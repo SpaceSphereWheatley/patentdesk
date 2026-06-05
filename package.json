@@ -1,0 +1,12 @@
+{
+  "name": "patentdesk",
+  "private": true,
+  "scripts": {
+    "lint": "eslint PatentDesk.html"
+  },
+  "devDependencies": {
+    "@html-eslint/eslint-plugin": "^0.24.1",
+    "@html-eslint/parser": "^0.24.1",
+    "eslint": "^8.57.0"
+  }
+}
