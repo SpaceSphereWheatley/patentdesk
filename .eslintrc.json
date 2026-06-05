@@ -1,0 +1,26 @@
+{
+  "plugins": ["@html-eslint"],
+  "overrides": [
+    {
+      "files": ["*.html"],
+      "parser": "@html-eslint/parser",
+      "plugins": ["@html-eslint"],
+      "rules": {
+        "no-undef": "error",
+        "no-unused-vars": "warn",
+        "no-unreachable": "error",
+        "no-constant-condition": "error",
+        "no-dupe-keys": "error",
+        "no-duplicate-case": "error",
+        "no-self-assign": "error",
+        "no-self-compare": "error",
+        "use-isnan": "error",
+        "valid-typeof": "error"
+      },
+      "env": {
+        "browser": true,
+        "es2020": true
+      }
+    }
+  ]
+}
