@@ -1,0 +1,417 @@
+# PatentDesk — Endringslogg
+# Rekonstruert fra samtalehistorikk
+# Nyeste versjon øverst
+
+═══════════════════════════════════════════════════════════════
+  v4.x  OVERHALING
+═══════════════════════════════════════════════════════════════
+
+v4.4.4  Bugfix: stale DOM-verdier på sakssiden
+───────────────────────────────────────────────────────────────
+  · renderSak nullstiller sak-num-claims og sak-filing-date
+    eksplisitt ved lasting av oppdrag
+  · renderSak nullstiller sak-duration ved lasting av søknad
+  · Type-guards i change-lyttere for sak-num-claims,
+    sak-filing-date og sak-duration hindrer kryss-sak-skriving
+
+v4.4.3  Innstillingsside redesign
+───────────────────────────────────────────────────────────────
+  · pt_theme fjernet fra deleteAllData()
+  · Konami-kode fjernet (23 linjer JS + CSS + div)
+  · «Om appen»-knapp i ny Om-seksjon åpner modal direkte
+  · Ny CSS: .s-btn, .s-inp, .s-sel med felles 32px høyde
+    erstatter .btn-setting-action i innstillingene
+  · Seksjoner omdøpt: Arbeidsoppsett → Produksjon,
+    Data → Sikkerhetskopiering; ny Om-seksjon
+  · Fristbuffer-label oppdatert til «global» med
+    «Kan overstyres per sak» i subtekst
+  · Eksporter: slått sammen til én rad med to knapper
+  · Ferieliste: kollapsbar med statusfarger (ferdig /
+    pågår / kommende) og «Legg til»-knapp inline
+
+v4.4.2  Responsiv kortliste
+───────────────────────────────────────────────────────────────
+  · Tittel får min-width: 60px — forsvinner aldri helt
+  · Notater krymper med flex-shrink, skjules under 800px
+  · Status-pill skjules under 700px
+  · Handlingsknapp skjules under 600px; meny-knappen (⋯)
+    alltid synlig som erstatning
+  · Meny-knapp synlig ved :focus-within (touch-støtte)
+
+v4.4.1  Visuell overhaling — navigasjon og kortliste
+───────────────────────────────────────────────────────────────
+  · Ny lys farge-palet (#f5f6f8 base)
+  · Mørk modus fjernet (ingen dark/light-referanser i koden)
+  · SVG Tabler-ikoner erstatter emoji i navigasjonen
+  · Nav-stil A: subtilt aktiv-tilstand med lys grå bakgrunn
+  · ti-flag ikon for Oppdrag-siden
+  · Hjemside: statistikkort viser kun Nye saker, Oppdrag,
+    Fristarkiv og Forfalt (Viderebehandling fjernet)
+  · Ny kompakt 30-dagers tidslinje ved siden av 120-dagers
+  · Statistikk: prognoselinje lagt til eksisterende
+    Chart.js-graf basert på effektive forfallsdatoer
+
+v4.3.0  Per-sak buffer og beleggberegning
+───────────────────────────────────────────────────────────────
+  · Drag-interaksjon på hjemtidslinjen for å sette
+    per-sak fristbuffer (kun fra hjemskjermen)
+  · Belegg endret fra union-modell til summeringsmodell
+    (tillater >100 % og viser reell overbelastning)
+  · effDueFor() prioriterer c.caseBuffer over global
+    fristBuffer når det er satt
+  · hasBuffer-sjekker bruker effDue !== c.dueDate
+    i stedet for fristBuffer > 0
+  · _dragJustEnded-flagg hindrer utilsiktet saksnavigasjon
+    etter drag
+  · renderHjem() kalles etter drag (oppdaterer alle kort)
+  · at-limit rød kant vises kun under aktiv dragging
+
+v4.2.8  Tidslinje-refaktor — gjenbrukbar widget
+───────────────────────────────────────────────────────────────
+  · renderTimeline() endret fra targetId-signatur til
+    opts-basert API
+  · _tlConfig-tabell erstatter seks løse variabler
+  · buildTimelineWidget() factory-funksjon eliminerer
+    ~200 linjer duplisert HTML og JS
+  · renderCardList og renderOversiktCards slått sammen
+    til renderCaseList(sorted, opts, listEl, emptyEl)
+  · Mørk modus og kompakt modus fjernet
+  · Tidslinje-feil fikset: widget-initialisering,
+    cases-timeline manglende fra _tlConfig,
+    modal zoom gjenoppbygger track,
+    _applyTimelineScroll hardkodet FULL=365 fikset,
+    clientWidth=0 ved oppstart via requestAnimationFrame
+
+v4.2.0–v4.2.7  Visuelle forbedringer kortliste og hjemside
+───────────────────────────────────────────────────────────────
+  · Chart.js-farger fra CSS-tokens
+  · Responsiv kortliste med shrink/skjul per breakpoint
+  · Sakskort-meny alltid synlig på touch via :hover-fix
+
+v4.1.8  Feriebadge overlapp-logikk
+───────────────────────────────────────────────────────────────
+  · periodOverlapsVacation(c) sjekker om noen del av
+    arbeidsperioden overlapper ferie (ikke bare fristen)
+  · Bruker effDueFor(c) konsekvent for begge sakstyper
+  · Fikset UTC-offset-feil (toISOString → setDate/getDate)
+
+v4.1.5  Prosjektikon
+───────────────────────────────────────────────────────────────
+  · Inline SVG favicon via data-URI i <head>
+  · Dobbel-offset sekskant i gull (#b08040) og blå (#2563eb)
+  · .logo-mark i navigasjonsdrawer bruker samme SVG
+
+v4.1.3  Legg-til-sak modal redesign
+───────────────────────────────────────────────────────────────
+  · Bulk-modal slått inn i hoved-modal som andre fane
+  · Arbeidsplan-tidslinje øverst i modalen (begge faner)
+  · Split-knapp erstattet med enkelt «Legg til sak»-knapp
+  · Oppdrag-saksnummerformat valideres (8 siffer + P)
+  · Status-valg via radioknapper med fargede pill-etiketter
+  · Avsluttet fjernet fra registreringsmodalen
+  · Notater og stikkord bak «Avansert»-veksler
+  · Bulk-fane: kun Excel lim-inn (manuell rad fjernet),
+    auto-deteksjon av kolonner som standard
+
+v4.1.1  Tidslinje — realtidslinje og 16:00-frister
+───────────────────────────────────────────────────────────────
+  · «I dag»-linjen plasseres ut fra new Date() (nøyaktig
+    klokkeslett), ikke midnatt — beveger seg gjennom dagen
+  · Forfallsdatoer tolkes som kl. 16:00
+  · pctDay() innført for grid-elementer
+  · Uketicks forankret til faktiske mandager
+  · Ukenummer vises også når månedsskifte faller på mandag
+
+v4.0.0  Produksjonsklar release (fra alpha-serie)
+───────────────────────────────────────────────────────────────
+  · Seksjonsstruktur S1–S7 med klare laggrenser
+  · Alle tilstandsendringer via dispatch() / reducer
+  · AppState-objekt — ingen løse globaler
+  · Historikk-modal med statusbytter og fristendringer
+  · Oppdrag-sakstype med egen flyt og tidslinje-visning
+  · Konfigurerbar sjekkliste-mal i Innstillinger
+  · Cascade-regel for kravsvurdering (nyhet + OH arves
+    transitivt nedover avhengighetskjeden)
+  · Komplett CSS-token-system (ingen hardkodede hex)
+  · Focus trap i alle 14 modaler (WCAG 2.1.2)
+  · aria-live toast-annonsering for skjermlesere
+  · Dyp import-validering med per-case-filtrering
+  · Duplikat saksnummer-advarsel (case-insensitivt)
+  · Chart-farger fra CSS-tokens
+
+═══════════════════════════════════════════════════════════════
+  v3.x  STABIL SERIE
+═══════════════════════════════════════════════════════════════
+
+v3.16.3  Oppdrag-bugfixer (runde 2)
+───────────────────────────────────────────────────────────────
+  · migrateCases bevarer type og duration (oppdrag mister
+    ikke sakstype ved reload)
+  · updateCaseField bruker riktig label for oppdrag
+  · buildByMonth dobbelteller ikke oppdrag i statistikk
+  · Tidslinje-popup bruker ikke buffer-justert dato for oppdrag
+  · sortedForPage sorterer oppdrag uten buffer
+  · P-suffix validering lagt til
+
+v3.16.0  Ny sakstype: Oppdrag
+───────────────────────────────────────────────────────────────
+  · Oppdrag-sakstype med totrinnflyt (Ny → Avsluttet)
+  · Saksnummer-format: 8 siffer + «P»
+  · Forenklet saksside uten kravtre og sjekkliste
+  · Oppdrag vises i kortlisten med særegen fargesetting
+  · Tidslinje-integrering med lilla felt-farge
+  · effDueFor(c) hjelper erstatter ti+ gjentatte ternary
+  · Statistikk-tabell med to nye kolonner for oppdrag
+  · Eksport statusMap inkluderer oppdrag
+  · Sticky progress-bar skjules for oppdrag-sakssider
+
+v3.12.4  Kravtre — divider-linjebugfix + navigasjonsikoner
+───────────────────────────────────────────────────────────────
+  · Horisontale skillelinjer mellom uselvstendige krav fjernet
+    (border-top på .kt-group-children fjernet)
+  · Navigasjonsikoner oppdatert:
+    Nye saker: 📄 → 📥 | Viderebehandling: 🔄 → ↩️
+    Fristarkiv: 📁 → ⏳
+
+v3.12.3  Kravtre — rekursiv hierarki
+───────────────────────────────────────────────────────────────
+  · Ytre wrapper-boks rundt hele treet
+  · Rekursiv rendering med stigende innrykk for >2 nivåer
+  · Krav-nummer vises i stedet for «Krav X»-etiketter
+
+v3.12.2  Kravtre — gruppebokser og statusfarger
+───────────────────────────────────────────────────────────────
+  · Boks per selvstendig krav-gruppe (kt- CSS-prefix)
+  · Fargekodet venstrekant basert på kravstatus
+    (grønn/rød/gul/grå)
+  · Kollapsbare grupper med persistent kollapstilstand
+
+v3.12.1  CPC v2-format og forbedringer
+───────────────────────────────────────────────────────────────
+  · cpc_v2.json-format: {t, l} per kode (253 422 symboler)
+  · Format-validering ved innlasting
+  · Last inn på nytt-knapp i CPC-banner
+  · CPC-database-seksjon i Innstillinger
+  · Kun {code, inUse} lagres — desc slås opp live fra _cpcDb
+  · Eksisterende desc-felt migreres ut av localStorage
+  · Hierarki-tooltip med foreldrekoder og dybdepunkter (●)
+  · 600ms hover-forsinkelse på tooltip
+  · Sjekkliste-redigerer flyttet til modal
+  · Tema-veksler-knapp viser hva den bytter til (ikke gjeldende)
+
+v3.11.5  Konfigurerbar sjekkliste-mal
+───────────────────────────────────────────────────────────────
+  · Ny standard sjekkliste: Forberedelse (8), Gransking (17),
+    Rapport (9)
+  · Sjekkliste-redigerer i Innstillinger med pt_checklist_tpl
+  · getChecklistTemplate() erstatter direkte
+    CHECKLIST_TEMPLATE-referanser
+
+v3.11.4  Kravvurdering — bugfix inventivDone-teller
+───────────────────────────────────────────────────────────────
+  · Krav uten nyhet telles korrekt som ferdigvurderte for OH
+  · inventiveTotal tilsvarer alltid fullt antall krav
+
+v3.11.3  Kravvurdering — cascade-regel
+───────────────────────────────────────────────────────────────
+  · Selvstendig krav med nyhet=ja og OH=ja sender verdiene
+    transitivt til alle avhengige krav
+  · Cascade-verdier kan overstyres manuelt per krav
+
+v3.11.2  Tidslinje på Nye saker + refaktor
+───────────────────────────────────────────────────────────────
+  · Tidslinje («Arbeidsplan») lagt til Nye saker-siden
+  · _renderBulkTimeline() slått inn i renderTimeline(targetId)
+  · Bulk-modal manuell-fane: «Legg til rad» og fane-bytte
+    kaller renderTimeline
+  · Tidslinje-SVG bruker width="100%"
+  · Bulk-modal-tidslinje horisontal scrollbar
+
+v3.11.0–v3.11.1  Codex-gjennomgang runde 2
+───────────────────────────────────────────────────────────────
+  · Modaler flyttes fra etter </html> til korrekt i <body>
+  · var-omfangskonflikt i klikkhåndterer fikset
+  · Manglende sanitering på interne notater
+  · Stiormalisering i buildCasePath
+  · workDaysUntil logikkfeil for helgefrister
+  · 67 inline CSS-stiler erstattet med 40+ navngitte klasser
+  · Duplikat CHANGELOG-innslag fjernet
+  · Inkonsekvent regex i _normDate
+  · getNorwegianHolidays memoized
+  · Dead code i initCpcLoadButton fjernet
+  · tagFilter-tilstandslekkasje mellom sidenavigasjon
+
+v3.10.7  Bulk-import modal og drawerfix
+───────────────────────────────────────────────────────────────
+  · Kollapsbar navigasjonsdrawer (‹/›, pt_drawer_collapsed)
+  · Tidslinje kopiert til Nye saker-siden
+  · Split «Legg til sak»-knapp med dropdown for bulk-import
+  · Bulk-modal med to faner: lim inn fra Excel / manuell
+  · Live tidslinjforhåndsvisning i bulk-modal
+  · Kritisk bugfix: addEventListener på bulk-modal-elementer
+    som ikke fantes i DOM ennå (TypeError stoppet all JS)
+  · sanitizeText() hindrer JSON.parse-krasj fra
+    uescapede linjeskift i notes-felt
+
+v3.10.3  CPC-autofullfør og statistikk-redesign
+───────────────────────────────────────────────────────────────
+  · CPC-autofullfør via lokal cpc.json, migrert til IndexedDB
+  · Statistikkside redesignet: årsvelger i header, Chart.js
+    med fylt areal, mållinje og trendlinje
+  · Hendelseslogg på statistikksiden bruker kortlistestil
+  · «Alle saker»-siden bruker kortlistestil med søk
+  · Stikkord-pill-redigerer med hover-slett og autofullfør
+  · CPC-database-onboarding-modal for nye brukere
+  · Kopieringsknapper for CPC-klasser (grovklasser / alle)
+  · Kravs avhengighets-dropdown erstattet med tallinndata
+    med auto-kopi
+
+v3.9.0  Kollapsbar navigasjonsdrawer
+───────────────────────────────────────────────────────────────
+  · Drawer kollapser til ikon-bredde (48px) via ‹/›
+  · Tooltips ved hover i kollapset tilstand
+  · Tilstand lagret i pt_drawer_collapsed
+
+v3.8.0  Eksport/import JSON utvidet
+───────────────────────────────────────────────────────────────
+  · JSON-eksport inkluderer pt_sak_*, ferier,
+    produksjonsmål, belegg-horisont og doc-rot
+  · «Slett alt»-håndterer rydder disse nøklene
+
+v3.7.0  Kravtre (kravtre-funksjon)
+───────────────────────────────────────────────────────────────
+  · Visuelt kravtre til høyre for vurderingstabellen
+  · Innrykk-basert hierarki (ingen grenlinjer)
+  · Valgfrie fritekst-etiketter per krav (synlige som chips)
+  · «Avh. av»-kolonne i tabellen definerer hierarki
+  · Selvstendig krav utledes fra dep === null
+  · Krav 1 er alltid selvstendig som standard
+
+v3.6.0  Kortlistestil for saksvisninger
+───────────────────────────────────────────────────────────────
+  · Nye saker, Fristarkiv og Viderebehandling bruker
+    kortlistestil i stedet for tabeller
+  · Primærhandlingsknapp alltid synlig på kort
+  · Rediger/slett/historikk i hover-avslørt ⋯-meny
+
+v3.5.0  Klikkbare saker og redigerbare detaljer
+───────────────────────────────────────────────────────────────
+  · Saker klikkbare fra alle steder inkl. hjemside
+  · Alle saksdetaljer redigerbare fra sakssiden
+  · Status-valg via pill-knapper
+  · To-store-arkitektur formalisert:
+    cases[] for liste; pt_sak_{id} for detaljer
+
+v3.4.0–v3.4.3  Belegg-widget
+───────────────────────────────────────────────────────────────
+  · Sirkulær belegg-måler (56px) på hjemside
+  · Konfigurerbar horisont (30/60/90 dager) i Innstillinger
+  · Fargekodet grønn/gul/rød (<60% / 60–80% / >80%)
+  · Trendpil for neste periode
+  · «Behandlet i år» dobbeltelling fikset (bruker stats.log)
+  · «Nybehandlinger i år»-kort med viderebehandlinger i subtekst
+
+v3.3.10  Patenterbar-beregning
+───────────────────────────────────────────────────────────────
+  · «Patenterbar»-raden viser union av patenterbare og
+    patenterbare-med-formelle-feil krav
+
+v3.3.9  Kravtabell — topplinje for selvstendige krav
+───────────────────────────────────────────────────────────────
+  · Full-bredde topplinje på selvstendige krav
+  · Krav 1 alltid selvstendig (toggle deaktivert)
+
+v3.3.8  Kravtabell — venstrelinje for selvstendige krav
+───────────────────────────────────────────────────────────────
+  · Gull venstrelinje på selvstendige krav (toggle via klikk)
+
+v3.3.0–v3.3.7  Hjemside og statistikk-forbedringer
+───────────────────────────────────────────────────────────────
+  · «Neste forfall»: kalender- og arbeidsdager side om side
+  · Norske helligdager (getNorwegianHolidays, easterSunday)
+  · workDaysUntil() ekskluderer helger, helligdager og ferier
+  · Statistikkside: Viderebehandling-kort/-kolonne fjernet
+  · Årlig produksjonsmål med stipplet mållinje i graf
+  · Prognoselabel «Anslag: XX» med fargestatus (grønn/gul/rød)
+  · CHANGELOG konvertert fra .md til .txt
+
+v3.2.13–v3.2.19  Sakssiden — sticky-bar og kravfremdrift
+───────────────────────────────────────────────────────────────
+  · Sticky-bar med tokolonne-grid: Nyhet | OH | Resultat
+  · updateStickySummary() via IntersectionObserver
+  · Kravtabell-kolonneoverskrifter viser per-kolonne fremdrift
+  · Grønt «✓ Ferdig»-merke når kolonne er ferdigvurdert
+
+v3.2.0–v3.2.12  Sakssiden (detaljside)
+───────────────────────────────────────────────────────────────
+  · Hash-ruting #sak/{saksnummer}
+  · Sjekkliste i tre faser (Forberedelse / Gransking /
+    Uttalelse) i tremkolonne-grid
+  · CPC-klasse-behandler med autofullfør
+  · Kravvurderingstabell: ✓/✗/— for nyhet, OH, formelle feil
+  · Resultatsummeringsgrid med kravområder
+  · Alle data lagres i pt_sak_{id} per sak
+  · Domeneregeler: ingen nyhet ⟹ ingen OH;
+    krav patenterbar bare med nyhet + OH bekreftet
+
+v3.1.3  Kodeoptimalisering
+───────────────────────────────────────────────────────────────
+  · appendHistory(c, status) hjelper erstatter duplisert mønster
+  · normaliseTags() konsekvent i btn-tag-confirm
+  · nextDue omdøpt fra upcoming (variabeloverskygning)
+
+v3.1.0–v3.1.2  Datepicker-komponent og feriebugfixer
+───────────────────────────────────────────────────────────────
+  · _dp singleton datepicker med norske dag-/månedsnavn
+  · IIFE flyttet til linje 27 for å unngå «kalt før definert»
+  · CSS-bugfixer: --bg2 → --surface2, --vacation-color lagt
+    til i light-blokk, .dp-wrap flex-fix
+
+v3.0.0  Ferieperioder i arbeidsplan
+───────────────────────────────────────────────────────────────
+  · Ferieperioder lagret i pt_vacations
+  · Grønne ferie-blokker i tidslinje med hover-popup
+  · ⛱-badge på frister som faller i ferie
+
+═══════════════════════════════════════════════════════════════
+  v2.x  TIDLIG UTVIKLING
+═══════════════════════════════════════════════════════════════
+
+v2.9.0  Hjemside-forbedringer og oppsamling
+───────────────────────────────────────────────────────────────
+  · Inter-font gjennomgående
+  · Fristarkiv vises etter Viderebehandling i alle visninger
+  · «Neste forfall» viser kun kommende (ikke forfalt)
+  · «Neste forfall»-kort klikkbart: kopierer mappesti
+  · «Forfalt»-kort: rød kant, 🔴-ikon, rød bakgrunn
+    når det finnes forfalte saker
+
+v2.5.0–v2.8.1  UI-iterasjoner
+───────────────────────────────────────────────────────────────
+  · Sticky-bar første implementasjon (IntersectionObserver)
+  · ss-patent / ss-patent-formal / ss-group-sep CSS-klasser
+  · Diverse justering av kortlayout, farger og typografi
+
+v2.3.0  Grunnfunksjoner og tidslinje
+───────────────────────────────────────────────────────────────
+  · Dashboard med statuskort og nøkkeltall
+  · SVG-tidslinje (enkelt-rad Gantt over 365 dager)
+  · Statistikk med kumulativ linjegraf og trendprojeksjon
+  · Stikkord-filtrering og autofullfør
+  · JSON/CSV eksport/import
+  · Angre for flytt og sletting
+  · Hash-ruting
+  · Lys/mørk modus
+  · Konami-kode-påskeegg
+
+v1.0.0–v1.4.0  Opprinnelig utvikling
+───────────────────────────────────────────────────────────────
+  · Grunnleggende saksflyt: Ny → Fristarkiv ↔
+    Viderebehandling → Avsluttet
+  · Statistikkside med månedstabell og aktivitetsgraf
+  · Navigasjonsdrawer erstatter horisontal toppmeny
+  · Eksport til CSV (UTF-8 BOM) og JSON
+  · Auto-lagring til localStorage
+  · Stikkord-autocomplete
+  · Stikkord-oversikt i statistikk
+  · Versjonsnummer i drawer-logo
