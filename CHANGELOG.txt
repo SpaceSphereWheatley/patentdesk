@@ -6,6 +6,33 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.5.2  Fix: "Slett alt" sletter nå virkelig alt som er lagret
+───────────────────────────────────────────────────────────────
+- "Slett alt"-funksjonen manglet flere lagrede nøkler
+  (pt_drawer_collapsed, pt_cpc_welcomed) og slettet ikke selve
+  CPC-databasen i IndexedDB. Alt dette fjernes nå, og
+  CPC-tilstanden (minne, banner, status) nullstilles fullstendig
+  via ny _cpcResetState().
+
+v4.5.1  Forbedring: live forhåndsvisning og filkrav for saksmappe-rot
+───────────────────────────────────────────────────────────────
+- Feltet for saksmappe-rot (i Innstillinger og i onboarding-
+  veiviseren) viser nå en live forhåndsvisning av den fullstendige
+  filbanen ("Eksempel: C:\...\NO20240001\Claims.pdf"), samt en
+  oversikt over hvilke filer hver sak-mappe bør inneholde
+  (Claims.pdf, Application.pdf, Figures.pdf, Description.pdf,
+  Abstract.pdf). Banen normaliseres ved lagring (fjerner
+  etterslengende skråstreker og konverterer "/" til "\").
+
+v4.5.0  Feature: onboarding-veiviser for nye brukere
+───────────────────────────────────────────────────────────────
+- Ny 3-stegs veiviser vises ved første gangs bruk: navn, mappe
+  for saksdokumenter og innlasting av CPC-database. Erstatter
+  den tidligere frittstående CPC-velkomstmodalen (samme
+  innlastingslogikk gjenbrukes i siste steg). Fremgangen lagres
+  som "pt_onboarding_completed" / "pt_user_name", og nullstilles
+  av "Slett all data".
+
 v4.4.6  Feature: dra-og-slipp for CPC-database
 ───────────────────────────────────────────────────────────────
 - CPC-database-raden i Innstillinger godtar nå dra-og-slipp av
