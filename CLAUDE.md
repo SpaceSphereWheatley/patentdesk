@@ -72,6 +72,18 @@ be present in a re-uploaded file — re-apply as needed. Always grep
 - Do not introduce new external libraries or CDN links.
 - The file is 8 000+ lines; this is acceptable given the offline constraint.
 
+### Download link after each push
+After committing and pushing a change to `PatentDesk.html`, always include a
+direct, version-pinned download link for the changed file using the commit
+SHA:
+
+```
+https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/<commit-sha>/PatentDesk.html
+```
+
+Provide this link as part of the summary for that change — don't wait to be
+asked.
+
 ---
 
 ## Files
