@@ -33,6 +33,7 @@
   --bg:          #f5f6f8;
   --surface:     #ffffff;
   --surface2:    #f9fafb;
+  --bg2:         var(--surface2);
   --border:      #e5e7eb;
   --border2:     #d1d5db;
   --text:        #111827;
@@ -363,8 +364,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   transition: border-color 0.2s, transform 0.15s;
   text-align: center;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06);
-}
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .card-label {
   font-size: 0.68rem; letter-spacing: 0.1em;
@@ -1420,8 +1419,8 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .sak-tri-btn-null     { background: var(--surface2); color: var(--muted) !important;
                          border-color: var(--border2); }
 /* Låst */
-.sak-tri-locked       { opacity: 0.4; cursor: not-allowed !important;
-                         filter: none !important; transform: none !important; }
+.sak-tri-locked       { opacity: 0.45; cursor: not-allowed !important;
+                         filter: none !important; transform: none !important; border-style: dashed; }
 /* Arvet (cascade) */
 .sak-tri-btn-cascade  { background: rgba(16,185,129,0.10); color: var(--color-ok) !important;
                          border-color: var(--color-ok); border-style: dashed; opacity: 0.75; }
@@ -1450,8 +1449,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .claim-unassessed   { opacity: 0.6; }
 .claim-ok           { }
 .claim-rejected     { background: rgba(224,85,85,0.06); }
-
-.sak-tri-locked     { opacity: 0.45; cursor: not-allowed; border-style: dashed; }
 
 /* ── 26. Saksdetaljer v2 ──────────────────────────── */
 
