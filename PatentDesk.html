@@ -1452,6 +1452,7 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   cursor:pointer; white-space:nowrap; margin-left:auto; }
 .cpc-load-banner-btn:hover { border-color:var(--accent); color:var(--accent); }
 #cpc-file-input { display:none; }
+#settings-cpc-row.cpc-drop-active { background: var(--s-oppdrag-bg); outline: 1px dashed var(--s-oppdrag-border); outline-offset: -1px; border-radius: var(--radius); }
 .sak-class-inuse-label  { display: flex; align-items: center; cursor: pointer; flex-shrink: 0; }
 .sak-class-inuse-label input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
 .sak-class-tag-active   { background: #e6f1fb; color: #185fa5 !important; border-radius: 4px; padding: 1px 6px; }
@@ -1572,19 +1573,23 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;
 }
 .sak-docs-dropdown-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 10px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: stretch;
+  border-bottom: 1px solid var(--border);
 }
 .sak-docs-dropdown-row:last-child { border-bottom: none; }
 .sak-docs-file { display: flex; align-items: center; gap: 7px;
   font-size: 0.82rem; color: var(--text); }
 .sak-docs-file-icon { font-size: 0.8rem; color: var(--muted); }
-.sak-docs-copy { display: flex; align-items: center; gap: 7px;
-  width: 100%; font-size: 0.82rem; color: var(--text); background: none;
-  border: none; border-bottom: 1px solid var(--border);
-  cursor: pointer; padding: 7px 10px; text-align: left; }
-.sak-docs-copy:last-child { border-bottom: none; }
-.sak-docs-copy:hover { background: var(--surface2); }
+.sak-docs-open { display: flex; align-items: center; gap: 7px;
+  flex: 1; min-width: 0; font-size: 0.82rem; color: var(--text); background: none;
+  border: none; cursor: pointer; padding: 7px 10px; text-align: left; }
+.sak-docs-open:hover { background: var(--surface2); }
+.sak-docs-copy { display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; color: var(--muted); background: none;
+  border: none; border-left: 1px solid var(--border);
+  cursor: pointer; padding: 7px 10px; }
+.sak-docs-copy:hover { background: var(--surface2); color: var(--text); }
+.sak-docs-copy.copied { color: var(--vacation-color); }
 .sak-docs-copy.copied { color: var(--vacation-color); }
 
 /* ── 27. Sak sticky-bar ───────────────────────────── */
@@ -2170,7 +2175,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
         <section class="settings-section">
           <h2 class="settings-section-title">Sikkerhetskopiering</h2>
           <div class="settings-group">
-            <div class="settings-row">
+            <div class="settings-row" id="settings-cpc-row">
               <div class="settings-label">
                 <span class="settings-label-title">CPC-database</span>
                 <span class="settings-label-sub" id="settings-cpc-status">Velg cpc_v2.json for å aktivere autofullfør og beskrivelser</span>
@@ -2272,11 +2277,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
             <div style="position:relative;">
               <button class="btn-secondary btn-sm" id="btn-sak-docs" title="Åpne saksdokumenter"><svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> Dokumenter</button>
               <div class="sak-docs-dropdown" id="sak-docs-dropdown" style="display:none;">
-                <button class="sak-docs-copy" data-file="Claims.pdf"><span class="sak-docs-file-icon">📄</span>Claims.pdf</button>
-                <button class="sak-docs-copy" data-file="Description.pdf"><span class="sak-docs-file-icon">📄</span>Description.pdf</button>
-                <button class="sak-docs-copy" data-file="Abstract.pdf"><span class="sak-docs-file-icon">📄</span>Abstract.pdf</button>
-                <button class="sak-docs-copy" data-file="Figures.pdf"><span class="sak-docs-file-icon">📄</span>Figures.pdf</button>
-                <button class="sak-docs-copy" data-file="Application.pdf"><span class="sak-docs-file-icon">📄</span>Application.pdf</button>
+                <div class="sak-docs-dropdown-row"><button class="sak-docs-open" data-file="Claims.pdf"><span class="sak-docs-file-icon">📄</span>Claims.pdf</button><button class="sak-docs-copy" data-file="Claims.pdf" title="Kopier sti">📋</button></div>
+                <div class="sak-docs-dropdown-row"><button class="sak-docs-open" data-file="Description.pdf"><span class="sak-docs-file-icon">📄</span>Description.pdf</button><button class="sak-docs-copy" data-file="Description.pdf" title="Kopier sti">📋</button></div>
+                <div class="sak-docs-dropdown-row"><button class="sak-docs-open" data-file="Abstract.pdf"><span class="sak-docs-file-icon">📄</span>Abstract.pdf</button><button class="sak-docs-copy" data-file="Abstract.pdf" title="Kopier sti">📋</button></div>
+                <div class="sak-docs-dropdown-row"><button class="sak-docs-open" data-file="Figures.pdf"><span class="sak-docs-file-icon">📄</span>Figures.pdf</button><button class="sak-docs-copy" data-file="Figures.pdf" title="Kopier sti">📋</button></div>
+                <div class="sak-docs-dropdown-row"><button class="sak-docs-open" data-file="Application.pdf"><span class="sak-docs-file-icon">📄</span>Application.pdf</button><button class="sak-docs-copy" data-file="Application.pdf" title="Kopier sti">📋</button></div>
               </div>
             </div>
             <button class="btn-secondary btn-sm" id="btn-sak-history" title="Vis historikk"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Historikk</button>
@@ -2825,7 +2830,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.4.4';
+var APP_VERSION    = 'v4.4.6';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -6995,26 +7000,50 @@ function initCpcLoadButton() {
   // Bind file input change alltid ved oppstart — uavhengig av IndexedDB-tilstand
   document.getElementById('cpc-file-input').addEventListener('change', function(e) {
     var file = e.target.files[0]; if (!file) return;
-    _cpcSetBanner('<span class="cpc-banner-loading">Lagrer…</span>');
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      try {
-        var data = JSON.parse(ev.target.result);
-        _cpcLoaded(data);
-        _cpcSaveToDb(data, function(err) {
-          if (err) showToast('Lastet, men kunne ikke lagre til database.');
-          else showToast('CPC-database lagret — lastes automatisk neste gang.');
-        });
-      } catch(err) {
-        showToast('Kunne ikke lese filen — ugyldig format.');
-        _cpcTryLoadFromDb();
-      }
-    };
-    reader.readAsText(file, 'utf-8');
+    _cpcLoadFile(file);
     e.target.value = '';
   });
 
+  // Dra-og-slipp på CPC-raden i innstillinger
+  var cpcRow = document.getElementById('settings-cpc-row');
+  ['dragover', 'dragenter'].forEach(function(evt) {
+    cpcRow.addEventListener(evt, function(e) {
+      e.preventDefault();
+      cpcRow.classList.add('cpc-drop-active');
+    });
+  });
+  ['dragleave', 'dragend', 'drop'].forEach(function(evt) {
+    cpcRow.addEventListener(evt, function(e) {
+      if (evt === 'dragleave' && cpcRow.contains(e.relatedTarget)) return;
+      cpcRow.classList.remove('cpc-drop-active');
+    });
+  });
+  cpcRow.addEventListener('drop', function(e) {
+    e.preventDefault();
+    var file = e.dataTransfer.files[0];
+    if (file) _cpcLoadFile(file);
+  });
+
   _cpcTryLoadFromDb();
+}
+
+function _cpcLoadFile(file) {
+  _cpcSetBanner('<span class="cpc-banner-loading">Lagrer…</span>');
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = JSON.parse(ev.target.result);
+      _cpcLoaded(data);
+      _cpcSaveToDb(data, function(err) {
+        if (err) showToast('Lastet, men kunne ikke lagre til database.');
+        else showToast('CPC-database lagret — lastes automatisk neste gang.');
+      });
+    } catch(err) {
+      showToast('Kunne ikke lese filen — ugyldig format.');
+      _cpcTryLoadFromDb();
+    }
+  };
+  reader.readAsText(file, 'utf-8');
 }
 
 function initCpcAutocomplete() {
@@ -7503,6 +7532,19 @@ document.getElementById('btn-sak-history').addEventListener('click', function() 
   });
 
   dd.addEventListener('click', function(e) {
+    var openBtn = e.target.closest('.sak-docs-open');
+    if (openBtn) {
+      var file = openBtn.getAttribute('data-file');
+      var cas  = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
+      if (!cas) return;
+      var root = loadDocRoot().replace(/[\\\/]+$/, '');
+      var winPath = root + '\\' + cas.caseNumber + '\\' + file;
+      var fileUrl = 'file:///' + winPath.replace(/\\/g, '/');
+      window.open(fileUrl, '_blank');
+      dd.style.display = 'none';
+      return;
+    }
+
     var copyBtn = e.target.closest('.sak-docs-copy');
     if (!copyBtn) return;
     var file = copyBtn.getAttribute('data-file');
@@ -7512,7 +7554,7 @@ document.getElementById('btn-sak-history').addEventListener('click', function() 
     var path = root + '\\' + cas.caseNumber + '\\' + file;
     navigator.clipboard.writeText(path).then(function() {
       var orig = copyBtn.innerHTML;
-      copyBtn.innerHTML = '✓ ' + file;
+      copyBtn.innerHTML = '✓';
       copyBtn.classList.add('copied');
       setTimeout(function() {
         copyBtn.innerHTML = orig;

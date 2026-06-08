@@ -6,6 +6,18 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.4.6  Feature: dra-og-slipp for CPC-database
+───────────────────────────────────────────────────────────────
+- CPC-database-raden i Innstillinger godtar nå dra-og-slipp av
+  cpc_v2.json som et raskere alternativ til "Velg fil"-dialogen.
+  Samme last/lagre-logikk som før — kun innlastingsveien er ny.
+
+v4.4.5  Feature: åpne saksdokumenter direkte fra dropdown
+───────────────────────────────────────────────────────────────
+- Dokument-dropdown på sakssiden har nå en egen "åpne"-knapp per
+  fil (klikk på filnavnet) som åpner filen direkte via file:///,
+  i tillegg til den eksisterende kopier-sti-knappen (📋-ikon).
+
 v4.4.4  Bugfix: stale DOM-verdier på sakssiden
 ───────────────────────────────────────────────────────────────
   · renderSak nullstiller sak-num-claims og sak-filing-date
