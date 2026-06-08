@@ -2855,7 +2855,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.5.1';
+var APP_VERSION    = 'v4.5.2';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3418,6 +3418,10 @@ function deleteAllData() {
   localStorage.removeItem('pt_schema_version');
   localStorage.removeItem(ONBOARDING_KEY);
   localStorage.removeItem(USER_NAME_KEY);
+  localStorage.removeItem('pt_drawer_collapsed');
+  localStorage.removeItem('pt_cpc_welcomed');
+
+  _cpcResetState();
 }
 
 // ── Import-validering ──────────────────────────────
@@ -5322,6 +5326,20 @@ function _cpcUpdateSettingsStatus() {
     el.textContent = 'Ikke lastet — velg cpc_v2.json';
     el.style.color = '';
   }
+}
+
+// Nullstiller CPC-databasen helt: minne, IndexedDB og UI
+function _cpcResetState() {
+  _cpcDb = null;
+  _cpcKeys = null;
+  try { indexedDB.deleteDatabase(_CPC_DB_NAME); } catch(e) {}
+  _cpcSetBanner(
+    '<span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>' +
+    '<button class="cpc-load-banner-btn" id="btn-cpc-load">Last inn</button>'
+  );
+  _initCpcLoadButton();
+  _cpcUpdateSettingsStatus();
+  _cpcHideNotice();
 }
 
 function renderSakClasses(data) {
