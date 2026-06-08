@@ -6,6 +6,23 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.6.1  Intern opprydding: slankere CSS og fiksede stilbugger
+───────────────────────────────────────────────────────────────
+- Slo sammen duplisert CSS for knappevarianter (.btn-primary/
+  .btn-secondary/.btn-danger) og stikkord-elementer (.tag-chip/
+  .tag-cloud-item) til delte basisregler — ingen visuell endring.
+- Fjernet en foreldreløs box-shadow-deklarasjon utenfor .card-
+  regelen og en duplisert/motstridende .sak-tri-locked-regel
+  (begge var ugyldig/dødt CSS uten effekt på utseendet).
+- Fikset en bug der den udefinerte variabelen --bg2 gjorde at
+  modal-type-knapper, oppdrag-varighetsmerker, bulk-fane og
+  modus-piller fikk gjennomsiktig bakgrunn i stedet for den
+  tiltenkte lyse gråfargen (--bg2 er nå et alias for --surface2).
+- Fjernet en duplisert oppføring i closeAllBackdrops()-listen.
+- Utvidet seksjonsoversikten øverst i <style> til å dekke hele
+  filen (CSS, HTML-markup og alle JS-seksjonene), ikke bare
+  CSS-delen.
+
 v4.6.0  Egendefinerbar dokumentliste på sakssiden
 ───────────────────────────────────────────────────────────────
 - "Dokumenter"-menyen på sakssiden er ikke lenger en fast liste.
