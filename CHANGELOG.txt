@@ -6,6 +6,16 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.5.1  Forbedring: live forhåndsvisning og filkrav for saksmappe-rot
+───────────────────────────────────────────────────────────────
+- Feltet for saksmappe-rot (i Innstillinger og i onboarding-
+  veiviseren) viser nå en live forhåndsvisning av den fullstendige
+  filbanen ("Eksempel: C:\...\NO20240001\Claims.pdf"), samt en
+  oversikt over hvilke filer hver sak-mappe bør inneholde
+  (Claims.pdf, Application.pdf, Figures.pdf, Description.pdf,
+  Abstract.pdf). Banen normaliseres ved lagring (fjerner
+  etterslengende skråstreker og konverterer "/" til "\").
+
 v4.5.0  Feature: onboarding-veiviser for nye brukere
 ───────────────────────────────────────────────────────────────
 - Ny 3-stegs veiviser vises ved første gangs bruk: navn, mappe

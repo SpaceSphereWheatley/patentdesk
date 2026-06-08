@@ -1139,6 +1139,11 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   width: 100%;
   font-size: 0.8rem;
 }
+.docroot-preview  { font-size: 0.74rem; color: var(--muted); word-break: break-all; }
+.docroot-preview code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-size: 0.74rem; }
+.docroot-filenote { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+.docroot-filenote ul { margin: 0.3rem 0 0; padding-left: 1.2rem; }
+.docroot-filenote code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-size: 0.74rem; }
 
 /* ── 22. DatePicker ──────────────────────────────── */
 .dp-wrap            { position: relative; display: flex; align-items: center; width: 100%; }
@@ -2168,6 +2173,18 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                      type="text"
                      value="C:\Users\brukernavn\Dokumenter\Saksdokumenter"
                      placeholder="C:\sti\til\Saksdokumenter" />
+              <div class="docroot-preview" id="docroot-preview"></div>
+              <div class="docroot-filenote">
+                For at åpning og kopiering av dokumenter skal fungere, bør hver
+                sak-mappe inneholde filene:
+                <ul>
+                  <li><code>Claims.pdf</code></li>
+                  <li><code>Application.pdf</code></li>
+                  <li><code>Figures.pdf</code></li>
+                  <li><code>Description.pdf</code></li>
+                  <li><code>Abstract.pdf</code></li>
+                </ul>
+              </div>
             </div>
             <div class="settings-row">
               <div class="settings-label">
@@ -2838,7 +2855,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.5.0';
+var APP_VERSION    = 'v4.5.1';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3367,6 +3384,18 @@ function saveDrawerCollapsed(v)   { try { localStorage.setItem('pt_drawer_collap
 // ── Saksdokumenter ─────────────────────────────────
 function loadDocRoot() { return localStorage.getItem(DOC_ROOT_KEY) || DEFAULT_DOC_ROOT; }
 function saveDocRoot(v) { try { localStorage.setItem(DOC_ROOT_KEY, v); } catch(e) {} }
+
+// Trim, drop trailing slashes, normalize "/" to "\" — root is always joined Windows-style
+function _docRootNormalize(v) {
+  return (v || '').trim().replace(/[\\\/]+$/, '').replace(/\//g, '\\');
+}
+function _docRootJoin(root, caseNumber, file) {
+  return _docRootNormalize(root) + '\\' + caseNumber + '\\' + file;
+}
+function _docRootPreviewHtml(root) {
+  var path = _docRootJoin(root || DEFAULT_DOC_ROOT, 'NO20240001', 'Claims.pdf');
+  return 'Eksempel: <code>' + path + '</code>';
+}
 
 // ── Onboarding ─────────────────────────────────────
 function loadUserName()  { return localStorage.getItem(USER_NAME_KEY) || ''; }
@@ -7003,7 +7032,11 @@ function initOnboarding() {
   var btnClose = document.getElementById('btn-onb-close');
   var nameInput = document.getElementById('input-onb-name');
   var docRootInput = document.getElementById('input-onb-docroot');
+  var docRootPreview = document.getElementById('onb-docroot-preview');
   var current = 0;
+
+  function updateDocRootPreview() { if (docRootPreview) docRootPreview.innerHTML = _docRootPreviewHtml(docRootInput.value); }
+  docRootInput.addEventListener('input', updateDocRootPreview);
 
   function showStep(n) {
     current = n;
@@ -7021,7 +7054,12 @@ function initOnboarding() {
 
   function persistStep(n) {
     if (n === 0) saveUserName(nameInput.value.trim());
-    if (n === 1) saveDocRoot(docRootInput.value.trim() || DEFAULT_DOC_ROOT);
+    if (n === 1) {
+      var normalized = _docRootNormalize(docRootInput.value) || DEFAULT_DOC_ROOT;
+      docRootInput.value = normalized;
+      updateDocRootPreview();
+      saveDocRoot(normalized);
+    }
   }
 
   function finish() {
@@ -7059,6 +7097,7 @@ function initOnboarding() {
   nameInput.value = loadUserName();
   var savedRoot = loadDocRoot();
   if (savedRoot && savedRoot !== DEFAULT_DOC_ROOT) docRootInput.value = savedRoot;
+  updateDocRootPreview();
   showStep(0);
 }
 
@@ -7608,8 +7647,7 @@ document.getElementById('btn-sak-history').addEventListener('click', function() 
       var file = openBtn.getAttribute('data-file');
       var cas  = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
       if (!cas) return;
-      var root = loadDocRoot().replace(/[\\\/]+$/, '');
-      var winPath = root + '\\' + cas.caseNumber + '\\' + file;
+      var winPath = _docRootJoin(loadDocRoot(), cas.caseNumber, file);
       var fileUrl = 'file:///' + winPath.replace(/\\/g, '/');
       window.open(fileUrl, '_blank');
       dd.style.display = 'none';
@@ -7621,8 +7659,7 @@ document.getElementById('btn-sak-history').addEventListener('click', function() 
     var file = copyBtn.getAttribute('data-file');
     var cas  = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
     if (!cas) return;
-    var root = loadDocRoot().replace(/[\\\/]+$/, '');
-    var path = root + '\\' + cas.caseNumber + '\\' + file;
+    var path = _docRootJoin(loadDocRoot(), cas.caseNumber, file);
     navigator.clipboard.writeText(path).then(function() {
       var orig = copyBtn.innerHTML;
       copyBtn.innerHTML = '✓';
@@ -8009,10 +8046,17 @@ document.getElementById('home-upcoming-list').addEventListener('click', function
 (function() {
   var inp = document.getElementById('input-doc-root');
   if (!inp) return;
+  var preview = document.getElementById('docroot-preview');
   var saved = loadDocRoot();
   if (saved && saved !== DEFAULT_DOC_ROOT) inp.value = saved;
+  function updatePreview() { if (preview) preview.innerHTML = _docRootPreviewHtml(inp.value); }
+  updatePreview();
+  inp.addEventListener('input', updatePreview);
   inp.addEventListener('change', function() {
-    dispatch('SETTINGS_DOC_ROOT_CHANGE', { value: this.value.trim() });
+    var normalized = _docRootNormalize(this.value);
+    this.value = normalized;
+    updatePreview();
+    dispatch('SETTINGS_DOC_ROOT_CHANGE', { value: normalized });
   });
 })();
 
@@ -8372,6 +8416,18 @@ if (document.readyState === 'loading') {
           <div class="onb-step-text">Hvor lagrer du saksdokumenter? Banen kopieres til utklippstavlen når du klikker saksnummeret.</div>
           <input class="field-input settings-path-input" id="input-onb-docroot" type="text"
                  placeholder="C:\sti\til\Saksdokumenter" />
+          <div class="docroot-preview" id="onb-docroot-preview"></div>
+          <div class="docroot-filenote">
+            For at åpning og kopiering av dokumenter skal fungere, bør hver
+            sak-mappe inneholde filene:
+            <ul>
+              <li><code>Claims.pdf</code></li>
+              <li><code>Application.pdf</code></li>
+              <li><code>Figures.pdf</code></li>
+              <li><code>Description.pdf</code></li>
+              <li><code>Abstract.pdf</code></li>
+            </ul>
+          </div>
         </div>
 
         <div class="onb-step" data-step="2">
