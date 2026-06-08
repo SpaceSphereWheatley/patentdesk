@@ -16,6 +16,8 @@ v4.6.0  Egendefinerbar dokumentliste på sakssiden
 - Nye filer følger samme stimønster som de øvrige
   (<dokumentrot>\<saksnummer>\<filnavn>) og ligger dermed i
   saksmappen, akkurat som standardfilene.
+- Filnavn uten filtype antas å være PDF når lenken åpnes/kopieres,
+  og ".pdf"-endelsen vises ikke i listen.
 
 v4.5.2  Fix: "Slett alt" sletter nå virkelig alt som er lagret
 ───────────────────────────────────────────────────────────────

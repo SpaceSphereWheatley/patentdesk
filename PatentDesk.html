@@ -3405,6 +3405,16 @@ function _docRootNormalize(v) {
 function _docRootJoin(root, caseNumber, file) {
   return _docRootNormalize(root) + '\\' + caseNumber + '\\' + file;
 }
+function _fileHasExt(name) {
+  return /\.[a-zA-Z0-9]+$/.test(name || '');
+}
+function _fileResolvedName(name) {
+  name = name || '';
+  return _fileHasExt(name) ? name : (name + '.pdf');
+}
+function _fileDisplayName(name) {
+  return _fileResolvedName(name).replace(/\.pdf$/i, '');
+}
 function _docRootPreviewHtml(root) {
   var path = _docRootJoin(root || DEFAULT_DOC_ROOT, 'NO20240001', 'Claims.pdf');
   return 'Eksempel: <code>' + path + '</code>';
@@ -5288,7 +5298,7 @@ function renderSakFileList(data) {
   }
   list.innerHTML = files.map(function(f, i) {
     return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
-      '<button class="sak-docs-open" data-idx="' + i + '"><span class="sak-docs-file-icon">📄</span>' + esc(f.name) + '</button>' +
+      '<button class="sak-docs-open" data-idx="' + i + '"><span class="sak-docs-file-icon">📄</span>' + esc(_fileDisplayName(f.name)) + '</button>' +
       '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti">📋</button>' +
       '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn">✏️</button>' +
       '<button class="sak-docs-del" data-idx="' + i + '" title="Slett">✕</button>' +
@@ -7748,7 +7758,7 @@ document.getElementById('btn-sak-history').addEventListener('click', function() 
     if (openBtn) {
       var ctx = activeSakFile(parseInt(openBtn.getAttribute('data-idx'), 10));
       if (!ctx) return;
-      var winPath = _docRootJoin(loadDocRoot(), ctx.cas.caseNumber, ctx.file.name);
+      var winPath = _docRootJoin(loadDocRoot(), ctx.cas.caseNumber, _fileResolvedName(ctx.file.name));
       var fileUrl = 'file:///' + winPath.replace(/\\/g, '/');
       window.open(fileUrl, '_blank');
       dd.style.display = 'none';
@@ -7759,7 +7769,7 @@ document.getElementById('btn-sak-history').addEventListener('click', function() 
     if (copyBtn) {
       var ctx2 = activeSakFile(parseInt(copyBtn.getAttribute('data-idx'), 10));
       if (!ctx2) return;
-      var path = _docRootJoin(loadDocRoot(), ctx2.cas.caseNumber, ctx2.file.name);
+      var path = _docRootJoin(loadDocRoot(), ctx2.cas.caseNumber, _fileResolvedName(ctx2.file.name));
       navigator.clipboard.writeText(path).then(function() {
         var orig = copyBtn.innerHTML;
         copyBtn.innerHTML = '✓';
