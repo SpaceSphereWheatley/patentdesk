@@ -6,6 +6,15 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.5.0  Feature: onboarding-veiviser for nye brukere
+───────────────────────────────────────────────────────────────
+- Ny 3-stegs veiviser vises ved første gangs bruk: navn, mappe
+  for saksdokumenter og innlasting av CPC-database. Erstatter
+  den tidligere frittstående CPC-velkomstmodalen (samme
+  innlastingslogikk gjenbrukes i siste steg). Fremgangen lagres
+  som "pt_onboarding_completed" / "pt_user_name", og nullstilles
+  av "Slett all data".
+
 v4.4.6  Feature: dra-og-slipp for CPC-database
 ───────────────────────────────────────────────────────────────
 - CPC-database-raden i Innstillinger godtar nå dra-og-slipp av
