@@ -74,11 +74,10 @@ be present in a re-uploaded file — re-apply as needed. Always grep
 
 ### Download link after each push
 After committing and pushing a change to `PatentDesk.html`, always include a
-direct, version-pinned download link for the changed file using the commit
-SHA:
+direct GitHub link to the file on the working branch:
 
 ```
-https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/<commit-sha>/PatentDesk.html
+https://github.com/SpaceSphereWheatley/patentdesk/blob/<branch-name>/PatentDesk.html
 ```
 
 Provide this link as part of the summary for that change — don't wait to be
