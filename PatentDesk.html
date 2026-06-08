@@ -2541,7 +2541,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
         <div class="field-row" id="modal-row-oppdrag" style="display:none;">
           <div class="field-group">
             <label class="field-label" for="f-case-number-op">Saksnummer</label>
-            <input class="field-input" id="f-case-number-op" type="text" placeholder="f.eks. 20240012P" maxlength="30" />
+            <input class="field-input" id="f-case-number-op" type="text" placeholder="f.eks. Oppdrag A" maxlength="30" />
           </div>
           <div class="field-group">
             <label class="field-label" for="f-due-date-op">Forfallsdato</label>
@@ -8108,10 +8108,6 @@ document.getElementById('btn-save').addEventListener('click', function() {
   var cn = cnEl.value.trim(), dd = ddEl.value, ti = fTitle.value.trim();
   if (!cn || !dd || !ti) { fieldError.textContent = 'Saksnummer, forfallsdato og tittel er påkrevd.'; _dupWarnPending = false; return; }
   if (!isValidDate(dd))  { fieldError.textContent = 'Ugyldig dato — bruk formatet åååå.mm.dd.'; _dupWarnPending = false; return; }
-  if (isOppdrag && !/^\d{8}P$/i.test(cn)) {
-    fieldError.textContent = 'Saksnummer for oppdrag må være 8 siffer etterfulgt av «P» (f.eks. 20240012P).';
-    _dupWarnPending = false; return;
-  }
   var id = editIdEl.value;
   var cnLower = cn.toLowerCase();
   var duplicate = cases.find(function(c) { return c.caseNumber.toLowerCase() === cnLower && c.id !== id; });

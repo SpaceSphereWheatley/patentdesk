@@ -18,6 +18,8 @@ v4.6.0  Egendefinerbar dokumentliste på sakssiden
   saksmappen, akkurat som standardfilene.
 - Filnavn uten filtype antas å være PDF når lenken åpnes/kopieres,
   og ".pdf"-endelsen vises ikke i listen.
+- Fjernet det strenge formatkravet til oppdragsnummer (tidligere
+  måtte det være 8 siffer + «P»). Du kan nå kalle oppdrag hva du vil.
 
 v4.5.2  Fix: "Slett alt" sletter nå virkelig alt som er lagret
 ───────────────────────────────────────────────────────────────
