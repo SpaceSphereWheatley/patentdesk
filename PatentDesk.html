@@ -1452,6 +1452,7 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   cursor:pointer; white-space:nowrap; margin-left:auto; }
 .cpc-load-banner-btn:hover { border-color:var(--accent); color:var(--accent); }
 #cpc-file-input { display:none; }
+#settings-cpc-row.cpc-drop-active { background: var(--s-oppdrag-bg); outline: 1px dashed var(--s-oppdrag-border); outline-offset: -1px; border-radius: var(--radius); }
 .sak-class-inuse-label  { display: flex; align-items: center; cursor: pointer; flex-shrink: 0; }
 .sak-class-inuse-label input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
 .sak-class-tag-active   { background: #e6f1fb; color: #185fa5 !important; border-radius: 4px; padding: 1px 6px; }
@@ -2174,7 +2175,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
         <section class="settings-section">
           <h2 class="settings-section-title">Sikkerhetskopiering</h2>
           <div class="settings-group">
-            <div class="settings-row">
+            <div class="settings-row" id="settings-cpc-row">
               <div class="settings-label">
                 <span class="settings-label-title">CPC-database</span>
                 <span class="settings-label-sub" id="settings-cpc-status">Velg cpc_v2.json for å aktivere autofullfør og beskrivelser</span>
@@ -2829,7 +2830,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.4.5';
+var APP_VERSION    = 'v4.4.6';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -6999,26 +7000,50 @@ function initCpcLoadButton() {
   // Bind file input change alltid ved oppstart — uavhengig av IndexedDB-tilstand
   document.getElementById('cpc-file-input').addEventListener('change', function(e) {
     var file = e.target.files[0]; if (!file) return;
-    _cpcSetBanner('<span class="cpc-banner-loading">Lagrer…</span>');
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      try {
-        var data = JSON.parse(ev.target.result);
-        _cpcLoaded(data);
-        _cpcSaveToDb(data, function(err) {
-          if (err) showToast('Lastet, men kunne ikke lagre til database.');
-          else showToast('CPC-database lagret — lastes automatisk neste gang.');
-        });
-      } catch(err) {
-        showToast('Kunne ikke lese filen — ugyldig format.');
-        _cpcTryLoadFromDb();
-      }
-    };
-    reader.readAsText(file, 'utf-8');
+    _cpcLoadFile(file);
     e.target.value = '';
   });
 
+  // Dra-og-slipp på CPC-raden i innstillinger
+  var cpcRow = document.getElementById('settings-cpc-row');
+  ['dragover', 'dragenter'].forEach(function(evt) {
+    cpcRow.addEventListener(evt, function(e) {
+      e.preventDefault();
+      cpcRow.classList.add('cpc-drop-active');
+    });
+  });
+  ['dragleave', 'dragend', 'drop'].forEach(function(evt) {
+    cpcRow.addEventListener(evt, function(e) {
+      if (evt === 'dragleave' && cpcRow.contains(e.relatedTarget)) return;
+      cpcRow.classList.remove('cpc-drop-active');
+    });
+  });
+  cpcRow.addEventListener('drop', function(e) {
+    e.preventDefault();
+    var file = e.dataTransfer.files[0];
+    if (file) _cpcLoadFile(file);
+  });
+
   _cpcTryLoadFromDb();
+}
+
+function _cpcLoadFile(file) {
+  _cpcSetBanner('<span class="cpc-banner-loading">Lagrer…</span>');
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = JSON.parse(ev.target.result);
+      _cpcLoaded(data);
+      _cpcSaveToDb(data, function(err) {
+        if (err) showToast('Lastet, men kunne ikke lagre til database.');
+        else showToast('CPC-database lagret — lastes automatisk neste gang.');
+      });
+    } catch(err) {
+      showToast('Kunne ikke lese filen — ugyldig format.');
+      _cpcTryLoadFromDb();
+    }
+  };
+  reader.readAsText(file, 'utf-8');
 }
 
 function initCpcAutocomplete() {
