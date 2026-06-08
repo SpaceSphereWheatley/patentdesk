@@ -6,6 +6,21 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.6.0  Egendefinerbar dokumentliste på sakssiden
+───────────────────────────────────────────────────────────────
+- "Dokumenter"-menyen på sakssiden er ikke lenger en fast liste.
+  Du kan nå legge til, slette og endre navn på filer per sak.
+- Søknadssaker beholder de fem standardfilene (Claims.pdf,
+  Description.pdf, Abstract.pdf, Figures.pdf, Application.pdf)
+  som utgangspunkt, mens oppdragssaker starter med en tom liste.
+- Nye filer følger samme stimønster som de øvrige
+  (<dokumentrot>\<saksnummer>\<filnavn>) og ligger dermed i
+  saksmappen, akkurat som standardfilene.
+- Filnavn uten filtype antas å være PDF når lenken åpnes/kopieres,
+  og ".pdf"-endelsen vises ikke i listen.
+- Fjernet det strenge formatkravet til oppdragsnummer (tidligere
+  måtte det være 8 siffer + «P»). Du kan nå kalle oppdrag hva du vil.
+
 v4.5.2  Fix: "Slett alt" sletter nå virkelig alt som er lagret
 ───────────────────────────────────────────────────────────────
 - "Slett alt"-funksjonen manglet flere lagrede nøkler
