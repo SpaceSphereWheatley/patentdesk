@@ -6,6 +6,12 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.4.5  Feature: åpne saksdokumenter direkte fra dropdown
+───────────────────────────────────────────────────────────────
+- Dokument-dropdown på sakssiden har nå en egen "åpne"-knapp per
+  fil (klikk på filnavnet) som åpner filen direkte via file:///,
+  i tillegg til den eksisterende kopier-sti-knappen (📋-ikon).
+
 v4.4.4  Bugfix: stale DOM-verdier på sakssiden
 ───────────────────────────────────────────────────────────────
   · renderSak nullstiller sak-num-claims og sak-filing-date
