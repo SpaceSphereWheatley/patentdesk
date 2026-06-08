@@ -7,8 +7,10 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='15 5 80 95'%3E%3Cpolygon points='50,10 80,27 80,62 50,78 20,62 20,27' fill='%232563eb' opacity='.9'/%3E%3Cpolygon points='60,26 90,43 90,78 60,94 30,78 30,43' fill='%23b08040'/%3E%3Ctext x='60' y='80' font-family='system-ui,sans-serif' font-size='50' font-weight='500' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E" sizes="any">
   <style>
 /* ══════════════════════════════════════════════════
-   PatentDesk — style.css
-   Seksjonsoversikt:
+   PatentDesk — innholdsoversikt for hele filen
+   (CSS i <style>, markup i <body>, logikk i <script>)
+
+   ── CSS (<style>) ──────────────────────────────────
      1.  Variabler          11. Modal og skjema
      2.  Reset              12. Valgpopup
      3.  App-shell          13. Statistikk-side
@@ -25,6 +27,20 @@
                             26. Kortlayout (sakslister)
                             27. Sak sticky-bar
                             28. Inline-stil-erstatninger
+
+   ── HTML (<body>) ──────────────────────────────────
+     Appens markup: SVG-sprite, app-shell/drawer,
+     sider (oversikt, sakslister, statistikk, innstillinger),
+     modaler og overlays (toast, onboarding)
+
+   ── JavaScript (<script>) ──────────────────────────
+     SEKSJON 1 · Konstanter og konfigurasjon
+     SEKSJON 2 · Domenefunksjoner
+     SEKSJON 3 · Storage-lag
+     SEKSJON 4 · Appstate
+     SEKSJON 5 · UI-komponenter
+     SEKSJON 6 · Event-håndtering
+     SEKSJON 7 · Bootstrap
 ══════════════════════════════════════════════════ */
 
 /* ── 1. Variabler ─────────────────────────────────── */
@@ -33,6 +49,7 @@
   --bg:          #f5f6f8;
   --surface:     #ffffff;
   --surface2:    #f9fafb;
+  --bg2:         var(--surface2);
   --border:      #e5e7eb;
   --border2:     #d1d5db;
   --text:        #111827;
@@ -294,30 +311,29 @@ svg.ti { width: 16px; height: 16px; flex-shrink: 0; vertical-align: middle; disp
             font-size: 0.82rem; line-height: 1; transition: color 0.15s, border-color 0.15s; }
 .bulk-del:hover { color: var(--danger); border-color: var(--danger); }
 
-.btn-primary {
-  background: var(--primary); color: var(--on-primary);
-  border: none; border-radius: var(--radius);
+.btn-primary, .btn-secondary, .btn-danger {
+  border-radius: var(--radius);
   padding: 0.55rem 1.25rem; font-family: var(--font-body);
   font-size: 0.82rem; letter-spacing: 0.05em;
-  cursor: pointer; transition: opacity 0.15s;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--primary); color: var(--on-primary);
+  border: none; transition: opacity 0.15s;
 }
 .btn-primary:hover { opacity: 0.85; }
 
 .btn-secondary {
   background: transparent; color: var(--muted);
-  border: 1px solid var(--border2); border-radius: var(--radius);
-  padding: 0.55rem 1.25rem; font-family: var(--font-body);
-  font-size: 0.82rem; letter-spacing: 0.05em;
-  cursor: pointer; transition: color 0.15s, border-color 0.15s;
+  border: 1px solid var(--border2);
+  transition: color 0.15s, border-color 0.15s;
 }
 .btn-secondary:hover { color: var(--text); border-color: var(--muted); }
 
 .btn-danger {
   background: var(--danger); color: var(--on-danger);
-  border: none; border-radius: var(--radius);
-  padding: 0.55rem 1.25rem; font-family: var(--font-body);
-  font-size: 0.82rem; letter-spacing: 0.05em;
-  cursor: pointer; transition: opacity 0.15s;
+  border: none; transition: opacity 0.15s;
 }
 .btn-danger:hover { opacity: 0.85; }
 
@@ -364,8 +380,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   transition: border-color 0.2s, transform 0.15s;
   text-align: center;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06);
-}
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .card-label {
   font-size: 0.68rem; letter-spacing: 0.1em;
@@ -601,10 +615,13 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
                       font-family: var(--font-body); }
 .tag-pill-input::placeholder { color: var(--muted); }
 
+.tag-chip, .tag-cloud-item {
+  background: rgba(100,116,139,0.1); border: 1px solid var(--tag-color);
+  border-radius: 20px; color: var(--muted);
+}
 .tag-chip {
   display: inline-block;
-  background: rgba(100,116,139,0.1); border: 1px solid var(--tag-color); color: var(--muted);
-  border-radius: 20px; padding: 0.1rem 0.55rem;
+  padding: 0.1rem 0.55rem;
   font-size: 0.72rem; letter-spacing: 0.03em;
   margin: 0.1rem 0.2rem 0.1rem 0; white-space: nowrap;
 }
@@ -616,9 +633,8 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 }
 .tag-cloud-item {
   display: inline-flex; align-items: center; gap: 0.35rem;
-  background: rgba(100,116,139,0.1); border: 1px solid var(--tag-color);
-  border-radius: 20px; padding: 0.2rem 0.7rem;
-  font-size: 0.78rem; color: var(--muted); cursor: pointer;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.78rem; cursor: pointer;
 }
 .tag-cloud-count { background: rgba(100,116,139,0.2); border-radius: 20px; font-size: 0.68rem; padding: 0 0.4em; color: var(--muted); line-height: 1.6; }
 .tag-cloud-empty { color: var(--muted); font-size: 0.83rem; padding: 0.25rem; }
@@ -1419,8 +1435,8 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .sak-tri-btn-null     { background: var(--surface2); color: var(--muted) !important;
                          border-color: var(--border2); }
 /* Låst */
-.sak-tri-locked       { opacity: 0.4; cursor: not-allowed !important;
-                         filter: none !important; transform: none !important; }
+.sak-tri-locked       { opacity: 0.45; cursor: not-allowed !important;
+                         filter: none !important; transform: none !important; border-style: dashed; }
 /* Arvet (cascade) */
 .sak-tri-btn-cascade  { background: rgba(16,185,129,0.10); color: var(--color-ok) !important;
                          border-color: var(--color-ok); border-style: dashed; opacity: 0.75; }
@@ -1449,8 +1465,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .claim-unassessed   { opacity: 0.6; }
 .claim-ok           { }
 .claim-rejected     { background: rgba(224,85,85,0.06); }
-
-.sak-tri-locked     { opacity: 0.45; cursor: not-allowed; border-style: dashed; }
 
 /* ── 26. Saksdetaljer v2 ──────────────────────────── */
 
@@ -4554,7 +4568,7 @@ function closeBackdrop(id) {
 function closeAllBackdrops() {
   ['cle-backdrop','modal-backdrop','confirm-backdrop','complete-backdrop','fristarkiv-choice-backdrop',
    'videre-choice-backdrop','reset-backdrop','import-backdrop','tag-backdrop','frist-backdrop',
-   'cle-backdrop','delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
+   'delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
    'history-backdrop',
    ].forEach(function(id) {
     var el = document.getElementById(id);
