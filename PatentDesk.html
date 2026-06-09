@@ -2901,7 +2901,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.6.5';
+var APP_VERSION    = 'v4.7.0';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3162,10 +3162,9 @@ var STATUS_CONFIG = {
   ny:              { int:0, label:'Ny',               pill:'s-ny',              histLabel:'Ny sak',           histIcon:'📄' },
   viderebehandling:{ int:1, label:'Viderebehandling', pill:'s-viderebehandling',histLabel:'Viderebehandling', histIcon:'🔄' },
   fristarkiv:      { int:2, label:'Fristarkiv',       pill:'s-fristarkiv',      histLabel:'Fristarkiv',       histIcon:'📁' },
-  avsluttet:       { int:3, label:'Avsluttet',        pill:'s-avsluttet',       histLabel:'Avsluttet',        histIcon:'✅' },
-  oppdrag:         { int:4, label:'Oppdrag',          pill:'s-oppdrag',         histLabel:'Oppdrag',          histIcon:'📋' }
+  avsluttet:       { int:3, label:'Avsluttet',        pill:'s-avsluttet',       histLabel:'Avsluttet',        histIcon:'✅' }
 };
-var INT_TO_STATUS = { 0:'ny', 1:'viderebehandling', 2:'fristarkiv', 3:'avsluttet', 4:'oppdrag' };
+var INT_TO_STATUS = { 0:'ny', 1:'viderebehandling', 2:'fristarkiv', 3:'avsluttet' };
 
 var LOG_LABELS = { ny:'Nybehandling', videre:'Viderebehandling', avsluttet:'Avsluttet', meddelelse:'Sendt til meddelelse', oppdrag:'Oppdrag utført' };
 var LOG_CLS    = { ny:'log-ny', videre:'log-videre', avsluttet:'log-avsluttet', meddelelse:'log-meddelelse', oppdrag:'log-oppdrag' };
@@ -3483,7 +3482,7 @@ function deleteAllData() {
 }
 
 // ── Import-validering ──────────────────────────────
-var VALID_IMPORT_STATUSES = { ny:1, viderebehandling:1, fristarkiv:1, avsluttet:1, oppdrag:1 };
+var VALID_IMPORT_STATUSES = { ny:1, viderebehandling:1, fristarkiv:1, avsluttet:1 };
 function _validateImportCase(c) {
   if (!c || typeof c !== 'object') return false;
   if (typeof c.id !== 'string' || !c.id.trim()) return false;
@@ -3505,6 +3504,8 @@ function migrateCases(arr) {
         : (n.createdAt || n.dueDate || new Date().toISOString()).replace(/T.*/, '') + 'T00:00:00.000Z';
       hist = [{ status: 'ny', date: seed }];
     }
+    // Migrer oppdrag: status='oppdrag' er nå ugyldig — normalize til 'ny'
+    if (n.type === 'oppdrag' && n.status === 'oppdrag') n.status = 'ny';
     return {
       id:         n.id          || uid(),
       caseNumber: n.caseNumber  || '',
@@ -3839,7 +3840,7 @@ function dispatch(action, payload) {
         var patch = { caseNumber: sanitizeText(p.caseNumber), dueDate: p.dueDate, title: sanitizeText(p.title),
                       notes: sanitizeText(p.notes || ''), tags: normaliseTags(p.tags || ''),
                       type: p.type || c.type, caseBuffer: p.caseBuffer != null ? p.caseBuffer : null };
-        if (p.type === 'oppdrag') { patch.status = 'oppdrag'; patch.duration = p.duration; patch.caseBuffer = null; }
+        if (p.type === 'oppdrag') { patch.status = p.status || 'ny'; patch.duration = p.duration; patch.caseBuffer = null; }
         else                      { patch.status = p.status;  delete patch.duration; }
         // Record frist change in history if dueDate changed
         var histPatch = {};
@@ -4514,7 +4515,11 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
     var cnCls       = isOppdrag ? ' case-card-cn-oppdrag' : '';
     var durPill     = showDurPill && isOppdrag && c.duration ? '<span class="oppdrag-duration-pill">⏱ ' + c.duration + ' dager</span>' : '';
     var statusEl    = showStatus
-      ? (isOppdrag ? '<span class="status-pill s-oppdrag">Oppdrag</span>' : statusCell(c.status || 'ny'))
+      ? (isOppdrag
+          ? (c.status === 'avsluttet'
+              ? '<span class="status-pill s-avsluttet">Avsluttet</span>'
+              : '<span class="status-pill s-oppdrag">Aktiv</span>')
+          : statusCell(c.status || 'ny'))
       : '';
     var actionBtn   = actionLabel
       ? '<button class="btn-action btn-move case-card-action" data-id="' + c.id + '">' + actionLabel + '</button>'
@@ -5260,7 +5265,7 @@ function renderSak(id) {
   var statusBtns = document.getElementById('sak-status-btns');
   if (isOppdrag) {
     statusBtns.innerHTML =
-      '<button class="sak-status-btn active-oppdrag" data-status="oppdrag"><svg class="ti" aria-hidden="true"><use href="#ti-flag"/></svg> Oppdrag</button>' +
+      '<button class="sak-status-btn" data-status="ny"><svg class="ti" aria-hidden="true"><use href="#ti-flag"/></svg> Aktiv</button>' +
       '<button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>';
   } else {
     statusBtns.innerHTML =
@@ -5271,7 +5276,9 @@ function renderSak(id) {
   }
   document.querySelectorAll('.sak-status-btn').forEach(function(btn) {
     btn.className = 'sak-status-btn';
-    if (btn.dataset.status === (cas.status || 'ny')) btn.classList.add('active-' + (cas.status || 'ny'));
+    if (btn.dataset.status === (cas.status || 'ny')) {
+      btn.classList.add(isOppdrag && btn.dataset.status === 'ny' ? 'active-oppdrag' : 'active-' + (cas.status || 'ny'));
+    }
   });
 
   // Seksjoner: skjul det som ikke gjelder oppdrag
@@ -6043,9 +6050,11 @@ document.getElementById('sak-status-btns').addEventListener('click', function(e)
   // Oppdater UI for statusknapper
   document.querySelectorAll('.sak-status-btn').forEach(function(b) {
     b.className = 'sak-status-btn';
-    if (b.dataset.status === newStatus) b.classList.add('active-' + newStatus);
+    if (b.dataset.status === newStatus) {
+      b.classList.add(isOppdrag && newStatus === 'ny' ? 'active-oppdrag' : 'active-' + newStatus);
+    }
   });
-  var cfg = isOppdrag ? { label: newStatus === 'avsluttet' ? 'Avsluttet' : 'Oppdrag' } : (STATUS_CONFIG[newStatus] || {});
+  var cfg = isOppdrag ? { label: newStatus === 'avsluttet' ? 'Avsluttet' : 'Aktiv' } : (STATUS_CONFIG[newStatus] || {});
   var updated = cases.find(function(c) { return c.id === id; });
   if (updated) {
     document.getElementById('sak-page-sub').textContent = (updated.title || '') + (cfg.label ? '  ·  ' + cfg.label : '');
@@ -8182,12 +8191,15 @@ document.getElementById('btn-save').addEventListener('click', function() {
   var duration = isOppdrag ? (parseInt(fDuration.value, 10) || 2) : undefined;
   var cbRaw = fCaseBuffer ? fCaseBuffer.value.trim() : '';
   var caseBuffer = isOppdrag ? null : (cbRaw === '' ? null : Math.max(0, parseInt(cbRaw, 10) || 0));
+  // For oppdrag: bevar eksisterende status ved redigering, sett 'ny' for nye
+  var existingOppdragStatus = id ? ((cases.find(function(c){return c.id===id;})||{}).status || null) : null;
+  var oppdragStatus = (existingOppdragStatus && existingOppdragStatus !== 'oppdrag') ? existingOppdragStatus : 'ny';
   var payload = { caseNumber: cn, dueDate: internalDate, title: ti,
     notes: fNotes.value.trim(), tags: fModalTags.value,
-    type: isOppdrag ? 'oppdrag' : 'sak', status: st, duration: duration, caseBuffer: caseBuffer };
+    type: isOppdrag ? 'oppdrag' : 'sak', status: isOppdrag ? oppdragStatus : st, duration: duration, caseBuffer: caseBuffer };
   if (id) { payload.id = id; dispatch('CASE_EDIT', payload); }
   else    { dispatch('CASE_CREATE', payload); }
-  var dest = st;
+  var dest = isOppdrag ? 'oppdrag' : st;
   if (activePage === 'sak') {
     render();
   } else if (activePage !== 'statistikk' && activePage !== 'innstillinger' && activePage !== 'hjem') {
