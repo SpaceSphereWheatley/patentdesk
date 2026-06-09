@@ -996,6 +996,7 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 
 
 .home-upcoming { display: flex; flex-direction: column; gap: 0.4rem; }
+.home-upcoming-divider { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0.75rem 0 0.35rem; padding-top: 0.65rem; border-top: 1px solid var(--border); }
 .home-upcoming-row {
   display: flex;
   align-items: center;
@@ -2011,6 +2012,10 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
         <section class="home-section">
           <h2 class="home-section-title">Kommende frister</h2>
           <div id="home-upcoming-list" class="home-upcoming"></div>
+          <div id="home-upcoming-low-section" style="display:none;">
+            <div class="home-upcoming-divider">Fristarkiv &amp; viderebehandling</div>
+            <div id="home-upcoming-low-list" class="home-upcoming"></div>
+          </div>
         </section>
       </div>
 
@@ -2888,7 +2893,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.6.3';
+var APP_VERSION    = 'v4.6.4';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -6284,23 +6289,24 @@ function renderHjem() {
   renderBeleggCard();
 
   // ── Kommende frister (liste) ───────────────────────
-  var upcomingPool = cases
-    .filter(function(c) {
-      if (c.type === 'oppdrag') return c.status !== 'avsluttet';
-      return c.status === 'ny' || c.status === 'fristarkiv' || (c.status === 'viderebehandling' && daysUntil(effDueFor(c)) >= 0);
-    })
-    .slice().sort(function(a,b) {
-      return daysUntil(effDueFor(a)) - daysUntil(effDueFor(b));
-    });
-  var upcoming = upcomingPool.filter(function(c) {
-    return daysUntil(effDueFor(c)) >= -30;
-  }).slice(0, 8);
-  var list = document.getElementById('home-upcoming-list');
-  if (!upcoming.length) {
-    list.innerHTML = '<p class="home-empty">Ingen aktive saker.</p>';
-    return;
+  function isHighPri(c) {
+    return c.type === 'oppdrag' ? c.status !== 'avsluttet' : c.status === 'ny';
   }
-  list.innerHTML = upcoming.map(function(c) {
+  function isLowPri(c) {
+    if (c.type === 'oppdrag') return false;
+    return c.status === 'fristarkiv' || (c.status === 'viderebehandling' && daysUntil(effDueFor(c)) >= 0);
+  }
+  function byDue(a, b) { return daysUntil(effDueFor(a)) - daysUntil(effDueFor(b)); }
+
+  var highPool = cases.filter(isHighPri).sort(byDue)
+    .filter(function(c) { return daysUntil(effDueFor(c)) >= -30; });
+  var lowPool  = cases.filter(isLowPri).sort(byDue)
+    .filter(function(c) { return daysUntil(effDueFor(c)) >= -30; });
+
+  var highItems = highPool.slice(0, 8);
+  var lowItems  = lowPool.slice(0, Math.min(3, 8 - highItems.length));
+
+  function renderRow(c) {
     var isOppdrag = c.type === 'oppdrag';
     var effDue  = effDueFor(c);
     var d       = daysUntil(effDue);
@@ -6318,7 +6324,24 @@ function renderHjem() {
         '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger">⋯</button>' +
       '</div>' +
     '</div>';
-  }).join('');
+  }
+
+  var list = document.getElementById('home-upcoming-list');
+  var lowSection = document.getElementById('home-upcoming-low-section');
+  var lowList    = document.getElementById('home-upcoming-low-list');
+
+  if (!highItems.length && !lowItems.length) {
+    list.innerHTML = '<p class="home-empty">Ingen aktive saker.</p>';
+    lowSection.style.display = 'none';
+    return;
+  }
+  list.innerHTML = highItems.length ? highItems.map(renderRow).join('') : '<p class="home-empty">Ingen førstesøknader eller oppdrag.</p>';
+  if (lowItems.length) {
+    lowSection.style.display = '';
+    lowList.innerHTML = lowItems.map(renderRow).join('');
+  } else {
+    lowSection.style.display = 'none';
+  }
 }
 
 // ── Arbeidsplan-tidslinje ──────────────────────────
@@ -8151,7 +8174,7 @@ document.getElementById('tag-cloud').addEventListener('click', function(e) {
 });
 
 // ── Hjem: klikk på kommende forfall ───────────────
-document.getElementById('home-upcoming-list').addEventListener('click', function(e) {
+function handleHomeListClick(e) {
   var moreBtn = e.target.closest('.home-row-more-btn');
   if (moreBtn) {
     e.stopPropagation();
@@ -8184,7 +8207,9 @@ document.getElementById('home-upcoming-list').addEventListener('click', function
   var row = e.target.closest('.home-upcoming-row');
   if (!row || !row.dataset.id) return;
   navigateTo('sak/' + row.dataset.id);
-});
+}
+document.getElementById('home-upcoming-list').addEventListener('click', handleHomeListClick);
+document.getElementById('home-upcoming-low-list').addEventListener('click', handleHomeListClick);
 
 // ── Tidslinje: hover-popup + klikk-navigasjon ──────
 (function() {

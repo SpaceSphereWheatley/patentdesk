@@ -6,6 +6,9 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.6.4  Hjemside: saksliste delt i to seksjoner — førstesøknader/oppdrag øverst, fristarkiv/viderebehandling under (maks 8 totalt, maks 3 i lavpri-seksjonen)
+───────────────────────────────────────────────────────────────
+
 v4.6.3  Forfallsdato og buffer inn i modal; antall krav redigerbart
 ───────────────────────────────────────────────────────────────
 - Forfallsdato og per-sak-buffer er nå skrivebeskyttet på sakssiden
