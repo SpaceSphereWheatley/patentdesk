@@ -6,6 +6,16 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.6.3  Forfallsdato og buffer inn i modal; antall krav redigerbart
+───────────────────────────────────────────────────────────────
+- Forfallsdato og per-sak-buffer er nå skrivebeskyttet på sakssiden
+  og redigeres utelukkende via ⋯ → Rediger sak-modalen.
+- Buffer-felt lagt til i modalen (vises kun for søknadstypen).
+- CASE_EDIT-handleren lagrer nå caseBuffer fra modalen.
+- Antall krav er tilbake som redigerbart inputfelt på sakssiden.
+- Fix: lagring fra modal mens man er på sakssiden navigerer nå ikke
+  bort fra sakssiden.
+
 v4.6.2  Handlingsmeny på sakssiden og hjemmesiden
 ───────────────────────────────────────────────────────────────
 - Sakssiden: bibliografiske felt (saksnummer, tittel, innleveringsdato,
