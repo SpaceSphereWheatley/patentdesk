@@ -6294,14 +6294,14 @@ function renderHjem() {
   }
   function isLowPri(c) {
     if (c.type === 'oppdrag') return false;
-    return c.status === 'fristarkiv' || (c.status === 'viderebehandling' && daysUntil(effDueFor(c)) >= 0);
+    return c.status === 'fristarkiv' || c.status === 'viderebehandling';
   }
   function byDue(a, b) { return daysUntil(effDueFor(a)) - daysUntil(effDueFor(b)); }
 
   var highPool = cases.filter(isHighPri).sort(byDue)
     .filter(function(c) { return daysUntil(effDueFor(c)) >= -30; });
   var lowPool  = cases.filter(isLowPri).sort(byDue)
-    .filter(function(c) { return daysUntil(effDueFor(c)) >= -30; });
+    .filter(function(c) { return c.status !== 'avsluttet'; });
 
   var highItems = highPool.slice(0, 8);
   var lowItems  = lowPool.slice(0, Math.min(3, 8 - highItems.length));
