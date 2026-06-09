@@ -6,6 +6,13 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.6.5  Hjemside-tidslinje: fristarkiv og kommende viderebehandlinger vises som prikker øverst i tidslinjen (top:2px, ingen overlapp med barer); hover-popup og klikk-navigasjon støttes
+        - Fix: prikker posisjonert inni track (top:2px) for å unngå clipping fra scroll-wrapper
+        - Seksjon under sakslisten heter nå «Viderebehandlinger over frist» og viser kun forfalte viderebehandlinger
+        - Lavpri-seksjonen vises alltid med maks 3 plasser, uavhengig av antall høypri-saker
+v4.6.4  Hjemside: saksliste delt i to seksjoner — førstesøknader (ny) og oppdrag øverst, forfalte viderebehandlinger i egen seksjon under (maks 8 i øvre, maks 3 i nedre)
+───────────────────────────────────────────────────────────────
+
 v4.6.3  Forfallsdato og buffer inn i modal; antall krav redigerbart
 ───────────────────────────────────────────────────────────────
 - Forfallsdato og per-sak-buffer er nå skrivebeskyttet på sakssiden

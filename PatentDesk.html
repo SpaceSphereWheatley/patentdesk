@@ -996,6 +996,7 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 
 
 .home-upcoming { display: flex; flex-direction: column; gap: 0.4rem; }
+.home-upcoming-divider { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0.75rem 0 0.35rem; padding-top: 0.65rem; border-top: 1px solid var(--border); }
 .home-upcoming-row {
   display: flex;
   align-items: center;
@@ -1825,6 +1826,14 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
   position: absolute; top: 4px; width: 2px; height: 40px;
   background: var(--tl-today); opacity: 0.9; border-radius: 1px; pointer-events: none;
 }
+.tl-dot {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  top: 2px; transform: translateX(-50%);
+  cursor: pointer; transition: opacity 0.12s; z-index: 2;
+}
+.tl-dot:hover { opacity: 0.7; }
+.tl-dot-fristarkiv    { background: var(--accent-dim); border: 1px solid var(--accent); }
+.tl-dot-videre        { background: rgba(99,102,241,0.45); border: 1px solid rgba(99,102,241,0.7); }
 .tl-bar-draft {
   position: absolute; top: 4px; height: 40px; border-radius: 5px;
   background: rgba(200,169,110,0.25); border: 1px dashed rgba(200,169,110,0.65);
@@ -2011,6 +2020,10 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
         <section class="home-section">
           <h2 class="home-section-title">Kommende frister</h2>
           <div id="home-upcoming-list" class="home-upcoming"></div>
+          <div id="home-upcoming-low-section" style="display:none;">
+            <div class="home-upcoming-divider">Viderebehandlinger over frist</div>
+            <div id="home-upcoming-low-list" class="home-upcoming"></div>
+          </div>
         </section>
       </div>
 
@@ -2888,7 +2901,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.6.3';
+var APP_VERSION    = 'v4.6.5';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -6284,23 +6297,32 @@ function renderHjem() {
   renderBeleggCard();
 
   // ── Kommende frister (liste) ───────────────────────
-  var upcomingPool = cases
-    .filter(function(c) {
-      if (c.type === 'oppdrag') return c.status !== 'avsluttet';
-      return c.status === 'ny' || c.status === 'fristarkiv' || (c.status === 'viderebehandling' && daysUntil(effDueFor(c)) >= 0);
-    })
-    .slice().sort(function(a,b) {
-      return daysUntil(effDueFor(a)) - daysUntil(effDueFor(b));
-    });
-  var upcoming = upcomingPool.filter(function(c) {
-    return daysUntil(effDueFor(c)) >= -30;
-  }).slice(0, 8);
-  var list = document.getElementById('home-upcoming-list');
-  if (!upcoming.length) {
-    list.innerHTML = '<p class="home-empty">Ingen aktive saker.</p>';
-    return;
+  function isHighPri(c) {
+    return c.type === 'oppdrag' ? c.status !== 'avsluttet' : c.status === 'ny';
   }
-  list.innerHTML = upcoming.map(function(c) {
+  function isLowPri(c) {
+    if (c.type === 'oppdrag') return false;
+    return c.status === 'viderebehandling' && daysUntil(effDueFor(c)) < 0;
+  }
+  function byDue(a, b) { return daysUntil(effDueFor(a)) - daysUntil(effDueFor(b)); }
+
+  var highPool = cases.filter(isHighPri).sort(byDue)
+    .filter(function(c) { return daysUntil(effDueFor(c)) >= -30; });
+  var lowPool  = cases.filter(isLowPri).sort(byDue)
+    .filter(function(c) { return c.status !== 'avsluttet'; });
+
+  // Overdue viderebehandlinger sorteres alltid øverst i lavpri-seksjonen
+  lowPool.sort(function(a, b) {
+    var aOverdue = a.status === 'viderebehandling' && daysUntil(effDueFor(a)) < 0 ? 0 : 1;
+    var bOverdue = b.status === 'viderebehandling' && daysUntil(effDueFor(b)) < 0 ? 0 : 1;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+    return byDue(a, b);
+  });
+
+  var highItems = highPool.slice(0, 8);
+  var lowItems  = lowPool.slice(0, 3);
+
+  function renderRow(c) {
     var isOppdrag = c.type === 'oppdrag';
     var effDue  = effDueFor(c);
     var d       = daysUntil(effDue);
@@ -6318,7 +6340,24 @@ function renderHjem() {
         '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger">⋯</button>' +
       '</div>' +
     '</div>';
-  }).join('');
+  }
+
+  var list = document.getElementById('home-upcoming-list');
+  var lowSection = document.getElementById('home-upcoming-low-section');
+  var lowList    = document.getElementById('home-upcoming-low-list');
+
+  if (!highItems.length && !lowItems.length) {
+    list.innerHTML = '<p class="home-empty">Ingen aktive saker.</p>';
+    lowSection.style.display = 'none';
+    return;
+  }
+  list.innerHTML = highItems.length ? highItems.map(renderRow).join('') : '<p class="home-empty">Ingen førstesøknader eller oppdrag.</p>';
+  if (lowItems.length) {
+    lowSection.style.display = '';
+    lowList.innerHTML = lowItems.map(renderRow).join('');
+  } else {
+    lowSection.style.display = 'none';
+  }
 }
 
 // ── Arbeidsplan-tidslinje ──────────────────────────
@@ -6566,6 +6605,23 @@ function buildTimelineDiv(opts) {
   todayLine.appendChild(todayLbl);
   track.appendChild(todayLine);
 
+  // ── Prikker for fristarkiv og viderebehandling ────
+  var dotCases = opts.dotCases || [];
+  dotCases.forEach(function(cas) {
+    if (!cas.dueDate) return;
+    var due = dueDateTime(cas.dueDate);
+    var d   = (due - now) / 86400000;
+    if (d < -PAST || d > HORIZON) return;
+    var dot = document.createElement('div');
+    dot.className = 'tl-dot ' + (cas.status === 'fristarkiv' ? 'tl-dot-fristarkiv' : 'tl-dot-videre');
+    dot.style.left = pct(d);
+    dot.dataset.cn    = cas.caseNumber;
+    dot.dataset.title = cas.title || '';
+    dot.dataset.id    = cas.id;
+    dot.dataset.due   = cas.dueDate;
+    track.appendChild(dot);
+  });
+
   return track;
 }
 
@@ -6728,12 +6784,20 @@ function renderTimeline(opts) {
     var cfg = Object.assign({}, _tlConfig[id] || _tlConfig['home-timeline'] || {}, opts);
     var wrap = document.getElementById(id);
     if (!wrap) return;
+    var dotCases = (id === 'home-timeline' || id === 'home-tl-30')
+      ? cases.filter(function(c) {
+          return !c.type || c.type !== 'oppdrag'
+            ? (c.status === 'fristarkiv' || (c.status === 'viderebehandling' && daysUntil(effDueFor(c)) >= 0))
+            : false;
+        })
+      : (cfg.dotCases || null);
     var track = buildTimelineDiv({
       horizon:      365,
       statusFilter: cfg.statusFilter || 'ny',
       axisMode:     cfg.axisMode     || 'month',
       draftRows:    cfg.draftRows    || null,
       draggable:    id === 'home-timeline' || id === 'home-tl-30',
+      dotCases:     dotCases,
     });
     var existing = wrap.querySelector('.tl-track');
     if (existing) wrap.replaceChild(track, existing);
@@ -8151,7 +8215,7 @@ document.getElementById('tag-cloud').addEventListener('click', function(e) {
 });
 
 // ── Hjem: klikk på kommende forfall ───────────────
-document.getElementById('home-upcoming-list').addEventListener('click', function(e) {
+function handleHomeListClick(e) {
   var moreBtn = e.target.closest('.home-row-more-btn');
   if (moreBtn) {
     e.stopPropagation();
@@ -8184,7 +8248,9 @@ document.getElementById('home-upcoming-list').addEventListener('click', function
   var row = e.target.closest('.home-upcoming-row');
   if (!row || !row.dataset.id) return;
   navigateTo('sak/' + row.dataset.id);
-});
+}
+document.getElementById('home-upcoming-list').addEventListener('click', handleHomeListClick);
+document.getElementById('home-upcoming-low-list').addEventListener('click', handleHomeListClick);
 
 // ── Tidslinje: hover-popup + klikk-navigasjon ──────
 (function() {
@@ -8196,14 +8262,16 @@ document.getElementById('home-upcoming-list').addEventListener('click', function
   function handleMove(e) {
     var el = e.target.closest('.tl-bar');
     var vl = e.target.closest('.tl-bar-vacation');
-    if (!el && !vl) { popup.style.display = 'none'; return; }
+    var dt = e.target.closest('.tl-dot');
+    if (!el && !vl && !dt) { popup.style.display = 'none'; return; }
+    var target = el || dt;
     if (vl) {
       popup.innerHTML = '<span class="tl-popup-cn">⛱ ' + esc(vl.dataset.label || 'Ferie') + '</span>';
     } else {
-      var cn    = el.dataset.cn    || '';
-      var title = el.dataset.title || '';
-      var due   = el.dataset.due   || '';
-      var caseId = el.dataset.id   || '';
+      var cn    = target.dataset.cn    || '';
+      var title = target.dataset.title || '';
+      var due   = target.dataset.due   || '';
+      var caseId = target.dataset.id   || '';
       var caseObj = caseId ? cases.find(function(c) { return c.id === caseId; }) : null;
       var effDue = caseObj ? effDueFor(caseObj) : getEffectiveDueDate(due);
       var days  = effDue ? daysUntil(effDue) : null;
@@ -8222,7 +8290,7 @@ document.getElementById('home-upcoming-list').addEventListener('click', function
   function handleLeave() { popup.style.display = 'none'; }
 
   function handleClick(e) {
-    var el = e.target.closest('.tl-bar');
+    var el = e.target.closest('.tl-bar') || e.target.closest('.tl-dot');
     if (!el || !el.dataset.id) return;
     closeAllBackdrops();
     navigateTo('sak/' + el.dataset.id);
