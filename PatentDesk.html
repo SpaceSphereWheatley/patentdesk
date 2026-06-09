@@ -6303,8 +6303,16 @@ function renderHjem() {
   var lowPool  = cases.filter(isLowPri).sort(byDue)
     .filter(function(c) { return c.status !== 'avsluttet'; });
 
+  // Overdue viderebehandlinger sorteres alltid øverst i lavpri-seksjonen
+  lowPool.sort(function(a, b) {
+    var aOverdue = a.status === 'viderebehandling' && daysUntil(effDueFor(a)) < 0 ? 0 : 1;
+    var bOverdue = b.status === 'viderebehandling' && daysUntil(effDueFor(b)) < 0 ? 0 : 1;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+    return byDue(a, b);
+  });
+
   var highItems = highPool.slice(0, 8);
-  var lowItems  = lowPool.slice(0, Math.min(3, 8 - highItems.length));
+  var lowItems  = lowPool.slice(0, 3);
 
   function renderRow(c) {
     var isOppdrag = c.type === 'oppdrag';
