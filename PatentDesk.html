@@ -1304,6 +1304,7 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .sak-info-field-full { grid-column: 1 / -1; }
 .sak-info-label     { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
 .sak-info-input     { width: 100%; }
+.sak-info-value     { font-size: 0.9rem; color: var(--text); min-height: 1.5em; display: block; padding: 0.1rem 0; }
 
 /* Status-knapper på sakssiden */
 .sak-status-btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
@@ -2335,6 +2336,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               </div>
             </div>
             <button class="btn-secondary btn-sm" id="btn-sak-history" title="Vis historikk"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Historikk</button>
+            <div class="sak-more-wrap" style="position:relative;">
+              <button class="btn-secondary btn-sm btn-card-more" id="btn-sak-more" title="Flere handlinger">⋯</button>
+            </div>
             <div class="sak-due-hero" id="sak-due-hero" style="display:none;">
               <div class="sak-due-hero-eff" id="sak-due-hero-eff"></div>
               <div class="sak-due-hero-actual" id="sak-due-hero-actual" style="display:none;"></div>
@@ -2376,11 +2380,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
           <div class="sak-info-grid sak-info-grid-full">
             <div class="sak-info-field">
               <label class="sak-info-label">Saksnummer</label>
-              <input class="field-input sak-info-input" id="sak-case-number" type="text" placeholder="f.eks. NO20240012" />
+              <span class="sak-info-value" id="sak-case-number"></span>
             </div>
             <div class="sak-info-field sak-info-field-wide">
               <label class="sak-info-label">Tittel</label>
-              <input class="field-input sak-info-input" id="sak-title" type="text" placeholder="Oppfinnelsens tittel" />
+              <span class="sak-info-value" id="sak-title"></span>
             </div>
             <div class="sak-info-field">
               <label class="sak-info-label">Forfallsdato</label>
@@ -2392,15 +2396,15 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
             </div>
             <div class="sak-info-field">
               <label class="sak-info-label">Innleveringsdato</label>
-              <div class="dp-wrap"><input class="field-input sak-info-input" id="sak-filing-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" /><button class="dp-trigger" tabindex="-1">📅</button></div>
+              <span class="sak-info-value" id="sak-filing-date"></span>
             </div>
             <div class="sak-info-field">
               <label class="sak-info-label">Antall krav</label>
-              <input class="field-input sak-info-input input-w100" id="sak-num-claims" type="number" min="1" max="200" placeholder="f.eks. 10" />
+              <span class="sak-info-value" id="sak-num-claims"></span>
             </div>
             <div class="sak-info-field" id="sak-duration-field" style="display:none;">
               <label class="sak-info-label">Varighet (dager)</label>
-              <input class="field-input sak-info-input" id="sak-duration" type="number" min="1" placeholder="f.eks. 3" class="input-w100" />
+              <span class="sak-info-value" id="sak-duration"></span>
             </div>
             <div class="sak-info-field sak-info-field-wide">
               <label class="sak-info-label">Status</label>
@@ -2880,7 +2884,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.6.1';
+var APP_VERSION    = 'v4.6.2';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5216,8 +5220,8 @@ function renderSak(id) {
   document.getElementById('btn-sak-back')._sakId = id;
 
   // Saksinformasjon — cases-felt
-  document.getElementById('sak-case-number').value = cas.caseNumber || '';
-  document.getElementById('sak-title').value        = cas.title || '';
+  document.getElementById('sak-case-number').textContent = cas.caseNumber || '';
+  document.getElementById('sak-title').textContent        = cas.title || '';
   document.getElementById('sak-due-date').value     = toDisplay(cas.dueDate) || '';
   document.getElementById('sak-case-notes').value   = cas.notes || '';
   document.getElementById('sak-tags').value         = '';
@@ -5227,7 +5231,7 @@ function renderSak(id) {
   var durField = document.getElementById('sak-duration-field');
   if (durField) durField.style.display = isOppdrag ? '' : 'none';
   var durInp = document.getElementById('sak-duration');
-  if (durInp) durInp.value = cas.duration || '';
+  if (durInp) durInp.textContent = cas.duration || '—';
 
   // Per-sak-buffer (skjules for oppdrag)
   var bufField = document.getElementById('sak-case-buffer-field');
@@ -5274,8 +5278,8 @@ function renderSak(id) {
     // Saksinformasjon — pt_sak-felt
     var numClaimsEl  = document.getElementById('sak-num-claims');
     var filingDateEl = document.getElementById('sak-filing-date');
-    numClaimsEl.value  = data.numClaims  || '';
-    filingDateEl.value = toDisplay(data.filingDate) || '';
+    numClaimsEl.textContent  = data.numClaims  || '—';
+    filingDateEl.textContent = toDisplay(data.filingDate) || '—';
 
     // Nullstill oppdrag-spesifikt felt så stale verdi ikke forurenser søknad
     if (durInp) durInp.value = '';
@@ -5288,8 +5292,8 @@ function renderSak(id) {
     updateSakProgress(data);
   } else {
     // Nullstill søknad-spesifikke felt så stale verdi ikke forurenser oppdrag
-    document.getElementById('sak-num-claims').value  = '';
-    document.getElementById('sak-filing-date').value = '';
+    document.getElementById('sak-num-claims').textContent  = '';
+    document.getElementById('sak-filing-date').textContent = '';
   }
 
   // Notater
@@ -5901,17 +5905,6 @@ function updateCaseField(id, patch) {
   }
 }
 
-document.getElementById('sak-case-number').addEventListener('change', function() {
-  var id = activeSakId; if (!id) return;
-  var val = this.value.trim(); if (!val) return;
-  updateCaseField(id, { caseNumber: val });
-});
-
-document.getElementById('sak-title').addEventListener('change', function() {
-  var id = activeSakId; if (!id) return;
-  updateCaseField(id, { title: this.value.trim() });
-});
-
 document.getElementById('sak-due-date').addEventListener('change', function() {
   var id = activeSakId; if (!id) return;
   var date = parseDate(this.value.trim());
@@ -6074,31 +6067,6 @@ document.getElementById('sak-status-btns').addEventListener('click', function(e)
   }
 });
 
-document.getElementById('sak-num-claims').addEventListener('change', function() {
-  var id = activeSakId; if (!id) return;
-  var cas = cases.find(function(c) { return c.id === id; });
-  if (!cas || cas.type === 'oppdrag') return; // type-guard
-  dispatch('SAK_CLAIM_COUNT_CHANGE', { id: id, count: Math.max(0, parseInt(this.value, 10) || 0) });
-});
-
-document.getElementById('sak-filing-date').addEventListener('change', function() {
-  var id = activeSakId; if (!id) return;
-  var cas = cases.find(function(c) { return c.id === id; });
-  if (!cas || cas.type === 'oppdrag') return; // type-guard
-  dispatch('SAK_FILING_DATE_CHANGE', { id: id, date: parseDate(this.value.trim()) });
-});
-autoFormatDateInput(document.getElementById('sak-filing-date'));
-
-(function() {
-  var durInp = document.getElementById('sak-duration');
-  if (!durInp) return;
-  durInp.addEventListener('change', function() {
-    var id = activeSakId; if (!id) return;
-    var cas = cases.find(function(c) { return c.id === id; });
-    if (!cas || cas.type !== 'oppdrag') return; // type-guard
-    dispatch('SAK_DURATION_CHANGE', { id: id, value: parseInt(this.value, 10) || null });
-  });
-})();
 
 document.getElementById('sak-checklist').addEventListener('change', function(e) {
   var cb = e.target.closest('.sak-checkbox'); if (!cb) return;
@@ -6367,6 +6335,9 @@ function renderHjem() {
       (c.notes ? '<span class="case-card-notes">' + esc(c.notes) + '</span>' : '') +
       vacBadge +
       '<span class="status-pill ' + cfg.pill + '">' + cfg.label + '</span>' +
+      '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:0.25rem;">' +
+        '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger">⋯</button>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
@@ -7651,7 +7622,7 @@ function closeAllDropdowns() {
 }
 
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('.case-card-menu')) closeAllDropdowns();
+  if (!e.target.closest('.case-card-menu') && !e.target.closest('.sak-more-wrap') && !e.target.closest('.home-row-more')) closeAllDropdowns();
 });
 
 document.getElementById('case-list').addEventListener('click', function(e) {
@@ -7741,6 +7712,36 @@ document.getElementById('btn-history-close').addEventListener('click', function(
 document.getElementById('history-backdrop').addEventListener('click', function(e) { if (e.target === this) closeBackdrop('history-backdrop'); });
 document.getElementById('btn-sak-history').addEventListener('click', function() {
   if (activeSakId) openHistoryModal(activeSakId);
+});
+
+document.getElementById('btn-sak-more').addEventListener('click', function(e) {
+  e.stopPropagation();
+  var id = activeSakId; if (!id) return;
+  if (_openDropdownId === 'sak-more') { closeAllDropdowns(); return; }
+  closeAllDropdowns();
+  _openDropdownId = 'sak-more';
+  var c = cases.find(function(x) { return x.id === id; });
+  if (!c) return;
+  var dropdown = document.createElement('div');
+  dropdown.className = 'card-dropdown';
+  dropdown.innerHTML =
+    '<button class="card-dropdown-item btn-sak-edit">✏ Rediger sak</button>' +
+    '<button class="card-dropdown-item btn-sak-copy-path" data-cn="' + esc(c.caseNumber) + '">📋 Kopier mappe-sti</button>' +
+    '<button class="card-dropdown-item danger btn-sak-del" data-id="' + id + '">✕ Slett sak</button>';
+  this.closest('.sak-more-wrap').appendChild(dropdown);
+  dropdown.addEventListener('click', function(ev) {
+    var btn = ev.target.closest('button');
+    if (!btn) return;
+    ev.stopPropagation();
+    closeAllDropdowns();
+    if (btn.classList.contains('btn-sak-edit')) {
+      openModal(c);
+    } else if (btn.classList.contains('btn-sak-copy-path')) {
+      copyToClipboard(buildCasePath(btn.dataset.cn), btn);
+    } else if (btn.classList.contains('btn-sak-del')) {
+      openConfirm(btn.dataset.id);
+    }
+  });
 });
 
 // ── Saksdokumenter dropdown ─────────────────────────
@@ -8165,6 +8166,35 @@ document.getElementById('tag-cloud').addEventListener('click', function(e) {
 
 // ── Hjem: klikk på kommende forfall ───────────────
 document.getElementById('home-upcoming-list').addEventListener('click', function(e) {
+  var moreBtn = e.target.closest('.home-row-more-btn');
+  if (moreBtn) {
+    e.stopPropagation();
+    var id = moreBtn.dataset.id;
+    if (_openDropdownId === 'home-' + id) { closeAllDropdowns(); return; }
+    closeAllDropdowns();
+    _openDropdownId = 'home-' + id;
+    var c = cases.find(function(x) { return x.id === id; });
+    if (!c) return;
+    var dropdown = document.createElement('div');
+    dropdown.className = 'card-dropdown';
+    dropdown.innerHTML =
+      '<button class="card-dropdown-item btn-home-edit" data-id="' + id + '">✏ Rediger sak</button>' +
+      '<button class="card-dropdown-item danger btn-home-del" data-id="' + id + '">✕ Slett sak</button>';
+    moreBtn.closest('.home-row-more').appendChild(dropdown);
+    dropdown.addEventListener('click', function(ev) {
+      var btn = ev.target.closest('button');
+      if (!btn) return;
+      ev.stopPropagation();
+      closeAllDropdowns();
+      if (btn.classList.contains('btn-home-edit')) {
+        var c2 = cases.find(function(x) { return x.id === btn.dataset.id; });
+        if (c2) openModal(c2);
+      } else if (btn.classList.contains('btn-home-del')) {
+        openConfirm(btn.dataset.id);
+      }
+    });
+    return;
+  }
   var row = e.target.closest('.home-upcoming-row');
   if (!row || !row.dataset.id) return;
   navigateTo('sak/' + row.dataset.id);

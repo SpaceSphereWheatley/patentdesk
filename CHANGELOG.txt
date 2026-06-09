@@ -6,6 +6,16 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.6.2  Handlingsmeny på sakssiden og hjemmesiden
+───────────────────────────────────────────────────────────────
+- Sakssiden: bibliografiske felt (saksnummer, tittel, innleveringsdato,
+  antall krav, varighet) vises nå som skrivebeskyttet tekst — endres
+  via "Rediger sak" i ny ⋯-meny øverst til høyre.
+- Sakssiden: ny ⋯-knapp i topbaren med Rediger sak, Kopier mappe-sti
+  og Slett sak (med bekreftelse).
+- Hjemmesiden: ny ⋯-knapp på hver rad i "Kommende frister"-listen
+  med Rediger sak og Slett sak.
+
 v4.6.1  Intern opprydding: slankere CSS og fiksede stilbugger
 ───────────────────────────────────────────────────────────────
 - Slo sammen duplisert CSS for knappevarianter (.btn-primary/
