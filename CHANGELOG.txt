@@ -6,6 +6,7 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.6.5  Hjemside-tidslinje: fristarkiv og kommende viderebehandlinger vises som prikker nederst i tidslinjen; hover-popup og klikk-navigasjon støttes
 v4.6.4  Hjemside: saksliste delt i to seksjoner — førstesøknader/oppdrag øverst, fristarkiv/viderebehandling under (maks 8 totalt, maks 3 i lavpri-seksjonen)
 ───────────────────────────────────────────────────────────────
 
