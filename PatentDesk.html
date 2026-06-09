@@ -1828,8 +1828,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 }
 .tl-dot {
   position: absolute; width: 7px; height: 7px; border-radius: 50%;
-  bottom: 4px; transform: translateX(-50%);
-  cursor: pointer; transition: opacity 0.12s;
+  bottom: -5px; transform: translateX(-50%);
+  cursor: pointer; transition: opacity 0.12s; z-index: 2;
 }
 .tl-dot:hover { opacity: 0.7; }
 .tl-dot-fristarkiv    { background: var(--accent-dim); border: 1px solid var(--accent); }
@@ -6302,7 +6302,7 @@ function renderHjem() {
   }
   function isLowPri(c) {
     if (c.type === 'oppdrag') return false;
-    return c.status === 'fristarkiv' || c.status === 'viderebehandling';
+    return c.status === 'viderebehandling' && daysUntil(effDueFor(c)) < 0;
   }
   function byDue(a, b) { return daysUntil(effDueFor(a)) - daysUntil(effDueFor(b)); }
 
