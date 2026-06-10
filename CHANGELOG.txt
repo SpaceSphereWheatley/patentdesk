@@ -6,6 +6,14 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.7.2  Mappe-sikkerhetskopi holdes à jour gjennom dagen
+───────────────────────────────────────────────────────────────
+- Dagens sikkerhetskopifil i valgt mappe overskrives nå ved hver
+  auto-backup (tidligere ble den kun skrevet ved dagens første endring
+  og var deretter frosset). Filen på disk er dermed alltid lik siste
+  tilstand. Fortsatt én datert fil per dag.
+- «Sist skrevet»-statusen i Innstillinger viser nå dato og klokkeslett.
+
 v4.7.1  Småfikser etter designrevisjon
 ───────────────────────────────────────────────────────────────
 - Fix: ikonene for opp-/nedlasting i Innstillinger var usynlige —

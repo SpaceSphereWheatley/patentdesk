@@ -2966,7 +2966,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.7.1';
+var APP_VERSION    = 'v4.7.2';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5065,7 +5065,6 @@ function _bkLoadDirHandle(cb) {
 
 function _bkMaybeWriteDailyFile(payload) {
   if (!_bkDirHandle || !_bkFsaSupported()) return;
-  if (localStorage.getItem(BACKUP_LAST_FILE_KEY) === todayStr()) return;
   _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
     if (perm === 'granted') _bkWriteDailyFile(payload);
     else _bkUpdateSettingsUI(); // viser «Gi tilgang» på knappen
@@ -5079,7 +5078,7 @@ function _bkWriteDailyFile(payload) {
   }).then(function(w) {
     return w.write(JSON.stringify(payload || makeExportPayload(), null, 2)).then(function() { return w.close(); });
   }).then(function() {
-    try { localStorage.setItem(BACKUP_LAST_FILE_KEY, todayStr()); } catch(e) {}
+    try { localStorage.setItem(BACKUP_LAST_FILE_KEY, new Date().toISOString()); } catch(e) {}
     _bkUpdateSettingsUI();
   }).catch(function() {
     showToast('✗ Kunne ikke skrive sikkerhetskopi til mappen', true);
@@ -5121,7 +5120,7 @@ function _bkUpdateSettingsUI() {
   _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
     if (folderSub) {
       folderSub.textContent = perm === 'granted'
-        ? 'Mappe: ' + _bkDirHandle.name + (localStorage.getItem(BACKUP_LAST_FILE_KEY) ? ' — sist skrevet ' + toDisplay(localStorage.getItem(BACKUP_LAST_FILE_KEY)) : '')
+        ? 'Mappe: ' + _bkDirHandle.name + (localStorage.getItem(BACKUP_LAST_FILE_KEY) ? ' — sist skrevet ' + _bkFmtTime(localStorage.getItem(BACKUP_LAST_FILE_KEY)) : '')
         : 'Mappe: ' + _bkDirHandle.name + ' — tilgang må bekreftes på nytt';
     }
     if (btn) btn.textContent = perm === 'granted' ? 'Bytt mappe' : 'Gi tilgang';
