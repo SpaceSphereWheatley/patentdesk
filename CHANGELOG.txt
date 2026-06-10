@@ -6,6 +6,23 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.7.0  Automatisk sikkerhetskopi + sikkerhetsherding
+───────────────────────────────────────────────────────────────
+- Automatisk sikkerhetskopi: øyeblikksbilde av alle data tas noen
+  sekunder etter hver endring (debounced); de 20 siste beholdes i
+  IndexedDB og kan gjenopprettes via Innstillinger → Sikkerhetskopiering
+  → «Vis kopier» (gjenbruker import-bekreftelsen).
+- Mappe-sikkerhetskopi (Chrome/Edge): velg en mappe, så skrives én
+  datert fil (patentdesk-backup-ÅÅÅÅ-MM-DD.json) per dag automatisk.
+  Skjules i nettlesere uten File System Access API.
+- Av/på-bryter for automatisk kopi; «Siste kopi»-status i innstillinger.
+- Ventende kopi tas umiddelbart når fanen skjules/lukkes.
+- Sikkerhet: Chart.js v4.4.1 er nå innebygd i filen (tidligere lastet
+  fra cdnjs-CDN uten SRI) — fjerner MITM-risiko og gjør appen 100 %
+  frakoblet.
+- Sikkerhet: XSS-hull tettet i stikkord-autofullfør (3 steder) — lagrede
+  stikkord og søkeord escapes nå før innsetting i HTML (highlightMatch).
+
 v4.6.5  Hjemside-tidslinje: fristarkiv og kommende viderebehandlinger vises som prikker øverst i tidslinjen (top:2px, ingen overlapp med barer); hover-popup og klikk-navigasjon støttes
         - Fix: prikker posisjonert inni track (top:2px) for å unngå clipping fra scroll-wrapper
         - Seksjon under sakslisten heter nå «Viderebehandlinger over frist» og viser kun forfalte viderebehandlinger
