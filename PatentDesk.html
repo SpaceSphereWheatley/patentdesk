@@ -1919,6 +1919,12 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
   <symbol id="ti-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <polyline points="5 12 10 17 19 7"/>
   </symbol>
+  <symbol id="ti-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/>
+  </symbol>
+  <symbol id="ti-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><polyline points="7 11 12 16 17 11"/><line x1="12" y1="4" x2="12" y2="16"/>
+  </symbol>
 </svg>
 
   <input type="file" id="import-file-input" accept=".json" class="hidden-input" />
@@ -2960,7 +2966,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.7.0';
+var APP_VERSION    = 'v4.7.1';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3469,6 +3475,12 @@ function loadSakData(id) {
 }
 
 function saveSakData(id, data) {
+  // Domeneregel håndheves også ved lagring: krav uten nyhet kan aldri ha oppfinnelseshøyde
+  if (data && Array.isArray(data.claims)) {
+    data.claims.forEach(function(c) {
+      if (c && c.novelty === false && c.inventive !== false) c.inventive = false;
+    });
+  }
   try { localStorage.setItem(sakKey(id), JSON.stringify(data)); }
   catch(e) { if (e.name === 'QuotaExceededError') showToast('✗ Lagring feilet — lagringsplass full', true); }
 }

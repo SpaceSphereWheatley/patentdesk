@@ -6,6 +6,16 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.7.1  Småfikser etter designrevisjon
+───────────────────────────────────────────────────────────────
+- Fix: ikonene for opp-/nedlasting i Innstillinger var usynlige —
+  manglende SVG-symboler #ti-upload og #ti-download lagt til i spriten.
+- Domeneregel håndheves nå også ved lagring: saveSakData normaliserer
+  krav uten nyhet til oppfinnelseshøyde = nei, så ugyldig tilstand
+  aldri kan persisteres (uansett om den kommer via import e.l.).
+- CLAUDE.md: konkret versjonstall fjernet — versjon grep'es alltid
+  fra APP_VERSION i filen.
+
 v4.7.0  Automatisk sikkerhetskopi + sikkerhetsherding
 ───────────────────────────────────────────────────────────────
 - Automatisk sikkerhetskopi: øyeblikksbilde av alle data tas noen

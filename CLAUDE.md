@@ -8,8 +8,8 @@ step, no dependencies, no server. The file is opened directly in a browser.
 All data is stored locally via **localStorage** (case list, settings) and
 **IndexedDB** (CPC classification database).
 
-Current version: `v4.4.4` — always grep `APP_VERSION` from the file to
-confirm; never rely on memory or prior context.
+Version: always grep `APP_VERSION` from the file to confirm; never rely on
+memory or prior context.
 
 ---
 
