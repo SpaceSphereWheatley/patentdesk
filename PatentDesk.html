@@ -2966,7 +2966,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.7.4';
+var APP_VERSION    = 'v4.7.5';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -8599,6 +8599,7 @@ var _tlDragHappened = false;
   var popup = document.createElement('div');
   popup.className = 'tl-popup';
   popup.style.display = 'none';
+  popup.style.pointerEvents = 'none';
   document.body.appendChild(popup);
 
   function handleMove(e) {

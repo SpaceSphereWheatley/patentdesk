@@ -6,6 +6,12 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.7.5  Fiks: klikk i tidslinjen blokkert av hover-popup
+───────────────────────────────────────────────────────────────
+- Hover-popupen som følger musen lå over sak-bjelken og fanget opp
+  klikket, så navigasjon til sakssiden aldri ble utløst. Popupen er
+  nå satt til pointer-events: none, så klikk går gjennom til bjelken.
+
 v4.7.4  Fiks: tidslinje drag vs. klikk, og venstre-hopp ved slipp
 ───────────────────────────────────────────────────────────────
 - Klikk på en sak-bjelke i tidslinjen åpner nå sakssiden, men kun hvis
