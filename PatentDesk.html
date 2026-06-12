@@ -2990,7 +2990,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.8.1';
+var APP_VERSION    = 'v4.8.2';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3474,6 +3474,7 @@ function migrateAll() {
   if (v >= SCHEMA_VERSION) return;
 
   // Oppgrader history[] i pt_cases: { status, date } → { type, date, from, to }
+  var migrationOk = true;
   try {
     var rawCases = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     var upgraded = rawCases.map(function(c) {
@@ -3485,26 +3486,54 @@ function migrateAll() {
       return c;
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(upgraded));
-  } catch(e) { console.warn('PatentDesk: Migrasjon av historikk feilet', e); }
+  } catch(e) {
+    migrationOk = false;
+    console.warn('PatentDesk: Migrasjon av historikk feilet', e);
+    showToast('✗ Datamigrering feilet — eldre data er urørt, prøver igjen neste gang', true);
+  }
 
   // Slett utdaterte nøkler
   localStorage.removeItem(AUTOSAVE_KEY);
   localStorage.removeItem('pt_cpc_welcomed');
 
-  // Sett schema-versjon
-  localStorage.setItem('pt_schema_version', String(SCHEMA_VERSION));
-  console.log('PatentDesk: Migrert til schema v' + SCHEMA_VERSION);
+  // Sett schema-versjon kun ved vellykket migrering, slik at den prøves på nytt ved neste oppstart
+  if (migrationOk) {
+    try { localStorage.setItem('pt_schema_version', String(SCHEMA_VERSION)); } catch(e) {}
+    console.log('PatentDesk: Migrert til schema v' + SCHEMA_VERSION);
+  }
 }
 
 // ── Saksdetaljer ───────────────────────────────────
 function sakKey(id) { return SAK_KEY_PREFIX + id; }
 
+// Felles localStorage-skriving med brukervarsel ved feil
+function lsSetSafe(key, value) {
+  try { localStorage.setItem(key, value); return true; }
+  catch(e) {
+    showToast(e && e.name === 'QuotaExceededError'
+      ? '✗ Lagring feilet — lagringsplass full'
+      : '✗ Lagring feilet', true);
+    return false;
+  }
+}
+
+var _warnedCorruptSak = {};
+
 function loadSakData(id) {
-  try {
-    var raw = localStorage.getItem(sakKey(id));
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch(e) { return null; }
+  var raw = null;
+  try { raw = localStorage.getItem(sakKey(id)); } catch(e) { return null; }
+  if (!raw) return null;
+  try { return JSON.parse(raw); }
+  catch(e) {
+    // Korrupt JSON: bevar råteksten under egen nøkkel så senere lagring ikke overskriver den
+    try { localStorage.setItem('pt_korrupt_' + id, raw); } catch(e2) {}
+    if (!_warnedCorruptSak[id]) {
+      _warnedCorruptSak[id] = true;
+      console.warn('PatentDesk: Korrupte saksdetaljer for ' + id + ' — råtekst bevart under pt_korrupt_' + id, e);
+      showToast('✗ Saksdetaljer kunne ikke leses — rådata er bevart', true);
+    }
+    return null;
+  }
 }
 
 function saveSakData(id, data) {
@@ -3514,8 +3543,7 @@ function saveSakData(id, data) {
       if (c && c.novelty === false && c.inventive !== false) c.inventive = false;
     });
   }
-  try { localStorage.setItem(sakKey(id), JSON.stringify(data)); }
-  catch(e) { if (e.name === 'QuotaExceededError') showToast('✗ Lagring feilet — lagringsplass full', true); }
+  lsSetSafe(sakKey(id), JSON.stringify(data));
 }
 
 // ── Sjekkliste-mal ─────────────────────────────────
@@ -3528,7 +3556,7 @@ function getChecklistTemplate() {
 }
 
 function saveChecklistTemplate(tpl) {
-  try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(tpl)); } catch(e) {}
+  lsSetSafe(CHECKLIST_KEY, JSON.stringify(tpl));
 }
 
 function resetChecklistTemplate() {
@@ -3543,7 +3571,7 @@ function saveDrawerCollapsed(v)   { try { localStorage.setItem('pt_drawer_collap
 
 // ── Saksdokumenter ─────────────────────────────────
 function loadDocRoot() { return localStorage.getItem(DOC_ROOT_KEY) || DEFAULT_DOC_ROOT; }
-function saveDocRoot(v) { try { localStorage.setItem(DOC_ROOT_KEY, v); } catch(e) {} }
+function saveDocRoot(v) { lsSetSafe(DOC_ROOT_KEY, v); }
 
 // Trim, drop trailing slashes, normalize "/" to "\" — root is always joined Windows-style
 function _docRootNormalize(v) {
@@ -3569,7 +3597,7 @@ function _docRootPreviewHtml(root) {
 
 // ── Onboarding ─────────────────────────────────────
 function loadUserName()  { return localStorage.getItem(USER_NAME_KEY) || ''; }
-function saveUserName(v) { try { localStorage.setItem(USER_NAME_KEY, v); } catch(e) {} }
+function saveUserName(v) { lsSetSafe(USER_NAME_KEY, v); }
 
 // ── Slett all data ─────────────────────────────────
 function deleteAllData() {
@@ -3640,13 +3668,7 @@ function loadCases() {
 }
 
 function saveCases() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cases.map(encodeCase)));
-  } catch(e) {
-    if (e.name === 'QuotaExceededError') showToast('✗ Lagring feilet — lagringsplass full', true);
-    return;
-  }
-  /* pt_autosave fjernet i v4 */
+  lsSetSafe(STORAGE_KEY, JSON.stringify(cases.map(encodeCase)));
 }
 
 function loadStats() {
@@ -3655,8 +3677,7 @@ function loadStats() {
 }
 
 function saveStats() {
-  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); }
-  catch(e) { if (e.name === 'QuotaExceededError') showToast('✗ Lagring feilet — lagringsplass full', true); }
+  lsSetSafe(STATS_KEY, JSON.stringify(stats));
 }
 
 function loadVacations() {
@@ -3664,24 +3685,21 @@ function loadVacations() {
   catch(e) { return []; }
 }
 function saveVacations() {
-  try { localStorage.setItem(VACATION_KEY, JSON.stringify(vacations)); }
-  catch(e) { showToast('✗ Lagring feilet', true); }
+  lsSetSafe(VACATION_KEY, JSON.stringify(vacations));
 }
 function loadGoal() {
   var v = parseInt(localStorage.getItem(GOAL_KEY), 10);
   return isNaN(v) ? 0 : v;
 }
 function saveGoal(val) {
-  try { localStorage.setItem(GOAL_KEY, String(val)); }
-  catch(e) { showToast('✗ Lagring feilet', true); }
+  lsSetSafe(GOAL_KEY, String(val));
 }
 function loadBeleggHorizon() {
   var v = parseInt(localStorage.getItem(BELEGG_KEY), 10);
   return [30, 60, 90].indexOf(v) !== -1 ? v : 60;
 }
 function saveBeleggHorizon(val) {
-  try { localStorage.setItem(BELEGG_KEY, String(val)); }
-  catch(e) { showToast('✗ Lagring feilet', true); }
+  lsSetSafe(BELEGG_KEY, String(val));
 }
 function loadFristBuffer() {
   var v = parseInt(localStorage.getItem(BUFFER_KEY), 10);
@@ -3726,6 +3744,22 @@ function periodOverlapsVacation(c) {
 }
 
 var cases = loadCases();
+
+// Rydd opp foreldreløse pt_sak_*-nøkler (saker slettet før opprydding ble innført)
+(function() {
+  var raw = null;
+  try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) { return; }
+  if (!raw) return; // ingen sakliste — ikke rydd (kan være første oppstart)
+  var ids = {};
+  try { (JSON.parse(raw) || []).forEach(function(c) { if (c && c.id) ids[c.id] = true; }); }
+  catch(e) { return; } // korrupt sakliste — ikke rydd
+  var orphans = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+    if (key && key.indexOf(SAK_KEY_PREFIX) === 0 && !ids[key.slice(SAK_KEY_PREFIX.length)]) orphans.push(key);
+  }
+  orphans.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
+})();
 
 // ── CPC-database ───────────────────────────────────
 var _cpcDb = null;
@@ -3964,12 +3998,17 @@ function _dispatch(action, payload) {
 
     case 'CASE_DELETE': {
       var theCase = cases.find(function(c) { return c.id === payload.id; });
+      var rawSak = null;
+      try { rawSak = localStorage.getItem(sakKey(payload.id)); } catch(e) {}
       AppState.undoSnapshot = {
         cases: cases.map(function(c) { return Object.assign({}, c); }),
         stats: JSON.parse(JSON.stringify(stats)),
-        label: theCase ? theCase.caseNumber : payload.id
+        label: theCase ? theCase.caseNumber : payload.id,
+        sakId: payload.id,
+        sakData: rawSak
       };
       AppState.cases = cases.filter(function(c) { return c.id !== payload.id; });
+      try { localStorage.removeItem(sakKey(payload.id)); } catch(e) {}
       saveCases();
       render();
       showUndoToast('Sak ' + AppState.undoSnapshot.label + ' slettet');
@@ -3980,6 +4019,10 @@ function _dispatch(action, payload) {
       if (!undoSnapshot) break;
       cases  = undoSnapshot.cases;
       stats  = undoSnapshot.stats;
+      // Gjenopprett saksdetaljer som ble fjernet ved sletting
+      if (undoSnapshot.sakId && undoSnapshot.sakData != null) {
+        lsSetSafe(sakKey(undoSnapshot.sakId), undoSnapshot.sakData);
+      }
       AppState.undoSnapshot = null;
       saveCases(); saveStats();
       render();
@@ -5004,9 +5047,16 @@ function runAutoBackup() {
   _bkMaybeWriteDailyFile(payload);
 }
 
+var _bkWarnedFail = false;
+function _bkWarnSaveFailed() {
+  if (_bkWarnedFail) return; // varsle kun én gang per feilperiode
+  _bkWarnedFail = true;
+  showToast('✗ Automatisk sikkerhetskopi feilet — eksporter manuelt fra innstillinger', true);
+}
+
 function _bkSaveSnapshot(payload) {
   _bkOpenDb(function(err, db) {
-    if (err) return;
+    if (err) { _bkWarnSaveFailed(); return; }
     var tx = db.transaction(_BK_SNAP_STORE, 'readwrite');
     var store = tx.objectStore(_BK_SNAP_STORE);
     store.put(payload, payload.exported);
@@ -5015,7 +5065,9 @@ function _bkSaveSnapshot(payload) {
       var keys = keysReq.result.slice().sort();
       while (keys.length > _BK_MAX_SNAPSHOTS) store.delete(keys.shift());
     };
+    tx.onerror = function() { _bkWarnSaveFailed(); };
     tx.oncomplete = function() {
+      _bkWarnedFail = false; // vellykket lagring → varsle igjen ved senere feil
       try { localStorage.setItem(BACKUP_LAST_KEY, payload.exported); } catch(e) {}
       _bkUpdateSettingsUI();
     };

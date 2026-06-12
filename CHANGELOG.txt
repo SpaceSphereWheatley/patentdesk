@@ -6,6 +6,29 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.8.2  Datasikkerhet: opprydding ved sletting + bedre feilvarsling
+───────────────────────────────────────────────────────────────
+- Sletting av en sak fjerner nå også sakens detaljdata (pt_sak_*)
+  fra localStorage. Tidligere ble detaljdataene liggende igjen for
+  alltid og spiste lagringsplass. Angre-knappen gjenoppretter både
+  saken og detaljdataene.
+- Ved oppstart ryddes foreldreløse pt_sak_*-nøkler fra tidligere
+  slettinger bort (kun når saklisten finnes og kan leses trygt).
+- Korrupte saksdetaljer overskrives ikke lenger stille av tomme
+  standarddata: råteksten bevares under pt_korrupt_<id> og brukeren
+  varsles med toast.
+- Feilet datamigrering varsles nå med toast, og schema-versjonen
+  settes ikke før migreringen lykkes (prøves på nytt neste oppstart).
+- Alle lagringsfunksjoner (sjekkliste, ferier, mål, belegg, dokumentrot,
+  brukernavn m.fl.) varsler nå brukeren ved lagringsfeil, med egen
+  melding når lagringsplassen er full (felles hjelper lsSetSafe).
+- Feilet automatisk sikkerhetskopi (IndexedDB) varsles nå med toast
+  én gang per feilperiode, med oppfordring om manuell eksport.
+- Lint-oppsettet sjekker nå faktisk JavaScript-koden i fila
+  (eslint-plugin-html), ikke bare HTML-strukturen. Død kode som
+  linteren avdekket er fjernet (gammel bulk-implementasjon, ubrukte
+  hjelpefunksjoner og variabler).
+
 v4.8.1  Tidslinje: klikk-fiks for søknader + saksfrist i hover-info
 ───────────────────────────────────────────────────────────────
 - Klikk på en søknad-bjelke på hjemskjermens tidslinje åpner nå
