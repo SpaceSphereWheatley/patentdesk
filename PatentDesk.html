@@ -2966,7 +2966,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.7.3';
+var APP_VERSION    = 'v4.7.4';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -8594,6 +8594,7 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
 document.getElementById('home-upcoming-low-list').addEventListener('click', handleHomeListClick);
 
 // ── Tidslinje: hover-popup + klikk-navigasjon ──────
+var _tlDragHappened = false;
 (function() {
   var popup = document.createElement('div');
   popup.className = 'tl-popup';
@@ -8631,6 +8632,7 @@ document.getElementById('home-upcoming-low-list').addEventListener('click', hand
   function handleLeave() { popup.style.display = 'none'; }
 
   function handleClick(e) {
+    if (_tlDragHappened) { _tlDragHappened = false; return; }
     var el = e.target.closest('.tl-bar') || e.target.closest('.tl-dot');
     if (!el || !el.dataset.id) return;
     closeAllBackdrops();
@@ -8912,7 +8914,8 @@ function init() {
         origBuffer: origBuffer, pxPerDay: pxPerDay,
         track: track, actualEnd: actualEnd,
         line: line, mark: mark, cas: cas,
-        pct: pct, PAST: PAST2, TOTAL: TOTAL2
+        pct: pct, PAST: PAST2, TOTAL: TOTAL2,
+        hasMoved: false
       };
       bar.style.opacity = '0.85';
     });
@@ -8920,6 +8923,7 @@ function init() {
     document.addEventListener('mousemove', function(e) {
       if (!dragging) return;
       var dx = e.clientX - dragging.startX;
+      if (Math.abs(dx) > 3) dragging.hasMoved = true;
       var daysDelta = Math.round(dx / dragging.pxPerDay);
       // drag left = increase buffer (move bar left), drag right = decrease
       var newBuffer = Math.max(0, dragging.origBuffer - daysDelta);
@@ -8928,8 +8932,10 @@ function init() {
       var cas = dragging.cas;
       var effD = new Date(cas.dueDate + 'T00:00:00');
       effD.setDate(effD.getDate() - newBuffer);
-      var now3 = new Date(); now3.setHours(0,0,0,0);
-      var newEffEnd = (effD - now3) / 86400000;
+      var effDStr = effD.toISOString().slice(0, 10);
+      var due = new Date(effDStr + 'T16:00:00');
+      var now3 = new Date();
+      var newEffEnd = (due - now3) / 86400000;
       var atLimit = newBuffer <= 0;
       dragging.bar.classList.toggle('at-limit', atLimit);
 
@@ -8956,6 +8962,7 @@ function init() {
       if (!dragging) return;
       var d = dragging;
       dragging = null;
+      _tlDragHappened = d.hasMoved;
       d.bar.style.opacity = '';
       d.bar.classList.remove('at-limit');
       var newBuffer = d._pendingBuffer != null ? d._pendingBuffer : d.origBuffer;

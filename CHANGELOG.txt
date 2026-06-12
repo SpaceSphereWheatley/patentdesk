@@ -6,6 +6,16 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.7.4  Fiks: tidslinje drag vs. klikk, og venstre-hopp ved slipp
+───────────────────────────────────────────────────────────────
+- Klikk på en sak-bjelke i tidslinjen åpner nå sakssiden, men kun hvis
+  man ikke har dratt bjelken (drag for å justere bufferdager fungerer
+  som før, uten å trigge navigasjon).
+- Fikset feil der bjelken hoppet ett hakk til venstre når man slapp
+  museknappen etter en drag. Forhåndsvisningen under drag brukte en
+  annen (midnatt-basert) regnemåte enn selve tidslinje-rendringen
+  (som bruker kl. 16:00 som fristtidspunkt); nå er de samkjørt.
+
 v4.7.3  Fiks: tidslinje hover-info og klikk-navigasjon
 ───────────────────────────────────────────────────────────────
 - Hover-popup på tidslinjebjelker (case-info ved museover) og klikk-
