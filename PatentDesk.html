@@ -8612,10 +8612,10 @@ document.getElementById('home-upcoming-low-list').addEventListener('click', hand
       var daysTxt = days !== null ? (days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'i dag' : days + 'd') : '';
       var wdaysTxt = wdays !== null ? ' · ' + wdays + ' arb.dager' : '';
       var dueTxt = due ? formatDate(due) : '';
+      var infoTxt = (dueTxt ? 'frist ' + dueTxt : '') + (dueTxt && daysTxt ? ' · ' : '') + daysTxt + wdaysTxt;
       popup.innerHTML = '<span class="tl-popup-cn">' + esc(cn) + '</span>' +
         (title ? '<span class="tl-popup-sep"> — </span><span class="tl-popup-title">' + esc(title) + '</span>' : '') +
-        (dueTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">frist ' + esc(dueTxt) + '</span>' : '') +
-        (daysTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(daysTxt + wdaysTxt) + '</span>' : '');
+        (infoTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(infoTxt) + '</span>' : '');
     }
     popup.style.display = 'block';
     popup.style.left = (e.pageX + 12) + 'px';
