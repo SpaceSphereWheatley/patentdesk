@@ -6,6 +6,14 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.7.3  Fiks: tidslinje hover-info og klikk-navigasjon
+───────────────────────────────────────────────────────────────
+- Hover-popup på tidslinjebjelker (case-info ved museover) og klikk-
+  navigasjon til saksside virket ikke lenger, fordi handlerne ble
+  bundet til tidslinje-elementer før disse ble bygget i DOM. Nå
+  brukes event-delegering på document, slik at hover og klikk
+  fungerer igjen på alle tidslinjer.
+
 v4.7.2  Mappe-sikkerhetskopi holdes à jour gjennom dagen
 ───────────────────────────────────────────────────────────────
 - Dagens sikkerhetskopifil i valgt mappe overskrives nå ved hver

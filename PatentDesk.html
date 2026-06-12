@@ -2966,7 +2966,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.7.2';
+var APP_VERSION    = 'v4.7.3';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -8637,12 +8637,25 @@ document.getElementById('home-upcoming-low-list').addEventListener('click', hand
     navigateTo('sak/' + el.dataset.id);
   }
 
-  ['home-timeline', 'bulk-timeline', 'modal-timeline', 'cases-timeline'].forEach(function(id) {
-    var wrap = document.getElementById(id);
-    if (!wrap) return;
-    wrap.addEventListener('mousemove', handleMove);
-    wrap.addEventListener('mouseleave', handleLeave);
-    wrap.addEventListener('click', handleClick);
+  var TL_IDS = ['home-timeline', 'bulk-timeline', 'modal-timeline', 'cases-timeline'];
+  function inTimeline(target) {
+    return TL_IDS.some(function(id) {
+      var wrap = document.getElementById(id);
+      return wrap && wrap.contains(target);
+    });
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    if (!inTimeline(e.target)) { popup.style.display = 'none'; return; }
+    handleMove(e);
+  });
+  document.addEventListener('mouseout', function(e) {
+    if (!inTimeline(e.target)) return;
+    if (!e.relatedTarget || !inTimeline(e.relatedTarget)) handleLeave();
+  });
+  document.addEventListener('click', function(e) {
+    if (!inTimeline(e.target)) return;
+    handleClick(e);
   });
 
 })();
