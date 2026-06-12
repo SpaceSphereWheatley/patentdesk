@@ -89,7 +89,6 @@
   --chart-ny:     #63b3ed;
   --chart-videre: #b794f4;
   /* Tidslinje */
-  --tl-track-bg:  #f3f4f6;
   --tl-today:     #7F77DD;
   --tl-vacation:  #f59e0b;
   --tl-bar-label: #ffffff;
@@ -3808,9 +3807,7 @@ var beleggHorizon  = loadBeleggHorizon();
 var fristBuffer    = loadFristBuffer();
 var _tlConfig = {
   'home-timeline':  { horizon: 90, axisMode: 'month', statusFilter: 'ny' },
-  'home-tl-30':     { horizon: 30, axisMode: 'week',  statusFilter: 'ny' },
   'cases-timeline': { horizon: 90, axisMode: 'month', statusFilter: 'ny' },
-  'bulk-timeline':  { horizon: 90, axisMode: 'month', statusFilter: 'ny' },
   'modal-timeline': { horizon: 90, axisMode: 'month', statusFilter: 'ny' },
 };
 
@@ -7124,7 +7121,7 @@ function renderTimeline(opts) {
     var cfg = Object.assign({}, _tlConfig[id] || _tlConfig['home-timeline'] || {}, opts);
     var wrap = document.getElementById(id);
     if (!wrap) return;
-    var dotCases = (id === 'home-timeline' || id === 'home-tl-30')
+    var dotCases = (id === 'home-timeline')
       ? cases.filter(function(c) {
           return !c.type || c.type !== 'oppdrag'
             ? (c.status === 'fristarkiv' || (c.status === 'viderebehandling' && daysUntil(effDueFor(c)) >= 0))
@@ -7136,7 +7133,7 @@ function renderTimeline(opts) {
       statusFilter: cfg.statusFilter || 'ny',
       axisMode:     cfg.axisMode     || 'month',
       draftRows:    cfg.draftRows    || null,
-      draggable:    id === 'home-timeline' || id === 'home-tl-30',
+      draggable:    id === 'home-timeline',
       dotCases:     dotCases,
     });
     var existing = wrap.querySelector('.tl-track');
@@ -7836,7 +7833,6 @@ function _bulkSwitchTab(tab) {
     _renderExcelPreview();
   }
   _updateBulkCount();
-  renderTimeline({ target: 'bulk-timeline', draftRows: _activeBulkRows() });
 }
 
 // ── Excel paste parsing ────────────────────────────
@@ -7907,11 +7903,6 @@ function _renderBulkRows() {
 }
 
 // ── Active rows (union of both tabs) ─────────────
-function _activeBulkRows() {
-  return _bulkTab === 'excel' ? _bulkParsed : _bulkRows;
-}
-
-
 // ════════════════════════════════════════════════════════════════════════════
 // SEKSJON 6 · EVENT-HÅNDTERING
 // Alle addEventListener-kall og navigasjonslogikk
@@ -8594,7 +8585,6 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
 document.getElementById('home-upcoming-low-list').addEventListener('click', handleHomeListClick);
 
 // ── Tidslinje: hover-popup + klikk-navigasjon ──────
-var _tlDragHappened = false;
 (function() {
   var popup = document.createElement('div');
   popup.className = 'tl-popup';
@@ -8633,14 +8623,14 @@ var _tlDragHappened = false;
   function handleLeave() { popup.style.display = 'none'; }
 
   function handleClick(e) {
-    if (_tlDragHappened) { _tlDragHappened = false; return; }
     var el = e.target.closest('.tl-bar') || e.target.closest('.tl-dot');
     if (!el || !el.dataset.id) return;
+    if (el.classList.contains('draggable')) return; // håndteres av drag-IIFE
     closeAllBackdrops();
     navigateTo('sak/' + el.dataset.id);
   }
 
-  var TL_IDS = ['home-timeline', 'bulk-timeline', 'modal-timeline', 'cases-timeline'];
+  var TL_IDS = ['home-timeline', 'modal-timeline', 'cases-timeline'];
   function inTimeline(target) {
     return TL_IDS.some(function(id) {
       var wrap = document.getElementById(id);
@@ -8867,8 +8857,8 @@ function init() {
       if (!bar) return;
       var track = bar.closest('.tl-track');
       if (!track) return;
-      // Only on home timelines
-      var tlDiv = track.closest('[id="home-timeline"]') || track.closest('[id="home-tl-30"]');
+      // Only on home timeline
+      var tlDiv = track.closest('[id="home-timeline"]');
       if (!tlDiv) return;
       e.preventDefault();
       var caseId = bar.dataset.id;
@@ -8963,14 +8953,15 @@ function init() {
       if (!dragging) return;
       var d = dragging;
       dragging = null;
-      _tlDragHappened = d.hasMoved;
       d.bar.style.opacity = '';
       d.bar.classList.remove('at-limit');
       if (!d.hasMoved) {
-        // Ren klikk uten drag — ikke re-render (bjelken må forbli i DOM
-        // slik at click-eventet kan navigere til sakssiden).
+        // Ren klikk uten drag — naviger til sakssiden direkte her,
+        // før noen re-render kan fjerne bjelken fra DOM.
         d.line.style.display = d.origBuffer > 0 ? '' : 'none';
         d.mark.style.display = d.origBuffer > 0 ? '' : 'none';
+        closeAllBackdrops();
+        navigateTo('sak/' + d.caseId);
         return;
       }
       var newBuffer = d._pendingBuffer != null ? d._pendingBuffer : d.origBuffer;
@@ -8985,7 +8976,7 @@ function init() {
   window.addEventListener('resize', function() {
     clearTimeout(_resizeTimer);
     _resizeTimer = setTimeout(function() {
-      ['home-timeline', 'cases-timeline', 'bulk-timeline', 'modal-timeline'].forEach(function(id) {
+      ['home-timeline', 'cases-timeline', 'modal-timeline'].forEach(function(id) {
         var tlDiv = document.getElementById(id);
         if (!tlDiv) return;
         var track = tlDiv.querySelector('.tl-track');
