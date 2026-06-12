@@ -5118,7 +5118,16 @@ var _bkTimer     = null;
 var _bkLastSig   = null;
 var _bkDirHandle = null;
 
-function backupEnabled() { return localStorage.getItem(BACKUP_ENABLED_KEY) !== '0'; }
+// Caches localStorage-oppslaget — kalles i hver auto-backup-syklus.
+// null = ikke lest ennå; invalideres når bryteren endres.
+var _backupEnabledCache = null;
+function backupEnabled() {
+  if (_backupEnabledCache === null) {
+    try { _backupEnabledCache = localStorage.getItem(BACKUP_ENABLED_KEY) !== '0'; }
+    catch(e) { _backupEnabledCache = true; }
+  }
+  return _backupEnabledCache;
+}
 
 function _bkOpenDb(cb) {
   var req;
@@ -5318,6 +5327,7 @@ function _bkRestoreSnapshot(key) {
 
 document.getElementById('backup-enabled-cb').addEventListener('change', function() {
   try { localStorage.setItem(BACKUP_ENABLED_KEY, this.checked ? '1' : '0'); } catch(e) {}
+  _backupEnabledCache = this.checked;
   _bkUpdateSettingsUI();
   if (this.checked) { showToast('✓ Automatisk sikkerhetskopi på'); scheduleAutoBackup(); }
   else showToast('Automatisk sikkerhetskopi avslått');
