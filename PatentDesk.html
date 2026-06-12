@@ -974,6 +974,7 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 }
 .home-card-clickable { cursor: pointer; }
 .home-card-clickable:hover { border-color: var(--border2); }
+.home-card-clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .home-card-label { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .home-card-value { font-family: var(--font-head); font-size: 2rem; font-weight: 600; color: var(--text); line-height: 1; margin: 6px 0 4px; }
 .home-card-sub   { font-size: 0.72rem; color: var(--muted); }
@@ -2014,17 +2015,17 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
         <!-- Statskort: 5 kolonner + belegg-indikator -->
         <div class="home-stat-grid" id="home-stat-grid">
-          <div class="home-card home-card-ny home-card-clickable" id="home-card-ny">
+          <div class="home-card home-card-ny home-card-clickable" id="home-card-ny" role="button" tabindex="0">
             <div class="home-card-label">Nye saker</div>
             <div class="home-card-value" id="home-count-ny">—</div>
             <div class="home-card-sub">aktive søknader</div>
           </div>
-          <div class="home-card home-card-clickable" id="home-card-oppdrag">
+          <div class="home-card home-card-clickable" id="home-card-oppdrag" role="button" tabindex="0">
             <div class="home-card-label">Oppdrag</div>
             <div class="home-card-value" id="home-count-oppdrag">—</div>
             <div class="home-card-sub">aktive oppdrag</div>
           </div>
-          <div class="home-card home-card-fristarkiv home-card-clickable" id="home-card-fristarkiv">
+          <div class="home-card home-card-fristarkiv home-card-clickable" id="home-card-fristarkiv" role="button" tabindex="0">
             <div class="home-card-label">Fristarkiv</div>
             <div class="home-card-value" id="home-count-fristarkiv">—</div>
             <div class="home-card-sub">venter på frist</div>
@@ -2410,7 +2411,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
             </div>
             <button class="btn-secondary btn-sm" id="btn-sak-history" title="Vis historikk"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Historikk</button>
             <div class="sak-more-wrap" style="position:relative;">
-              <button class="btn-secondary btn-sm btn-card-more" id="btn-sak-more" title="Flere handlinger">⋯</button>
+              <button class="btn-secondary btn-sm btn-card-more" id="btn-sak-more" title="Flere handlinger" aria-label="Flere handlinger">⋯</button>
             </div>
             <div class="sak-due-hero" id="sak-due-hero" style="display:none;">
               <div class="sak-due-hero-eff" id="sak-due-hero-eff"></div>
@@ -2472,7 +2473,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               <span class="sak-info-value" id="sak-filing-date"></span>
             </div>
             <div class="sak-info-field">
-              <label class="sak-info-label">Antall krav</label>
+              <label class="sak-info-label" for="sak-num-claims">Antall krav</label>
               <input class="field-input sak-info-input input-w100" id="sak-num-claims" type="number" min="1" max="200" placeholder="f.eks. 10" />
             </div>
             <div class="sak-info-field" id="sak-duration-field" style="display:none;">
@@ -2489,7 +2490,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               </div>
             </div>
             <div class="sak-info-field sak-info-field-full">
-              <label class="sak-info-label">Stikkord</label>
+              <label class="sak-info-label" for="sak-tags">Stikkord</label>
               <div class="sak-tags-wrap" id="sak-tags-wrap">
                 <div class="tag-pill-editor" id="sak-tags-editor">
                   <div id="sak-tags-pills" class="tag-pill-list"></div>
@@ -2500,11 +2501,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               <span class="field-hint">Enter eller komma legger til</span>
             </div>
             <div class="sak-info-field sak-info-field-full">
-              <label class="sak-info-label">Notater <span class="field-label-sub">(vises i saksoversikten)</span></label>
+              <label class="sak-info-label" for="sak-case-notes">Notater <span class="field-label-sub">(vises i saksoversikten)</span></label>
               <textarea class="field-input sak-info-input" id="sak-case-notes" rows="3" placeholder="Valgfrie notater…"></textarea>
             </div>
             <div class="sak-info-field sak-info-field-full">
-              <label class="sak-info-label">Interne notater <span class="field-label-sub">(vises ikke i saksoversikten)</span></label>
+              <label class="sak-info-label" for="sak-notes">Interne notater <span class="field-label-sub">(vises ikke i saksoversikten)</span></label>
               <textarea class="field-input sak-notes-area" id="sak-notes" rows="4" placeholder="Interne notater for denne saken…"></textarea>
             </div>
           </div>
@@ -2722,8 +2723,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
   </div>
 
   <div class="modal-backdrop" id="confirm-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">Slett sak</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="confirm-modal-title">Slett sak</h2></div>
       <div class="modal-body">
         <p class="modal-text">Er du sikker på at du vil slette denne saken? Dette kan ikke angres.</p>
       </div>
@@ -2736,8 +2737,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Bekreft fullføring -->
   <div class="modal-backdrop" id="complete-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">Bekreft handling</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="complete-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="complete-modal-title">Bekreft handling</h2></div>
       <div class="modal-body">
         <p class="modal-text">Saken <strong id="complete-case-number"></strong> vil bli <span id="complete-action-desc"></span>.</p>
         <p class="modal-text modal-text-mt">Vil du fortsette?</p>
@@ -2751,9 +2752,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Handling: Fristarkiv -->
   <div class="modal-backdrop" id="fristarkiv-choice-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="fristarkiv-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Handling — <span id="fristarkiv-case-number"></span></h2>
+        <h2 class="modal-title" id="fristarkiv-modal-title">Handling — <span id="fristarkiv-case-number"></span></h2>
       </div>
       <div class="modal-body">
         <p class="modal-text modal-text-mb">Hva skal skje med denne saken?</p>
@@ -2782,9 +2783,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Handling: Viderebehandling -->
   <div class="modal-backdrop" id="videre-choice-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="videre-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Handling — <span id="videre-case-number"></span></h2>
+        <h2 class="modal-title" id="videre-modal-title">Handling — <span id="videre-case-number"></span></h2>
       </div>
       <div class="modal-body">
         <p class="modal-text modal-text-mb">Hva skal skje med denne saken?</p>
@@ -2813,7 +2814,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Stikkord ved avslutning -->
   <div class="modal-backdrop" id="tag-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title">
       <div class="modal-header">
         <h2 class="modal-title" id="tag-modal-title">Fullføring — <span id="tag-case-number"></span></h2>
       </div>
@@ -2834,9 +2835,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Ny frist -->
   <div class="modal-backdrop" id="frist-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="frist-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Ny frist — <span id="frist-case-number"></span></h2>
+        <h2 class="modal-title" id="frist-modal-title">Ny frist — <span id="frist-case-number"></span></h2>
       </div>
       <div class="modal-body">
         <p class="modal-text modal-text-mb" id="frist-desc"></p>
@@ -2854,8 +2855,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Import -->
   <div class="modal-backdrop" id="import-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">Last inn saker</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="import-modal-title">Last inn saker</h2></div>
       <div class="modal-body">
         <p class="modal-text">Filen inneholder <strong id="import-count"></strong> saker.</p>
         <p class="modal-text modal-text-mt">Dette vil <strong>erstatte</strong> alle nåværende saker. Vil du fortsette?</p>
@@ -2870,9 +2871,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Gjenopprett fra automatisk sikkerhetskopi modal -->
   <div class="modal-backdrop" id="backup-restore-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="backup-restore-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Automatiske sikkerhetskopier</h2>
+        <h2 class="modal-title" id="backup-restore-modal-title">Automatiske sikkerhetskopier</h2>
         <button class="modal-close" id="btn-backup-restore-close" aria-label="Lukk">✕</button>
       </div>
       <div class="modal-body modal-body-scroll">
@@ -2883,9 +2884,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Sjekkliste-editor modal -->
   <div class="modal-backdrop" id="cle-backdrop" aria-hidden="true">
-    <div class="modal modal-lg" role="dialog" aria-modal="true">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="cle-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Rediger sjekkliste-mal</h2>
+        <h2 class="modal-title" id="cle-modal-title">Rediger sjekkliste-mal</h2>
         <button class="modal-close" id="btn-cle-close" aria-label="Lukk">✕</button>
       </div>
       <div class="modal-body modal-body-scroll">
@@ -2904,8 +2905,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Slett alt — steg 1 -->
   <div class="modal-backdrop" id="delete-all-backdrop-1" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">⚠ Slett all data?</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="delete-all-1-title">
+      <div class="modal-header"><h2 class="modal-title" id="delete-all-1-title">⚠ Slett all data?</h2></div>
       <div class="modal-body">
         <p class="modal-text">Dette vil slette <strong>alle saker, historikk, stikkord og statistikk</strong> permanent.</p>
         <p class="modal-text modal-text-mt">Dette kan <strong>ikke</strong> angres. Har du tatt backup?</p>
@@ -2919,8 +2920,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Slett alt — steg 2 -->
   <div class="modal-backdrop" id="delete-all-backdrop-2" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">⚠ Siste sjanse</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="delete-all-2-title">
+      <div class="modal-header"><h2 class="modal-title" id="delete-all-2-title">⚠ Siste sjanse</h2></div>
       <div class="modal-body">
         <p class="modal-text">All data slettes nå permanent. Det finnes ingen vei tilbake.</p>
         <p class="modal-text modal-text-mt modal-text-danger">Trykk «Slett alt» for å bekrefte.</p>
@@ -2934,8 +2935,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Nullstill statistikk -->
   <div class="modal-backdrop" id="reset-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">Nullstill statistikk</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="reset-modal-title">Nullstill statistikk</h2></div>
       <div class="modal-body">
         <p class="modal-text">Dette sletter alle teller- og loggdata permanent. Sakslistene påvirkes ikke.</p>
       </div>
@@ -2948,9 +2949,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Om PatentDesk (Konami-kode) -->
   <div class="modal-backdrop" id="about-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Om PatentDesk</h2>
+        <h2 class="modal-title" id="about-modal-title">Om PatentDesk</h2>
         <button class="modal-close" id="btn-about-close" aria-label="Lukk">✕</button>
       </div>
       <div class="modal-body about-body">
@@ -2963,6 +2964,20 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
           <div class="about-fact-label">Fun fact</div>
           <div class="about-fact" id="about-fact"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tilbakestill sjekkliste-mal (bekreftelse) -->
+  <div class="modal-backdrop" id="cle-reset-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="cle-reset-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="cle-reset-modal-title">Tilbakestill sjekkliste</h2></div>
+      <div class="modal-body">
+        <p class="modal-text">Tilbakestill til standard sjekkliste? Tilpassede endringer slettes.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-cle-reset-cancel">Avbryt</button>
+        <button class="btn-danger" id="btn-cle-reset-confirm">Tilbakestill</button>
       </div>
     </div>
   </div>
@@ -2990,7 +3005,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.8.3';
+var APP_VERSION    = 'v4.8.4';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4665,7 +4680,7 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
       actionBtn +
       '<div class="case-card-menu">' +
         '<button class="btn-card-hist" data-id="' + c.id + '" title="Historikk">⏱</button>' +
-        '<button class="btn-card-more" data-id="' + c.id + '" title="Mer">⋯</button>' +
+        '<button class="btn-card-more" data-id="' + c.id + '" title="Mer" aria-label="Flere handlinger">⋯</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -4725,7 +4740,7 @@ function closeAllBackdrops() {
   ['cle-backdrop','modal-backdrop','confirm-backdrop','complete-backdrop','fristarkiv-choice-backdrop',
    'videre-choice-backdrop','reset-backdrop','import-backdrop','tag-backdrop','frist-backdrop',
    'delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
-   'history-backdrop',
+   'history-backdrop','backup-restore-backdrop','cle-reset-backdrop',
    ].forEach(function(id) {
     var el = document.getElementById(id);
     el.classList.remove('open');
@@ -4996,8 +5011,11 @@ document.getElementById('btn-cle-save').addEventListener('click', function() {
   dispatch('CHECKLIST_TEMPLATE_SAVE', { template: tpl });
 });
 
-document.getElementById('btn-cle-reset').addEventListener('click', function() {
-  if (!confirm('Tilbakestill til standard sjekkliste? Tilpassede endringer slettes.')) return;
+document.getElementById('btn-cle-reset').addEventListener('click', function() { openBackdrop('cle-reset-backdrop'); });
+document.getElementById('btn-cle-reset-cancel').addEventListener('click', function() { closeBackdrop('cle-reset-backdrop'); });
+document.getElementById('cle-reset-backdrop').addEventListener('click', function(e) { if (e.target === this) closeBackdrop('cle-reset-backdrop'); });
+document.getElementById('btn-cle-reset-confirm').addEventListener('click', function() {
+  closeBackdrop('cle-reset-backdrop');
   resetChecklistTemplate();
   renderCle();
   _cleUpdateSummary();
@@ -5437,15 +5455,17 @@ function renderBeleggCard() {
   subEl.innerHTML = '&nbsp;·&nbsp;<span class="' + cls2 + '">' + arrow + ' ' + pct2 + '%</span> neste periode';
 }
 
-// ── Hjem: status-kort klikk → side ────────────────
-['ny','fristarkiv'].forEach(function(page) {
-  var card = document.getElementById('home-card-' + page);
-  if (card) card.addEventListener('click', function() { navigateTo(page); });
+// ── Hjem: status-kort klikk/tastatur → side ───────
+function _bindCardActivate(card, fn) {
+  if (!card) return;
+  card.addEventListener('click', fn);
+  card.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
+  });
+}
+['ny','fristarkiv','oppdrag'].forEach(function(page) {
+  _bindCardActivate(document.getElementById('home-card-' + page), function() { navigateTo(page); });
 });
-(function() {
-  var card = document.getElementById('home-card-oppdrag');
-  if (card) card.addEventListener('click', function() { navigateTo('oppdrag'); });
-})();
 
 // ── Årsnavigering ──────────────────────────────────
 document.getElementById('btn-year-prev').addEventListener('click', function() { statYear--; renderStats(); });
@@ -5880,7 +5900,7 @@ function renderSakClasses(data) {
       '</label>' +
       '<span class="sak-class-tag' + (cls.inUse ? ' sak-class-tag-active' : '') + '">' + esc(cls.code) + '</span>' +
       (desc ? '<span class="sak-class-desc">' + esc(desc) + '</span>' : '') +
-      '<button class="btn-icon btn-sak-class-del" data-idx="' + i + '" title="Fjern">✕</button>' +
+      '<button class="btn-icon btn-sak-class-del" data-idx="' + i + '" title="Fjern" aria-label="Fjern klasse">✕</button>' +
     '</div>';
   }).join('');
 }
@@ -6724,7 +6744,7 @@ function renderHjem() {
       vacBadge +
       '<span class="status-pill ' + cfg.pill + '">' + cfg.label + '</span>' +
       '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:0.25rem;">' +
-        '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger">⋯</button>' +
+        '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
       '</div>' +
     '</div>';
   }
@@ -7256,7 +7276,7 @@ function renderVacationList() {
       '<span class="vac-status-name ' + status + '">' + esc(v.label || 'Ferie') + '</span>' +
       '<span class="vac-status-dates ' + status + '">' + toDisplay(v.from) + ' – ' + toDisplay(v.to) + '</span>' +
       badge +
-      '<button class="btn-icon btn-vac-del" data-idx="' + i + '" title="Slett">✕</button>' +
+      '<button class="btn-icon btn-vac-del" data-idx="' + i + '" title="Slett" aria-label="Slett ferie">✕</button>' +
     '</div>';
   }).join('');
   _updateVacToggleLabel();
@@ -7535,7 +7555,7 @@ function renderEventLog() {
       '<span class="case-card-title">' + esc(lookupTitle(e)) + '</span>' +
       '<span class="case-card-notes">' + esc(notes) + '</span>' +
       '<div class="case-card-menu">' +
-        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato">✏</button>' +
+        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato">✏</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -9012,7 +9032,7 @@ if (document.readyState === 'loading') {
 
   <!-- Onboarding-veiviser (første gang) -->
   <div class="modal-backdrop" id="onboarding-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-label="Velkomstveiviser">
       <div class="modal-header">
         <div class="onb-dots" id="onb-dots">
           <span class="onb-dot onb-dot-active" data-step="0"></span>

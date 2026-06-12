@@ -6,6 +6,23 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.8.4  Tilgjengelighet: skjermleser- og tastaturstøtte
+───────────────────────────────────────────────────────────────
+- Alle modaler har nå tilgjengelig navn (aria-labelledby koblet til
+  modaltittelen; veiviseren bruker aria-label). Skjermlesere
+  annonserer dermed hvilken dialog som åpnes.
+- Klikkbare statskort på hjemskjermen (Nye saker, Oppdrag,
+  Fristarkiv) kan nå nås og aktiveres med tastatur (role="button",
+  tabindex, Enter/mellomrom) og har synlig fokusmarkering.
+- Etiketter på sakssiden (Antall krav, Stikkord, Notater, Interne
+  notater) er nå koblet til feltene sine med for-attributt.
+- Ikon-knapper (⋯-menyer, ✕-slett, ✏-rediger) har fått aria-label.
+- «Tilbakestill sjekkliste» bruker nå appens egen bekreftelses-modal
+  i stedet for nettleserens window.confirm — samme utseende som
+  øvrige bekreftelser.
+- closeAllBackdrops lukker nå også sikkerhetskopi-modalen, som
+  manglet i listen.
+
 v4.8.3  Ytelse: raskere CPC-søk, navigasjon og hjemskjerm
 ───────────────────────────────────────────────────────────────
 - CPC-autofullfør: nøklene normaliseres (whitespace/store bokstaver)
