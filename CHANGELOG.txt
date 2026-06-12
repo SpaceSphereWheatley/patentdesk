@@ -6,6 +6,19 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.7.6  Tidslinje: klikk-fiks for søknader + saksfrist i hover-info
+───────────────────────────────────────────────────────────────
+- Klikk på en søknad-bjelke på hjemskjermens tidslinje åpner nå
+  sakssiden (navigering skjer direkte ved museopp før evt.
+  re-render, så bjelken ikke forsvinner fra DOM før klikk-eventet
+  rekker å fyres).
+- Hover-info i tidslinjen viser nå saksfristen i tillegg til
+  saksnummer, tittel og dager til frist.
+- Fjernet dødt tidslinje-materiale: ubrukte config-nøkler
+  ('home-tl-30', 'bulk-timeline'), tilhørende grener i renderTimeline
+  og drag-handler, ubrukt funksjon _activeBulkRows() og ubrukt
+  CSS-variabel --tl-track-bg.
+
 v4.7.5  Fiks: klikk i tidslinjen blokkert av hover-popup
 ───────────────────────────────────────────────────────────────
 - Hover-popupen som følger musen lå over sak-bjelken og fanget opp

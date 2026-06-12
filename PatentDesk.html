@@ -2965,7 +2965,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.7.5';
+var APP_VERSION    = 'v4.7.6';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -8611,8 +8611,10 @@ document.getElementById('home-upcoming-low-list').addEventListener('click', hand
       var wdays = effDue ? workDaysUntil(effDue) : null;
       var daysTxt = days !== null ? (days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'i dag' : days + 'd') : '';
       var wdaysTxt = wdays !== null ? ' · ' + wdays + ' arb.dager' : '';
+      var dueTxt = due ? formatDate(due) : '';
       popup.innerHTML = '<span class="tl-popup-cn">' + esc(cn) + '</span>' +
         (title ? '<span class="tl-popup-sep"> — </span><span class="tl-popup-title">' + esc(title) + '</span>' : '') +
+        (dueTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">frist ' + esc(dueTxt) + '</span>' : '') +
         (daysTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(daysTxt + wdaysTxt) + '</span>' : '');
     }
     popup.style.display = 'block';
