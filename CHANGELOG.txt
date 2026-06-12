@@ -6,6 +6,12 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.9.0  Oppdrag er nå en ren sakstype med egne statuser (ny/avsluttet)
+        - Fjernet 'oppdrag' som statusverdi — type-feltet alene avgjør om en sak er et oppdrag
+        - Datamigrasjon: eksisterende oppdrag med status='oppdrag' normaliseres til status='ny' ved oppstart
+        - Detaljvisning: statusknapper for oppdrag viser «Aktiv» og «Avsluttet» (ikke «Oppdrag»)
+        - Kortkortvisning: oppdrag viser «Aktiv» eller «Avsluttet» basert på faktisk status
+───────────────────────────────────────────────────────────────
 v4.8.1  Tidslinje: klikk-fiks for søknader + saksfrist i hover-info
 ───────────────────────────────────────────────────────────────
 - Klikk på en søknad-bjelke på hjemskjermens tidslinje åpner nå
