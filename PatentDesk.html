@@ -2969,6 +2969,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Chart.js v4.4.1 (MIT) — innebygd lokalt; appen er helt frakoblet og uavhengig av CDN -->
   <script>
+/* eslint-disable */
 /*!
  * Chart.js v4.4.1
  * https://www.chartjs.org
@@ -3054,7 +3055,6 @@ var CHECKLIST_DEFAULT = [
 
 // Sjekkliste-lagring: se SEKSJON 3
 // getChecklistTemplate(), saveChecklistTemplate(), resetChecklistTemplate() er definert i SEKSJON 3
-var CHECKLIST_TEMPLATE = CHECKLIST_DEFAULT; // bakoverkompatibilitet
 
 // Frister i måneder
 var FRIST_NY_TIL_FRISTARKIV     = 6;
@@ -3366,16 +3366,6 @@ function workDaysUntil(dateStr) {
   return count;
 }
 
-function daysBadge(days) {
-  var cls, label;
-  if      (days < 0)   { cls = 'overdue'; label = Math.abs(days) + 'd forfalt'; }
-  else if (days === 0) { cls = 'urgent';  label = 'I dag'; }
-  else if (days <= 3)  { cls = 'urgent';  label = days + ' d'; }
-  else if (days <= 14) { cls = 'soon';    label = days + ' d'; }
-  else                 { cls = 'ok';      label = days + ' d'; }
-  return '<span class="days-badge ' + cls + '">' + label + '</span>';
-}
-
 function formatDate(dateStr) {
   var d = new Date(dateStr + 'T00:00:00');
   return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
@@ -3649,8 +3639,6 @@ function loadCases() {
   catch(e) { return []; }
 }
 
-var _suppressAutoBackup = false;
-
 function saveCases() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cases.map(encodeCase)));
@@ -3719,12 +3707,6 @@ function getEffectiveDueDate(dueDateStr, caseObj) {
 // Oppdrag always use their actual dueDate; regular cases get the buffer-adjusted date.
 function effDueFor(c) {
   return (c && c.type === 'oppdrag') ? c.dueDate : getEffectiveDueDate(c ? c.dueDate : '', c);
-}
-
-// Returns true if dateStr (yyyy-mm-dd) falls within any vacation period
-function isOnVacation(dateStr) {
-  if (!dateStr) return false;
-  return vacations.some(function(v) { return dateStr >= v.from && dateStr <= v.to; });
 }
 
 // Returns true if any day in the case's working period overlaps a vacation.
@@ -4432,42 +4414,12 @@ function appendHistory(c, fromStatus, toStatus, type, fromVal, toVal) {
   return hist;
 }
 
-// ── Historikk-rad ──────────────────────────────────
-function buildHistRow(cas, colCount) {
-  if (!cas.history || !cas.history.length) return '';
-  var items = cas.history.map(function(h, i) {
-    var isStatus = !h.type || h.type === 'status';
-    var cfg    = isStatus ? (STATUS_CONFIG[h.to] || STATUS_CONFIG[h.status] || {}) : {};
-    var isLast = i === cas.history.length - 1;
-    var approx = h.approximate ? ' <span class="hist-approx" title="Dato er anslått">~</span>' : '';
-    var label  = isStatus
-      ? (cfg.histLabel || h.to || h.status || '?')
-      : 'Fristendring';
-    return '<div class="hist-step' + (isLast ? ' hist-step-last' : '') + '">' +
-      '<div class="hist-dot">' + (cfg.histIcon || (isStatus ? '•' : '📅')) + '</div>' +
-      (isLast ? '' : '<div class="hist-line"></div>') +
-      '<div class="hist-info">' +
-        '<span class="hist-label">' + label + '</span>' +
-        '<span class="hist-date">' + (h.date ? formatDateTime(h.date) : '—') + approx + '</span>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-  return '<tr class="hist-row" data-id="' + cas.id + '">' +
-    '<td colspan="' + colCount + '" class="hist-cell">' +
-      '<div class="hist-timeline">' + items + '</div>' +
-    '</td>' +
-  '</tr>';
-}
-
 // ── Historikk-modal ─────────────────────────────────
 function openHistoryModal(id) {
   var cas = cases.find(function(c) { return c.id === id; });
   if (!cas) return;
   document.getElementById('history-modal-cn').textContent = cas.caseNumber;
   var body = document.getElementById('history-modal-body');
-  var hist = Array.isArray(cas.history) ? cas.history.slice().reverse() : [];
-  var origIdxMap = hist.map(function(_, ri) { return hist.length - 1 - ri; }); // reversed index → original index
-
   function renderHistBody() {
     var hist2 = Array.isArray(cas.history) ? cas.history.slice().reverse() : [];
     if (!hist2.length) {
@@ -5510,25 +5462,6 @@ function ensureSakFiles(data, cas) {
 }
 
 // ── Saksdetaljer: hjelpere ─────────────────────────
-function claimResultLabel(c) {
-  if (c.novelty === null || c.inventive === null) return null; // ikke vurdert
-  var issues = [];
-  if (c.novelty   === false) issues.push('Mangler nyhet');
-  if (c.inventive === false) issues.push('Mangler oppfinnelseshøyde');
-  if (c.formal    === true)  issues.push('Formelle feil');
-  if (!issues.length) return 'patenterbar';
-  return issues.join(', ');
-}
-
-function claimResultClass(c) {
-  if (c.novelty === null || c.inventive === null) return 'claim-unassessed';
-  var issues = [];
-  if (c.novelty   === false) issues.push(1);
-  if (c.inventive === false) issues.push(1);
-  if (c.formal    === true)  issues.push(1);
-  return issues.length ? 'claim-rejected' : 'claim-ok';
-}
-
 function triToggle(current) {
   // null → true → false → null
   if (current === null)  return true;
@@ -5899,7 +5832,6 @@ function triButtonClass(val, isFormal) {
 }
 
 function claimRowClass(c) {
-  var unassessed = c.novelty === null || c.inventive === null;
   if (c.novelty === true && c.inventive === true && c.formal === true)  return 'claim-row-formal';
   if (c.novelty === true && c.inventive === true)                        return 'claim-row-ok';
   if (c.novelty === false || c.inventive === false)                      return 'claim-row-no';
@@ -6011,9 +5943,6 @@ function renderSakClaimsTable(data) {
     if (c.num === _sakActiveClaimNum) rowCls = (rowCls ? rowCls + ' ' : '') + 'sak-claim-active-row';
 
     // Dep input
-    var prevClaim = data.claims[data.claims.indexOf(c) - 1];
-    var prevDep = prevClaim ? prevClaim.dep : null;
-    var isCopied = c.dep !== null && c.dep === prevDep && !c.depManual;
     var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep="' + c.num + '" min="1" placeholder="—" value="' + (c.dep !== null ? c.dep : '') + '" />';
 
     // Label cell
@@ -6638,7 +6567,6 @@ document.getElementById('sak-notes').addEventListener('input', function() {
 // ── Hjem-side ──────────────────────────────────────
 function renderHjem() {
   var now = new Date(); now.setHours(0,0,0,0);
-  var thisYear = now.getFullYear();
 
   // ── Statskort ──────────────────────────────────────
   var countNy      = cases.filter(function(c) { return c.status === 'ny' && c.type !== 'oppdrag'; }).length;
@@ -6651,7 +6579,6 @@ function renderHjem() {
   var countForfaltVidere = cases.filter(function(c) {
     return c.status === 'viderebehandling' && daysUntil(effDueFor(c)) < 0;
   }).length;
-  var countForfalt = countForfaltNy + countForfaltVidere;
 
   var elNy     = document.getElementById('home-count-ny');
   var elOpp    = document.getElementById('home-count-oppdrag');
@@ -7885,48 +7812,8 @@ var FUN_FACTS = [
 ];
 
 // ── Bulk-legg til saker ────────────────────────────
-var _bulkRows    = [];
-var _bulkTab     = 'excel';   // 'excel' | 'manual'
-var _bulkParsed  = [];        // parsed rows from paste
-
 function _bulkRowId() { return 'br_' + uid(); }
 
-
-// ── Tab switching ──────────────────────────────────
-function _bulkSwitchTab(tab) {
-  _bulkTab = tab;
-  document.getElementById('bulk-pane-excel').style.display  = tab === 'excel'  ? 'block' : 'none';
-  document.getElementById('bulk-pane-manual').style.display = tab === 'manual' ? 'block' : 'none';
-  document.querySelectorAll('.bulk-tab').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.tab === tab);
-  });
-  if (tab === 'manual') {
-    _renderBulkRows();
-  } else {
-    var inp = document.getElementById('bulk-paste-input');
-    if (inp) inp.value = '';
-    _renderExcelPreview();
-  }
-  _updateBulkCount();
-}
-
-// ── Excel paste parsing ────────────────────────────
-function _parseExcelPaste(text) {
-  var rows = [];
-  var lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-  lines.forEach(function(line) {
-    line = line.trim();
-    if (!line) return;
-    var cols = line.split('\t');
-    if (cols.length < 1) return;
-    var cn    = (cols[0] || '').trim();
-    var title = (cols[1] || '').trim();
-    var date  = (cols[2] || '').trim();
-    date = _normDate(date);
-    rows.push({ id: _bulkRowId(), cn: cn, title: title, date: date, checked: true });
-  });
-  return rows;
-}
 function _normDate(s) {
   s = s.trim();
   if (/^\d{4}[.-]\d{2}[.-]\d{2}$/.test(s)) return s.replace(/\./g, '-');
@@ -7935,49 +7822,7 @@ function _normDate(s) {
   }
   return s;
 }
-function _renderExcelPreview() {
-  var container = document.getElementById('bulk-excel-preview');
-  if (!container) return;
-  if (!_bulkParsed.length) { container.innerHTML = ''; return; }
 
-  var hdr = '<div class="bulk-preview-hdr">' +
-    '<div></div><div>Saksnummer</div><div>Tittel</div><div>Forfallsdato</div><div></div>' +
-    '</div>';
-
-  var rows = _bulkParsed.map(function(row) {
-    var dateOk  = row.date && isValidDate(row.date);
-    var cnOk    = !!row.cn;
-    var dateDisp = dateOk ? toDisplay(row.date) : (row.date || '—');
-    var dateCls  = dateOk ? 'bulk-preview-cell' : 'bulk-preview-cell err';
-    return '<div class="bulk-preview-row" data-rid="' + row.id + '">' +
-      '<div class="bulk-check-cell">' +
-        '<input type="checkbox" class="bulk-check" data-rid="' + row.id + '"' + (row.checked ? ' checked' : '') + '/>' +
-      '</div>' +
-      '<div class="bulk-preview-cell' + (cnOk ? '' : ' err') + '" title="' + esc(row.cn) + '">' + esc(row.cn || '—') + '</div>' +
-      '<div class="bulk-preview-cell" title="' + esc(row.title) + '">' + esc(row.title || '') + '</div>' +
-      '<div class="' + dateCls + '">' + esc(dateDisp) + '</div>' +
-      '<button class="bulk-del" data-rid="' + row.id + '" title="Fjern rad">×</button>' +
-    '</div>';
-  }).join('');
-
-  container.innerHTML = hdr + rows;
-}
-
-// ── Manual rows ────────────────────────────────────
-function _renderBulkRows() {
-  var container = document.getElementById('bulk-rows');
-  if (!container) return;
-  container.innerHTML = _bulkRows.map(function(row) {
-    return '<div class="bulk-row" data-rid="' + row.id + '">' +
-      '<input type="text" class="field-input bulk-cn" data-rid="' + row.id + '" value="' + esc(row.cn) + '" placeholder="Saksnummer…" />' +
-      '<input type="text" class="field-input bulk-title" data-rid="' + row.id + '" value="' + esc(row.title) + '" placeholder="Tittel…" />' +
-      '<input type="text" class="field-input bulk-date" data-rid="' + row.id + '" value="' + esc(row.date) + '" placeholder="åååå.mm.dd" />' +
-      '<button class="bulk-del" data-rid="' + row.id + '" title="Fjern rad">×</button>' +
-    '</div>';
-  }).join('');
-}
-
-// ── Active rows (union of both tabs) ─────────────
 // ════════════════════════════════════════════════════════════════════════════
 // SEKSJON 6 · EVENT-HÅNDTERING
 // Alle addEventListener-kall og navigasjonslogikk
@@ -8503,7 +8348,7 @@ function _parseModalBulkRow(cols) {
   if (_modalBulkMode === 'fast') {
     return { id: _bulkRowId(), cn: (cols[0]||'').trim(), title: (cols[1]||'').trim(), date: _normDate((cols[2]||'').trim()), checked: true };
   }
-  var cn='', title='', date='', rest=[];
+  var cn='', date='', rest=[];
   var reNr   = /^\d{8}P?$/i;
   var reDate = /^\d{2}\.\d{2}\.\d{4}$|^\d{4}[.\-]\d{2}[.\-]\d{2}$/;
   cols.forEach(function(c) {

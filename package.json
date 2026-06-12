@@ -2,11 +2,14 @@
   "name": "patentdesk",
   "private": true,
   "scripts": {
-    "lint": "eslint PatentDesk.html"
+    "lint": "npm run lint:js && npm run lint:html",
+    "lint:js": "eslint PatentDesk.html",
+    "lint:html": "eslint --no-eslintrc -c .eslintrc-html.json PatentDesk.html"
   },
   "devDependencies": {
     "@html-eslint/eslint-plugin": "^0.24.1",
     "@html-eslint/parser": "^0.24.1",
-    "eslint": "^8.57.0"
+    "eslint": "^8.57.0",
+    "eslint-plugin-html": "^8.1.4"
   }
 }

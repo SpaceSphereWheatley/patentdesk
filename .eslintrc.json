@@ -1,10 +1,16 @@
 {
-  "plugins": ["@html-eslint"],
+  "root": true,
+  "plugins": ["html"],
   "overrides": [
     {
       "files": ["*.html"],
-      "parser": "@html-eslint/parser",
-      "plugins": ["@html-eslint"],
+      "env": {
+        "browser": true,
+        "es2022": true
+      },
+      "globals": {
+        "Chart": "readonly"
+      },
       "rules": {
         "no-undef": "error",
         "no-unused-vars": "warn",
@@ -16,10 +22,6 @@
         "no-self-compare": "error",
         "use-isnan": "error",
         "valid-typeof": "error"
-      },
-      "env": {
-        "browser": true,
-        "es2020": true
       }
     }
   ]
