@@ -6,12 +6,100 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
-v4.7.0  Oppdrag er nå en ren sakstype med egne statuser (ny/avsluttet)
+v4.9.0  Oppdrag er nå en ren sakstype med egne statuser (ny/avsluttet)
         - Fjernet 'oppdrag' som statusverdi — type-feltet alene avgjør om en sak er et oppdrag
         - Datamigrasjon: eksisterende oppdrag med status='oppdrag' normaliseres til status='ny' ved oppstart
         - Detaljvisning: statusknapper for oppdrag viser «Aktiv» og «Avsluttet» (ikke «Oppdrag»)
         - Kortkortvisning: oppdrag viser «Aktiv» eller «Avsluttet» basert på faktisk status
 ───────────────────────────────────────────────────────────────
+v4.8.1  Tidslinje: klikk-fiks for søknader + saksfrist i hover-info
+───────────────────────────────────────────────────────────────
+- Klikk på en søknad-bjelke på hjemskjermens tidslinje åpner nå
+  sakssiden (navigering skjer direkte ved museopp før evt.
+  re-render, så bjelken ikke forsvinner fra DOM før klikk-eventet
+  rekker å fyres).
+- Hover-info i tidslinjen viser nå saksfristen i tillegg til
+  saksnummer, tittel og dager til frist.
+- Fjernet dødt tidslinje-materiale: ubrukte config-nøkler
+  ('home-tl-30', 'bulk-timeline'), tilhørende grener i renderTimeline
+  og drag-handler, ubrukt funksjon _activeBulkRows() og ubrukt
+  CSS-variabel --tl-track-bg.
+
+v4.7.5  Fiks: klikk i tidslinjen blokkert av hover-popup
+───────────────────────────────────────────────────────────────
+- Hover-popupen som følger musen lå over sak-bjelken og fanget opp
+  klikket, så navigasjon til sakssiden aldri ble utløst. Popupen er
+  nå satt til pointer-events: none, så klikk går gjennom til bjelken.
+
+v4.7.4  Fiks: tidslinje drag vs. klikk, og venstre-hopp ved slipp
+───────────────────────────────────────────────────────────────
+- Klikk på en sak-bjelke i tidslinjen åpner nå sakssiden, men kun hvis
+  man ikke har dratt bjelken (drag for å justere bufferdager fungerer
+  som før, uten å trigge navigasjon).
+- Fikset feil der bjelken hoppet ett hakk til venstre når man slapp
+  museknappen etter en drag. Forhåndsvisningen under drag brukte en
+  annen (midnatt-basert) regnemåte enn selve tidslinje-rendringen
+  (som bruker kl. 16:00 som fristtidspunkt); nå er de samkjørt.
+
+v4.7.3  Fiks: tidslinje hover-info og klikk-navigasjon
+───────────────────────────────────────────────────────────────
+- Hover-popup på tidslinjebjelker (case-info ved museover) og klikk-
+  navigasjon til saksside virket ikke lenger, fordi handlerne ble
+  bundet til tidslinje-elementer før disse ble bygget i DOM. Nå
+  brukes event-delegering på document, slik at hover og klikk
+  fungerer igjen på alle tidslinjer.
+
+v4.8.0  Forfalte saker i tidslinjen + nytt fridag-kort
+───────────────────────────────────────────────────────────────
+- Saker som er over frist forsvinner ikke lenger fra tidslinjen.
+  Forfalte saker (innenfor 14-dagersvinduet) vises nå med rød
+  farge på bar/prikk. Saker som er mer enn 14 dager over frist
+  festes som en rød "‹N forfalt"-markør ved venstre kant, med
+  saksnummer og antall dager forfalt ved hover. Ny "Forfalt"-
+  oppføring i tegnforklaringen.
+- Julaften (24. des) og nyttårsaften (31. des) er lagt til som
+  fridager, i tillegg til de 12 offisielle røde dagene (inkl.
+  påske og jul som allerede var komplette).
+- Nytt statskort på hjemskjermen: "Dager til fridag", som viser
+  antall dager til neste ferie eller offentlige fridag, med navn
+  og dato. Statskortene er nå i rekkefølgen Nye saker, Oppdrag,
+  Fristarkiv, Forfalt, Dager til fridag.
+
+v4.7.2  Mappe-sikkerhetskopi holdes à jour gjennom dagen
+───────────────────────────────────────────────────────────────
+- Dagens sikkerhetskopifil i valgt mappe overskrives nå ved hver
+  auto-backup (tidligere ble den kun skrevet ved dagens første endring
+  og var deretter frosset). Filen på disk er dermed alltid lik siste
+  tilstand. Fortsatt én datert fil per dag.
+- «Sist skrevet»-statusen i Innstillinger viser nå dato og klokkeslett.
+
+v4.7.1  Småfikser etter designrevisjon
+───────────────────────────────────────────────────────────────
+- Fix: ikonene for opp-/nedlasting i Innstillinger var usynlige —
+  manglende SVG-symboler #ti-upload og #ti-download lagt til i spriten.
+- Domeneregel håndheves nå også ved lagring: saveSakData normaliserer
+  krav uten nyhet til oppfinnelseshøyde = nei, så ugyldig tilstand
+  aldri kan persisteres (uansett om den kommer via import e.l.).
+- CLAUDE.md: konkret versjonstall fjernet — versjon grep'es alltid
+  fra APP_VERSION i filen.
+
+v4.7.0  Automatisk sikkerhetskopi + sikkerhetsherding
+───────────────────────────────────────────────────────────────
+- Automatisk sikkerhetskopi: øyeblikksbilde av alle data tas noen
+  sekunder etter hver endring (debounced); de 20 siste beholdes i
+  IndexedDB og kan gjenopprettes via Innstillinger → Sikkerhetskopiering
+  → «Vis kopier» (gjenbruker import-bekreftelsen).
+- Mappe-sikkerhetskopi (Chrome/Edge): velg en mappe, så skrives én
+  datert fil (patentdesk-backup-ÅÅÅÅ-MM-DD.json) per dag automatisk.
+  Skjules i nettlesere uten File System Access API.
+- Av/på-bryter for automatisk kopi; «Siste kopi»-status i innstillinger.
+- Ventende kopi tas umiddelbart når fanen skjules/lukkes.
+- Sikkerhet: Chart.js v4.4.1 er nå innebygd i filen (tidligere lastet
+  fra cdnjs-CDN uten SRI) — fjerner MITM-risiko og gjør appen 100 %
+  frakoblet.
+- Sikkerhet: XSS-hull tettet i stikkord-autofullfør (3 steder) — lagrede
+  stikkord og søkeord escapes nå før innsetting i HTML (highlightMatch).
+
 v4.6.5  Hjemside-tidslinje: fristarkiv og kommende viderebehandlinger vises som prikker øverst i tidslinjen (top:2px, ingen overlapp med barer); hover-popup og klikk-navigasjon støttes
         - Fix: prikker posisjonert inni track (top:2px) for å unngå clipping fra scroll-wrapper
         - Seksjon under sakslisten heter nå «Viderebehandlinger over frist» og viser kun forfalte viderebehandlinger
