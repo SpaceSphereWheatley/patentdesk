@@ -1,1 +1,8 @@
 node_modules/
+
+# OS/editor artifacts
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
