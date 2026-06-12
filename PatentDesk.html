@@ -8966,6 +8966,13 @@ function init() {
       _tlDragHappened = d.hasMoved;
       d.bar.style.opacity = '';
       d.bar.classList.remove('at-limit');
+      if (!d.hasMoved) {
+        // Ren klikk uten drag — ikke re-render (bjelken må forbli i DOM
+        // slik at click-eventet kan navigere til sakssiden).
+        d.line.style.display = d.origBuffer > 0 ? '' : 'none';
+        d.mark.style.display = d.origBuffer > 0 ? '' : 'none';
+        return;
+      }
       var newBuffer = d._pendingBuffer != null ? d._pendingBuffer : d.origBuffer;
       var finalBuffer = newBuffer === fristBuffer ? null : newBuffer;
       dispatch('CASE_FIELD_UPDATE', { id: d.caseId, patch: { caseBuffer: finalBuffer } });
