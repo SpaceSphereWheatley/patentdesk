@@ -6,6 +6,19 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.8.3  Ytelse: raskere CPC-søk, navigasjon og hjemskjerm
+───────────────────────────────────────────────────────────────
+- CPC-autofullfør: nøklene normaliseres (whitespace/store bokstaver)
+  én gang ved lasting i stedet for per nøkkel per tastetrykk —
+  merkbart raskere søk i databasen med 253 000+ symboler.
+- Navigasjonsfanene grupperer nå sakene per side i én gjennomgang
+  i stedet for å filtrere hele saklisten én gang per fane.
+- Hjemskjermens statskort teller alle kategorier i én gjennomgang
+  i stedet for fem separate filter-pass over saklisten.
+- Desc-migreringen av pt_sak_* kjøres nå bare én gang (flagg
+  pt_desc_stripped) i stedet for å iterere alle nøkler ved hver
+  oppstart.
+
 v4.8.2  Datasikkerhet: opprydding ved sletting + bedre feilvarsling
 ───────────────────────────────────────────────────────────────
 - Sletting av en sak fjerner nå også sakens detaljdata (pt_sak_*)

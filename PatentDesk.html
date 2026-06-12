@@ -2990,7 +2990,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.8.2';
+var APP_VERSION    = 'v4.8.3';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3764,6 +3764,7 @@ var cases = loadCases();
 // ── CPC-database ───────────────────────────────────
 var _cpcDb = null;
 var _cpcKeys = null;
+var _cpcKeysNorm = null; // nøkler uten whitespace, store bokstaver — for raskt prefikssøk
 var _CPC_DB_NAME = 'PatentDeskCPC';
 var _CPC_STORE   = 'classes';
 var _CPC_KEY     = 'all';
@@ -3774,9 +3775,8 @@ function cpcSearch(query) {
   var q = query.replace(/\s+/g, '').toUpperCase();
   var results = [];
   for (var i = 0; i < _cpcKeys.length && results.length < 10; i++) {
-    var key = _cpcKeys[i];
-    if (key.replace(/\s+/g, '').toUpperCase().indexOf(q) === 0) {
-      results.push({ code: key, title: _cpcDb[key].t });
+    if (_cpcKeysNorm[i].indexOf(q) === 0) {
+      results.push({ code: _cpcKeys[i], title: _cpcDb[_cpcKeys[i]].t });
     }
   }
   return results;
@@ -3795,6 +3795,8 @@ function _cpcLoaded(data) {
   }
   _cpcDb   = data;
   _cpcKeys = keys;
+  // Forhåndsnormaliser nøklene én gang, så søk slipper replace/toUpperCase per nøkkel per tastetrykk
+  _cpcKeysNorm = keys.map(function(k) { return k.replace(/\s+/g, '').toUpperCase(); });
   _cpcSetLoaded();
   _cpcHideNotice();
 }
@@ -3845,8 +3847,11 @@ function _cpcTryLoadFromDb() {
   });
 }
 
-// Migrer pt_sak_*: fjern desc fra klasser i eksisterende data
+// Migrer pt_sak_*: fjern desc fra klasser i eksisterende data.
+// Engangsjobb — flagget hindrer at alle nøkler itereres ved hver oppstart.
 (function() {
+  // NB: flagget må ikke starte med pt_sak_ — da ville oppryddingen av foreldreløse nøkler slettet det
+  try { if (localStorage.getItem('pt_desc_stripped') === '1') return; } catch(e) { return; }
   for (var i = 0; i < localStorage.length; i++) {
     var key = localStorage.key(i);
     if (!key || key.indexOf(SAK_KEY_PREFIX) !== 0) continue;
@@ -3858,6 +3863,7 @@ function _cpcTryLoadFromDb() {
       }
     } catch(e) {}
   }
+  try { localStorage.setItem('pt_desc_stripped', '1'); } catch(e) {}
 })();
 
 var stats = loadStats();
@@ -4384,13 +4390,20 @@ function sortedForPage(page) {
 
 // ── Navigasjon ─────────────────────────────────────
 function updateNav() {
+  // Grupper saker per side i én gjennomgang i stedet for ett filter per fane
+  var byPage = { ny: [], viderebehandling: [], fristarkiv: [], avsluttet: [], oppdrag: [] };
+  cases.forEach(function(c) {
+    if (c.type === 'oppdrag') { if (c.status !== 'avsluttet') byPage.oppdrag.push(c); return; }
+    var s = c.status || 'ny';
+    if (byPage[s]) byPage[s].push(c);
+  });
   document.querySelectorAll('.nav-tab').forEach(function(tab) {
     var page = tab.dataset.page;
     tab.classList.toggle('active', page === activePage);
     if (page === 'hjem' || page === 'statistikk' || page === 'innstillinger') return;
     var badge = tab.querySelector('.nav-count');
     if (!badge) { badge = document.createElement('span'); badge.className = 'nav-count'; tab.appendChild(badge); }
-    var list = casesForPage(page);
+    var list = byPage[page] || casesForPage(page);
     badge.textContent = list.length;
     // Oppdrag: farg badge etter alvorlighetsgrad
     if (page === 'oppdrag') {
@@ -5819,6 +5832,7 @@ function _cpcUpdateSettingsStatus() {
 function _cpcResetState() {
   _cpcDb = null;
   _cpcKeys = null;
+  _cpcKeysNorm = null;
   try { indexedDB.deleteDatabase(_CPC_DB_NAME); } catch(e) {}
   _cpcSetBanner(
     '<span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>' +
@@ -6620,17 +6634,20 @@ document.getElementById('sak-notes').addEventListener('input', function() {
 function renderHjem() {
   var now = new Date(); now.setHours(0,0,0,0);
 
-  // ── Statskort ──────────────────────────────────────
-  var countNy      = cases.filter(function(c) { return c.status === 'ny' && c.type !== 'oppdrag'; }).length;
-  var countOppdrag = cases.filter(function(c) { return c.type === 'oppdrag' && c.status !== 'avsluttet'; }).length;
-  var countFrist   = cases.filter(function(c) { return c.status === 'fristarkiv'; }).length;
-  // ── Forfalt-kort: kun nye saker teller som rødt ───
-  var countForfaltNy     = cases.filter(function(c) {
-    return c.status === 'ny' && c.type !== 'oppdrag' && daysUntil(effDueFor(c)) < 0;
-  }).length;
-  var countForfaltVidere = cases.filter(function(c) {
-    return c.status === 'viderebehandling' && daysUntil(effDueFor(c)) < 0;
-  }).length;
+  // ── Statskort: alle tellinger i én gjennomgang ─────
+  // Forfalt-kort: kun nye saker teller som rødt
+  var countNy = 0, countOppdrag = 0, countFrist = 0, countForfaltNy = 0, countForfaltVidere = 0;
+  cases.forEach(function(c) {
+    var isOppdrag = c.type === 'oppdrag';
+    if (isOppdrag && c.status !== 'avsluttet') countOppdrag++;
+    if (c.status === 'fristarkiv') countFrist++;
+    if (c.status === 'ny' && !isOppdrag) {
+      countNy++;
+      if (daysUntil(effDueFor(c)) < 0) countForfaltNy++;
+    } else if (c.status === 'viderebehandling' && daysUntil(effDueFor(c)) < 0) {
+      countForfaltVidere++;
+    }
+  });
 
   var elNy     = document.getElementById('home-count-ny');
   var elOpp    = document.getElementById('home-count-oppdrag');
