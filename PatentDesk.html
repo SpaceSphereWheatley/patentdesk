@@ -984,10 +984,19 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .home-card-forfalt { border-left: 3px solid var(--danger); border-radius: 0 var(--radius) var(--radius) 0; }
 .home-card-forfalt .home-card-label     { color: var(--danger); }
 .home-card-value-forfalt                { color: var(--danger); }
+.home-card-fridag { border-left: 3px solid var(--vacation-color); border-radius: 0 var(--radius) var(--radius) 0; }
+.home-card-fridag .home-card-label      { color: var(--vacation-color); }
+.home-card-fridag .home-card-value      { color: var(--vacation-color); }
 
-/* Statskort-grid — 4 kolonner */
+/* Statskort-grid — 5 kolonner */
 .home-stat-grid {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 0.25rem;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 0.25rem;
+}
+@media (max-width: 900px) {
+  .home-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .home-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* Seksjon-struktur */
@@ -1785,6 +1794,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 .tl-bar.draggable { cursor: grab; }
 .tl-bar.draggable:active { cursor: grabbing; }
 .tl-bar.at-limit { box-shadow: 0 0 0 2px var(--danger); }
+.tl-bar-overdue { background: rgba(220,38,38,0.35) !important; border: 1px solid rgba(220,38,38,0.7) !important; }
 .tl-bar-label {
   position: absolute; top: 50%; transform: translateY(-50%);
   left: 8px; right: 4px; font-size: 0.75rem; font-weight: 600;
@@ -1841,6 +1851,15 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 .tl-dot:hover { opacity: 0.7; }
 .tl-dot-fristarkiv    { background: var(--accent-dim); border: 1px solid var(--accent); }
 .tl-dot-videre        { background: rgba(99,102,241,0.45); border: 1px solid rgba(99,102,241,0.7); }
+.tl-dot-overdue       { background: rgba(220,38,38,0.5) !important; border: 1px solid var(--danger) !important; }
+.tl-overdue-pin {
+  position: absolute; top: 4px; left: 1px; height: 40px; width: 24px;
+  border-radius: 5px; background: rgba(220,38,38,0.18); border: 1px solid rgba(220,38,38,0.6);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--danger); font-weight: 700; font-size: 0.8rem;
+  cursor: default; z-index: 3;
+}
+.tl-legend-swatch-overdue { background: rgba(220,38,38,0.4); border: 1px solid rgba(220,38,38,0.7); }
 .tl-bar-draft {
   position: absolute; top: 4px; height: 40px; border-radius: 5px;
   background: rgba(200,169,110,0.25); border: 1px dashed rgba(200,169,110,0.65);
@@ -1993,7 +2012,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
           <h1 class="page-title">Oversikt</h1>
         </section>
 
-        <!-- Statskort: 4 kolonner + belegg-indikator -->
+        <!-- Statskort: 5 kolonner + belegg-indikator -->
         <div class="home-stat-grid" id="home-stat-grid">
           <div class="home-card home-card-ny home-card-clickable" id="home-card-ny">
             <div class="home-card-label">Nye saker</div>
@@ -2014,6 +2033,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
             <div class="home-card-label">Forfalt</div>
             <div class="home-card-value home-card-value-forfalt" id="home-count-forfalt">—</div>
             <div class="home-card-sub" id="home-forfalt-sub">nye saker over fristen</div>
+          </div>
+          <div class="home-card home-card-fridag" id="home-card-fridag">
+            <div class="home-card-label">Dager til fridag</div>
+            <div class="home-card-value" id="home-count-fridag">—</div>
+            <div class="home-card-sub" id="home-fridag-sub">—</div>
           </div>
         </div>
 
@@ -2965,7 +2989,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.7.6';
+var APP_VERSION    = 'v4.8.1';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3276,24 +3300,27 @@ function easterSunday(year) {
 }
 
 var _holidayCache = {};
+// Returns [{date:'YYYY-MM-DD', name:'...'}] for offentlige fridager og fri-aftener.
 function getNorwegianHolidays(year) {
   if (_holidayCache[year]) return _holidayCache[year];
   var e = easterSunday(year);
   function addDays(d, n) { var r = new Date(d); r.setDate(r.getDate() + n); return r; }
   function fmt(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
   var days = [
-    fmt(new Date(year,0,1)),   // nyttårsdag
-    fmt(addDays(e,-3)),        // skjærtorsdag
-    fmt(addDays(e,-2)),        // langfredag
-    fmt(e),                    // påskedag
-    fmt(addDays(e,1)),         // 2. påskedag
-    fmt(new Date(year,4,1)),   // arbeidernes dag
-    fmt(new Date(year,4,17)),  // grunnlovsdag
-    fmt(addDays(e,39)),        // Kristi himmelfartsdag
-    fmt(addDays(e,49)),        // 1. pinsedag
-    fmt(addDays(e,50)),        // 2. pinsedag
-    fmt(new Date(year,11,25)), // 1. juledag
-    fmt(new Date(year,11,26))  // 2. juledag
+    {date: fmt(new Date(year,0,1)),   name: 'Nyttårsdag'},
+    {date: fmt(addDays(e,-3)),        name: 'Skjærtorsdag'},
+    {date: fmt(addDays(e,-2)),        name: 'Langfredag'},
+    {date: fmt(e),                    name: '1. påskedag'},
+    {date: fmt(addDays(e,1)),         name: '2. påskedag'},
+    {date: fmt(new Date(year,4,1)),   name: 'Arbeidernes dag'},
+    {date: fmt(new Date(year,4,17)),  name: 'Grunnlovsdagen'},
+    {date: fmt(addDays(e,39)),        name: 'Kristi himmelfartsdag'},
+    {date: fmt(addDays(e,49)),        name: '1. pinsedag'},
+    {date: fmt(addDays(e,50)),        name: '2. pinsedag'},
+    {date: fmt(new Date(year,11,24)), name: 'Julaften'},
+    {date: fmt(new Date(year,11,25)), name: '1. juledag'},
+    {date: fmt(new Date(year,11,26)), name: '2. juledag'},
+    {date: fmt(new Date(year,11,31)), name: 'Nyttårsaften'}
   ];
   _holidayCache[year] = days;
   return days;
@@ -3303,9 +3330,26 @@ function isNonWorkday(date) {
   var dow = date.getDay();
   if (dow === 0 || dow === 6) return true;
   var dateStr = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
-  if (getNorwegianHolidays(date.getFullYear()).indexOf(dateStr) !== -1) return true;
+  if (getNorwegianHolidays(date.getFullYear()).some(function(h) { return h.date === dateStr; })) return true;
   if (vacations && vacations.some(function(v) { return dateStr >= v.from && dateStr <= v.to; })) return true;
   return false;
+}
+
+// Finner neste fridag (offentlig fridag eller ferie) fra og med i dag.
+// Returnerer {days, label, date} eller null hvis ingen funnet innen 2 år.
+function getNextHoliday() {
+  var today = new Date(); today.setHours(0,0,0,0);
+  function fmt(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  for (var i = 0; i <= 730; i++) {
+    var d = new Date(today); d.setDate(d.getDate() + i);
+    if (d.getDay() === 0 || d.getDay() === 6) continue; // vanlige helger teller ikke
+    var dateStr = fmt(d);
+    var holiday = getNorwegianHolidays(d.getFullYear()).find(function(h) { return h.date === dateStr; });
+    if (holiday) return { days: i, label: holiday.name, date: dateStr };
+    var vac = vacations.find(function(v) { return dateStr >= v.from && dateStr <= v.to; });
+    if (vac) return { days: i, label: vac.label || 'Ferie', date: dateStr };
+  }
+  return null;
 }
 
 function workDaysUntil(dateStr) {
@@ -6629,6 +6673,16 @@ function renderHjem() {
   var forfaltCard = document.getElementById('home-card-forfalt');
   if (forfaltCard) forfaltCard.classList.toggle('home-card-overdue-active', countForfaltNy > 0);
 
+  // ── Dager til fridag-kort ──────────────────────────
+  var elFridag    = document.getElementById('home-count-fridag');
+  var elFridagSub = document.getElementById('home-fridag-sub');
+  var nextHoliday = getNextHoliday();
+  if (nextHoliday && elFridag && elFridagSub) {
+    elFridag.textContent = nextHoliday.days === 0 ? 'I dag' : String(nextHoliday.days);
+    var hd = new Date(nextHoliday.date + 'T00:00:00');
+    elFridagSub.textContent = hd.toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' }) + ' · ' + nextHoliday.label;
+  }
+
   // ── Tidslinje + belegg ────────────────────────────
   renderTimeline();
   renderBeleggCard();
@@ -6743,7 +6797,7 @@ function buildTimelineDiv(opts) {
     return cas.status === statusFilter;
   });
 
-  var busyRanges = activeCases.map(function(cas) {
+  var allRanges = activeCases.map(function(cas) {
     var isOp      = cas.type === 'oppdrag';
     var effDue    = effDueFor(cas);
     var due       = dueDateTime(effDue);
@@ -6758,17 +6812,24 @@ function buildTimelineDiv(opts) {
       actualEnd:  actEnd,
       hasBuffer:  !isOp && cas.dueDate !== effDue,
       isOppdrag:  isOp,
+      isOverdue:  effEnd < 0,
       id:         cas.id,
       caseNumber: cas.caseNumber,
       title:      cas.title || '',
       dueDate:    cas.dueDate
     };
-  }).filter(function(r) { return r.end >= -PAST && r.start <= HORIZON; });
+  });
+
+  // Saker som er mer enn PAST dager over frist — vises ikke som egen bar,
+  // men telles og listes i en "forfalt"-pin ved venstre kant av sporet.
+  var overdueBeyond = allRanges.filter(function(r) { return r.end < -PAST; });
+
+  var busyRanges = allRanges.filter(function(r) { return r.end >= -PAST && r.start <= HORIZON; });
 
   var holidays = [];
   for (var yi = 0; yi <= Math.ceil(HORIZON / 365); yi++) {
-    getNorwegianHolidays(today.getFullYear() + yi).forEach(function(dateStr) {
-      var day = Math.round((new Date(dateStr + 'T00:00:00') - today) / 86400000);
+    getNorwegianHolidays(today.getFullYear() + yi).forEach(function(h) {
+      var day = Math.round((new Date(h.date + 'T00:00:00') - today) / 86400000);
       if (day >= 0 && day <= HORIZON) holidays.push(day);
     });
   }
@@ -6826,7 +6887,7 @@ function buildTimelineDiv(opts) {
     var barH  = r.hasAnyOverlap ? HALF_BAR : FULL_BAR;
     var topPx = 4 + r.row * (barH + GAP);
     var bar = document.createElement('div');
-    bar.className = 'tl-bar' + (r.isOppdrag ? ' tl-bar-oppdrag' : '') + (opts.draggable && !r.isOppdrag ? ' draggable' : '');
+    bar.className = 'tl-bar' + (r.isOppdrag ? ' tl-bar-oppdrag' : '') + (opts.draggable && !r.isOppdrag ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '');
     var visStart = Math.max(-PAST, r.start);
     var visEnd   = Math.min(HORIZON, r.end);
     bar.style.left   = pct(visStart);
@@ -6948,9 +7009,10 @@ function buildTimelineDiv(opts) {
     if (!cas.dueDate) return;
     var due = dueDateTime(cas.dueDate);
     var d   = (due - now) / 86400000;
-    if (d < -PAST || d > HORIZON) return;
+    if (d < -PAST) { overdueBeyond.push({ end: d, caseNumber: cas.caseNumber, title: cas.title || '', dueDate: cas.dueDate }); return; }
+    if (d > HORIZON) return;
     var dot = document.createElement('div');
-    dot.className = 'tl-dot ' + (cas.status === 'fristarkiv' ? 'tl-dot-fristarkiv' : 'tl-dot-videre');
+    dot.className = 'tl-dot ' + (cas.status === 'fristarkiv' ? 'tl-dot-fristarkiv' : 'tl-dot-videre') + (d < 0 ? ' tl-dot-overdue' : '');
     dot.style.left = pct(d);
     dot.dataset.cn    = cas.caseNumber;
     dot.dataset.title = cas.title || '';
@@ -6958,6 +7020,18 @@ function buildTimelineDiv(opts) {
     dot.dataset.due   = cas.dueDate;
     track.appendChild(dot);
   });
+
+  // ── Forfalt-pin: saker mer enn PAST dager over frist, festet til venstre kant ──
+  if (overdueBeyond.length) {
+    var pin = document.createElement('div');
+    pin.className = 'tl-overdue-pin';
+    pin.textContent = '‹' + overdueBeyond.length;
+    var pinLines = overdueBeyond
+      .sort(function(a, b) { return a.end - b.end; })
+      .map(function(r) { return r.caseNumber + ' — ' + Math.abs(Math.floor(r.end)) + 'd forfalt'; });
+    pin.title = (overdueBeyond.length === 1 ? '1 sak over frist:\n' : overdueBeyond.length + ' saker over frist:\n') + pinLines.join('\n');
+    track.appendChild(pin);
+  }
 
   return track;
 }
@@ -7023,7 +7097,8 @@ function buildTimelineWidget(hostEl, opts) {
   legend.innerHTML =
     '<span class="tl-legend-item"><span class="tl-legend-swatch tl-legend-swatch-task"></span>Opptatt</span>' +
     '<span class="tl-legend-item"><span class="tl-legend-swatch tl-legend-swatch-vac"></span>Ferie</span>' +
-    '<span class="tl-legend-item"><span class="tl-legend-swatch tl-legend-swatch-buffer"></span>Fridag</span>';
+    '<span class="tl-legend-item"><span class="tl-legend-swatch tl-legend-swatch-buffer"></span>Fridag</span>' +
+    '<span class="tl-legend-item"><span class="tl-legend-swatch tl-legend-swatch-overdue"></span>Forfalt</span>';
   if (lblBufId) {
     var bufItem = document.createElement('span');
     bufItem.className = 'tl-legend-item';

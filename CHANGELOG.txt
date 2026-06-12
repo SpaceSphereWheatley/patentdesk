@@ -6,7 +6,7 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
-v4.7.6  Tidslinje: klikk-fiks for søknader + saksfrist i hover-info
+v4.8.1  Tidslinje: klikk-fiks for søknader + saksfrist i hover-info
 ───────────────────────────────────────────────────────────────
 - Klikk på en søknad-bjelke på hjemskjermens tidslinje åpner nå
   sakssiden (navigering skjer direkte ved museopp før evt.
@@ -42,6 +42,22 @@ v4.7.3  Fiks: tidslinje hover-info og klikk-navigasjon
   bundet til tidslinje-elementer før disse ble bygget i DOM. Nå
   brukes event-delegering på document, slik at hover og klikk
   fungerer igjen på alle tidslinjer.
+
+v4.8.0  Forfalte saker i tidslinjen + nytt fridag-kort
+───────────────────────────────────────────────────────────────
+- Saker som er over frist forsvinner ikke lenger fra tidslinjen.
+  Forfalte saker (innenfor 14-dagersvinduet) vises nå med rød
+  farge på bar/prikk. Saker som er mer enn 14 dager over frist
+  festes som en rød "‹N forfalt"-markør ved venstre kant, med
+  saksnummer og antall dager forfalt ved hover. Ny "Forfalt"-
+  oppføring i tegnforklaringen.
+- Julaften (24. des) og nyttårsaften (31. des) er lagt til som
+  fridager, i tillegg til de 12 offisielle røde dagene (inkl.
+  påske og jul som allerede var komplette).
+- Nytt statskort på hjemskjermen: "Dager til fridag", som viser
+  antall dager til neste ferie eller offentlige fridag, med navn
+  og dato. Statskortene er nå i rekkefølgen Nye saker, Oppdrag,
+  Fristarkiv, Forfalt, Dager til fridag.
 
 v4.7.2  Mappe-sikkerhetskopi holdes à jour gjennom dagen
 ───────────────────────────────────────────────────────────────
