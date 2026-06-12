@@ -2,7 +2,8 @@
   "name": "patentdesk",
   "private": true,
   "scripts": {
-    "lint": "eslint PatentDesk.html"
+    "lint": "eslint PatentDesk.html",
+    "test": "node --test test/*.test.js"
   },
   "devDependencies": {
     "@html-eslint/eslint-plugin": "^0.24.1",
