@@ -1,5 +1,60 @@
 # PatentDesk
 
+Offlinebasert saksbehandlingsverktøy for patentgranskere. Enkeltfil med
+HTML/CSS/JS — ingen byggprosess, ingen avhengigheter, ingen server.
+
+## Kom i gang
+
+1. Last ned [`PatentDesk.html`](PatentDesk.html)
+2. Åpne filen i en nettleser (Chrome eller Edge anbefales — mappesikkerhetskopi
+   krever File System Access API)
+3. Det er alt. Alt kjører lokalt; ingenting forlater maskinen din.
+
+Valgfritt: last inn `cpc_v2.json` (CPC-klassifikasjonsdatabase med 253 000+
+symboler) via banneret i appen eller via Innstillinger for å aktivere
+autofullføring av klassifikasjon. Den lagres i nettleserens IndexedDB.
+
+## Hvordan data lagres
+
+All data lever i nettleseren, begrenset til filens opprinnelse:
+
+| Lager | Innhold |
+|---|---|
+| `localStorage` (`pt_cases`) | Sakliste — statuser, frister, etiketter |
+| `localStorage` (`pt_sak_<id>`) | Per-sak-detaljer — krav, CPC-klasser, sjekkliste |
+| `localStorage` (diverse `pt_*` nøkler) | Innstillinger: mål, ferieavsnitt, dokumentrot, osv. |
+| IndexedDB `PatentDeskCPC` | CPC-klassifikasjonsdatabase (valgfritt) |
+| IndexedDB `patentdesk_backups` | Automatiske øyeblikksbilder (20 nyeste) |
+
+**Viktig:** Hvis du sletter nettstedsdata i nettleseren, slettes alt. Bruk
+Innstillinger → Sikkerhetskopi for å eksportere et JSON-øyeblikksbilde jevnlig,
+eller aktiver den automatiske mappesikkerhetsopien (Chrome/Edge) som skriver
+én datert fil per dag til en mappe du velger. CPC-databasen er ikke inkludert
+i sikkerhetskopier — last inn `cpc_v2.json` på nytt etter å ha gjenopprettet
+på en ny maskin.
+
+## Arbeidsflyt
+
+Saker beveger seg gjennom: `Ny → Fristarkiv ↔ Viderebehandling → Avsluttet`,
+pluss et eget `Oppdrag`-spor. Krav vurderes per-krav for nyhet og
+oppfinnelseshøyde; et krav uten nyhet kan aldri ha oppfinnelseshøyde, og
+vurderingene kaskaderer fra uavhengige krav til deres avhengige.
+
+## Utvikling
+
+Enkeltfildesignet er intensjonalt: ikke del opp filen eller legg til
+kjøringstidsavhengigheter. Se [`CLAUDE.md`](CLAUDE.md) for konvensjoner og
+[`CHANGELOG.txt`](CHANGELOG.txt) for versjonshistorikk.
+
+```bash
+npm ci        # kun utviklingsverktøy (ESLint)
+npm run lint  # linter både innebygd JS og HTML-struktur
+```
+
+---
+
+# PatentDesk (English)
+
 Offline patent case management tool for patent examiners. Single-file
 HTML/CSS/JS — no build step, no dependencies, no server.
 
