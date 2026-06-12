@@ -6,6 +6,22 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.9.0  Fristvarsel-banner + globalt søk (Ctrl+K)
+───────────────────────────────────────────────────────────────
+- Nytt fristvarsel-banner øverst på hjemskjermen: viser antall
+  forfalte saker og frister som forfaller innen 7 dager, med de
+  inntil 5 mest presserende sakene som klikkbare rader (forfalte
+  først). Rød venstrekant ved forfalte, gull ved kun kommende.
+  «Lukk» skjuler banneret resten av dagen (pt_digest_hidden).
+  Teller aktive saker, oppdrag og fristarkiv med forfallsdato.
+- Nytt globalt søk: Ctrl+K (eller Cmd+K) åpner et søkefelt som
+  søker i saksnummer, tittel, stikkord og notater på tvers av alle
+  arbeidsflyt-statuser. Beste treff først (saksnummer-prefiks >
+  saksnummer > tittel > stikkord > notater), maks 10 treff.
+  Piltaster velger, Enter åpner saken, Esc lukker.
+- Begge deler er tastatur- og skjermleservennlige (role, aria-label,
+  fokusmarkering) i tråd med v4.8.4-arbeidet.
+
 v4.8.4  Tilgjengelighet: skjermleser- og tastaturstøtte
 ───────────────────────────────────────────────────────────────
 - Alle modaler har nå tilgjengelig navn (aria-labelledby koblet til
