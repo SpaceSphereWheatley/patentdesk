@@ -6,6 +6,24 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.10.1 Robusthet: sekvensielle migrasjoner, IndexedDB-herding, flerfane-vakt
+───────────────────────────────────────────────────────────────
+- Schema-migrasjoner er nå et sekvensielt register (SCHEMA_MIGRATIONS[n]
+  løfter fra versjon n til n+1). Hvert steg lagrer versjonen umiddelbart,
+  så delvis framgang bevares; ved feil stopper kjeden og prøves på nytt
+  ved neste oppstart. Nye versjonsløft slottes inn uten å røre eksisterende
+  steg.
+- IndexedDB-åpning (både CPC-databasen og sikkerhetskopiene) tåler nå at
+  indexedDB.open kaster synkront (privat modus / blokkert lagring) — feilen
+  rutes til callbacken i stedet for å krasje oppstarten. Objektlagre opprettes
+  idempotent, og databasene har eksplisitte versjonskonstanter for framtidige
+  strukturendringer.
+- Flerfane-vakt: dersom saksdata endres i en annen åpen fane, varsles brukeren
+  (én gang) om å laste siden på nytt for å unngå at denne fanens lagring
+  overskriver den andre fanens endringer.
+- Sikkerhet: angre-toasten bygges nå med textContent i stedet for innerHTML,
+  så et saksnummer som inneholder HTML ikke lenger kan injiseres i DOM-en.
+
 v4.10.0 Fristvarsel-banner + globalt søk (Ctrl+K)
 ───────────────────────────────────────────────────────────────
 - Nytt fristvarsel-banner øverst på hjemskjermen: viser antall

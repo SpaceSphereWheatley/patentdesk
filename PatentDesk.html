@@ -3055,7 +3055,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.10.0';
+var APP_VERSION    = 'v4.10.1';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3533,13 +3533,14 @@ function buildCasePath(caseNumber) {
 // ════════════════════════════════════════════════════════════════════════════
 
 // ── Migrasjon v3 → v4 ──────────────────────────────
-function migrateAll() {
-  var v = parseInt(localStorage.getItem('pt_schema_version') || '0', 10);
-  if (v >= SCHEMA_VERSION) return;
-
-  // Oppgrader history[] i pt_cases: { status, date } → { type, date, from, to }
-  var migrationOk = true;
-  try {
+// Migrasjoner kjøres sekvensielt: SCHEMA_MIGRATIONS[n] løfter data fra
+// schema-versjon n til n+1. Legg til nye steg her når SCHEMA_VERSION økes —
+// f.eks. SCHEMA_MIGRATIONS[4] for v4 → v5. Hvert steg kaster ved feil; da
+// stopper kjeden og versjonen blir stående på siste vellykkede steg, slik at
+// den prøves på nytt ved neste oppstart.
+var SCHEMA_MIGRATIONS = {
+  // v3 → v4: history[] { status, date } → { type, date, from, to }; rydd utdaterte nøkler
+  3: function() {
     var rawCases = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     var upgraded = rawCases.map(function(c) {
       if (!Array.isArray(c.history)) return c;
@@ -3550,21 +3551,30 @@ function migrateAll() {
       return c;
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(upgraded));
-  } catch(e) {
-    migrationOk = false;
-    console.warn('PatentDesk: Migrasjon av historikk feilet', e);
-    showToast('✗ Datamigrering feilet — eldre data er urørt, prøver igjen neste gang', true);
+    localStorage.removeItem(AUTOSAVE_KEY);
+    localStorage.removeItem('pt_cpc_welcomed');
   }
+};
 
-  // Slett utdaterte nøkler
-  localStorage.removeItem(AUTOSAVE_KEY);
-  localStorage.removeItem('pt_cpc_welcomed');
-
-  // Sett schema-versjon kun ved vellykket migrering, slik at den prøves på nytt ved neste oppstart
-  if (migrationOk) {
-    try { localStorage.setItem('pt_schema_version', String(SCHEMA_VERSION)); } catch(e) {}
-    console.log('PatentDesk: Migrert til schema v' + SCHEMA_VERSION);
+function migrateAll() {
+  var v = parseInt(localStorage.getItem('pt_schema_version') || '0', 10);
+  // Data uten versjonsnøkkel er pre-v4 (formatet før schema-versjonering): behandles som v3.
+  if (!v) v = 3;
+  while (v < SCHEMA_VERSION) {
+    var step = SCHEMA_MIGRATIONS[v];
+    if (step) {
+      try {
+        step();
+      } catch(e) {
+        console.warn('PatentDesk: Migrasjon v' + v + ' → v' + (v + 1) + ' feilet', e);
+        showToast('✗ Datamigrering feilet — eldre data er urørt, prøver igjen neste gang', true);
+        return; // stopp; versjonen blir stående på siste vellykkede steg
+      }
+    }
+    v++;
+    try { localStorage.setItem('pt_schema_version', String(v)); } catch(e) {}
   }
+  console.log('PatentDesk: Schema på v' + SCHEMA_VERSION);
 }
 
 // ── Saksdetaljer ───────────────────────────────────
@@ -3834,6 +3844,7 @@ var _cpcKeysNorm = null; // nøkler uten whitespace, store bokstaver — for ras
 var _CPC_DB_NAME = 'PatentDeskCPC';
 var _CPC_STORE   = 'classes';
 var _CPC_KEY     = 'all';
+var _CPC_VERSION = 1; // øk ved framtidige endringer i CPC-lagerets struktur
 
 // ── CPC-søk ────────────────────────────────────────
 function cpcSearch(query) {
@@ -3869,12 +3880,17 @@ function _cpcLoaded(data) {
 
 // ── IndexedDB helpers ──────────────────────────────
 function _cpcOpenDb(cb) {
-  var req = indexedDB.open(_CPC_DB_NAME, 1);
+  var req;
+  // indexedDB.open kan kaste synkront (privat modus, blokkert lagring)
+  try { req = indexedDB.open(_CPC_DB_NAME, _CPC_VERSION); }
+  catch(e) { cb(e); return; }
   req.onupgradeneeded = function(e) {
-    e.target.result.createObjectStore(_CPC_STORE);
+    // Idempotent oppretting, så fremtidige versjonsløft ikke kaster «store finnes allerede»
+    var db = e.target.result;
+    if (!db.objectStoreNames.contains(_CPC_STORE)) db.createObjectStore(_CPC_STORE);
   };
   req.onsuccess = function(e) { cb(null, e.target.result); };
-  req.onerror   = function(e) { cb(e.target.error); };
+  req.onerror   = function(e) { cb((e.target && e.target.error) || new Error('IndexedDB utilgjengelig')); };
 }
 
 function _cpcSaveToDb(data, cb) {
@@ -5093,6 +5109,7 @@ var BACKUP_ENABLED_KEY   = 'pt_backup_enabled';
 var BACKUP_LAST_KEY      = 'pt_backup_last';
 var BACKUP_LAST_FILE_KEY = 'pt_backup_last_file_date';
 var _BK_DB_NAME       = 'patentdesk_backups';
+var _BK_VERSION       = 1; // øk ved framtidige endringer i backup-lagerets struktur
 var _BK_SNAP_STORE    = 'snapshots';
 var _BK_MISC_STORE    = 'misc';
 var _BK_MAX_SNAPSHOTS = 20;
@@ -5104,7 +5121,10 @@ var _bkDirHandle = null;
 function backupEnabled() { return localStorage.getItem(BACKUP_ENABLED_KEY) !== '0'; }
 
 function _bkOpenDb(cb) {
-  var req = indexedDB.open(_BK_DB_NAME, 1);
+  var req;
+  // indexedDB.open kan kaste synkront (privat modus, blokkert lagring)
+  try { req = indexedDB.open(_BK_DB_NAME, _BK_VERSION); }
+  catch(e) { cb(e); return; }
   req.onupgradeneeded = function(e) {
     var db = e.target.result;
     if (!db.objectStoreNames.contains(_BK_SNAP_STORE)) db.createObjectStore(_BK_SNAP_STORE);
@@ -5552,9 +5572,16 @@ function showUndoToast(msg) {
   clearTimeout(undoToastTimer);
   var t = document.createElement('div');
   t.id = 'undo-toast'; t.className = 'undo-toast';
-  t.innerHTML = '<span>' + msg + '</span><button id="btn-undo-action">Angre</button>';
+  // Bygg trygt: msg inneholder brukerangitt saksnummer, så det settes via textContent
+  var span = document.createElement('span');
+  span.textContent = msg;
+  var undoBtn = document.createElement('button');
+  undoBtn.id = 'btn-undo-action';
+  undoBtn.textContent = 'Angre';
+  t.appendChild(span);
+  t.appendChild(undoBtn);
   document.body.appendChild(t);
-  document.getElementById('btn-undo-action').addEventListener('click', function() {
+  undoBtn.addEventListener('click', function() {
     if (!undoSnapshot) return;
     dispatch('CASE_UNDO');
     clearTimeout(undoToastTimer);
@@ -8009,6 +8036,23 @@ function initTagAutocomplete(inputEl) {
 
 // ── Escape ─────────────────────────────────────────
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAllBackdrops(); });
+
+// ── Flerfane-vakt ──────────────────────────────────
+// storage-eventet fyrer kun i ANDRE faner enn den som skrev. Endres saksdata i
+// en annen fane, er denne fanens minne utdatert — og en lagring herfra ville
+// overskrevet den andre fanens endringer (siste-skriver-vinner). Vi varsler
+// (én gang) i stedet for å auto-laste på nytt, for ikke å forkaste pågående
+// redigering i denne fanen.
+var _multiTabWarned = false;
+window.addEventListener('storage', function(e) {
+  if (_multiTabWarned || !e.key) return;
+  // Bare egentlig saksdata teller — ikke backup-status, schema-flagg e.l.
+  var isDataKey = e.key === STORAGE_KEY || e.key === STATS_KEY ||
+                  e.key === VACATION_KEY || e.key.indexOf(SAK_KEY_PREFIX) === 0;
+  if (!isDataKey) return;
+  _multiTabWarned = true;
+  showToast('⚠ Dataene ble endret i en annen fane. Last inn siden på nytt for å unngå å overskrive.', true);
+});
 
 // ── Globalt søk (Ctrl+K) ───────────────────────────
 var _searchHits = [], _searchSel = 0;
