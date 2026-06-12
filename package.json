@@ -4,7 +4,8 @@
   "scripts": {
     "lint": "npm run lint:js && npm run lint:html",
     "lint:js": "eslint PatentDesk.html",
-    "lint:html": "eslint --no-eslintrc -c .eslintrc-html.json PatentDesk.html"
+    "lint:html": "eslint --no-eslintrc -c .eslintrc-html.json PatentDesk.html",
+    "test": "node --test test/*.test.js"
   },
   "devDependencies": {
     "@html-eslint/eslint-plugin": "^0.24.1",

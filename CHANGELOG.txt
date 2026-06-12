@@ -6,7 +6,7 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
-v4.9.0  Fristvarsel-banner + globalt søk (Ctrl+K)
+v4.10.0 Fristvarsel-banner + globalt søk (Ctrl+K)
 ───────────────────────────────────────────────────────────────
 - Nytt fristvarsel-banner øverst på hjemskjermen: viser antall
   forfalte saker og frister som forfaller innen 7 dager, med de
@@ -21,6 +21,20 @@ v4.9.0  Fristvarsel-banner + globalt søk (Ctrl+K)
   Piltaster velger, Enter åpner saken, Esc lukker.
 - Begge deler er tastatur- og skjermleservennlige (role, aria-label,
   fokusmarkering) i tråd med v4.8.4-arbeidet.
+- claimResultLabel/claimResultClass (fjernet som død kode i v4.8.2)
+  er gjeninnført: de uttrykker domenereglene per krav og holdes i
+  live som kjørbar dokumentasjon via test/claimRules.test.js.
+
+v4.9.0  Oppdrag er nå en ren sakstype med egne statuser (ny/avsluttet)
+───────────────────────────────────────────────────────────────
+- Fjernet 'oppdrag' som statusverdi — type-feltet alene avgjør om
+  en sak er et oppdrag.
+- Datamigrasjon: eksisterende oppdrag med status='oppdrag'
+  normaliseres til status='ny' ved oppstart.
+- Detaljvisning: statusknapper for oppdrag viser «Aktiv» og
+  «Avsluttet» (ikke «Oppdrag»).
+- Kortvisning: oppdrag viser «Aktiv» eller «Avsluttet» basert på
+  faktisk status.
 
 v4.8.4  Tilgjengelighet: skjermleser- og tastaturstøtte
 ───────────────────────────────────────────────────────────────
