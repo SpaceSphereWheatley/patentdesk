@@ -1,0 +1,17 @@
+{
+  "root": true,
+  "overrides": [
+    {
+      "files": ["*.html"],
+      "parser": "@html-eslint/parser",
+      "plugins": ["@html-eslint"],
+      "rules": {
+        "@html-eslint/no-duplicate-id": "error",
+        "@html-eslint/no-duplicate-attrs": "error",
+        "@html-eslint/no-obsolete-tags": "error",
+        "@html-eslint/require-lang": "error",
+        "@html-eslint/require-title": "error"
+      }
+    }
+  ]
+}

@@ -974,6 +974,41 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 }
 .home-card-clickable { cursor: pointer; }
 .home-card-clickable:hover { border-color: var(--border2); }
+.home-card-clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── Fristvarsel-banner (hjem) ── */
+.frist-digest { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--danger);
+  border-radius: 8px; padding: 0.7rem 1rem 0.55rem; margin-bottom: 1.1rem; }
+.frist-digest-soon-only { border-left-color: var(--accent); }
+.frist-digest-hdr { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.35rem; }
+.frist-digest-title { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.frist-digest-close { background: transparent; border: none; color: var(--muted); cursor: pointer;
+  font-size: 0.85rem; padding: 2px 6px; border-radius: 4px; }
+.frist-digest-close:hover { color: var(--text); background: var(--bg2); }
+.frist-digest-row { display: flex; gap: 0.7rem; align-items: baseline; padding: 0.26rem 0.35rem;
+  border-radius: 5px; cursor: pointer; font-size: 0.82rem; }
+.frist-digest-row:hover { background: var(--bg2); }
+.frist-digest-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.frist-digest-cn { font-weight: 600; color: var(--text); white-space: nowrap; }
+.frist-digest-t { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frist-digest-days { white-space: nowrap; font-weight: 600; }
+.frist-digest-days-overdue { color: var(--danger); }
+.frist-digest-days-soon    { color: var(--accent-dim); }
+
+/* ── Globalt søk (Ctrl+K) ── */
+.search-modal { width: 560px; max-width: 92vw; align-self: flex-start; margin-top: 11vh; padding: 0; }
+.search-input-wrap { padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--border); }
+.search-results { max-height: 50vh; overflow-y: auto; padding: 0.3rem; }
+.search-hit { display: flex; gap: 0.7rem; align-items: baseline; padding: 0.45rem 0.6rem;
+  border-radius: 6px; cursor: pointer; font-size: 0.84rem; }
+.search-hit:hover { background: var(--bg2); }
+.search-hit-sel { background: var(--bg2); box-shadow: inset 2px 0 0 var(--accent); }
+.search-hit-cn { font-weight: 600; color: var(--text); white-space: nowrap; }
+.search-hit-t { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-hit-meta { color: var(--muted); white-space: nowrap; font-size: 0.76rem; }
+.search-empty { padding: 0.8rem 0.7rem; color: var(--muted); font-size: 0.82rem; }
+.search-hint-bar { padding: 0.45rem 0.8rem; border-top: 1px solid var(--border); color: var(--muted);
+  font-size: 0.72rem; }
 .home-card-label { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .home-card-value { font-family: var(--font-head); font-size: 2rem; font-weight: 600; color: var(--text); line-height: 1; margin: 6px 0 4px; }
 .home-card-sub   { font-size: 0.72rem; color: var(--muted); }
@@ -2012,19 +2047,22 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
           <h1 class="page-title">Oversikt</h1>
         </section>
 
+        <!-- Fristvarsel-banner -->
+        <div class="frist-digest" id="frist-digest" style="display:none;" role="region" aria-label="Fristvarsel"></div>
+
         <!-- Statskort: 5 kolonner + belegg-indikator -->
         <div class="home-stat-grid" id="home-stat-grid">
-          <div class="home-card home-card-ny home-card-clickable" id="home-card-ny">
+          <div class="home-card home-card-ny home-card-clickable" id="home-card-ny" role="button" tabindex="0">
             <div class="home-card-label">Nye saker</div>
             <div class="home-card-value" id="home-count-ny">—</div>
             <div class="home-card-sub">aktive søknader</div>
           </div>
-          <div class="home-card home-card-clickable" id="home-card-oppdrag">
+          <div class="home-card home-card-clickable" id="home-card-oppdrag" role="button" tabindex="0">
             <div class="home-card-label">Oppdrag</div>
             <div class="home-card-value" id="home-count-oppdrag">—</div>
             <div class="home-card-sub">aktive oppdrag</div>
           </div>
-          <div class="home-card home-card-fristarkiv home-card-clickable" id="home-card-fristarkiv">
+          <div class="home-card home-card-fristarkiv home-card-clickable" id="home-card-fristarkiv" role="button" tabindex="0">
             <div class="home-card-label">Fristarkiv</div>
             <div class="home-card-value" id="home-count-fristarkiv">—</div>
             <div class="home-card-sub">venter på frist</div>
@@ -2410,7 +2448,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
             </div>
             <button class="btn-secondary btn-sm" id="btn-sak-history" title="Vis historikk"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Historikk</button>
             <div class="sak-more-wrap" style="position:relative;">
-              <button class="btn-secondary btn-sm btn-card-more" id="btn-sak-more" title="Flere handlinger">⋯</button>
+              <button class="btn-secondary btn-sm btn-card-more" id="btn-sak-more" title="Flere handlinger" aria-label="Flere handlinger">⋯</button>
             </div>
             <div class="sak-due-hero" id="sak-due-hero" style="display:none;">
               <div class="sak-due-hero-eff" id="sak-due-hero-eff"></div>
@@ -2472,7 +2510,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               <span class="sak-info-value" id="sak-filing-date"></span>
             </div>
             <div class="sak-info-field">
-              <label class="sak-info-label">Antall krav</label>
+              <label class="sak-info-label" for="sak-num-claims">Antall krav</label>
               <input class="field-input sak-info-input input-w100" id="sak-num-claims" type="number" min="1" max="200" placeholder="f.eks. 10" />
             </div>
             <div class="sak-info-field" id="sak-duration-field" style="display:none;">
@@ -2489,7 +2527,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               </div>
             </div>
             <div class="sak-info-field sak-info-field-full">
-              <label class="sak-info-label">Stikkord</label>
+              <label class="sak-info-label" for="sak-tags">Stikkord</label>
               <div class="sak-tags-wrap" id="sak-tags-wrap">
                 <div class="tag-pill-editor" id="sak-tags-editor">
                   <div id="sak-tags-pills" class="tag-pill-list"></div>
@@ -2500,11 +2538,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               <span class="field-hint">Enter eller komma legger til</span>
             </div>
             <div class="sak-info-field sak-info-field-full">
-              <label class="sak-info-label">Notater <span class="field-label-sub">(vises i saksoversikten)</span></label>
+              <label class="sak-info-label" for="sak-case-notes">Notater <span class="field-label-sub">(vises i saksoversikten)</span></label>
               <textarea class="field-input sak-info-input" id="sak-case-notes" rows="3" placeholder="Valgfrie notater…"></textarea>
             </div>
             <div class="sak-info-field sak-info-field-full">
-              <label class="sak-info-label">Interne notater <span class="field-label-sub">(vises ikke i saksoversikten)</span></label>
+              <label class="sak-info-label" for="sak-notes">Interne notater <span class="field-label-sub">(vises ikke i saksoversikten)</span></label>
               <textarea class="field-input sak-notes-area" id="sak-notes" rows="4" placeholder="Interne notater for denne saken…"></textarea>
             </div>
           </div>
@@ -2722,8 +2760,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
   </div>
 
   <div class="modal-backdrop" id="confirm-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">Slett sak</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="confirm-modal-title">Slett sak</h2></div>
       <div class="modal-body">
         <p class="modal-text">Er du sikker på at du vil slette denne saken? Dette kan ikke angres.</p>
       </div>
@@ -2736,8 +2774,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Bekreft fullføring -->
   <div class="modal-backdrop" id="complete-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">Bekreft handling</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="complete-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="complete-modal-title">Bekreft handling</h2></div>
       <div class="modal-body">
         <p class="modal-text">Saken <strong id="complete-case-number"></strong> vil bli <span id="complete-action-desc"></span>.</p>
         <p class="modal-text modal-text-mt">Vil du fortsette?</p>
@@ -2751,9 +2789,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Handling: Fristarkiv -->
   <div class="modal-backdrop" id="fristarkiv-choice-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="fristarkiv-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Handling — <span id="fristarkiv-case-number"></span></h2>
+        <h2 class="modal-title" id="fristarkiv-modal-title">Handling — <span id="fristarkiv-case-number"></span></h2>
       </div>
       <div class="modal-body">
         <p class="modal-text modal-text-mb">Hva skal skje med denne saken?</p>
@@ -2782,9 +2820,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Handling: Viderebehandling -->
   <div class="modal-backdrop" id="videre-choice-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="videre-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Handling — <span id="videre-case-number"></span></h2>
+        <h2 class="modal-title" id="videre-modal-title">Handling — <span id="videre-case-number"></span></h2>
       </div>
       <div class="modal-body">
         <p class="modal-text modal-text-mb">Hva skal skje med denne saken?</p>
@@ -2813,7 +2851,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Stikkord ved avslutning -->
   <div class="modal-backdrop" id="tag-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title">
       <div class="modal-header">
         <h2 class="modal-title" id="tag-modal-title">Fullføring — <span id="tag-case-number"></span></h2>
       </div>
@@ -2834,9 +2872,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Ny frist -->
   <div class="modal-backdrop" id="frist-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="frist-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Ny frist — <span id="frist-case-number"></span></h2>
+        <h2 class="modal-title" id="frist-modal-title">Ny frist — <span id="frist-case-number"></span></h2>
       </div>
       <div class="modal-body">
         <p class="modal-text modal-text-mb" id="frist-desc"></p>
@@ -2854,8 +2892,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Import -->
   <div class="modal-backdrop" id="import-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">Last inn saker</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="import-modal-title">Last inn saker</h2></div>
       <div class="modal-body">
         <p class="modal-text">Filen inneholder <strong id="import-count"></strong> saker.</p>
         <p class="modal-text modal-text-mt">Dette vil <strong>erstatte</strong> alle nåværende saker. Vil du fortsette?</p>
@@ -2870,9 +2908,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Gjenopprett fra automatisk sikkerhetskopi modal -->
   <div class="modal-backdrop" id="backup-restore-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="backup-restore-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Automatiske sikkerhetskopier</h2>
+        <h2 class="modal-title" id="backup-restore-modal-title">Automatiske sikkerhetskopier</h2>
         <button class="modal-close" id="btn-backup-restore-close" aria-label="Lukk">✕</button>
       </div>
       <div class="modal-body modal-body-scroll">
@@ -2883,9 +2921,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Sjekkliste-editor modal -->
   <div class="modal-backdrop" id="cle-backdrop" aria-hidden="true">
-    <div class="modal modal-lg" role="dialog" aria-modal="true">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="cle-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Rediger sjekkliste-mal</h2>
+        <h2 class="modal-title" id="cle-modal-title">Rediger sjekkliste-mal</h2>
         <button class="modal-close" id="btn-cle-close" aria-label="Lukk">✕</button>
       </div>
       <div class="modal-body modal-body-scroll">
@@ -2904,8 +2942,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Slett alt — steg 1 -->
   <div class="modal-backdrop" id="delete-all-backdrop-1" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">⚠ Slett all data?</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="delete-all-1-title">
+      <div class="modal-header"><h2 class="modal-title" id="delete-all-1-title">⚠ Slett all data?</h2></div>
       <div class="modal-body">
         <p class="modal-text">Dette vil slette <strong>alle saker, historikk, stikkord og statistikk</strong> permanent.</p>
         <p class="modal-text modal-text-mt">Dette kan <strong>ikke</strong> angres. Har du tatt backup?</p>
@@ -2919,8 +2957,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Slett alt — steg 2 -->
   <div class="modal-backdrop" id="delete-all-backdrop-2" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">⚠ Siste sjanse</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="delete-all-2-title">
+      <div class="modal-header"><h2 class="modal-title" id="delete-all-2-title">⚠ Siste sjanse</h2></div>
       <div class="modal-body">
         <p class="modal-text">All data slettes nå permanent. Det finnes ingen vei tilbake.</p>
         <p class="modal-text modal-text-mt modal-text-danger">Trykk «Slett alt» for å bekrefte.</p>
@@ -2934,8 +2972,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Nullstill statistikk -->
   <div class="modal-backdrop" id="reset-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
-      <div class="modal-header"><h2 class="modal-title">Nullstill statistikk</h2></div>
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="reset-modal-title">Nullstill statistikk</h2></div>
       <div class="modal-body">
         <p class="modal-text">Dette sletter alle teller- og loggdata permanent. Sakslistene påvirkes ikke.</p>
       </div>
@@ -2948,9 +2986,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
   <!-- Om PatentDesk (Konami-kode) -->
   <div class="modal-backdrop" id="about-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Om PatentDesk</h2>
+        <h2 class="modal-title" id="about-modal-title">Om PatentDesk</h2>
         <button class="modal-close" id="btn-about-close" aria-label="Lukk">✕</button>
       </div>
       <div class="modal-body about-body">
@@ -2967,8 +3005,36 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
     </div>
   </div>
 
+  <!-- Tilbakestill sjekkliste-mal (bekreftelse) -->
+  <div class="modal-backdrop" id="cle-reset-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="cle-reset-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="cle-reset-modal-title">Tilbakestill sjekkliste</h2></div>
+      <div class="modal-body">
+        <p class="modal-text">Tilbakestill til standard sjekkliste? Tilpassede endringer slettes.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-cle-reset-cancel">Avbryt</button>
+        <button class="btn-danger" id="btn-cle-reset-confirm">Tilbakestill</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Globalt søk (Ctrl+K) -->
+  <div class="modal-backdrop" id="search-backdrop" aria-hidden="true">
+    <div class="modal search-modal" role="dialog" aria-modal="true" aria-label="Søk i saker">
+      <div class="search-input-wrap">
+        <input class="field-input" id="global-search-input" type="text"
+               placeholder="Søk i alle saker — saksnummer, tittel, stikkord, notater…"
+               autocomplete="off" aria-label="Søk i alle saker" />
+      </div>
+      <div class="search-results" id="global-search-results" role="listbox" aria-label="Søkeresultater"></div>
+      <div class="search-hint-bar">Esc lukker · ↑↓ velger · Enter åpner sak</div>
+    </div>
+  </div>
+
   <!-- Chart.js v4.4.1 (MIT) — innebygd lokalt; appen er helt frakoblet og uavhengig av CDN -->
   <script>
+/* eslint-disable */
 /*!
  * Chart.js v4.4.1
  * https://www.chartjs.org
@@ -2989,7 +3055,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.9.0';
+var APP_VERSION    = 'v4.10.0';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3054,7 +3120,6 @@ var CHECKLIST_DEFAULT = [
 
 // Sjekkliste-lagring: se SEKSJON 3
 // getChecklistTemplate(), saveChecklistTemplate(), resetChecklistTemplate() er definert i SEKSJON 3
-var CHECKLIST_TEMPLATE = CHECKLIST_DEFAULT; // bakoverkompatibilitet
 
 // Frister i måneder
 var FRIST_NY_TIL_FRISTARKIV     = 6;
@@ -3365,16 +3430,6 @@ function workDaysUntil(dateStr) {
   return count;
 }
 
-function daysBadge(days) {
-  var cls, label;
-  if      (days < 0)   { cls = 'overdue'; label = Math.abs(days) + 'd forfalt'; }
-  else if (days === 0) { cls = 'urgent';  label = 'I dag'; }
-  else if (days <= 3)  { cls = 'urgent';  label = days + ' d'; }
-  else if (days <= 14) { cls = 'soon';    label = days + ' d'; }
-  else                 { cls = 'ok';      label = days + ' d'; }
-  return '<span class="days-badge ' + cls + '">' + label + '</span>';
-}
-
 function formatDate(dateStr) {
   var d = new Date(dateStr + 'T00:00:00');
   return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
@@ -3483,6 +3538,7 @@ function migrateAll() {
   if (v >= SCHEMA_VERSION) return;
 
   // Oppgrader history[] i pt_cases: { status, date } → { type, date, from, to }
+  var migrationOk = true;
   try {
     var rawCases = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     var upgraded = rawCases.map(function(c) {
@@ -3494,26 +3550,54 @@ function migrateAll() {
       return c;
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(upgraded));
-  } catch(e) { console.warn('PatentDesk: Migrasjon av historikk feilet', e); }
+  } catch(e) {
+    migrationOk = false;
+    console.warn('PatentDesk: Migrasjon av historikk feilet', e);
+    showToast('✗ Datamigrering feilet — eldre data er urørt, prøver igjen neste gang', true);
+  }
 
   // Slett utdaterte nøkler
   localStorage.removeItem(AUTOSAVE_KEY);
   localStorage.removeItem('pt_cpc_welcomed');
 
-  // Sett schema-versjon
-  localStorage.setItem('pt_schema_version', String(SCHEMA_VERSION));
-  console.log('PatentDesk: Migrert til schema v' + SCHEMA_VERSION);
+  // Sett schema-versjon kun ved vellykket migrering, slik at den prøves på nytt ved neste oppstart
+  if (migrationOk) {
+    try { localStorage.setItem('pt_schema_version', String(SCHEMA_VERSION)); } catch(e) {}
+    console.log('PatentDesk: Migrert til schema v' + SCHEMA_VERSION);
+  }
 }
 
 // ── Saksdetaljer ───────────────────────────────────
 function sakKey(id) { return SAK_KEY_PREFIX + id; }
 
+// Felles localStorage-skriving med brukervarsel ved feil
+function lsSetSafe(key, value) {
+  try { localStorage.setItem(key, value); return true; }
+  catch(e) {
+    showToast(e && e.name === 'QuotaExceededError'
+      ? '✗ Lagring feilet — lagringsplass full'
+      : '✗ Lagring feilet', true);
+    return false;
+  }
+}
+
+var _warnedCorruptSak = {};
+
 function loadSakData(id) {
-  try {
-    var raw = localStorage.getItem(sakKey(id));
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch(e) { return null; }
+  var raw = null;
+  try { raw = localStorage.getItem(sakKey(id)); } catch(e) { return null; }
+  if (!raw) return null;
+  try { return JSON.parse(raw); }
+  catch(e) {
+    // Korrupt JSON: bevar råteksten under egen nøkkel så senere lagring ikke overskriver den
+    try { localStorage.setItem('pt_korrupt_' + id, raw); } catch(e2) {}
+    if (!_warnedCorruptSak[id]) {
+      _warnedCorruptSak[id] = true;
+      console.warn('PatentDesk: Korrupte saksdetaljer for ' + id + ' — råtekst bevart under pt_korrupt_' + id, e);
+      showToast('✗ Saksdetaljer kunne ikke leses — rådata er bevart', true);
+    }
+    return null;
+  }
 }
 
 function saveSakData(id, data) {
@@ -3523,8 +3607,7 @@ function saveSakData(id, data) {
       if (c && c.novelty === false && c.inventive !== false) c.inventive = false;
     });
   }
-  try { localStorage.setItem(sakKey(id), JSON.stringify(data)); }
-  catch(e) { if (e.name === 'QuotaExceededError') showToast('✗ Lagring feilet — lagringsplass full', true); }
+  lsSetSafe(sakKey(id), JSON.stringify(data));
 }
 
 // ── Sjekkliste-mal ─────────────────────────────────
@@ -3537,7 +3620,7 @@ function getChecklistTemplate() {
 }
 
 function saveChecklistTemplate(tpl) {
-  try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(tpl)); } catch(e) {}
+  lsSetSafe(CHECKLIST_KEY, JSON.stringify(tpl));
 }
 
 function resetChecklistTemplate() {
@@ -3552,7 +3635,7 @@ function saveDrawerCollapsed(v)   { try { localStorage.setItem('pt_drawer_collap
 
 // ── Saksdokumenter ─────────────────────────────────
 function loadDocRoot() { return localStorage.getItem(DOC_ROOT_KEY) || DEFAULT_DOC_ROOT; }
-function saveDocRoot(v) { try { localStorage.setItem(DOC_ROOT_KEY, v); } catch(e) {} }
+function saveDocRoot(v) { lsSetSafe(DOC_ROOT_KEY, v); }
 
 // Trim, drop trailing slashes, normalize "/" to "\" — root is always joined Windows-style
 function _docRootNormalize(v) {
@@ -3578,7 +3661,7 @@ function _docRootPreviewHtml(root) {
 
 // ── Onboarding ─────────────────────────────────────
 function loadUserName()  { return localStorage.getItem(USER_NAME_KEY) || ''; }
-function saveUserName(v) { try { localStorage.setItem(USER_NAME_KEY, v); } catch(e) {} }
+function saveUserName(v) { lsSetSafe(USER_NAME_KEY, v); }
 
 // ── Slett all data ─────────────────────────────────
 function deleteAllData() {
@@ -3650,16 +3733,8 @@ function loadCases() {
   catch(e) { return []; }
 }
 
-var _suppressAutoBackup = false;
-
 function saveCases() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cases.map(encodeCase)));
-  } catch(e) {
-    if (e.name === 'QuotaExceededError') showToast('✗ Lagring feilet — lagringsplass full', true);
-    return;
-  }
-  /* pt_autosave fjernet i v4 */
+  lsSetSafe(STORAGE_KEY, JSON.stringify(cases.map(encodeCase)));
 }
 
 function loadStats() {
@@ -3668,8 +3743,7 @@ function loadStats() {
 }
 
 function saveStats() {
-  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); }
-  catch(e) { if (e.name === 'QuotaExceededError') showToast('✗ Lagring feilet — lagringsplass full', true); }
+  lsSetSafe(STATS_KEY, JSON.stringify(stats));
 }
 
 function loadVacations() {
@@ -3677,24 +3751,21 @@ function loadVacations() {
   catch(e) { return []; }
 }
 function saveVacations() {
-  try { localStorage.setItem(VACATION_KEY, JSON.stringify(vacations)); }
-  catch(e) { showToast('✗ Lagring feilet', true); }
+  lsSetSafe(VACATION_KEY, JSON.stringify(vacations));
 }
 function loadGoal() {
   var v = parseInt(localStorage.getItem(GOAL_KEY), 10);
   return isNaN(v) ? 0 : v;
 }
 function saveGoal(val) {
-  try { localStorage.setItem(GOAL_KEY, String(val)); }
-  catch(e) { showToast('✗ Lagring feilet', true); }
+  lsSetSafe(GOAL_KEY, String(val));
 }
 function loadBeleggHorizon() {
   var v = parseInt(localStorage.getItem(BELEGG_KEY), 10);
   return [30, 60, 90].indexOf(v) !== -1 ? v : 60;
 }
 function saveBeleggHorizon(val) {
-  try { localStorage.setItem(BELEGG_KEY, String(val)); }
-  catch(e) { showToast('✗ Lagring feilet', true); }
+  lsSetSafe(BELEGG_KEY, String(val));
 }
 function loadFristBuffer() {
   var v = parseInt(localStorage.getItem(BUFFER_KEY), 10);
@@ -3722,12 +3793,6 @@ function effDueFor(c) {
   return (c && c.type === 'oppdrag') ? c.dueDate : getEffectiveDueDate(c ? c.dueDate : '', c);
 }
 
-// Returns true if dateStr (yyyy-mm-dd) falls within any vacation period
-function isOnVacation(dateStr) {
-  if (!dateStr) return false;
-  return vacations.some(function(v) { return dateStr >= v.from && dateStr <= v.to; });
-}
-
 // Returns true if any day in the case's working period overlaps a vacation.
 // For søknader: 14-day window ending on effDueDate.
 // For oppdrag: duration-day window ending on dueDate.
@@ -3746,9 +3811,26 @@ function periodOverlapsVacation(c) {
 
 var cases = loadCases();
 
+// Rydd opp foreldreløse pt_sak_*-nøkler (saker slettet før opprydding ble innført)
+(function() {
+  var raw = null;
+  try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) { return; }
+  if (!raw) return; // ingen sakliste — ikke rydd (kan være første oppstart)
+  var ids = {};
+  try { (JSON.parse(raw) || []).forEach(function(c) { if (c && c.id) ids[c.id] = true; }); }
+  catch(e) { return; } // korrupt sakliste — ikke rydd
+  var orphans = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+    if (key && key.indexOf(SAK_KEY_PREFIX) === 0 && !ids[key.slice(SAK_KEY_PREFIX.length)]) orphans.push(key);
+  }
+  orphans.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
+})();
+
 // ── CPC-database ───────────────────────────────────
 var _cpcDb = null;
 var _cpcKeys = null;
+var _cpcKeysNorm = null; // nøkler uten whitespace, store bokstaver — for raskt prefikssøk
 var _CPC_DB_NAME = 'PatentDeskCPC';
 var _CPC_STORE   = 'classes';
 var _CPC_KEY     = 'all';
@@ -3759,9 +3841,8 @@ function cpcSearch(query) {
   var q = query.replace(/\s+/g, '').toUpperCase();
   var results = [];
   for (var i = 0; i < _cpcKeys.length && results.length < 10; i++) {
-    var key = _cpcKeys[i];
-    if (key.replace(/\s+/g, '').toUpperCase().indexOf(q) === 0) {
-      results.push({ code: key, title: _cpcDb[key].t });
+    if (_cpcKeysNorm[i].indexOf(q) === 0) {
+      results.push({ code: _cpcKeys[i], title: _cpcDb[_cpcKeys[i]].t });
     }
   }
   return results;
@@ -3780,6 +3861,8 @@ function _cpcLoaded(data) {
   }
   _cpcDb   = data;
   _cpcKeys = keys;
+  // Forhåndsnormaliser nøklene én gang, så søk slipper replace/toUpperCase per nøkkel per tastetrykk
+  _cpcKeysNorm = keys.map(function(k) { return k.replace(/\s+/g, '').toUpperCase(); });
   _cpcSetLoaded();
   _cpcHideNotice();
 }
@@ -3830,8 +3913,11 @@ function _cpcTryLoadFromDb() {
   });
 }
 
-// Migrer pt_sak_*: fjern desc fra klasser i eksisterende data
+// Migrer pt_sak_*: fjern desc fra klasser i eksisterende data.
+// Engangsjobb — flagget hindrer at alle nøkler itereres ved hver oppstart.
 (function() {
+  // NB: flagget må ikke starte med pt_sak_ — da ville oppryddingen av foreldreløse nøkler slettet det
+  try { if (localStorage.getItem('pt_desc_stripped') === '1') return; } catch(e) { return; }
   for (var i = 0; i < localStorage.length; i++) {
     var key = localStorage.key(i);
     if (!key || key.indexOf(SAK_KEY_PREFIX) !== 0) continue;
@@ -3843,6 +3929,7 @@ function _cpcTryLoadFromDb() {
       }
     } catch(e) {}
   }
+  try { localStorage.setItem('pt_desc_stripped', '1'); } catch(e) {}
 })();
 
 var stats = loadStats();
@@ -3983,12 +4070,17 @@ function _dispatch(action, payload) {
 
     case 'CASE_DELETE': {
       var theCase = cases.find(function(c) { return c.id === payload.id; });
+      var rawSak = null;
+      try { rawSak = localStorage.getItem(sakKey(payload.id)); } catch(e) {}
       AppState.undoSnapshot = {
         cases: cases.map(function(c) { return Object.assign({}, c); }),
         stats: JSON.parse(JSON.stringify(stats)),
-        label: theCase ? theCase.caseNumber : payload.id
+        label: theCase ? theCase.caseNumber : payload.id,
+        sakId: payload.id,
+        sakData: rawSak
       };
       AppState.cases = cases.filter(function(c) { return c.id !== payload.id; });
+      try { localStorage.removeItem(sakKey(payload.id)); } catch(e) {}
       saveCases();
       render();
       showUndoToast('Sak ' + AppState.undoSnapshot.label + ' slettet');
@@ -3999,6 +4091,10 @@ function _dispatch(action, payload) {
       if (!undoSnapshot) break;
       cases  = undoSnapshot.cases;
       stats  = undoSnapshot.stats;
+      // Gjenopprett saksdetaljer som ble fjernet ved sletting
+      if (undoSnapshot.sakId && undoSnapshot.sakData != null) {
+        lsSetSafe(sakKey(undoSnapshot.sakId), undoSnapshot.sakData);
+      }
       AppState.undoSnapshot = null;
       saveCases(); saveStats();
       render();
@@ -4360,13 +4456,20 @@ function sortedForPage(page) {
 
 // ── Navigasjon ─────────────────────────────────────
 function updateNav() {
+  // Grupper saker per side i én gjennomgang i stedet for ett filter per fane
+  var byPage = { ny: [], viderebehandling: [], fristarkiv: [], avsluttet: [], oppdrag: [] };
+  cases.forEach(function(c) {
+    if (c.type === 'oppdrag') { if (c.status !== 'avsluttet') byPage.oppdrag.push(c); return; }
+    var s = c.status || 'ny';
+    if (byPage[s]) byPage[s].push(c);
+  });
   document.querySelectorAll('.nav-tab').forEach(function(tab) {
     var page = tab.dataset.page;
     tab.classList.toggle('active', page === activePage);
     if (page === 'hjem' || page === 'statistikk' || page === 'innstillinger') return;
     var badge = tab.querySelector('.nav-count');
     if (!badge) { badge = document.createElement('span'); badge.className = 'nav-count'; tab.appendChild(badge); }
-    var list = casesForPage(page);
+    var list = byPage[page] || casesForPage(page);
     badge.textContent = list.length;
     // Oppdrag: farg badge etter alvorlighetsgrad
     if (page === 'oppdrag') {
@@ -4433,42 +4536,12 @@ function appendHistory(c, fromStatus, toStatus, type, fromVal, toVal) {
   return hist;
 }
 
-// ── Historikk-rad ──────────────────────────────────
-function buildHistRow(cas, colCount) {
-  if (!cas.history || !cas.history.length) return '';
-  var items = cas.history.map(function(h, i) {
-    var isStatus = !h.type || h.type === 'status';
-    var cfg    = isStatus ? (STATUS_CONFIG[h.to] || STATUS_CONFIG[h.status] || {}) : {};
-    var isLast = i === cas.history.length - 1;
-    var approx = h.approximate ? ' <span class="hist-approx" title="Dato er anslått">~</span>' : '';
-    var label  = isStatus
-      ? (cfg.histLabel || h.to || h.status || '?')
-      : 'Fristendring';
-    return '<div class="hist-step' + (isLast ? ' hist-step-last' : '') + '">' +
-      '<div class="hist-dot">' + (cfg.histIcon || (isStatus ? '•' : '📅')) + '</div>' +
-      (isLast ? '' : '<div class="hist-line"></div>') +
-      '<div class="hist-info">' +
-        '<span class="hist-label">' + label + '</span>' +
-        '<span class="hist-date">' + (h.date ? formatDateTime(h.date) : '—') + approx + '</span>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-  return '<tr class="hist-row" data-id="' + cas.id + '">' +
-    '<td colspan="' + colCount + '" class="hist-cell">' +
-      '<div class="hist-timeline">' + items + '</div>' +
-    '</td>' +
-  '</tr>';
-}
-
 // ── Historikk-modal ─────────────────────────────────
 function openHistoryModal(id) {
   var cas = cases.find(function(c) { return c.id === id; });
   if (!cas) return;
   document.getElementById('history-modal-cn').textContent = cas.caseNumber;
   var body = document.getElementById('history-modal-body');
-  var hist = Array.isArray(cas.history) ? cas.history.slice().reverse() : [];
-  var origIdxMap = hist.map(function(_, ri) { return hist.length - 1 - ri; }); // reversed index → original index
-
   function renderHistBody() {
     var hist2 = Array.isArray(cas.history) ? cas.history.slice().reverse() : [];
     if (!hist2.length) {
@@ -4662,7 +4735,7 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
       actionBtn +
       '<div class="case-card-menu">' +
         '<button class="btn-card-hist" data-id="' + c.id + '" title="Historikk">⏱</button>' +
-        '<button class="btn-card-more" data-id="' + c.id + '" title="Mer">⋯</button>' +
+        '<button class="btn-card-more" data-id="' + c.id + '" title="Mer" aria-label="Flere handlinger">⋯</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -4722,7 +4795,7 @@ function closeAllBackdrops() {
   ['cle-backdrop','modal-backdrop','confirm-backdrop','complete-backdrop','fristarkiv-choice-backdrop',
    'videre-choice-backdrop','reset-backdrop','import-backdrop','tag-backdrop','frist-backdrop',
    'delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
-   'history-backdrop',
+   'history-backdrop','backup-restore-backdrop','cle-reset-backdrop','search-backdrop',
    ].forEach(function(id) {
     var el = document.getElementById(id);
     el.classList.remove('open');
@@ -4993,8 +5066,11 @@ document.getElementById('btn-cle-save').addEventListener('click', function() {
   dispatch('CHECKLIST_TEMPLATE_SAVE', { template: tpl });
 });
 
-document.getElementById('btn-cle-reset').addEventListener('click', function() {
-  if (!confirm('Tilbakestill til standard sjekkliste? Tilpassede endringer slettes.')) return;
+document.getElementById('btn-cle-reset').addEventListener('click', function() { openBackdrop('cle-reset-backdrop'); });
+document.getElementById('btn-cle-reset-cancel').addEventListener('click', function() { closeBackdrop('cle-reset-backdrop'); });
+document.getElementById('cle-reset-backdrop').addEventListener('click', function(e) { if (e.target === this) closeBackdrop('cle-reset-backdrop'); });
+document.getElementById('btn-cle-reset-confirm').addEventListener('click', function() {
+  closeBackdrop('cle-reset-backdrop');
   resetChecklistTemplate();
   renderCle();
   _cleUpdateSummary();
@@ -5057,9 +5133,16 @@ function runAutoBackup() {
   _bkMaybeWriteDailyFile(payload);
 }
 
+var _bkWarnedFail = false;
+function _bkWarnSaveFailed() {
+  if (_bkWarnedFail) return; // varsle kun én gang per feilperiode
+  _bkWarnedFail = true;
+  showToast('✗ Automatisk sikkerhetskopi feilet — eksporter manuelt fra innstillinger', true);
+}
+
 function _bkSaveSnapshot(payload) {
   _bkOpenDb(function(err, db) {
-    if (err) return;
+    if (err) { _bkWarnSaveFailed(); return; }
     var tx = db.transaction(_BK_SNAP_STORE, 'readwrite');
     var store = tx.objectStore(_BK_SNAP_STORE);
     store.put(payload, payload.exported);
@@ -5068,7 +5151,9 @@ function _bkSaveSnapshot(payload) {
       var keys = keysReq.result.slice().sort();
       while (keys.length > _BK_MAX_SNAPSHOTS) store.delete(keys.shift());
     };
+    tx.onerror = function() { _bkWarnSaveFailed(); };
     tx.oncomplete = function() {
+      _bkWarnedFail = false; // vellykket lagring → varsle igjen ved senere feil
       try { localStorage.setItem(BACKUP_LAST_KEY, payload.exported); } catch(e) {}
       _bkUpdateSettingsUI();
     };
@@ -5425,15 +5510,17 @@ function renderBeleggCard() {
   subEl.innerHTML = '&nbsp;·&nbsp;<span class="' + cls2 + '">' + arrow + ' ' + pct2 + '%</span> neste periode';
 }
 
-// ── Hjem: status-kort klikk → side ────────────────
-['ny','fristarkiv'].forEach(function(page) {
-  var card = document.getElementById('home-card-' + page);
-  if (card) card.addEventListener('click', function() { navigateTo(page); });
+// ── Hjem: status-kort klikk/tastatur → side ───────
+function _bindCardActivate(card, fn) {
+  if (!card) return;
+  card.addEventListener('click', fn);
+  card.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
+  });
+}
+['ny','fristarkiv','oppdrag'].forEach(function(page) {
+  _bindCardActivate(document.getElementById('home-card-' + page), function() { navigateTo(page); });
 });
-(function() {
-  var card = document.getElementById('home-card-oppdrag');
-  if (card) card.addEventListener('click', function() { navigateTo('oppdrag'); });
-})();
 
 // ── Årsnavigering ──────────────────────────────────
 document.getElementById('btn-year-prev').addEventListener('click', function() { statYear--; renderStats(); });
@@ -5515,6 +5602,10 @@ function ensureSakFiles(data, cas) {
 }
 
 // ── Saksdetaljer: hjelpere ─────────────────────────
+
+// Kanonisk uttrykk for domenereglene per krav; brukes ikke av UI-koden,
+// men holdes i live som kjørbar dokumentasjon via test/claimRules.test.js
+// eslint-disable-next-line no-unused-vars
 function claimResultLabel(c) {
   if (c.novelty === null || c.inventive === null) return null; // ikke vurdert
   var issues = [];
@@ -5525,6 +5616,7 @@ function claimResultLabel(c) {
   return issues.join(', ');
 }
 
+// eslint-disable-next-line no-unused-vars
 function claimResultClass(c) {
   if (c.novelty === null || c.inventive === null) return 'claim-unassessed';
   var issues = [];
@@ -5841,6 +5933,7 @@ function _cpcUpdateSettingsStatus() {
 function _cpcResetState() {
   _cpcDb = null;
   _cpcKeys = null;
+  _cpcKeysNorm = null;
   try { indexedDB.deleteDatabase(_CPC_DB_NAME); } catch(e) {}
   _cpcSetBanner(
     '<span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>' +
@@ -5888,7 +5981,7 @@ function renderSakClasses(data) {
       '</label>' +
       '<span class="sak-class-tag' + (cls.inUse ? ' sak-class-tag-active' : '') + '">' + esc(cls.code) + '</span>' +
       (desc ? '<span class="sak-class-desc">' + esc(desc) + '</span>' : '') +
-      '<button class="btn-icon btn-sak-class-del" data-idx="' + i + '" title="Fjern">✕</button>' +
+      '<button class="btn-icon btn-sak-class-del" data-idx="' + i + '" title="Fjern" aria-label="Fjern klasse">✕</button>' +
     '</div>';
   }).join('');
 }
@@ -5906,7 +5999,6 @@ function triButtonClass(val, isFormal) {
 }
 
 function claimRowClass(c) {
-  var unassessed = c.novelty === null || c.inventive === null;
   if (c.novelty === true && c.inventive === true && c.formal === true)  return 'claim-row-formal';
   if (c.novelty === true && c.inventive === true)                        return 'claim-row-ok';
   if (c.novelty === false || c.inventive === false)                      return 'claim-row-no';
@@ -6018,9 +6110,6 @@ function renderSakClaimsTable(data) {
     if (c.num === _sakActiveClaimNum) rowCls = (rowCls ? rowCls + ' ' : '') + 'sak-claim-active-row';
 
     // Dep input
-    var prevClaim = data.claims[data.claims.indexOf(c) - 1];
-    var prevDep = prevClaim ? prevClaim.dep : null;
-    var isCopied = c.dep !== null && c.dep === prevDep && !c.depManual;
     var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep="' + c.num + '" min="1" placeholder="—" value="' + (c.dep !== null ? c.dep : '') + '" />';
 
     // Label cell
@@ -6645,22 +6734,79 @@ document.getElementById('sak-notes').addEventListener('input', function() {
 });
 
 // ── Hjem-side ──────────────────────────────────────
+// ── Fristvarsel-banner ─────────────────────────────
+function _digestTodayKey() { return new Date().toISOString().slice(0, 10); }
+
+function _digestDaysLabel(d) {
+  if (d < 0)   return '<span class="frist-digest-days frist-digest-days-overdue">' + Math.abs(d) + ' d forfalt</span>';
+  if (d === 0) return '<span class="frist-digest-days frist-digest-days-soon">frist i dag</span>';
+  return '<span class="frist-digest-days frist-digest-days-soon">frist om ' + d + ' d</span>';
+}
+
+function renderFristDigest(overdue, soon) {
+  var el = document.getElementById('frist-digest');
+  if (!el) return;
+  var dismissed = null;
+  try { dismissed = localStorage.getItem('pt_digest_hidden'); } catch(e) {}
+  if ((!overdue.length && !soon.length) || dismissed === _digestTodayKey()) {
+    el.style.display = 'none';
+    return;
+  }
+  overdue.sort(function(a, b) { return a.d - b.d; });
+  soon.sort(function(a, b) { return a.d - b.d; });
+  var rows = overdue.concat(soon).slice(0, 5);
+  var parts = [];
+  if (overdue.length) parts.push(overdue.length + ' forfalt' + (overdue.length !== 1 ? 'e' : ''));
+  if (soon.length)    parts.push(soon.length + ' frist' + (soon.length !== 1 ? 'er' : '') + ' innen 7 dager');
+  el.className = 'frist-digest' + (overdue.length ? '' : ' frist-digest-soon-only');
+  el.innerHTML =
+    '<div class="frist-digest-hdr">' +
+      '<span class="frist-digest-title">⚠ Fristvarsel &nbsp;·&nbsp; ' + parts.join(' · ') + '</span>' +
+      '<button class="frist-digest-close" id="frist-digest-close" title="Skjul resten av dagen" aria-label="Skjul fristvarsel resten av dagen">Lukk ✕</button>' +
+    '</div>' +
+    rows.map(function(r) {
+      return '<div class="frist-digest-row" data-id="' + esc(r.c.id) + '" role="button" tabindex="0">' +
+        '<span class="frist-digest-cn">' + esc(r.c.caseNumber) + '</span>' +
+        '<span class="frist-digest-t">' + esc(r.c.title || '') + '</span>' +
+        _digestDaysLabel(r.d) +
+      '</div>';
+    }).join('');
+  el.style.display = 'block';
+  document.getElementById('frist-digest-close').addEventListener('click', function() {
+    lsSetSafe('pt_digest_hidden', _digestTodayKey());
+    el.style.display = 'none';
+  });
+  el.querySelectorAll('.frist-digest-row').forEach(function(row) {
+    _bindCardActivate(row, function() { navigateTo('sak/' + row.dataset.id); });
+  });
+}
+
 function renderHjem() {
   var now = new Date(); now.setHours(0,0,0,0);
-  var thisYear = now.getFullYear();
 
-  // ── Statskort ──────────────────────────────────────
-  var countNy      = cases.filter(function(c) { return c.status === 'ny' && c.type !== 'oppdrag'; }).length;
-  var countOppdrag = cases.filter(function(c) { return c.type === 'oppdrag' && c.status !== 'avsluttet'; }).length;
-  var countFrist   = cases.filter(function(c) { return c.status === 'fristarkiv'; }).length;
-  // ── Forfalt-kort: kun nye saker teller som rødt ───
-  var countForfaltNy     = cases.filter(function(c) {
-    return c.status === 'ny' && c.type !== 'oppdrag' && daysUntil(effDueFor(c)) < 0;
-  }).length;
-  var countForfaltVidere = cases.filter(function(c) {
-    return c.status === 'viderebehandling' && daysUntil(effDueFor(c)) < 0;
-  }).length;
-  var countForfalt = countForfaltNy + countForfaltVidere;
+  // ── Statskort: alle tellinger i én gjennomgang ─────
+  // Forfalt-kort: kun nye saker teller som rødt
+  var countNy = 0, countOppdrag = 0, countFrist = 0, countForfaltNy = 0, countForfaltVidere = 0;
+  var digestOverdue = [], digestSoon = [];
+  cases.forEach(function(c) {
+    var isOppdrag = c.type === 'oppdrag';
+    var active = c.status !== 'avsluttet';
+    if (isOppdrag && active) countOppdrag++;
+    if (c.status === 'fristarkiv') countFrist++;
+    var d = active ? daysUntil(effDueFor(c)) : null;
+    if (c.status === 'ny' && !isOppdrag) {
+      countNy++;
+      if (d < 0) countForfaltNy++;
+    } else if (c.status === 'viderebehandling' && d < 0) {
+      countForfaltVidere++;
+    }
+    // Fristvarsel: forfalte aktive saker/oppdrag, og frister innen 7 dager (inkl. fristarkiv)
+    if (active && c.dueDate) {
+      if (d < 0)              digestOverdue.push({ c: c, d: d });
+      else if (d <= 7)        digestSoon.push({ c: c, d: d });
+    }
+  });
+  renderFristDigest(digestOverdue, digestSoon);
 
   var elNy     = document.getElementById('home-count-ny');
   var elOpp    = document.getElementById('home-count-oppdrag');
@@ -6737,7 +6883,7 @@ function renderHjem() {
       vacBadge +
       '<span class="status-pill ' + cfg.pill + '">' + cfg.label + '</span>' +
       '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:0.25rem;">' +
-        '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger">⋯</button>' +
+        '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
       '</div>' +
     '</div>';
   }
@@ -7269,7 +7415,7 @@ function renderVacationList() {
       '<span class="vac-status-name ' + status + '">' + esc(v.label || 'Ferie') + '</span>' +
       '<span class="vac-status-dates ' + status + '">' + toDisplay(v.from) + ' – ' + toDisplay(v.to) + '</span>' +
       badge +
-      '<button class="btn-icon btn-vac-del" data-idx="' + i + '" title="Slett">✕</button>' +
+      '<button class="btn-icon btn-vac-del" data-idx="' + i + '" title="Slett" aria-label="Slett ferie">✕</button>' +
     '</div>';
   }).join('');
   _updateVacToggleLabel();
@@ -7548,7 +7694,7 @@ function renderEventLog() {
       '<span class="case-card-title">' + esc(lookupTitle(e)) + '</span>' +
       '<span class="case-card-notes">' + esc(notes) + '</span>' +
       '<div class="case-card-menu">' +
-        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato">✏</button>' +
+        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato">✏</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -7864,6 +8010,97 @@ function initTagAutocomplete(inputEl) {
 // ── Escape ─────────────────────────────────────────
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAllBackdrops(); });
 
+// ── Globalt søk (Ctrl+K) ───────────────────────────
+var _searchHits = [], _searchSel = 0;
+
+function openGlobalSearch() {
+  var inp = document.getElementById('global-search-input');
+  inp.value = '';
+  _searchHits = []; _searchSel = 0;
+  _renderSearchResults('');
+  openBackdrop('search-backdrop');
+  inp.focus();
+}
+
+// Rangering: saksnummer-prefiks > saksnummer > tittel > stikkord > notater
+function searchCases(q) {
+  q = (q || '').trim().toLowerCase();
+  if (!q) return [];
+  var hits = [];
+  cases.forEach(function(c) {
+    var cn = (c.caseNumber || '').toLowerCase();
+    var score = -1;
+    if      (cn.indexOf(q) === 0)                                  score = 0;
+    else if (cn.indexOf(q) > -1)                                   score = 1;
+    else if ((c.title || '').toLowerCase().indexOf(q) > -1)        score = 2;
+    else if ((c.tags  || '').toLowerCase().indexOf(q) > -1)        score = 3;
+    else if ((c.notes || '').toLowerCase().indexOf(q) > -1)        score = 4;
+    if (score >= 0) hits.push({ c: c, score: score });
+  });
+  hits.sort(function(a, b) {
+    if (a.score !== b.score) return a.score - b.score;
+    return (a.c.caseNumber || '') < (b.c.caseNumber || '') ? -1 : 1;
+  });
+  return hits.slice(0, 10).map(function(h) { return h.c; });
+}
+
+function _searchHitMeta(c) {
+  var label;
+  if (c.type === 'oppdrag') label = c.status === 'avsluttet' ? 'Avsluttet oppdrag' : 'Oppdrag';
+  else                      label = (STATUS_CONFIG[c.status] || {}).label || c.status || '';
+  if (c.status === 'avsluttet' || !c.dueDate) return label;
+  var d = daysUntil(effDueFor(c));
+  return label + ' · ' + (d < 0 ? Math.abs(d) + ' d forfalt' : d === 0 ? 'frist i dag' : d + ' d igjen');
+}
+
+function _renderSearchResults(q) {
+  var box = document.getElementById('global-search-results');
+  _searchHits = searchCases(q);
+  if (_searchSel >= _searchHits.length) _searchSel = 0;
+  if (!q.trim()) { box.innerHTML = ''; return; }
+  if (!_searchHits.length) {
+    box.innerHTML = '<div class="search-empty">Ingen treff</div>';
+    return;
+  }
+  box.innerHTML = _searchHits.map(function(c, i) {
+    return '<div class="search-hit' + (i === _searchSel ? ' search-hit-sel' : '') + '" data-id="' + esc(c.id) + '" role="option"' + (i === _searchSel ? ' aria-selected="true"' : '') + '>' +
+      '<span class="search-hit-cn">' + esc(c.caseNumber) + '</span>' +
+      '<span class="search-hit-t">' + esc(c.title || '') + '</span>' +
+      '<span class="search-hit-meta">' + esc(_searchHitMeta(c)) + '</span>' +
+    '</div>';
+  }).join('');
+  box.querySelectorAll('.search-hit').forEach(function(row) {
+    row.addEventListener('click', function() { _openSearchHit(row.dataset.id); });
+  });
+}
+
+function _openSearchHit(id) {
+  closeBackdrop('search-backdrop');
+  navigateTo('sak/' + id);
+}
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    openGlobalSearch();
+  }
+});
+
+document.getElementById('global-search-input').addEventListener('input', function() {
+  _searchSel = 0;
+  _renderSearchResults(this.value);
+});
+
+document.getElementById('global-search-input').addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowDown')      { e.preventDefault(); if (_searchHits.length) { _searchSel = (_searchSel + 1) % _searchHits.length; _renderSearchResults(this.value); } }
+  else if (e.key === 'ArrowUp')   { e.preventDefault(); if (_searchHits.length) { _searchSel = (_searchSel - 1 + _searchHits.length) % _searchHits.length; _renderSearchResults(this.value); } }
+  else if (e.key === 'Enter')     { e.preventDefault(); if (_searchHits[_searchSel]) _openSearchHit(_searchHits[_searchSel].id); }
+});
+
+document.getElementById('search-backdrop').addEventListener('click', function(e) {
+  if (e.target === this) closeBackdrop('search-backdrop');
+});
+
 // ── Konsoll-melding ────────────────────────────────
 (function() {
   console.log('PatentDesk ' + APP_VERSION);
@@ -7894,48 +8131,8 @@ var FUN_FACTS = [
 ];
 
 // ── Bulk-legg til saker ────────────────────────────
-var _bulkRows    = [];
-var _bulkTab     = 'excel';   // 'excel' | 'manual'
-var _bulkParsed  = [];        // parsed rows from paste
-
 function _bulkRowId() { return 'br_' + uid(); }
 
-
-// ── Tab switching ──────────────────────────────────
-function _bulkSwitchTab(tab) {
-  _bulkTab = tab;
-  document.getElementById('bulk-pane-excel').style.display  = tab === 'excel'  ? 'block' : 'none';
-  document.getElementById('bulk-pane-manual').style.display = tab === 'manual' ? 'block' : 'none';
-  document.querySelectorAll('.bulk-tab').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.tab === tab);
-  });
-  if (tab === 'manual') {
-    _renderBulkRows();
-  } else {
-    var inp = document.getElementById('bulk-paste-input');
-    if (inp) inp.value = '';
-    _renderExcelPreview();
-  }
-  _updateBulkCount();
-}
-
-// ── Excel paste parsing ────────────────────────────
-function _parseExcelPaste(text) {
-  var rows = [];
-  var lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-  lines.forEach(function(line) {
-    line = line.trim();
-    if (!line) return;
-    var cols = line.split('\t');
-    if (cols.length < 1) return;
-    var cn    = (cols[0] || '').trim();
-    var title = (cols[1] || '').trim();
-    var date  = (cols[2] || '').trim();
-    date = _normDate(date);
-    rows.push({ id: _bulkRowId(), cn: cn, title: title, date: date, checked: true });
-  });
-  return rows;
-}
 function _normDate(s) {
   s = s.trim();
   if (/^\d{4}[.-]\d{2}[.-]\d{2}$/.test(s)) return s.replace(/\./g, '-');
@@ -7944,49 +8141,7 @@ function _normDate(s) {
   }
   return s;
 }
-function _renderExcelPreview() {
-  var container = document.getElementById('bulk-excel-preview');
-  if (!container) return;
-  if (!_bulkParsed.length) { container.innerHTML = ''; return; }
 
-  var hdr = '<div class="bulk-preview-hdr">' +
-    '<div></div><div>Saksnummer</div><div>Tittel</div><div>Forfallsdato</div><div></div>' +
-    '</div>';
-
-  var rows = _bulkParsed.map(function(row) {
-    var dateOk  = row.date && isValidDate(row.date);
-    var cnOk    = !!row.cn;
-    var dateDisp = dateOk ? toDisplay(row.date) : (row.date || '—');
-    var dateCls  = dateOk ? 'bulk-preview-cell' : 'bulk-preview-cell err';
-    return '<div class="bulk-preview-row" data-rid="' + row.id + '">' +
-      '<div class="bulk-check-cell">' +
-        '<input type="checkbox" class="bulk-check" data-rid="' + row.id + '"' + (row.checked ? ' checked' : '') + '/>' +
-      '</div>' +
-      '<div class="bulk-preview-cell' + (cnOk ? '' : ' err') + '" title="' + esc(row.cn) + '">' + esc(row.cn || '—') + '</div>' +
-      '<div class="bulk-preview-cell" title="' + esc(row.title) + '">' + esc(row.title || '') + '</div>' +
-      '<div class="' + dateCls + '">' + esc(dateDisp) + '</div>' +
-      '<button class="bulk-del" data-rid="' + row.id + '" title="Fjern rad">×</button>' +
-    '</div>';
-  }).join('');
-
-  container.innerHTML = hdr + rows;
-}
-
-// ── Manual rows ────────────────────────────────────
-function _renderBulkRows() {
-  var container = document.getElementById('bulk-rows');
-  if (!container) return;
-  container.innerHTML = _bulkRows.map(function(row) {
-    return '<div class="bulk-row" data-rid="' + row.id + '">' +
-      '<input type="text" class="field-input bulk-cn" data-rid="' + row.id + '" value="' + esc(row.cn) + '" placeholder="Saksnummer…" />' +
-      '<input type="text" class="field-input bulk-title" data-rid="' + row.id + '" value="' + esc(row.title) + '" placeholder="Tittel…" />' +
-      '<input type="text" class="field-input bulk-date" data-rid="' + row.id + '" value="' + esc(row.date) + '" placeholder="åååå.mm.dd" />' +
-      '<button class="bulk-del" data-rid="' + row.id + '" title="Fjern rad">×</button>' +
-    '</div>';
-  }).join('');
-}
-
-// ── Active rows (union of both tabs) ─────────────
 // ════════════════════════════════════════════════════════════════════════════
 // SEKSJON 6 · EVENT-HÅNDTERING
 // Alle addEventListener-kall og navigasjonslogikk
@@ -8512,7 +8667,7 @@ function _parseModalBulkRow(cols) {
   if (_modalBulkMode === 'fast') {
     return { id: _bulkRowId(), cn: (cols[0]||'').trim(), title: (cols[1]||'').trim(), date: _normDate((cols[2]||'').trim()), checked: true };
   }
-  var cn='', title='', date='', rest=[];
+  var cn='', date='', rest=[];
   var reNr   = /^\d{8}P?$/i;
   var reDate = /^\d{2}\.\d{2}\.\d{4}$|^\d{4}[.\-]\d{2}[.\-]\d{2}$/;
   cols.forEach(function(c) {
@@ -9110,7 +9265,7 @@ if (document.readyState === 'loading') {
 
   <!-- Onboarding-veiviser (første gang) -->
   <div class="modal-backdrop" id="onboarding-backdrop" aria-hidden="true">
-    <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-label="Velkomstveiviser">
       <div class="modal-header">
         <div class="onb-dots" id="onb-dots">
           <span class="onb-dot onb-dot-active" data-step="0"></span>

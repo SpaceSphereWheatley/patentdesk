@@ -6,12 +6,89 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
-v4.9.0  Oppdrag er nå en ren sakstype med egne statuser (ny/avsluttet)
-        - Fjernet 'oppdrag' som statusverdi — type-feltet alene avgjør om en sak er et oppdrag
-        - Datamigrasjon: eksisterende oppdrag med status='oppdrag' normaliseres til status='ny' ved oppstart
-        - Detaljvisning: statusknapper for oppdrag viser «Aktiv» og «Avsluttet» (ikke «Oppdrag»)
-        - Kortkortvisning: oppdrag viser «Aktiv» eller «Avsluttet» basert på faktisk status
+v4.10.0 Fristvarsel-banner + globalt søk (Ctrl+K)
 ───────────────────────────────────────────────────────────────
+- Nytt fristvarsel-banner øverst på hjemskjermen: viser antall
+  forfalte saker og frister som forfaller innen 7 dager, med de
+  inntil 5 mest presserende sakene som klikkbare rader (forfalte
+  først). Rød venstrekant ved forfalte, gull ved kun kommende.
+  «Lukk» skjuler banneret resten av dagen (pt_digest_hidden).
+  Teller aktive saker, oppdrag og fristarkiv med forfallsdato.
+- Nytt globalt søk: Ctrl+K (eller Cmd+K) åpner et søkefelt som
+  søker i saksnummer, tittel, stikkord og notater på tvers av alle
+  arbeidsflyt-statuser. Beste treff først (saksnummer-prefiks >
+  saksnummer > tittel > stikkord > notater), maks 10 treff.
+  Piltaster velger, Enter åpner saken, Esc lukker.
+- Begge deler er tastatur- og skjermleservennlige (role, aria-label,
+  fokusmarkering) i tråd med v4.8.4-arbeidet.
+- claimResultLabel/claimResultClass (fjernet som død kode i v4.8.2)
+  er gjeninnført: de uttrykker domenereglene per krav og holdes i
+  live som kjørbar dokumentasjon via test/claimRules.test.js.
+
+v4.9.0  Oppdrag er nå en ren sakstype med egne statuser (ny/avsluttet)
+───────────────────────────────────────────────────────────────
+- Fjernet 'oppdrag' som statusverdi — type-feltet alene avgjør om
+  en sak er et oppdrag.
+- Datamigrasjon: eksisterende oppdrag med status='oppdrag'
+  normaliseres til status='ny' ved oppstart.
+- Detaljvisning: statusknapper for oppdrag viser «Aktiv» og
+  «Avsluttet» (ikke «Oppdrag»).
+- Kortvisning: oppdrag viser «Aktiv» eller «Avsluttet» basert på
+  faktisk status.
+
+v4.8.4  Tilgjengelighet: skjermleser- og tastaturstøtte
+───────────────────────────────────────────────────────────────
+- Alle modaler har nå tilgjengelig navn (aria-labelledby koblet til
+  modaltittelen; veiviseren bruker aria-label). Skjermlesere
+  annonserer dermed hvilken dialog som åpnes.
+- Klikkbare statskort på hjemskjermen (Nye saker, Oppdrag,
+  Fristarkiv) kan nå nås og aktiveres med tastatur (role="button",
+  tabindex, Enter/mellomrom) og har synlig fokusmarkering.
+- Etiketter på sakssiden (Antall krav, Stikkord, Notater, Interne
+  notater) er nå koblet til feltene sine med for-attributt.
+- Ikon-knapper (⋯-menyer, ✕-slett, ✏-rediger) har fått aria-label.
+- «Tilbakestill sjekkliste» bruker nå appens egen bekreftelses-modal
+  i stedet for nettleserens window.confirm — samme utseende som
+  øvrige bekreftelser.
+- closeAllBackdrops lukker nå også sikkerhetskopi-modalen, som
+  manglet i listen.
+
+v4.8.3  Ytelse: raskere CPC-søk, navigasjon og hjemskjerm
+───────────────────────────────────────────────────────────────
+- CPC-autofullfør: nøklene normaliseres (whitespace/store bokstaver)
+  én gang ved lasting i stedet for per nøkkel per tastetrykk —
+  merkbart raskere søk i databasen med 253 000+ symboler.
+- Navigasjonsfanene grupperer nå sakene per side i én gjennomgang
+  i stedet for å filtrere hele saklisten én gang per fane.
+- Hjemskjermens statskort teller alle kategorier i én gjennomgang
+  i stedet for fem separate filter-pass over saklisten.
+- Desc-migreringen av pt_sak_* kjøres nå bare én gang (flagg
+  pt_desc_stripped) i stedet for å iterere alle nøkler ved hver
+  oppstart.
+
+v4.8.2  Datasikkerhet: opprydding ved sletting + bedre feilvarsling
+───────────────────────────────────────────────────────────────
+- Sletting av en sak fjerner nå også sakens detaljdata (pt_sak_*)
+  fra localStorage. Tidligere ble detaljdataene liggende igjen for
+  alltid og spiste lagringsplass. Angre-knappen gjenoppretter både
+  saken og detaljdataene.
+- Ved oppstart ryddes foreldreløse pt_sak_*-nøkler fra tidligere
+  slettinger bort (kun når saklisten finnes og kan leses trygt).
+- Korrupte saksdetaljer overskrives ikke lenger stille av tomme
+  standarddata: råteksten bevares under pt_korrupt_<id> og brukeren
+  varsles med toast.
+- Feilet datamigrering varsles nå med toast, og schema-versjonen
+  settes ikke før migreringen lykkes (prøves på nytt neste oppstart).
+- Alle lagringsfunksjoner (sjekkliste, ferier, mål, belegg, dokumentrot,
+  brukernavn m.fl.) varsler nå brukeren ved lagringsfeil, med egen
+  melding når lagringsplassen er full (felles hjelper lsSetSafe).
+- Feilet automatisk sikkerhetskopi (IndexedDB) varsles nå med toast
+  én gang per feilperiode, med oppfordring om manuell eksport.
+- Lint-oppsettet sjekker nå faktisk JavaScript-koden i fila
+  (eslint-plugin-html), ikke bare HTML-strukturen. Død kode som
+  linteren avdekket er fjernet (gammel bulk-implementasjon, ubrukte
+  hjelpefunksjoner og variabler).
+
 v4.8.1  Tidslinje: klikk-fiks for søknader + saksfrist i hover-info
 ───────────────────────────────────────────────────────────────
 - Klikk på en søknad-bjelke på hjemskjermens tidslinje åpner nå
@@ -24,6 +101,22 @@ v4.8.1  Tidslinje: klikk-fiks for søknader + saksfrist i hover-info
   ('home-tl-30', 'bulk-timeline'), tilhørende grener i renderTimeline
   og drag-handler, ubrukt funksjon _activeBulkRows() og ubrukt
   CSS-variabel --tl-track-bg.
+
+v4.8.0  Forfalte saker i tidslinjen + nytt fridag-kort
+───────────────────────────────────────────────────────────────
+- Saker som er over frist forsvinner ikke lenger fra tidslinjen.
+  Forfalte saker (innenfor 14-dagersvinduet) vises nå med rød
+  farge på bar/prikk. Saker som er mer enn 14 dager over frist
+  festes som en rød "‹N forfalt"-markør ved venstre kant, med
+  saksnummer og antall dager forfalt ved hover. Ny "Forfalt"-
+  oppføring i tegnforklaringen.
+- Julaften (24. des) og nyttårsaften (31. des) er lagt til som
+  fridager, i tillegg til de 12 offisielle røde dagene (inkl.
+  påske og jul som allerede var komplette).
+- Nytt statskort på hjemskjermen: "Dager til fridag", som viser
+  antall dager til neste ferie eller offentlige fridag, med navn
+  og dato. Statskortene er nå i rekkefølgen Nye saker, Oppdrag,
+  Fristarkiv, Forfalt, Dager til fridag.
 
 v4.7.5  Fiks: klikk i tidslinjen blokkert av hover-popup
 ───────────────────────────────────────────────────────────────
@@ -48,22 +141,6 @@ v4.7.3  Fiks: tidslinje hover-info og klikk-navigasjon
   bundet til tidslinje-elementer før disse ble bygget i DOM. Nå
   brukes event-delegering på document, slik at hover og klikk
   fungerer igjen på alle tidslinjer.
-
-v4.8.0  Forfalte saker i tidslinjen + nytt fridag-kort
-───────────────────────────────────────────────────────────────
-- Saker som er over frist forsvinner ikke lenger fra tidslinjen.
-  Forfalte saker (innenfor 14-dagersvinduet) vises nå med rød
-  farge på bar/prikk. Saker som er mer enn 14 dager over frist
-  festes som en rød "‹N forfalt"-markør ved venstre kant, med
-  saksnummer og antall dager forfalt ved hover. Ny "Forfalt"-
-  oppføring i tegnforklaringen.
-- Julaften (24. des) og nyttårsaften (31. des) er lagt til som
-  fridager, i tillegg til de 12 offisielle røde dagene (inkl.
-  påske og jul som allerede var komplette).
-- Nytt statskort på hjemskjermen: "Dager til fridag", som viser
-  antall dager til neste ferie eller offentlige fridag, med navn
-  og dato. Statskortene er nå i rekkefølgen Nye saker, Oppdrag,
-  Fristarkiv, Forfalt, Dager til fridag.
 
 v4.7.2  Mappe-sikkerhetskopi holdes à jour gjennom dagen
 ───────────────────────────────────────────────────────────────
