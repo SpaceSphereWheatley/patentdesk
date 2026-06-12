@@ -6,6 +6,43 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.8.1  Tidslinje: klikk-fiks for søknader + saksfrist i hover-info
+───────────────────────────────────────────────────────────────
+- Klikk på en søknad-bjelke på hjemskjermens tidslinje åpner nå
+  sakssiden (navigering skjer direkte ved museopp før evt.
+  re-render, så bjelken ikke forsvinner fra DOM før klikk-eventet
+  rekker å fyres).
+- Hover-info i tidslinjen viser nå saksfristen i tillegg til
+  saksnummer, tittel og dager til frist.
+- Fjernet dødt tidslinje-materiale: ubrukte config-nøkler
+  ('home-tl-30', 'bulk-timeline'), tilhørende grener i renderTimeline
+  og drag-handler, ubrukt funksjon _activeBulkRows() og ubrukt
+  CSS-variabel --tl-track-bg.
+
+v4.7.5  Fiks: klikk i tidslinjen blokkert av hover-popup
+───────────────────────────────────────────────────────────────
+- Hover-popupen som følger musen lå over sak-bjelken og fanget opp
+  klikket, så navigasjon til sakssiden aldri ble utløst. Popupen er
+  nå satt til pointer-events: none, så klikk går gjennom til bjelken.
+
+v4.7.4  Fiks: tidslinje drag vs. klikk, og venstre-hopp ved slipp
+───────────────────────────────────────────────────────────────
+- Klikk på en sak-bjelke i tidslinjen åpner nå sakssiden, men kun hvis
+  man ikke har dratt bjelken (drag for å justere bufferdager fungerer
+  som før, uten å trigge navigasjon).
+- Fikset feil der bjelken hoppet ett hakk til venstre når man slapp
+  museknappen etter en drag. Forhåndsvisningen under drag brukte en
+  annen (midnatt-basert) regnemåte enn selve tidslinje-rendringen
+  (som bruker kl. 16:00 som fristtidspunkt); nå er de samkjørt.
+
+v4.7.3  Fiks: tidslinje hover-info og klikk-navigasjon
+───────────────────────────────────────────────────────────────
+- Hover-popup på tidslinjebjelker (case-info ved museover) og klikk-
+  navigasjon til saksside virket ikke lenger, fordi handlerne ble
+  bundet til tidslinje-elementer før disse ble bygget i DOM. Nå
+  brukes event-delegering på document, slik at hover og klikk
+  fungerer igjen på alle tidslinjer.
+
 v4.8.0  Forfalte saker i tidslinjen + nytt fridag-kort
 ───────────────────────────────────────────────────────────────
 - Saker som er over frist forsvinner ikke lenger fra tidslinjen.

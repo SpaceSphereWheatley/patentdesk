@@ -89,7 +89,6 @@
   --chart-ny:     #63b3ed;
   --chart-videre: #b794f4;
   /* Tidslinje */
-  --tl-track-bg:  #f3f4f6;
   --tl-today:     #7F77DD;
   --tl-vacation:  #f59e0b;
   --tl-bar-label: #ffffff;
@@ -2990,7 +2989,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.8.0';
+var APP_VERSION    = 'v4.8.1';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3852,9 +3851,7 @@ var beleggHorizon  = loadBeleggHorizon();
 var fristBuffer    = loadFristBuffer();
 var _tlConfig = {
   'home-timeline':  { horizon: 90, axisMode: 'month', statusFilter: 'ny' },
-  'home-tl-30':     { horizon: 30, axisMode: 'week',  statusFilter: 'ny' },
   'cases-timeline': { horizon: 90, axisMode: 'month', statusFilter: 'ny' },
-  'bulk-timeline':  { horizon: 90, axisMode: 'month', statusFilter: 'ny' },
   'modal-timeline': { horizon: 90, axisMode: 'month', statusFilter: 'ny' },
 };
 
@@ -7199,7 +7196,7 @@ function renderTimeline(opts) {
     var cfg = Object.assign({}, _tlConfig[id] || _tlConfig['home-timeline'] || {}, opts);
     var wrap = document.getElementById(id);
     if (!wrap) return;
-    var dotCases = (id === 'home-timeline' || id === 'home-tl-30')
+    var dotCases = (id === 'home-timeline')
       ? cases.filter(function(c) {
           return !c.type || c.type !== 'oppdrag'
             ? (c.status === 'fristarkiv' || (c.status === 'viderebehandling' && daysUntil(effDueFor(c)) >= 0))
@@ -7211,7 +7208,7 @@ function renderTimeline(opts) {
       statusFilter: cfg.statusFilter || 'ny',
       axisMode:     cfg.axisMode     || 'month',
       draftRows:    cfg.draftRows    || null,
-      draggable:    id === 'home-timeline' || id === 'home-tl-30',
+      draggable:    id === 'home-timeline',
       dotCases:     dotCases,
     });
     var existing = wrap.querySelector('.tl-track');
@@ -7911,7 +7908,6 @@ function _bulkSwitchTab(tab) {
     _renderExcelPreview();
   }
   _updateBulkCount();
-  renderTimeline({ target: 'bulk-timeline', draftRows: _activeBulkRows() });
 }
 
 // ── Excel paste parsing ────────────────────────────
@@ -7982,11 +7978,6 @@ function _renderBulkRows() {
 }
 
 // ── Active rows (union of both tabs) ─────────────
-function _activeBulkRows() {
-  return _bulkTab === 'excel' ? _bulkParsed : _bulkRows;
-}
-
-
 // ════════════════════════════════════════════════════════════════════════════
 // SEKSJON 6 · EVENT-HÅNDTERING
 // Alle addEventListener-kall og navigasjonslogikk
@@ -8673,6 +8664,7 @@ document.getElementById('home-upcoming-low-list').addEventListener('click', hand
   var popup = document.createElement('div');
   popup.className = 'tl-popup';
   popup.style.display = 'none';
+  popup.style.pointerEvents = 'none';
   document.body.appendChild(popup);
 
   function handleMove(e) {
@@ -8694,9 +8686,11 @@ document.getElementById('home-upcoming-low-list').addEventListener('click', hand
       var wdays = effDue ? workDaysUntil(effDue) : null;
       var daysTxt = days !== null ? (days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'i dag' : days + 'd') : '';
       var wdaysTxt = wdays !== null ? ' · ' + wdays + ' arb.dager' : '';
+      var dueTxt = due ? formatDate(due) : '';
+      var infoTxt = (dueTxt ? 'frist ' + dueTxt : '') + (dueTxt && daysTxt ? ' · ' : '') + daysTxt + wdaysTxt;
       popup.innerHTML = '<span class="tl-popup-cn">' + esc(cn) + '</span>' +
         (title ? '<span class="tl-popup-sep"> — </span><span class="tl-popup-title">' + esc(title) + '</span>' : '') +
-        (daysTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(daysTxt + wdaysTxt) + '</span>' : '');
+        (infoTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(infoTxt) + '</span>' : '');
     }
     popup.style.display = 'block';
     popup.style.left = (e.pageX + 12) + 'px';
@@ -8708,16 +8702,30 @@ document.getElementById('home-upcoming-low-list').addEventListener('click', hand
   function handleClick(e) {
     var el = e.target.closest('.tl-bar') || e.target.closest('.tl-dot');
     if (!el || !el.dataset.id) return;
+    if (el.classList.contains('draggable')) return; // håndteres av drag-IIFE
     closeAllBackdrops();
     navigateTo('sak/' + el.dataset.id);
   }
 
-  ['home-timeline', 'bulk-timeline', 'modal-timeline', 'cases-timeline'].forEach(function(id) {
-    var wrap = document.getElementById(id);
-    if (!wrap) return;
-    wrap.addEventListener('mousemove', handleMove);
-    wrap.addEventListener('mouseleave', handleLeave);
-    wrap.addEventListener('click', handleClick);
+  var TL_IDS = ['home-timeline', 'modal-timeline', 'cases-timeline'];
+  function inTimeline(target) {
+    return TL_IDS.some(function(id) {
+      var wrap = document.getElementById(id);
+      return wrap && wrap.contains(target);
+    });
+  }
+
+  document.addEventListener('mousemove', function(e) {
+    if (!inTimeline(e.target)) { popup.style.display = 'none'; return; }
+    handleMove(e);
+  });
+  document.addEventListener('mouseout', function(e) {
+    if (!inTimeline(e.target)) return;
+    if (!e.relatedTarget || !inTimeline(e.relatedTarget)) handleLeave();
+  });
+  document.addEventListener('click', function(e) {
+    if (!inTimeline(e.target)) return;
+    handleClick(e);
   });
 
 })();
@@ -8926,8 +8934,8 @@ function init() {
       if (!bar) return;
       var track = bar.closest('.tl-track');
       if (!track) return;
-      // Only on home timelines
-      var tlDiv = track.closest('[id="home-timeline"]') || track.closest('[id="home-tl-30"]');
+      // Only on home timeline
+      var tlDiv = track.closest('[id="home-timeline"]');
       if (!tlDiv) return;
       e.preventDefault();
       var caseId = bar.dataset.id;
@@ -8974,7 +8982,8 @@ function init() {
         origBuffer: origBuffer, pxPerDay: pxPerDay,
         track: track, actualEnd: actualEnd,
         line: line, mark: mark, cas: cas,
-        pct: pct, PAST: PAST2, TOTAL: TOTAL2
+        pct: pct, PAST: PAST2, TOTAL: TOTAL2,
+        hasMoved: false
       };
       bar.style.opacity = '0.85';
     });
@@ -8982,6 +8991,7 @@ function init() {
     document.addEventListener('mousemove', function(e) {
       if (!dragging) return;
       var dx = e.clientX - dragging.startX;
+      if (Math.abs(dx) > 3) dragging.hasMoved = true;
       var daysDelta = Math.round(dx / dragging.pxPerDay);
       // drag left = increase buffer (move bar left), drag right = decrease
       var newBuffer = Math.max(0, dragging.origBuffer - daysDelta);
@@ -8990,8 +9000,10 @@ function init() {
       var cas = dragging.cas;
       var effD = new Date(cas.dueDate + 'T00:00:00');
       effD.setDate(effD.getDate() - newBuffer);
-      var now3 = new Date(); now3.setHours(0,0,0,0);
-      var newEffEnd = (effD - now3) / 86400000;
+      var effDStr = effD.toISOString().slice(0, 10);
+      var due = new Date(effDStr + 'T16:00:00');
+      var now3 = new Date();
+      var newEffEnd = (due - now3) / 86400000;
       var atLimit = newBuffer <= 0;
       dragging.bar.classList.toggle('at-limit', atLimit);
 
@@ -9020,6 +9032,15 @@ function init() {
       dragging = null;
       d.bar.style.opacity = '';
       d.bar.classList.remove('at-limit');
+      if (!d.hasMoved) {
+        // Ren klikk uten drag — naviger til sakssiden direkte her,
+        // før noen re-render kan fjerne bjelken fra DOM.
+        d.line.style.display = d.origBuffer > 0 ? '' : 'none';
+        d.mark.style.display = d.origBuffer > 0 ? '' : 'none';
+        closeAllBackdrops();
+        navigateTo('sak/' + d.caseId);
+        return;
+      }
       var newBuffer = d._pendingBuffer != null ? d._pendingBuffer : d.origBuffer;
       var finalBuffer = newBuffer === fristBuffer ? null : newBuffer;
       dispatch('CASE_FIELD_UPDATE', { id: d.caseId, patch: { caseBuffer: finalBuffer } });
@@ -9032,7 +9053,7 @@ function init() {
   window.addEventListener('resize', function() {
     clearTimeout(_resizeTimer);
     _resizeTimer = setTimeout(function() {
-      ['home-timeline', 'cases-timeline', 'bulk-timeline', 'modal-timeline'].forEach(function(id) {
+      ['home-timeline', 'cases-timeline', 'modal-timeline'].forEach(function(id) {
         var tlDiv = document.getElementById(id);
         if (!tlDiv) return;
         var track = tlDiv.querySelector('.tl-track');
