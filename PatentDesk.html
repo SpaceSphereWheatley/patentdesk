@@ -1009,6 +1009,24 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .search-empty { padding: 0.8rem 0.7rem; color: var(--muted); font-size: 0.82rem; }
 .search-hint-bar { padding: 0.45rem 0.8rem; border-top: 1px solid var(--border); color: var(--muted);
   font-size: 0.72rem; }
+
+/* ── Import-modus (erstatt / slå sammen) ── */
+.import-mode-group { display: flex; flex-direction: column; gap: 0.55rem; margin: 0.7rem 0 0.2rem; }
+.import-mode-opt { display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer;
+  padding: 0.55rem 0.65rem; border: 1px solid var(--border); border-radius: 6px; }
+.import-mode-opt:hover { border-color: var(--border2); }
+.import-mode-opt input { margin-top: 0.15rem; accent-color: var(--accent); flex-shrink: 0; }
+.import-mode-text { font-size: 0.85rem; color: var(--text); }
+.import-mode-desc { display: block; font-size: 0.76rem; color: var(--muted); margin-top: 0.1rem; }
+
+/* ── Tastatursnarvei-oversikt ── */
+.shortcuts-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.shortcuts-table td { padding: 0.32rem 0.4rem; vertical-align: middle; }
+.shortcuts-table td:first-child { white-space: nowrap; width: 1%; }
+.shortcuts-table tr + tr td { border-top: 1px solid var(--border); }
+kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 6px; font-family: var(--font-body);
+  font-size: 0.78rem; color: var(--text); background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 4px; box-shadow: 0 1px 0 var(--border2); }
 .home-card-label { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .home-card-value { font-family: var(--font-head); font-size: 2rem; font-weight: 600; color: var(--text); line-height: 1; margin: 6px 0 4px; }
 .home-card-sub   { font-size: 0.72rem; color: var(--muted); }
@@ -2896,7 +2914,18 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
       <div class="modal-header"><h2 class="modal-title" id="import-modal-title">Last inn saker</h2></div>
       <div class="modal-body">
         <p class="modal-text">Filen inneholder <strong id="import-count"></strong> saker.</p>
-        <p class="modal-text modal-text-mt">Dette vil <strong>erstatte</strong> alle nåværende saker. Vil du fortsette?</p>
+        <div class="import-mode-group" role="radiogroup" aria-label="Importmodus">
+          <label class="import-mode-opt">
+            <input type="radio" name="import-mode" value="replace" checked />
+            <span class="import-mode-text"><strong>Erstatt alt</strong>
+              <span class="import-mode-desc">Sletter nåværende saker først.</span></span>
+          </label>
+          <label class="import-mode-opt">
+            <input type="radio" name="import-mode" value="merge" />
+            <span class="import-mode-text"><strong>Slå sammen</strong>
+              <span class="import-mode-desc" id="import-merge-desc">Beholder nåværende saker.</span></span>
+          </label>
+        </div>
         <p class="modal-text modal-text-mt modal-text-warning">Tips: Lagre til fil først dersom du vil beholde gjeldende data.</p>
       </div>
       <div class="modal-footer">
@@ -3032,6 +3061,29 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
     </div>
   </div>
 
+  <!-- Tastatursnarveier (?) -->
+  <div class="modal-backdrop" id="shortcuts-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="shortcuts-modal-title">Tastatursnarveier</h2>
+        <button class="modal-close" id="btn-shortcuts-close" aria-label="Lukk">✕</button>
+      </div>
+      <div class="modal-body">
+        <table class="shortcuts-table">
+          <tr><td><kbd>Ctrl</kbd> + <kbd>K</kbd></td><td>Søk i alle saker</td></tr>
+          <tr><td><kbd>N</kbd></td><td>Ny sak</td></tr>
+          <tr><td><kbd>1</kbd></td><td>Hjem</td></tr>
+          <tr><td><kbd>2</kbd></td><td>Nye saker</td></tr>
+          <tr><td><kbd>3</kbd></td><td>Viderebehandling</td></tr>
+          <tr><td><kbd>4</kbd></td><td>Fristarkiv</td></tr>
+          <tr><td><kbd>5</kbd></td><td>Oppdrag</td></tr>
+          <tr><td><kbd>?</kbd></td><td>Denne oversikten</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Lukk dialog</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- Chart.js v4.4.1 (MIT) — innebygd lokalt; appen er helt frakoblet og uavhengig av CDN -->
   <script>
 /* eslint-disable */
@@ -3055,7 +3107,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.10.1';
+var APP_VERSION    = 'v4.11.0';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4364,24 +4416,42 @@ function _dispatch(action, payload) {
 
     case 'DATA_IMPORT': {
       var d = payload.data;
-      cases = d.cases;
-      if (d.stats) stats = d.stats;
-      saveCases(); saveStats();
-      if (d.sakDetails) {
-        Object.keys(d.sakDetails).forEach(function(id) { saveSakData(id, d.sakDetails[id]); });
-      }
-      if (Array.isArray(d.vacations)) { vacations = d.vacations; saveVacations(); }
-      if (typeof d.goal === 'number') { productionGoal = d.goal; saveGoal(productionGoal); }
-      if (d.beleggHorizon) { beleggHorizon = d.beleggHorizon; saveBeleggHorizon(beleggHorizon); }
-      if (d.docRoot) {
-        saveDocRoot(d.docRoot);
-        var inp = document.getElementById('input-doc-root');
-        if (inp) inp.value = d.docRoot;
+      var mergeMode = payload.mode === 'merge';
+      if (mergeMode) {
+        // Flett saker på id: eksisterende oppdateres, nye legges til. Øvrige data
+        // (stats, ferier, mål, dokumentrot) røres ikke — kun saker og deres detaljer.
+        var idx = {};
+        cases.forEach(function(c, i) { idx[c.id] = i; });
+        var merged = cases.slice();
+        d.cases.forEach(function(ic) {
+          if (idx[ic.id] !== undefined) merged[idx[ic.id]] = ic;
+          else merged.push(ic);
+        });
+        cases = merged;
+        saveCases();
+        if (d.sakDetails) {
+          Object.keys(d.sakDetails).forEach(function(id) { saveSakData(id, d.sakDetails[id]); });
+        }
+      } else {
+        cases = d.cases;
+        if (d.stats) stats = d.stats;
+        saveCases(); saveStats();
+        if (d.sakDetails) {
+          Object.keys(d.sakDetails).forEach(function(id) { saveSakData(id, d.sakDetails[id]); });
+        }
+        if (Array.isArray(d.vacations)) { vacations = d.vacations; saveVacations(); }
+        if (typeof d.goal === 'number') { productionGoal = d.goal; saveGoal(productionGoal); }
+        if (d.beleggHorizon) { beleggHorizon = d.beleggHorizon; saveBeleggHorizon(beleggHorizon); }
+        if (d.docRoot) {
+          saveDocRoot(d.docRoot);
+          var inp = document.getElementById('input-doc-root');
+          if (inp) inp.value = d.docRoot;
+        }
       }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
       navigateTo('ny');
-      showToast('✓ Saker lastet inn');
+      showToast(mergeMode ? '✓ Saker slått sammen' : '✓ Saker lastet inn');
       break;
     }
 
@@ -4684,11 +4754,12 @@ function render() {
   var filterBar = document.getElementById('avsluttet-filter-bar');
   tableSection.style.display = 'none';
   caseList.style.display     = '';
-  if (filterBar) filterBar.style.display = isOversikt ? 'block' : 'none';
+  // Filterlinjen vises nå på alle sakslister, ikke bare oversikten.
+  if (filterBar) filterBar.style.display = 'block';
   if (isOversikt) {
     renderCaseList(sorted, { showStatus: true, filter: tagFilter }, caseList, cardEmpty);
   } else {
-    renderCaseList(sorted, { actionLabel: cfg.actionLabel, showDurPill: true }, caseList, cardEmpty);
+    renderCaseList(sorted, { actionLabel: cfg.actionLabel, showDurPill: true, filter: tagFilter }, caseList, cardEmpty);
   }
 }
 
@@ -4812,6 +4883,7 @@ function closeAllBackdrops() {
    'videre-choice-backdrop','reset-backdrop','import-backdrop','tag-backdrop','frist-backdrop',
    'delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
    'history-backdrop','backup-restore-backdrop','cle-reset-backdrop','search-backdrop',
+   'shortcuts-backdrop',
    ].forEach(function(id) {
     var el = document.getElementById(id);
     el.classList.remove('open');
@@ -5118,7 +5190,16 @@ var _bkTimer     = null;
 var _bkLastSig   = null;
 var _bkDirHandle = null;
 
-function backupEnabled() { return localStorage.getItem(BACKUP_ENABLED_KEY) !== '0'; }
+// Caches localStorage-oppslaget — kalles i hver auto-backup-syklus.
+// null = ikke lest ennå; invalideres når bryteren endres.
+var _backupEnabledCache = null;
+function backupEnabled() {
+  if (_backupEnabledCache === null) {
+    try { _backupEnabledCache = localStorage.getItem(BACKUP_ENABLED_KEY) !== '0'; }
+    catch(e) { _backupEnabledCache = true; }
+  }
+  return _backupEnabledCache;
+}
 
 function _bkOpenDb(cb) {
   var req;
@@ -5309,7 +5390,7 @@ function _bkRestoreSnapshot(key) {
       data.cases = migrated.filter(_validateImportCase);
       if (data.stats && (typeof data.stats !== 'object' || !Array.isArray(data.stats.log))) delete data.stats;
       pendingImportData = data;
-      document.getElementById('import-count').textContent = data.cases.length + ' sak' + (data.cases.length !== 1 ? 'er' : '');
+      _prepareImportModal(0);
       closeBackdrop('backup-restore-backdrop');
       openBackdrop('import-backdrop');
     } catch(e) { showToast('✗ Kunne ikke lese sikkerhetskopien', true); }
@@ -5318,6 +5399,7 @@ function _bkRestoreSnapshot(key) {
 
 document.getElementById('backup-enabled-cb').addEventListener('change', function() {
   try { localStorage.setItem(BACKUP_ENABLED_KEY, this.checked ? '1' : '0'); } catch(e) {}
+  _backupEnabledCache = this.checked;
   _bkUpdateSettingsUI();
   if (this.checked) { showToast('✓ Automatisk sikkerhetskopi på'); scheduleAutoBackup(); }
   else showToast('Automatisk sikkerhetskopi avslått');
@@ -5395,6 +5477,32 @@ document.getElementById('btn-export-csv').addEventListener('click', function() {
 // ── Import ─────────────────────────────────────────
 var pendingImportData = null;
 
+// Fyller import-modalen med antall og fletteforklaring (matcher på sakens id),
+// og nullstiller modus til «Erstatt alt». skipped = antall rader forkastet ved validering.
+function _prepareImportModal(skipped) {
+  var n = pendingImportData ? pendingImportData.cases.length : 0;
+  var countTxt = n + ' sak' + (n !== 1 ? 'er' : '');
+  if (skipped > 0) countTxt += ' (' + skipped + ' hoppet over — ugyldig format)';
+  document.getElementById('import-count').textContent = countTxt;
+
+  var existing = {};
+  cases.forEach(function(c) { existing[c.id] = true; });
+  var matched = pendingImportData ? pendingImportData.cases.filter(function(c) { return existing[c.id]; }).length : 0;
+  var fresh = n - matched;
+  var desc = document.getElementById('import-merge-desc');
+  if (desc) {
+    desc.textContent = 'Beholder nåværende saker. ' +
+      matched + ' oppdateres (finnes allerede), ' + fresh + ' ny' + (fresh !== 1 ? 'e' : '') + ' legges til.';
+  }
+  var replaceRadio = document.querySelector('input[name="import-mode"][value="replace"]');
+  if (replaceRadio) replaceRadio.checked = true;
+}
+
+function _selectedImportMode() {
+  var sel = document.querySelector('input[name="import-mode"]:checked');
+  return sel ? sel.value : 'replace';
+}
+
 document.getElementById('btn-import').addEventListener('click', function() {
   document.getElementById('import-file-input').value = '';
   document.getElementById('import-file-input').click();
@@ -5415,9 +5523,7 @@ document.getElementById('import-file-input').addEventListener('change', function
         delete data.stats;
       }
       pendingImportData = data;
-      var countTxt = valid.length + ' sak' + (valid.length !== 1 ? 'er' : '');
-      if (skipped > 0) countTxt += ' (' + skipped + ' hoppet over — ugyldig format)';
-      document.getElementById('import-count').textContent = countTxt;
+      _prepareImportModal(skipped);
       openBackdrop('import-backdrop');
     } catch(err) { showToast('✗ Kunne ikke lese filen — ugyldig format', true); }
   };
@@ -5427,7 +5533,7 @@ document.getElementById('btn-import-cancel').addEventListener('click', function(
 document.getElementById('import-backdrop').addEventListener('click', function(e) { if (e.target === this) { closeBackdrop('import-backdrop'); pendingImportData = null; } });
 document.getElementById('btn-import-confirm').addEventListener('click', function() {
   if (!pendingImportData) return;
-  dispatch('DATA_IMPORT', { data: pendingImportData });
+  dispatch('DATA_IMPORT', { data: pendingImportData, mode: _selectedImportMode() });
   pendingImportData = null;
 });
 
@@ -8037,6 +8143,33 @@ function initTagAutocomplete(inputEl) {
 // ── Escape ─────────────────────────────────────────
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAllBackdrops(); });
 
+// ── Tastatursnarveier ──────────────────────────────
+function _isTypingTarget(el) {
+  if (!el) return false;
+  var tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+}
+function _anyBackdropOpen() { return !!document.querySelector('.modal-backdrop.open'); }
+
+document.addEventListener('keydown', function(e) {
+  // Hopp over når en modifikator holdes (Ctrl+K m.fl. håndteres separat),
+  // når man skriver i et felt, eller når en dialog allerede er åpen.
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (_isTypingTarget(e.target)) return;
+  if (_anyBackdropOpen()) return;
+  switch (e.key) {
+    case '?': e.preventDefault(); openBackdrop('shortcuts-backdrop'); break;
+    case 'n': case 'N': e.preventDefault(); openModal(null); break;
+    case '1': e.preventDefault(); navigateTo('hjem'); break;
+    case '2': e.preventDefault(); navigateTo('ny'); break;
+    case '3': e.preventDefault(); navigateTo('viderebehandling'); break;
+    case '4': e.preventDefault(); navigateTo('fristarkiv'); break;
+    case '5': e.preventDefault(); navigateTo('oppdrag'); break;
+  }
+});
+document.getElementById('btn-shortcuts-close').addEventListener('click', function() { closeBackdrop('shortcuts-backdrop'); });
+document.getElementById('shortcuts-backdrop').addEventListener('click', function(e) { if (e.target === this) closeBackdrop('shortcuts-backdrop'); });
+
 // ── Flerfane-vakt ──────────────────────────────────
 // storage-eventet fyrer kun i ANDRE faner enn den som skrev. Endres saksdata i
 // en annen fane, er denne fanens minne utdatert — og en lagring herfra ville
@@ -8220,7 +8353,8 @@ function slugToCaseId(slug) {
 
 function navigateTo(page, addToHistory) {
   if (activePage === 'sak') document.title = 'PatentDesk — Sakslogg';
-  if (activePage === 'avsluttet' && page !== 'avsluttet') {
+  // Saksliste-filteret nullstilles ved sidebytte (gjelder nå alle sakslister).
+  if (page !== activePage) {
     AppState.ui.tagFilter = '';
     var fi = document.getElementById('tag-filter-input');
     if (fi) fi.value = '';
@@ -8828,8 +8962,9 @@ document.getElementById('btn-filter-clear').addEventListener('click', function()
 document.getElementById('tag-cloud').addEventListener('click', function(e) {
   var item = e.target.closest('.tag-cloud-item');
   if (!item || !item.dataset.tag) return;
-  dispatch('TAG_FILTER_SET', { tag: item.dataset.tag });
+  // Naviger først — sidebytte nullstiller filteret — og sett deretter stikkordet.
   navigateTo('avsluttet');
+  dispatch('TAG_FILTER_SET', { tag: item.dataset.tag });
 });
 
 // ── Hjem: klikk på kommende forfall ───────────────
