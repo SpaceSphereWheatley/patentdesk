@@ -6,6 +6,23 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.11.0 Flette-import, filter på alle sakslister, tastatursnarveier
+───────────────────────────────────────────────────────────────
+- Import: ny «Slå sammen»-modus ved siden av «Erstatt alt». Flett beholder
+  nåværende saker, oppdaterer dem som har samme id fra filen og legger til de
+  nye (med detaljdata). Modalen viser hvor mange som oppdateres og hvor mange
+  som er nye. «Erstatt alt» er fortsatt forvalg og uendret. Gjelder både
+  filimport og gjenoppretting fra automatisk sikkerhetskopi.
+- Søke-/filterlinjen som før bare fantes på «Alle saker» vises nå på alle
+  sakslister (Ny, Viderebehandling, Fristarkiv, Oppdrag). Samme oppførsel —
+  matcher saksnummer, tittel, stikkord og notater — og nullstilles ved
+  sidebytte.
+- Tastatursnarveier: «?» åpner en snarveisoversikt; «N» ny sak; «1»–«5»
+  navigerer mellom sidene. Snarveiene er inaktive mens man skriver i et felt
+  eller har en dialog åpen. Ctrl+K (søk) og Esc (lukk) virker som før.
+- Ytelse: backupEnabled() caches i minnet i stedet for å lese localStorage i
+  hver auto-backup-syklus; bufferen invalideres når bryteren endres.
+
 v4.10.1 Robusthet: sekvensielle migrasjoner, IndexedDB-herding, flerfane-vakt
 ───────────────────────────────────────────────────────────────
 - Schema-migrasjoner er nå et sekvensielt register (SCHEMA_MIGRATIONS[n]
