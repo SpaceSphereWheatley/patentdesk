@@ -6,6 +6,41 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.11.0 Flette-import, filter på alle sakslister, tastatursnarveier
+───────────────────────────────────────────────────────────────
+- Import: ny «Slå sammen»-modus ved siden av «Erstatt alt». Flett beholder
+  nåværende saker, oppdaterer dem som har samme id fra filen og legger til de
+  nye (med detaljdata). Modalen viser hvor mange som oppdateres og hvor mange
+  som er nye. «Erstatt alt» er fortsatt forvalg og uendret. Gjelder både
+  filimport og gjenoppretting fra automatisk sikkerhetskopi.
+- Søke-/filterlinjen som før bare fantes på «Alle saker» vises nå på alle
+  sakslister (Ny, Viderebehandling, Fristarkiv, Oppdrag). Samme oppførsel —
+  matcher saksnummer, tittel, stikkord og notater — og nullstilles ved
+  sidebytte.
+- Tastatursnarveier: «?» åpner en snarveisoversikt; «N» ny sak; «1»–«5»
+  navigerer mellom sidene. Snarveiene er inaktive mens man skriver i et felt
+  eller har en dialog åpen. Ctrl+K (søk) og Esc (lukk) virker som før.
+- Ytelse: backupEnabled() caches i minnet i stedet for å lese localStorage i
+  hver auto-backup-syklus; bufferen invalideres når bryteren endres.
+
+v4.10.1 Robusthet: sekvensielle migrasjoner, IndexedDB-herding, flerfane-vakt
+───────────────────────────────────────────────────────────────
+- Schema-migrasjoner er nå et sekvensielt register (SCHEMA_MIGRATIONS[n]
+  løfter fra versjon n til n+1). Hvert steg lagrer versjonen umiddelbart,
+  så delvis framgang bevares; ved feil stopper kjeden og prøves på nytt
+  ved neste oppstart. Nye versjonsløft slottes inn uten å røre eksisterende
+  steg.
+- IndexedDB-åpning (både CPC-databasen og sikkerhetskopiene) tåler nå at
+  indexedDB.open kaster synkront (privat modus / blokkert lagring) — feilen
+  rutes til callbacken i stedet for å krasje oppstarten. Objektlagre opprettes
+  idempotent, og databasene har eksplisitte versjonskonstanter for framtidige
+  strukturendringer.
+- Flerfane-vakt: dersom saksdata endres i en annen åpen fane, varsles brukeren
+  (én gang) om å laste siden på nytt for å unngå at denne fanens lagring
+  overskriver den andre fanens endringer.
+- Sikkerhet: angre-toasten bygges nå med textContent i stedet for innerHTML,
+  så et saksnummer som inneholder HTML ikke lenger kan injiseres i DOM-en.
+
 v4.10.0 Fristvarsel-banner + globalt søk (Ctrl+K)
 ───────────────────────────────────────────────────────────────
 - Nytt fristvarsel-banner øverst på hjemskjermen: viser antall
