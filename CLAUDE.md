@@ -41,20 +41,18 @@ These two stores have distinct responsibilities. Do not conflate them.
   only at the end of a batch of related changes.
 
 ### Changelog
-`CHANGELOG.txt` follows the **Keep a Changelog 1.1.0** conventions
+`CHANGELOG.md` follows the **Keep a Changelog 1.1.0** conventions
 (https://keepachangelog.com/en/1.1.0/):
 - Newest version first; there is an entry for every released version.
-- Each entry is headed by the version and its release date in ISO form,
-  e.g. `## [4.12.0] - 2026-06-22`.
+- Each entry is headed by the version and, when known, its release date in ISO
+  form, e.g. `## [4.14.0] - 2026-06-22`. Historical entries with unknown dates
+  omit the date.
 - Group changes under the standard headings, omitting any that are empty:
   **Added, Changed, Deprecated, Removed, Fixed, Security**.
 - Keep an `## [Unreleased]` section at the top for work that has landed but
   not yet been released.
 - Entries are written for humans — describe the change and its effect, not the
   raw diff or commit log.
-- The file keeps the `.txt` extension but its content is Keep a Changelog
-  Markdown. Entries authored before this convention was adopted remain in the
-  legacy plain-text format; new entries use Keep a Changelog.
 
 ---
 
@@ -84,7 +82,7 @@ be present in a re-uploaded file — re-apply as needed. Always grep
 
 ### Change discipline
 - List planned changes before implementing.
-- One `CHANGELOG.txt` entry per version bump.
+- One `CHANGELOG.md` entry per version bump.
 - Do not introduce new external libraries or CDN links.
 - The file is 8 000+ lines; this is acceptable given the offline constraint.
 
@@ -106,6 +104,6 @@ asked.
 | File | Purpose |
 |---|---|
 | `PatentDesk.html` | The entire application |
-| `CHANGELOG.txt` | Version history (Keep a Changelog 1.1.0 format) |
+| `CHANGELOG.md` | Version history (Keep a Changelog 1.1.0 format) |
 | `CLAUDE.md` | These instructions |
 | `cpc_v2.json` | CPC classification data (external, loaded into IndexedDB) |
