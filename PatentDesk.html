@@ -1702,10 +1702,12 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 .sak-docs-add-row { display: flex; gap: 0.4rem; align-items: center; padding: 8px 10px;
   border-top: 1px solid var(--border); }
 .sak-docs-add-input { flex: 1; min-width: 0; font-size: 0.82rem; }
+.sak-docs-footer-row { display: flex; border-top: 1px solid var(--border); }
 .sak-docs-folder { display: flex; align-items: center; justify-content: center; gap: 6px;
-  width: 100%; font-size: 0.82rem; color: var(--muted); background: none;
-  border: none; border-top: 1px solid var(--border);
+  flex: 1; min-width: 0; font-size: 0.82rem; color: var(--muted); background: none;
+  border: none;
   cursor: pointer; padding: 8px 10px; }
+.sak-docs-footer-row .sak-docs-folder:not(:last-child) { border-right: 1px solid var(--border); }
 .sak-docs-folder:hover { background: var(--surface2); color: var(--text); }
 
 /* ── 27. Sak sticky-bar ───────────────────────────── */
@@ -2467,7 +2469,10 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                   <input class="field-input sak-docs-add-input" id="sak-docs-add-input" type="text" placeholder="Filnavn (f.eks. Vedlegg.pdf)" maxlength="80" />
                   <button class="s-btn s-btn-accent" id="btn-sak-docs-add">+ Legg til</button>
                 </div>
-                <button class="sak-docs-folder" id="btn-sak-docs-folder" title="Kopier sti til sakmappen">📋 Kopier mappe-sti</button>
+                <div class="sak-docs-footer-row">
+                  <button class="sak-docs-folder" id="btn-sak-docs-folder" title="Kopier sti til sakmappen">📋 Kopier mappe-sti</button>
+                  <button class="sak-docs-folder" id="btn-sak-docs-openall" title="Åpne alle PDF-dokumenter i bakgrunnsfaner">🗂️ Åpne alle PDF-er</button>
+                </div>
               </div>
             </div>
             <button class="btn-secondary btn-sm" id="btn-sak-history" title="Vis historikk"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Historikk</button>
@@ -3113,7 +3118,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.14.0';
+var APP_VERSION    = 'v4.15.0';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3721,6 +3726,25 @@ function _fileResolvedName(name) {
 }
 function _fileDisplayName(name) {
   return _fileResolvedName(name).replace(/\.pdf$/i, '');
+}
+function _fileExt(name) {
+  var m = _fileResolvedName(name).match(/\.([a-zA-Z0-9]+)$/);
+  return m ? m[1].toLowerCase() : '';
+}
+function _fileIsPdf(name) {
+  return _fileExt(name) === 'pdf';
+}
+function _fileIcon(name) {
+  switch (_fileExt(name)) {
+    case 'pdf': return '📄';
+    case 'doc': case 'docx': case 'odt': return '📝';
+    case 'xls': case 'xlsx': case 'csv': return '📊';
+    case 'ppt': case 'pptx': return '📽️';
+    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'bmp': case 'svg': return '🖼️';
+    case 'zip': case 'rar': case '7z': return '🗄️';
+    case 'txt': return '📃';
+    default: return '📎';
+  }
 }
 function _docRootPreviewHtml(root) {
   var path = _docRootJoin(root || DEFAULT_DOC_ROOT, 'NO20240001', 'Claims.pdf');
@@ -5957,7 +5981,7 @@ function renderSakFileList(data) {
       ? 'file:///' + _docRootJoin(root, cas.caseNumber, _fileResolvedName(f.name)).replace(/\\/g, '/')
       : '#';
     return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
-      '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener"><span class="sak-docs-file-icon">📄</span>' + esc(_fileDisplayName(f.name)) + '</a>' +
+      '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span>' + esc(_fileDisplayName(f.name)) + '</a>' +
       '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti">📋</button>' +
       '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn">✏️</button>' +
       '<button class="sak-docs-del" data-idx="' + i + '" title="Slett">✕</button>' +
@@ -8662,6 +8686,22 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     var cas = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
     if (!cas) return;
     copyToClipboard(buildCasePath(cas.caseNumber), folderBtn);
+  });
+
+  var openAllBtn = document.getElementById('btn-sak-docs-openall');
+  openAllBtn.addEventListener('click', function() {
+    var cas = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
+    if (!cas) return;
+    var data = loadSakData(cas.id);
+    var files = (data && data.files) || [];
+    var root = loadDocRoot();
+    var pdfs = files.filter(function(f) { return _fileIsPdf(f.name); });
+    if (!pdfs.length) { showToast('Ingen PDF-dokumenter å åpne.'); return; }
+    pdfs.forEach(function(f) {
+      var fileUrl = 'file:///' + _docRootJoin(root, cas.caseNumber, _fileResolvedName(f.name)).replace(/\\/g, '/');
+      window.open(fileUrl, '_blank');
+    });
+    dd.style.display = 'none';
   });
 })();
 
