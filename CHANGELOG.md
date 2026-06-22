@@ -6,6 +6,11 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Changed
+- Expanded the automated test suite (date/holiday/workday logic, vacation
+  overlap, import validation and case migration, status encode/decode, file
+  and slug helpers) and broadened CI to run tests across Node 18/20/22 with a
+  separate lint job and a function-coverage report.
 
 ## [4.15.0] - 2026-06-22
 ### Added
