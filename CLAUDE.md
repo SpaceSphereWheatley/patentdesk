@@ -34,11 +34,27 @@ These two stores have distinct responsibilities. Do not conflate them.
 - No utility frameworks. All styles are hand-written in the `<style>` block.
 
 ### Versioning
-- Version string: `APP_VERSION` (semver, e.g. `v4.4.4`)
+- Version string: `APP_VERSION` (SemVer, e.g. `v4.4.4`)
 - Schema version: `SCHEMA_VERSION` (integer, currently `4`)
-- Changelog: `CHANGELOG.txt` (plain text, newest first, not Markdown)
-- Bump patch for fixes, minor for meaningful features. Do not bump
-  mid-session — only at the end of a batch of related changes.
+- Versioning follows **Semantic Versioning**: bump patch for fixes, minor for
+  meaningful features, major for breaking changes. Do not bump mid-session —
+  only at the end of a batch of related changes.
+
+### Changelog
+`CHANGELOG.txt` follows the **Keep a Changelog 1.1.0** conventions
+(https://keepachangelog.com/en/1.1.0/):
+- Newest version first; there is an entry for every released version.
+- Each entry is headed by the version and its release date in ISO form,
+  e.g. `## [4.12.0] - 2026-06-22`.
+- Group changes under the standard headings, omitting any that are empty:
+  **Added, Changed, Deprecated, Removed, Fixed, Security**.
+- Keep an `## [Unreleased]` section at the top for work that has landed but
+  not yet been released.
+- Entries are written for humans — describe the change and its effect, not the
+  raw diff or commit log.
+- The file keeps the `.txt` extension but its content is Keep a Changelog
+  Markdown. Entries authored before this convention was adopted remain in the
+  legacy plain-text format; new entries use Keep a Changelog.
 
 ---
 
@@ -90,6 +106,6 @@ asked.
 | File | Purpose |
 |---|---|
 | `PatentDesk.html` | The entire application |
-| `CHANGELOG.txt` | Version history (plain text) |
+| `CHANGELOG.txt` | Version history (Keep a Changelog 1.1.0 format) |
 | `CLAUDE.md` | These instructions |
 | `cpc_v2.json` | CPC classification data (external, loaded into IndexedDB) |
