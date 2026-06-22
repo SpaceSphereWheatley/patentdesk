@@ -86,6 +86,15 @@ be present in a re-uploaded file — re-apply as needed. Always grep
 - Do not introduce new external libraries or CDN links.
 - The file is 8 000+ lines; this is acceptable given the offline constraint.
 
+### Test first
+Every new change — bug fix, new logic, refactor of a pure function — must
+come with a test before (or alongside) the implementation. Add or update a
+test in `test/*.test.js` using the `loadFunctions` harness
+(`test/extractFunctions.js`) that exercises the new/changed behavior, and run
+`npm test` before considering the change done. UI-only/render code with no
+extractable pure logic is exempt, but extract pure logic into its own
+function where possible so it can be tested this way.
+
 ### Download link after each push
 After committing and pushing a change to `PatentDesk.html`, always include a
 direct GitHub link to the file on the working branch:
