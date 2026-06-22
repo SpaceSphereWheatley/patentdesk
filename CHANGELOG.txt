@@ -6,6 +6,14 @@
   v4.x  OVERHALING
 ═══════════════════════════════════════════════════════════════
 
+v4.12.0 Dokumentlenker med midtklikk og kopier mappe-sti
+───────────────────────────────────────────────────────────────
+- Dokumentene i sak-nedtrekket er nå ekte lenker i stedet for knapper.
+  Venstreklikk åpner filen i ny fane som før, men midtklikk (og Ctrl+klikk)
+  åpner nå filen i en bakgrunnsfane via nettleserens egen håndtering.
+- Ny «Kopier mappe-sti»-knapp nederst i dokument-nedtrekket som kopierer
+  banen til selve sakmappen til utklippstavlen.
+
 v4.11.0 Flette-import, filter på alle sakslister, tastatursnarveier
 ───────────────────────────────────────────────────────────────
 - Import: ny «Slå sammen»-modus ved siden av «Erstatt alt». Flett beholder
