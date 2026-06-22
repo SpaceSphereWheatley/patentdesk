@@ -44,7 +44,7 @@ vurderingene kaskaderer fra uavhengige krav til deres avhengige.
 
 Enkeltfildesignet er intensjonalt: ikke del opp filen eller legg til
 kjøringstidsavhengigheter. Se [`CLAUDE.md`](CLAUDE.md) for konvensjoner og
-[`CHANGELOG.txt`](CHANGELOG.txt) for versjonshistorikk.
+[`CHANGELOG.md`](CHANGELOG.md) for versjonshistorikk.
 
 ```bash
 npm ci        # kun utviklingsverktøy (ESLint)
@@ -99,7 +99,7 @@ independent claims to their dependents.
 
 The single-file design is intentional: do not split the file or add
 runtime dependencies. See [`CLAUDE.md`](CLAUDE.md) for conventions and
-[`CHANGELOG.txt`](CHANGELOG.txt) for version history.
+[`CHANGELOG.md`](CHANGELOG.md) for version history.
 
 ```bash
 npm ci        # dev tooling only (ESLint)

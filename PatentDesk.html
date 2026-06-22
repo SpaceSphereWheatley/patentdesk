@@ -1702,6 +1702,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 .sak-docs-add-row { display: flex; gap: 0.4rem; align-items: center; padding: 8px 10px;
   border-top: 1px solid var(--border); }
 .sak-docs-add-input { flex: 1; min-width: 0; font-size: 0.82rem; }
+.sak-docs-folder { display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; font-size: 0.82rem; color: var(--muted); background: none;
+  border: none; border-top: 1px solid var(--border);
+  cursor: pointer; padding: 8px 10px; }
+.sak-docs-folder:hover { background: var(--surface2); color: var(--text); }
 
 /* ── 27. Sak sticky-bar ───────────────────────────── */
 .sak-sticky-bar {
@@ -2462,6 +2467,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                   <input class="field-input sak-docs-add-input" id="sak-docs-add-input" type="text" placeholder="Filnavn (f.eks. Vedlegg.pdf)" maxlength="80" />
                   <button class="s-btn s-btn-accent" id="btn-sak-docs-add">+ Legg til</button>
                 </div>
+                <button class="sak-docs-folder" id="btn-sak-docs-folder" title="Kopier sti til sakmappen">📋 Kopier mappe-sti</button>
               </div>
             </div>
             <button class="btn-secondary btn-sm" id="btn-sak-history" title="Vis historikk"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Historikk</button>
@@ -3107,7 +3113,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.11.0';
+var APP_VERSION    = 'v4.14.0';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5944,9 +5950,14 @@ function renderSakFileList(data) {
     list.innerHTML = '<p class="sak-docs-empty">Ingen filer registrert.</p>';
     return;
   }
+  var cas = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
+  var root = loadDocRoot();
   list.innerHTML = files.map(function(f, i) {
+    var fileUrl = cas
+      ? 'file:///' + _docRootJoin(root, cas.caseNumber, _fileResolvedName(f.name)).replace(/\\/g, '/')
+      : '#';
     return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
-      '<button class="sak-docs-open" data-idx="' + i + '"><span class="sak-docs-file-icon">📄</span>' + esc(_fileDisplayName(f.name)) + '</button>' +
+      '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener"><span class="sak-docs-file-icon">📄</span>' + esc(_fileDisplayName(f.name)) + '</a>' +
       '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti">📋</button>' +
       '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn">✏️</button>' +
       '<button class="sak-docs-del" data-idx="' + i + '" title="Slett">✕</button>' +
@@ -8561,13 +8572,11 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
   }
 
   dd.addEventListener('click', function(e) {
-    var openBtn = e.target.closest('.sak-docs-open');
-    if (openBtn) {
-      var ctx = activeSakFile(parseInt(openBtn.getAttribute('data-idx'), 10));
-      if (!ctx) return;
-      var winPath = _docRootJoin(loadDocRoot(), ctx.cas.caseNumber, _fileResolvedName(ctx.file.name));
-      var fileUrl = 'file:///' + winPath.replace(/\\/g, '/');
-      window.open(fileUrl, '_blank');
+    // Venstreklikk på en dokumentlenke: la nettleseren navigere (target=_blank),
+    // og lukk nedtrekket. Midtklikk gir auxclick (ikke click) og håndteres nativt
+    // av nettleseren som bakgrunnsfane uten å lukke nedtrekket.
+    var openLink = e.target.closest('.sak-docs-open');
+    if (openLink) {
       dd.style.display = 'none';
       return;
     }
@@ -8646,6 +8655,13 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
   });
   addInput.addEventListener('keydown', function(ev) {
     if (ev.key === 'Enter') { ev.preventDefault(); addBtn.click(); }
+  });
+
+  var folderBtn = document.getElementById('btn-sak-docs-folder');
+  folderBtn.addEventListener('click', function() {
+    var cas = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
+    if (!cas) return;
+    copyToClipboard(buildCasePath(cas.caseNumber), folderBtn);
   });
 })();
 
