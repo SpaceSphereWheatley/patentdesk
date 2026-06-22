@@ -25,16 +25,33 @@ function extractFunctionSource(html, name) {
   return html.slice(start, i);
 }
 
-// Loads the named pure functions from PatentDesk.html into a sandbox and
-// returns them as callable JS functions, so domain-logic tests don't need
-// to spin up the full single-file app (DOM, IndexedDB, localStorage, etc).
-function loadFunctions(names) {
+// Extracts a top-level `var name = ...;` declaration from PatentDesk.html.
+function extractVarSource(html, name) {
+  const re = new RegExp('var\\s+' + name + '\\s*=');
+  const match = re.exec(html);
+  if (!match) throw new Error('Var not found: ' + name);
+  const start = match.index;
+  const end = html.indexOf(';\n', start);
+  if (end === -1) throw new Error('Unterminated var: ' + name);
+  return html.slice(start, end + 1);
+}
+
+// Loads the named pure functions (and optional top-level vars / extra globals)
+// from PatentDesk.html into a sandbox and returns them as callable JS values,
+// so domain-logic tests don't need to spin up the full single-file app (DOM,
+// IndexedDB, localStorage, etc).
+function loadFunctions(names, opts) {
+  opts = opts || {};
+  const vars = opts.vars || [];
+  const globals = opts.globals || {};
   const html = fs.readFileSync(HTML_PATH, 'utf8');
-  const sources = names.map((name) => extractFunctionSource(html, name));
-  const sandbox = { module: { exports: {} } };
+  const sources = names.map((name) => extractFunctionSource(html, name))
+    .concat(vars.map((name) => extractVarSource(html, name)));
+  const sandbox = Object.assign({ module: { exports: {} } }, globals);
   vm.createContext(sandbox);
-  vm.runInContext(sources.join('\n') + '\nmodule.exports = { ' + names.join(', ') + ' };', sandbox);
+  const exported = names.concat(vars);
+  vm.runInContext(sources.join('\n') + '\nmodule.exports = { ' + exported.join(', ') + ' };', sandbox);
   return sandbox.module.exports;
 }
 
-module.exports = { extractFunctionSource, loadFunctions };
+module.exports = { extractFunctionSource, extractVarSource, loadFunctions };
