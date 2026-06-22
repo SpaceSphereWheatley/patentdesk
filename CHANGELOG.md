@@ -7,6 +7,16 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.15.0] - 2026-06-22
+### Added
+- «Åpne alle PDF-er»-knapp ved siden av «Kopier mappe-sti» i dokument-
+  nedtrekket. Åpner alle PDF-dokumentene i listen som bakgrunnsfaner.
+
+### Changed
+- Dokumentikonene i sak-nedtrekket viser nå filtype: PDF-er har sitt vanlige
+  dokumentikon, mens andre filtyper (Word, Excel, PowerPoint, bilder, arkiver,
+  tekstfiler m.m.) får et eget ikon som skiller dem fra PDF-er.
+
 ## [4.14.0] - 2026-06-22
 ### Added
 - «Kopier mappe-sti»-knapp nederst i dokument-nedtrekket som kopierer banen til
