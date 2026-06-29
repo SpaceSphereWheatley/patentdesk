@@ -12,6 +12,19 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   and slug helpers) and broadened CI to run tests across Node 18/20/22 with a
   separate lint job and a function-coverage report.
 
+## [4.16.0] - 2026-06-29
+### Added
+- Hovering over a vacation in the timeline now shows its title, dates and
+  duration in days, matching the existing tooltip for case deadlines.
+- Vacations in Settings can now be edited in place (title and dates), instead
+  of having to delete and re-create them.
+
+### Fixed
+- Vacation bars in the timeline rendered far wider than their actual date
+  range, because the bar's width reused the formula meant for absolute
+  positioning instead of the one for a duration. The bar now stops at the
+  correct end date.
+
 ## [4.15.0] - 2026-06-22
 ### Added
 - «Åpne alle PDF-er»-knapp ved siden av «Kopier mappe-sti» i dokument-

@@ -14,9 +14,11 @@ const {
   monthKey,
   esc,
   highlightMatch,
+  vacationDurationDays,
 } = loadFunctions([
   'parseDate', 'toDisplay', 'normaliseTags', 'sanitizeText', 'isValidDate',
   'formatDate', 'formatDateTime', 'monthKey', 'esc', 'highlightMatch',
+  'vacationDurationDays',
 ]);
 
 test('parseDate converts dotted dates to ISO form', () => {
@@ -75,4 +77,10 @@ test('highlightMatch wraps the matched term in <mark> and escapes the rest', () 
 
 test('highlightMatch escapes the whole string when there is no match', () => {
   assert.strictEqual(highlightMatch('<i>no match</i>', 'xyz'), '&lt;i&gt;no match&lt;/i&gt;');
+});
+
+test('vacationDurationDays counts both endpoints inclusively', () => {
+  assert.strictEqual(vacationDurationDays('2026-07-01', '2026-07-01'), 1);
+  assert.strictEqual(vacationDurationDays('2026-07-01', '2026-07-03'), 3);
+  assert.strictEqual(vacationDurationDays('2026-12-30', '2027-01-02'), 4);
 });
