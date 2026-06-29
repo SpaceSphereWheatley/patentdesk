@@ -7216,7 +7216,7 @@ function buildTimelineDiv(opts) {
     var el = document.createElement('div');
     el.className = 'tl-bar-vacation';
     el.style.left   = pct(Math.max(0, ds));
-    el.style.width  = pct(Math.min(HORIZON, de + 1) - Math.max(0, ds));
+    el.style.width  = pctW(Math.min(HORIZON, de + 1) - Math.max(0, ds));
     el.style.height = '100%';
     el.dataset.label = v.label || 'Ferie';
     el.dataset.from  = v.from;
