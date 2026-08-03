@@ -24,6 +24,20 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   overlap, import validation and case migration, status encode/decode, file
   and slug helpers) and broadened CI to run tests across Node 18/20/22 with a
   separate lint job and a function-coverage report.
+- Added a systematic design-token layer (spacing, type, radius, shadow and
+  motion scales, plus design-system-convention color aliases) to `:root`,
+  and pointed every `border-radius`, `box-shadow`, `font-size`,
+  `font-weight`, `line-height`, `letter-spacing`, `padding`/`margin`/`gap`,
+  and transition/animation duration that already exactly matched one of
+  those tokens — including three extended motion tokens
+  (`--dur-instant`/`--dur-slower`/`--dur-slowest`) added to cover durations
+  the original three-step scale didn't — at the new variable instead of its
+  literal value (roughly 700 declarations across the stylesheet). Purely
+  internal — no visual output changes, verified by `npm run lint` and
+  `npm test` (66/66) after each step; this is prep work from the new
+  PatentDesk Design System project (see its `readme.md`) for a later,
+  separately-reviewed pass on the values that don't already land on the
+  scale.
 
 ### Fixed
 - Tidslinjens rad-tildeling for overlappende saker var begrenset til to
