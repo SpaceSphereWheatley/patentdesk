@@ -6,11 +6,40 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Added
+- Tidslinjen har et nytt filter der du fritt kan krysse av hvilke sakstyper
+  (Ny, Fristarkiv, Viderebehandling, Oppdrag) som skal vises, i stedet for å
+  være låst til «Ny». Saksliste-tidslinjen forhåndskrysser av sakstypen som
+  svarer til siden du står på, men valget kan overstyres fritt. Hver sakstype
+  har nå også en egen farge på tidslinje-bjelken, som gjenbruker de samme
+  fargene som status-pillene ellers i appen.
+- Tidslinjen kan nå scrolles opptil 6 måneder tilbake i tid, mot bare 14
+  dager før. Saker som er mer enn et par uker over frist vises nå som
+  vanlige bjelker man kan scrolle til og klikke på, i stedet for å bare bli
+  telt i «forfalt»-indikatoren i venstre kant (den brukes fortsatt for saker
+  som er mer enn 6 måneder over frist).
+
 ### Changed
 - Expanded the automated test suite (date/holiday/workday logic, vacation
   overlap, import validation and case migration, status encode/decode, file
   and slug helpers) and broadened CI to run tests across Node 18/20/22 with a
   separate lint job and a function-coverage report.
+
+### Fixed
+- Tidslinjens rad-tildeling for overlappende saker var begrenset til to
+  rader; en tredje sak som overlappet i tid ble tegnet oppå en annen bjelke
+  uten noe tegn på at den var skjult. Tidslinjen bruker nå like mange rader
+  som faktisk trengs, og vokser i høyden ved behov.
+- Rad-tildelingen behandlet saker i lagringsrekkefølge i stedet for
+  kronologisk rekkefølge, som kunne gi unødvendige eller feil
+  rad-plasseringer for overlappende saker.
+- Helligdager fra i fjor manglet på tidslinjen når man scrollet tilbake over
+  et årsskifte, fordi helligdags-oppslaget aldri hentet forrige års
+  helligdager og filtrerte bort alt før i dag.
+- Zoom-nivået («3 mnd» / «6 mnd» / «1 år») ble kunstig komprimert av
+  fortidsvinduet i beregningen av piksler per dag, slik at f.eks. «3 mnd»
+  viste mindre enn tre måneder i praksis. Fortiden legges nå til ved samme
+  tetthet i stedet for å dele på samme plassbudsjett som horisonten.
 
 ## [4.16.0] - 2026-06-29
 ### Added
