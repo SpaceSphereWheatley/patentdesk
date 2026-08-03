@@ -3,8 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
-const { filterCasesForTimeline, assignTimelineRows } = loadFunctions([
-  'filterCasesForTimeline', 'assignTimelineRows',
+const { filterCasesForTimeline, assignTimelineRows, holidayYearOffsets } = loadFunctions([
+  'filterCasesForTimeline', 'assignTimelineRows', 'holidayYearOffsets',
 ]);
 
 function makeCase(overrides) {
@@ -121,4 +121,30 @@ test('assignTimelineRows preserves extra fields on each range', () => {
   const ranges = [{ start: 0, end: 5, caseNumber: 'NO20240001' }];
   const result = assignTimelineRows(ranges);
   assert.strictEqual(result.ranges[0].caseNumber, 'NO20240001');
+});
+
+// holidayYearOffsets is extracted and run inside the loadFunctions vm
+// sandbox, so the arrays it builds internally (via `[]`) belong to that
+// sandbox's Array realm, not this test file's. assert.deepStrictEqual is
+// realm-sensitive, so normalise with Array.from() before comparing.
+function offsetsOf(pastDays, horizonDays) {
+  return Array.from(holidayYearOffsets(pastDays, horizonDays));
+}
+
+test('holidayYearOffsets reaches back into the previous year for any nonzero past window', () => {
+  // Regression test: the old code always started the loop at yi=0, so
+  // holidays from November/December of the previous year were silently
+  // missing whenever the past window crossed the new year (e.g. a lookback
+  // in January needs holidays from December of the previous year — true
+  // even for the old fixed 14-day window, just easy to miss at 14 days).
+  assert.deepStrictEqual(offsetsOf(14, 365), [-1, 0, 1]);
+  assert.deepStrictEqual(offsetsOf(180, 365), [-1, 0, 1]);
+});
+
+test('holidayYearOffsets needs no lookback for a zero-day past window', () => {
+  assert.deepStrictEqual(offsetsOf(0, 0), [0]);
+});
+
+test('holidayYearOffsets scales with however far back/forward is requested', () => {
+  assert.deepStrictEqual(offsetsOf(400, 400), [-2, -1, 0, 1, 2]);
 });

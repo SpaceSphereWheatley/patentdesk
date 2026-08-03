@@ -3463,6 +3463,19 @@ function getNorwegianHolidays(year) {
   return days;
 }
 
+// holidayYearOffsets: hvilke år (relativt til inneværende år, 0) man må
+// hente helligdager for, gitt hvor mange dager tilbake (pastDays) og frem
+// (horizonDays) tidslinjen strekker seg. Går tilbake til -1 (i fjor) så
+// snart pastDays strekker seg over årsskiftet — ellers mangler helligdager
+// fra desember/november i tidslinjens fortidsvindu.
+function holidayYearOffsets(pastDays, horizonDays) {
+  var from = 0 - Math.ceil(pastDays / 365); // 0 - x (not -x) to avoid a -0 result when pastDays is 0
+  var to   = Math.ceil(horizonDays / 365);
+  var offsets = [];
+  for (var yi = from; yi <= to; yi++) offsets.push(yi);
+  return offsets;
+}
+
 function isNonWorkday(date) {
   var dow = date.getDay();
   if (dow === 0 || dow === 6) return true;
@@ -3919,6 +3932,13 @@ function periodOverlapsVacation(c) {
 // Sakstyper (nøkler) en sak kan filtreres på i tidslinjen: status for vanlige
 // saker, eller 'oppdrag' for saker med type==='oppdrag' (uavhengig av status).
 var TIMELINE_TYPES = ['ny', 'fristarkiv', 'viderebehandling', 'oppdrag'];
+
+// Hvor mange dager tilbake i tid tidslinjen strekker seg, slik at man kan
+// scrolle tilbake og se saker som er mer enn et par uker over frist i stedet
+// for at de bare telles i "forfalt"-pinnen. Delt av buildTimelineDiv,
+// _applyTimelineScroll og drag-håndteringen — de må alle bruke samme verdi
+// for at posisjonene (pct/pxPerDay) skal stemme overens.
+var TL_PAST_DAYS = 180;
 
 // filterCasesForTimeline: returnerer sakene som matcher et fritt valgt sett
 // av sakstyper (typeFilter, en liste av TIMELINE_TYPES-nøkler). Avsluttede
@@ -7164,7 +7184,7 @@ function renderHjem() {
 function buildTimelineDiv(opts) {
   var BUSY_DAYS = 14;
   var HORIZON   = opts.horizon || 365;
-  var PAST      = 14;
+  var PAST      = TL_PAST_DAYS;
   var TOTAL     = PAST + HORIZON;
   var axisMode  = opts.axisMode || 'month';
   var now       = new Date(); // real-time — not midnight-snapped
@@ -7229,12 +7249,12 @@ function buildTimelineDiv(opts) {
   var busyRanges = allRanges.filter(function(r) { return r.end >= -PAST && r.start <= HORIZON; });
 
   var holidays = [];
-  for (var yi = 0; yi <= Math.ceil(HORIZON / 365); yi++) {
+  holidayYearOffsets(PAST, HORIZON).forEach(function(yi) {
     getNorwegianHolidays(today.getFullYear() + yi).forEach(function(h) {
       var day = Math.round((new Date(h.date + 'T00:00:00') - today) / 86400000);
-      if (day >= 0 && day <= HORIZON) holidays.push(day);
+      if (day >= -PAST && day <= HORIZON) holidays.push(day);
     });
-  }
+  });
 
   var majorDays = [], majorLabels = [];
   var d = new Date(today); d.setDate(1); d.setMonth(d.getMonth() - 1);
@@ -7425,20 +7445,23 @@ function buildTimelineDiv(opts) {
 }
 
 function _applyTimelineScroll(scrollEl, trackEl, horizon) {
-  var PAST     = 14;
-  var FULL     = 365 + PAST;   // sporet dekker alltid 1 år + fortid
+  var FULL = 365 + TL_PAST_DAYS;   // sporet dekker alltid 1 år fremover + fortid
   var containerW = scrollEl.clientWidth;
   if (!containerW) {
     requestAnimationFrame(function() { _applyTimelineScroll(scrollEl, trackEl, horizon); });
     return;
   }
-  // Zoom: horizon dager + fortid skal fylle containerbredden
-  var pxPerDay = containerW / (horizon + PAST);
+  // Zoom styres kun av horizon (dager fremover) — fortiden (TL_PAST_DAYS)
+  // legges til ved samme tetthet i stedet for å presses inn i samme
+  // containerbredde, slik at f.eks. "3 mnd" alltid viser 90 dager i samme
+  // størrelse uavhengig av hvor langt tilbake sporet strekker seg.
+  var pxPerDay = containerW / horizon;
   var totalPx  = Math.round(pxPerDay * FULL);
   trackEl.style.width    = totalPx + 'px';
   trackEl.style.minWidth = totalPx + 'px';
-  // Scroll så i dag er nær venstre kant
-  scrollEl.scrollLeft = Math.max(0, Math.round(totalPx * PAST / FULL) - 20);
+  // Scroll så i dag er nær venstre kant; resten av fortiden ligger til
+  // venstre for det, tilgjengelig ved å scrolle bakover.
+  scrollEl.scrollLeft = Math.max(0, Math.round(pxPerDay * TL_PAST_DAYS) - 20);
 }
 
 // ── Widget-bygger: én funksjon for alle tidslinje-widgets ──────────────────
@@ -9486,7 +9509,7 @@ function init() {
     var dragging = null; // { bar, caseId, startX, origBuffer, pxPerDay, track, actualEnd }
 
     function getPxPerDay(track) {
-      var HORIZON = 365, PAST = 14, TOTAL = PAST + HORIZON;
+      var TOTAL = TL_PAST_DAYS + 365;
       return track.offsetWidth / TOTAL;
     }
 
@@ -9511,7 +9534,7 @@ function init() {
       var actualEnd = bar._actualEnd; // will be set below
       // Compute actualEnd from dueDate
       var now2 = new Date(); now2.setHours(0,0,0,0);
-      var PAST2 = 14;
+      var PAST2 = TL_PAST_DAYS;
       var actualDue = new Date(cas.dueDate + 'T00:00:00');
       actualEnd = (actualDue - now2) / 86400000; // days from today
 
