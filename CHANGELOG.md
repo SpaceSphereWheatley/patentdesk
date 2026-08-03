@@ -38,6 +38,21 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   PatentDesk Design System project (see its `readme.md`) for a later,
   separately-reviewed pass on the values that don't already land on the
   scale.
+- Snapped the remaining `font-size`, `letter-spacing`, and
+  `padding`/`margin`/`gap` values that were close to but not exactly on the
+  design-token scale onto their nearest token (roughly 300 further
+  declarations), and added a `--shadow-ring` token for the two `box-shadow`
+  declarations that share a focus/selection-ring shape. Unlike the token
+  layer itself, **this does change a handful of rendered pixel sizes** —
+  up to ~1.3px per snapped value — since it reuses the existing 9-step type
+  scale and 10-step spacing scale rather than adding new steps. A small set
+  of outliers that would have drifted more than that (a few singleton
+  heading sizes, hairline 1-2px paddings, and the drawer's fixed 260px
+  width) were intentionally left as literals rather than forced onto a
+  distant token. Also snapped two one-off transition/animation durations
+  (`0.08s` → `--dur-instant`, `0.18s` → `--dur-slow`, both ~20ms
+  differences). Verified with `npm run lint` and `npm test` (81/81); the
+  full snap-vs-outlier breakdown is in the pull request description.
 
 ### Fixed
 - Tidslinjens rad-tildeling for overlappende saker var begrenset til to
