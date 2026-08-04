@@ -276,6 +276,16 @@ svg.ti { width: 16px; height: 16px; flex-shrink: 0; vertical-align: middle; disp
 }
 
 /* ── 6. Knapper ───────────────────────────────────── */
+/* Synlig tastaturfokus for alle knapper/lenker/tabbare elementer. Mer
+   spesifikke :focus-visible-regler lenger ned i arket (f.eks. .frist-digest-row)
+   overstyrer denne der de er definert — dette er kun standardbehandlingen. */
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .btn-add {
   background: var(--primary); color: var(--on-primary);
   border: none; border-radius: var(--radius);
@@ -482,6 +492,12 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   padding: 3.5rem; text-align: center;
   color: var(--muted); font-size: var(--text-sm); letter-spacing: var(--tracking-wide);
 }
+.table-empty-clear {
+  display: inline; background: none; border: none; padding: 0; margin-left: var(--space-2);
+  color: var(--accent); font-size: inherit; letter-spacing: inherit; font-family: var(--font-body);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.table-empty-clear:hover { color: var(--accent-dim); }
 
 .case-table th[data-col="status"],
 .case-table td:nth-child(2):has(.status-pill) { text-align: center; }
@@ -810,6 +826,7 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   transition: color var(--dur-base), border-color var(--dur-base), background var(--dur-base);
 }
 .s-btn:hover   { color: var(--text); border-color: var(--muted); background: var(--surface); }
+.s-btn:disabled { opacity: .55; cursor: not-allowed; }
 .s-btn-accent  { color: var(--accent); border-color: var(--accent-dim); }
 .s-btn-accent:hover  { background: rgba(200,169,110,0.08); border-color: var(--accent); }
 .s-btn-danger  { color: var(--danger); border-color: rgba(224,85,85,0.4); }
@@ -925,6 +942,19 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 @keyframes fadeUp  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
 @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
 @keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin    { to { transform: rotate(360deg); } }
+
+/* Spinner for async handlinger (CPC-innlasting, gjenoppretting o.l.) — bruker
+   currentColor så den arver riktig farge uansett bakgrunn/kontekst. */
+.spinner {
+  display: inline-block; width: 12px; height: 12px; flex-shrink: 0;
+  border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; opacity: .75; vertical-align: -2px;
+  animation: spin .8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+}
 
 /* ── 23. Responsiv ────────────────────────────────── */
 @media (max-width: 800px) {
@@ -1323,8 +1353,17 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .case-card-vac          { font-size: var(--text-sm); flex-shrink: 0; }
 .case-card-oppdrag      { background: rgba(6,182,212,0.06); border-color: rgba(6,182,212,0.3); }
 .case-card-cn-oppdrag   { color: var(--color-info) !important; font-weight: var(--weight-medium); }
-.oppdrag-duration-pill  { display:inline-flex;align-items:center;gap: var(--space-1);font-size: var(--text-xs);padding: 1px var(--space-2);border-radius:9999px;background:var(--bg2);border:1px solid var(--border);color:var(--muted);flex-shrink:0; }
+.oppdrag-duration-pill  { display:inline-flex;align-items:center;gap: var(--space-1);font-size: var(--text-xs);padding: 1px var(--space-2);border-radius:var(--radius-pill);background:var(--bg2);border:1px solid var(--border);color:var(--muted);flex-shrink:0; }
 .tl-bar-oppdrag         { background: rgba(6,182,212,0.45) !important; border-color: var(--s-oppdrag-border) !important; }
+
+/* Saksrad: på smale skjermer har raden ikke plass til alle faste bredder
+   (dagbadge/status/saksnr/notater), og tittelen ble klemt uleselig. Fra
+   700px bryter raden til flere linjer og notatkolonnen skjules. */
+@media (max-width: 700px) {
+  .case-card         { flex-wrap: wrap; row-gap: var(--space-2); }
+  .case-card-notes   { display: none; }
+  .case-card-title   { flex-basis: 100%; white-space: normal; }
+}
 
 .case-card-menu {
   display: flex; align-items: center; gap: var(--space-1);
@@ -1522,7 +1561,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-tri-btn {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 3.2rem; padding: var(--space-1) var(--space-4);
-  border-radius: 999px; border: 2px solid transparent;
+  border-radius: var(--radius-pill); border: 2px solid transparent;
   font-size: var(--text-sm); font-weight: var(--weight-bold); font-family: var(--font-body);
   cursor: pointer; line-height: 1; transition: filter var(--dur-instant), transform var(--dur-instant);
   background: var(--surface2); color: var(--muted); border-color: var(--border2);
@@ -1808,7 +1847,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                             border-radius: var(--radius-sm); background: var(--surface2); border: 1px solid var(--border2); }
 .cpc-banner-text         { font-size: var(--text-xs); color: var(--muted); font-weight: var(--weight-regular); letter-spacing: 0; }
 .cpc-banner-loaded       { font-size: var(--text-xs); color: var(--cpc-loaded); }
-.cpc-banner-loading      { font-size: var(--text-xs); color: var(--muted); }
+.cpc-banner-loading      { font-size: var(--text-xs); color: var(--muted); display: inline-flex; align-items: center; gap: var(--space-2); }
 .cpc-notice-icon         { flex-shrink: 0; opacity: 0.45; }
 .btn-icon-sm             { font-size: var(--text-sm); padding: 2px var(--space-3); border-radius: var(--radius-sm);
                             background: var(--surface2); border: 1px solid var(--border2); }
@@ -1874,7 +1913,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 .tl-type-chip {
   display: inline-flex; align-items: center; gap: var(--space-2);
   font-family: var(--font-body); font-size: var(--text-xs); font-weight: 600; color: var(--muted);
-  background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-pill);
   padding: var(--space-1) var(--space-4) var(--space-1) var(--space-3); cursor: pointer; transition: all 0.12s;
 }
 .tl-type-chip:hover { border-color: var(--border2); color: var(--text); }
@@ -4108,7 +4147,7 @@ function _cpcLoadFromDb(cb) {
 }
 
 function _cpcTryLoadFromDb() {
-  _cpcSetBanner('<span class="cpc-banner-loading">Laster…</span>');
+  _cpcSetBanner('<span class="cpc-banner-loading"><span class="spinner" aria-hidden="true"></span>Laster…</span>');
   _cpcLoadFromDb(function(err, data) {
     if (err || !data) {
       _cpcSetBanner(
@@ -4935,6 +4974,15 @@ function render() {
 }
 
 // ── Kortliste (ny / fristarkiv / viderebehandling) ─
+// Tomtilstand: skiller mellom "ingen saker i det hele tatt" og "filteret ga
+// null treff", så brukeren vet om løsningen er å opprette en sak eller å
+// tømme søket.
+function emptyStateMessage(filter) {
+  var trimmed = (filter || '').trim();
+  if (trimmed) return { text: 'Ingen saker matcher «' + trimmed + '».', clearable: true };
+  return { text: 'Ingen saker her. Bruk «+ Legg til sak» for å opprette en ny.', clearable: false };
+}
+
 // ── Felles kortliste-renderer ──────────────────────
 function renderCaseList(sorted, opts, listEl, emptyEl) {
   var actionLabel = opts.actionLabel || null;
@@ -4953,7 +5001,12 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
 
   if (!rows.length) {
     listEl.innerHTML = '';
-    if (emptyEl) emptyEl.style.display = 'block';
+    if (emptyEl) {
+      var empty = emptyStateMessage(filter);
+      emptyEl.innerHTML = esc(empty.text) +
+        (empty.clearable ? ' <button type="button" class="table-empty-clear" id="btn-empty-clear-filter">Tøm filter</button>' : '');
+      emptyEl.style.display = 'block';
+    }
     return;
   }
   if (emptyEl) emptyEl.style.display = 'none';
@@ -5532,7 +5585,7 @@ function _bkUpdateSettingsUI() {
 
 function _bkOpenRestoreModal() {
   var list = document.getElementById('backup-snapshot-list');
-  list.innerHTML = '<p class="bk-snap-empty">Laster…</p>';
+  list.innerHTML = '<p class="bk-snap-empty"><span class="spinner" aria-hidden="true"></span> Laster…</p>';
   openBackdrop('backup-restore-backdrop');
   _bkListSnapshots(function(err, snaps) {
     if (err || !snaps.length) {
@@ -5550,10 +5603,13 @@ function _bkOpenRestoreModal() {
   });
 }
 
-function _bkRestoreSnapshot(key) {
+function _bkRestoreSnapshot(key, btn) {
+  function resetBtn() {
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Gjenopprett'; }
+  }
   _bkListSnapshots(function(err, snaps) {
     var snap = snaps.find(function(s) { return s.exported === key; });
-    if (!snap) { showToast('✗ Fant ikke sikkerhetskopien', true); return; }
+    if (!snap) { resetBtn(); showToast('✗ Fant ikke sikkerhetskopien', true); return; }
     try {
       var data = JSON.parse(JSON.stringify(snap));
       if (!Array.isArray(data.cases)) throw new Error('Ugyldig format');
@@ -5564,7 +5620,7 @@ function _bkRestoreSnapshot(key) {
       _prepareImportModal(0);
       closeBackdrop('backup-restore-backdrop');
       openBackdrop('import-backdrop');
-    } catch(e) { showToast('✗ Kunne ikke lese sikkerhetskopien', true); }
+    } catch(e) { resetBtn(); showToast('✗ Kunne ikke lese sikkerhetskopien', true); }
   });
 }
 
@@ -5604,7 +5660,10 @@ document.getElementById('btn-backup-restore-close').addEventListener('click', fu
 document.getElementById('backup-restore-backdrop').addEventListener('click', function(e) { if (e.target === this) closeBackdrop('backup-restore-backdrop'); });
 document.getElementById('backup-snapshot-list').addEventListener('click', function(e) {
   var btn = e.target.closest('[data-bk-key]');
-  if (btn) _bkRestoreSnapshot(btn.dataset.bkKey);
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" aria-hidden="true"></span>';
+  _bkRestoreSnapshot(btn.dataset.bkKey, btn);
 });
 
 // Ta ventende kopi umiddelbart når fanen skjules/lukkes
@@ -5826,10 +5885,18 @@ document.getElementById('btn-year-next').addEventListener('click', function() {
 });
 
 // ── Toast ──────────────────────────────────────────
+// Avstand fra bunnen for det n-te samtidige varselet (0-indeksert), så flere
+// varsler i rask rekkefølge stables i stedet for å overlappe hverandre.
+function toastStackOffset(existingCount) {
+  return 24 + existingCount * 54;
+}
+
 function showToast(msg, isError) {
+  var existingCount = document.querySelectorAll('.save-toast').length;
   var t = document.createElement('div');
   t.className = 'save-toast' + (isError ? ' toast-error' : '');
   t.textContent = msg;
+  t.style.bottom = toastStackOffset(existingCount) + 'px';
   document.body.appendChild(t);
   setTimeout(function() {
     t.style.transition = 'opacity 0.3s'; t.style.opacity = '0';
@@ -8186,7 +8253,7 @@ function initCpcLoadButton() {
 }
 
 function _cpcLoadFile(file) {
-  _cpcSetBanner('<span class="cpc-banner-loading">Lagrer…</span>');
+  _cpcSetBanner('<span class="cpc-banner-loading"><span class="spinner" aria-hidden="true"></span>Lagrer…</span>');
   var reader = new FileReader();
   reader.onload = function(ev) {
     try {
@@ -9192,6 +9259,9 @@ document.getElementById('tag-filter-input').addEventListener('input', function()
 });
 document.getElementById('btn-filter-clear').addEventListener('click', function() {
   dispatch('TAG_FILTER_SET', { tag: '' });
+});
+document.getElementById('card-list-empty').addEventListener('click', function(e) {
+  if (e.target.closest('#btn-empty-clear-filter')) dispatch('TAG_FILTER_SET', { tag: '' });
 });
 
 // ── Stikkord klikk → Alle saker ───────────────────

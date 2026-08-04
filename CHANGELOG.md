@@ -53,6 +53,26 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   (`0.08s` → `--dur-instant`, `0.18s` → `--dur-slow`, both ~20ms
   differences). Verified with `npm run lint` and `npm test` (81/81); the
   full snap-vs-outlier breakdown is in the pull request description.
+- Normaliserte de resterende pille-formede `border-radius`-verdiene
+  (`999px`/`9999px` på tri-state-knapper, oppdrag-varighetspillen og
+  sakstype-bryterne på tidslinjen) til det eksisterende
+  `--radius-pill`-tokenet. Ingen visuell endring — verdiene klippes uansett
+  til halve elementhøyden.
+- Tomtilstanden for sakslisten skiller nå mellom «ingen saker i det hele
+  tatt» og «filteret ga ingen treff»: med et aktivt søk vises «Ingen saker
+  matcher «…»» og en lenke for å tømme filteret, i stedet for den generiske
+  «bruk + Legg til sak»-meldingen som før vistes uansett årsak.
+- CPC-innlasting og «Gjenopprett»-knappen for sikkerhetskopier viser nå en
+  spinner og deaktiveres mens handlingen pågår, slik at det er tydelig at
+  klikket registrerte og man ikke ved et uhell kan trigge samme handling to
+  ganger.
+- Lagt til et synlig tastaturfokus (ring i aksentfargen) på knapper, lenker
+  og andre tabbare elementer som før enten hadde nettleserens standardfokus
+  eller ingen synlig indikator i det hele tatt.
+- Saksradene i kortlisten bryter nå til flere linjer i stedet for å klemme
+  tittelen uleselig sammen på smale skjermer (under 700px bredde);
+  notatkolonnen skjules ved samme bruddpunkt for å gi tittelen plassen den
+  trenger.
 
 ### Fixed
 - Tidslinjens rad-tildeling for overlappende saker var begrenset til to
@@ -69,6 +89,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   fortidsvinduet i beregningen av piksler per dag, slik at f.eks. «3 mnd»
   viste mindre enn tre måneder i praksis. Fortiden legges nå til ved samme
   tetthet i stedet for å dele på samme plassbudsjett som horisonten.
+- Flere lagre-varsler («toasts») som dukket opp rett etter hverandre la seg
+  oppå hverandre i samme hjørne av skjermen. De stables nå ovenfor
+  hverandre i stedet for å overlappe.
 
 ## [4.16.0] - 2026-06-29
 ### Added
