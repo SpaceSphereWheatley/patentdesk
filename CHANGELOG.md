@@ -6,6 +6,8 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.17.0] - 2026-08-06
 ### Added
 - Ny **Mothold**-seksjon på sakssiden der du registrerer nærmeste kjente
   teknikk. Motholdene nummereres automatisk D1, D2, D3 … og har felt for
