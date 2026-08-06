@@ -7,6 +7,26 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 ### Added
+- Ny **Mothold**-seksjon på sakssiden der du registrerer nærmeste kjente
+  teknikk. Motholdene nummereres automatisk D1, D2, D3 … og har felt for
+  referanse og tittel. Hvert mothold kan flagges som **P** (mellomliggende
+  dokument) eller **E** (eldre søknad publisert på eller etter
+  inngivelsesdagen); flaggene prefikser kategorien i granskingsrapporten
+  («P,X»). Mothold som bare er bakgrunn kan merkes med **Bakgrunn** — de tas
+  ut av kravsvelgerne og får A på alle vurderte krav. Fjerner du et mothold,
+  renummereres de øvrige og kravenes henvisninger flyttes med.
+- Kravsvurderingen kobler nå hvert avslag til motholdet som tar det. Når
+  nyhet eller oppfinnelseshøyde settes til ✗, dukker det opp en chip ved
+  siden av knappen der du velger mothold: nyhet tar nøyaktig ett, mens
+  oppfinnelseshøyde tar ett eller to i kombinasjon. Krav uten nyhet har
+  låst oppfinnelseshøyde fra før, og arver nyhetsmotholdet i stedet for å be
+  om et nytt valg.
+- Ny **Granskingsrapport**-seksjon som utledes automatisk av kravsvurderingen
+  — ingenting skal tastes inn. For hvert mothold vises hvilke krav det er X,
+  Y eller A for: motholdet som tar nyheten eller oppfinnelseshøyden alene blir
+  X, motholdet som inngår i en kombinasjon blir Y, og resten blir A. Krav som
+  ikke er ferdig vurdert holdes utenfor og listes under tabellen. Knappen
+  «Kopier rapport» legger hele rapporten på utklippstavlen som ren tekst.
 - Tidslinjen har et nytt filter der du fritt kan krysse av hvilke sakstyper
   (Ny, Fristarkiv, Viderebehandling, Oppdrag) som skal vises, i stedet for å
   være låst til «Ny». Saksliste-tidslinjen forhåndskrysser av sakstypen som
