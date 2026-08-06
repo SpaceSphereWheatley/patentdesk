@@ -5,7 +5,7 @@ HTML/CSS/JS — ingen byggprosess, ingen avhengigheter, ingen server.
 
 ## Kom i gang
 
-1. Last ned [`PatentDesk.html`](PatentDesk.html)
+1. [📥 Last ned PatentDesk.html](https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/PatentDesk.html)
 2. Åpne filen i en nettleser (Chrome eller Edge anbefales — mappesikkerhetskopi
    krever File System Access API)
 3. Det er alt. Alt kjører lokalt; ingenting forlater maskinen din.
@@ -60,7 +60,7 @@ HTML/CSS/JS — no build step, no dependencies, no server.
 
 ## Getting started
 
-1. Download [`PatentDesk.html`](PatentDesk.html)
+1. [📥 Download PatentDesk.html](https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/PatentDesk.html)
 2. Open it in a browser (Chrome or Edge recommended — folder backup
    requires the File System Access API)
 3. That's it. Everything runs locally; nothing leaves your machine.
