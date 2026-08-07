@@ -7,6 +7,15 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.17.1] - 2026-08-07
+### Fixed
+- Mothold-chipen ved siden av nyhet-/OH-knappene i kravsvurderingen kunne få
+  selve knappen til å hoppe sidelengs idet chipen dukket opp eller forsvant,
+  fordi cellen sentrerer knapp og chip sammen og chipens bredde endret den
+  sentrerte wrapperens totalbredde. Det reserveres nå alltid plass til
+  chipen — en usynlig plassholder når den ikke er aktuell — slik at knappen
+  ligger stille.
+
 ## [4.17.0] - 2026-08-06
 ### Added
 - Ny **Mothold**-seksjon på sakssiden der du registrerer nærmeste kjente
