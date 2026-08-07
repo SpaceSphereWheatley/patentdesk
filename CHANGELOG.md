@@ -14,7 +14,12 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   fordi cellen sentrerer knapp og chip sammen og chipens bredde endret den
   sentrerte wrapperens totalbredde. Det reserveres nå alltid plass til
   chipen — en usynlig plassholder når den ikke er aktuell — slik at knappen
-  ligger stille.
+  ligger stille. Kravstabellen brukte i tillegg `table-layout: auto`, som
+  regnet ut kolonnebreddene på nytt fra innholdet i hele tabellen ved hvert
+  klikk — dette kunne få knappen og alt til høyre for den til å forskyve seg.
+  Tabellen har nå faste kolonnebredder som ikke lenger endres av innhold, og
+  mothold-chipen har fått en fast minstebredde slik at den ikke lenger
+  endrer størrelse når et dokument velges.
 
 ## [4.17.0] - 2026-08-06
 ### Added

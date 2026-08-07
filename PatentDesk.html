@@ -1540,7 +1540,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .btn-sak-class-add:hover { color: var(--accent); border-color: var(--accent-dim); }
 
 /* Kravsvurdering-tabell */
-.sak-claims-table   { width: 100%; }
+.sak-claims-table   { width: 100%; table-layout: fixed; }
 .sak-claims-table th { text-align: center; }
 .sak-th-krav        { width: 3.5rem; text-align: center; }
 .sak-th-check       { width: 10.5rem; text-align: center; }
@@ -1689,7 +1689,8 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 /* Kravstabell: mothold-chip ved siden av tri-state-knappen */
 .claim-doc-wrap     { display: inline-flex; align-items: center; gap: var(--space-2); position: relative; }
-.claim-doc-chip     { display: inline-flex; align-items: center;
+.claim-doc-chip     { display: inline-flex; align-items: center; justify-content: center;
+                      min-width: 4rem;
                       font-size: var(--text-2xs); font-weight: var(--weight-semibold); font-family: var(--font-body);
                       padding: 2px var(--space-3); border-radius: var(--radius-sm); cursor: pointer;
                       white-space: nowrap; background: rgba(37,99,235,0.10); color: var(--primary);
@@ -1821,9 +1822,10 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .kt-empty           { font-size: var(--text-xs); color: var(--muted); padding: var(--space-3) var(--space-5); }
 
 /* Etikett-celle i tabellen */
-.sak-th-tag         { width: 96px; text-align: center; }
+.sak-th-tag         { width: 128px; text-align: center; }
 .sak-th-dep         { width: 80px; text-align: center; }
-.sak-tag-display    { font-size: var(--text-xs); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.sak-tag-display    { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+                      font-size: var(--text-xs); color: var(--muted); cursor: pointer; white-space: nowrap; }
 .sak-tag-display:hover { color: var(--text); }
 .sak-tag-display.sak-tag-empty { opacity: 0; pointer-events: none; }
 tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
