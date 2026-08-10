@@ -1540,7 +1540,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .btn-sak-class-add:hover { color: var(--accent); border-color: var(--accent-dim); }
 
 /* Kravsvurdering-tabell */
-.sak-claims-table   { width: 100%; }
+.sak-claims-table   { width: 100%; table-layout: fixed; }
 .sak-claims-table th { text-align: center; }
 .sak-th-krav        { width: 3.5rem; text-align: center; }
 .sak-th-check       { width: 10.5rem; text-align: center; }
@@ -1689,7 +1689,8 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 /* Kravstabell: mothold-chip ved siden av tri-state-knappen */
 .claim-doc-wrap     { display: inline-flex; align-items: center; gap: var(--space-2); position: relative; }
-.claim-doc-chip     { display: inline-flex; align-items: center;
+.claim-doc-chip     { display: inline-flex; align-items: center; justify-content: center;
+                      min-width: 4rem;
                       font-size: var(--text-2xs); font-weight: var(--weight-semibold); font-family: var(--font-body);
                       padding: 2px var(--space-3); border-radius: var(--radius-sm); cursor: pointer;
                       white-space: nowrap; background: rgba(37,99,235,0.10); color: var(--primary);
@@ -1700,6 +1701,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .claim-doc-chip-empty:hover { background: var(--surface2); color: var(--primary); border-color: var(--primary); }
 .claim-doc-chip-inherit { opacity: 0.6; border-style: dashed; cursor: default; }
 .claim-doc-chip-inherit:hover { background: rgba(37,99,235,0.10); border-color: rgba(37,99,235,0.35); }
+.claim-doc-chip-placeholder { visibility: hidden; }
 
 /* Mothold-velger */
 /* Ligger fast i viewporten, ikke i tabellen: .table-wrap ruller (overflow-x:
@@ -1820,9 +1822,10 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .kt-empty           { font-size: var(--text-xs); color: var(--muted); padding: var(--space-3) var(--space-5); }
 
 /* Etikett-celle i tabellen */
-.sak-th-tag         { width: 96px; text-align: center; }
+.sak-th-tag         { width: 128px; text-align: center; }
 .sak-th-dep         { width: 80px; text-align: center; }
-.sak-tag-display    { font-size: var(--text-xs); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.sak-tag-display    { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+                      font-size: var(--text-xs); color: var(--muted); cursor: pointer; white-space: nowrap; }
 .sak-tag-display:hover { color: var(--text); }
 .sak-tag-display.sak-tag-empty { opacity: 0; pointer-events: none; }
 tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
@@ -3331,7 +3334,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.17.0';
+var APP_VERSION    = 'v4.17.1';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -6846,7 +6849,12 @@ function renderSakDocs(data) {
 function claimDocChipHtml(data, c, field, effNovelty) {
   var isNovelty = field === 'novelty';
   var val = isNovelty ? effNovelty : effectiveClaimValue(data.claims, c, 'inventive');
-  if (val !== false) return '';
+  // Reserverer chipens plass selv når den ikke er aktuell ennå, slik at
+  // tri-state-knappen ikke hopper sidelengs når chipen dukker opp/forsvinner
+  // (cellen sentrerer wrapperen, så totalbredden må holdes stabil).
+  if (val !== false) {
+    return '<span class="claim-doc-chip claim-doc-chip-empty claim-doc-chip-placeholder" aria-hidden="true">velg</span>';
+  }
 
   // Krav uten nyhet har låst oppfinnelseshøyde og arver nyhetsmotholdet.
   if (!isNovelty && effNovelty === false) {

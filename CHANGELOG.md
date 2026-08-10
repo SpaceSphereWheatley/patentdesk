@@ -7,6 +7,20 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.17.1] - 2026-08-07
+### Fixed
+- Mothold-chipen ved siden av nyhet-/OH-knappene i kravsvurderingen kunne få
+  selve knappen til å hoppe sidelengs idet chipen dukket opp eller forsvant,
+  fordi cellen sentrerer knapp og chip sammen og chipens bredde endret den
+  sentrerte wrapperens totalbredde. Det reserveres nå alltid plass til
+  chipen — en usynlig plassholder når den ikke er aktuell — slik at knappen
+  ligger stille. Kravstabellen brukte i tillegg `table-layout: auto`, som
+  regnet ut kolonnebreddene på nytt fra innholdet i hele tabellen ved hvert
+  klikk — dette kunne få knappen og alt til høyre for den til å forskyve seg.
+  Tabellen har nå faste kolonnebredder som ikke lenger endres av innhold, og
+  mothold-chipen har fått en fast minstebredde slik at den ikke lenger
+  endrer størrelse når et dokument velges.
+
 ## [4.17.0] - 2026-08-06
 ### Added
 - Ny **Mothold**-seksjon på sakssiden der du registrerer nærmeste kjente
