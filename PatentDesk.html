@@ -1497,6 +1497,64 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       flex-shrink: 0; cursor: pointer; }
 .sak-check-label    { flex: 1; }
 
+/* ── Medlesing ──────────────────────────────────────── */
+.medl-new-form      { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap;
+                      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+                      padding: var(--space-5) var(--space-6); margin-bottom: var(--space-6); box-shadow: var(--shadow-card); }
+.medl-new-form .field-input, .medl-new-form .s-sel { flex: 1; min-width: 140px; }
+
+.medl-row            { cursor: pointer; }
+.medl-type-pill      { display: inline-block; font-size: var(--text-xs); font-weight: var(--weight-semibold);
+                      padding: 2px var(--space-4); border-radius: var(--radius-pill); letter-spacing: var(--tracking-normal); }
+.medl-type-normal    { background: var(--s-avsl-bg); color: var(--s-avsl-text); border: 1px solid var(--s-avsl-border); }
+.medl-type-medium_stor { background: var(--s-videre-bg); color: var(--s-videre-text); border: 1px solid var(--s-videre-border); }
+.medl-date-cell      { color: var(--muted); font-variant-numeric: tabular-nums; }
+.medl-progress-cell  { display: flex; align-items: center; gap: var(--space-3); min-width: 120px; }
+.medl-progress-track { flex: 1; height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.medl-progress-fill  { height: 100%; background: var(--accent); border-radius: 3px; }
+.medl-progress-txt   { font-size: var(--text-xs); color: var(--muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.medl-status-pill    { font-size: var(--text-xs); font-weight: var(--weight-medium); color: var(--muted); }
+.medl-status-done    { color: var(--color-ok); }
+
+.medl-back           { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--muted);
+                      font-size: var(--text-sm); text-decoration: none; margin-bottom: var(--space-5); font-weight: var(--weight-medium); }
+.medl-back:hover     { color: var(--text); }
+
+.medl-detail-head    { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+                      padding: var(--space-6) var(--space-7); margin-bottom: var(--space-6); box-shadow: var(--shadow-card);
+                      display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-7); flex-wrap: wrap; }
+.medl-detail-meta    { display: flex; gap: var(--space-8); flex-wrap: wrap; }
+.medl-meta-field label { display: block; font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: var(--tracking-label);
+                      color: var(--muted); font-weight: var(--weight-semibold); margin-bottom: var(--space-1); }
+.medl-meta-val       { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.medl-detail-progress { text-align: right; flex-shrink: 0; }
+.medl-progress-num   { font-size: var(--text-2xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+.medl-progress-lbl   { font-size: var(--text-xs); color: var(--muted); }
+
+.medl-phase          { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+                      margin-bottom: var(--space-5); box-shadow: var(--shadow-card); overflow: hidden; }
+.medl-phase-title    { padding: var(--space-4) var(--space-7); background: var(--surface2); border-bottom: 1px solid var(--border);
+                      font-size: var(--text-base); font-weight: var(--weight-bold); }
+.medl-check-group    { padding: var(--space-3) var(--space-7) var(--space-1); font-size: var(--text-xs);
+                      font-weight: var(--weight-semibold); color: var(--accent-dim); }
+.medl-check-row      { display: flex; align-items: flex-start; gap: var(--space-4); padding: var(--space-4) var(--space-7);
+                      border-bottom: 1px solid var(--border); cursor: pointer; }
+.medl-phase .medl-check-row:last-child { border-bottom: none; }
+.medl-check-row:hover { background: var(--surface2); }
+.medl-check-row input { margin-top: 2px; width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+.medl-check-label    { font-size: var(--text-base); line-height: var(--line-snug); }
+.medl-check-done .medl-check-label { color: var(--muted); text-decoration: line-through; }
+.medl-check-sub      { padding-left: 40px; }
+
+.medl-notat-box      { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+                      padding: var(--space-6) var(--space-7); margin-top: var(--space-2); box-shadow: var(--shadow-card); }
+.medl-notat-box label { display: block; font-size: var(--text-xs); font-weight: var(--weight-semibold);
+                      text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--muted); margin-bottom: var(--space-3); }
+.medl-notat-box textarea { width: 100%; min-height: 70px; font-family: var(--font-body); font-size: var(--text-base);
+                      color: var(--text); border: 1px solid var(--border2); border-radius: var(--radius); padding: var(--space-4);
+                      resize: vertical; }
+.medl-detail-footer  { margin-top: var(--space-6); }
+
 /* Ja/Nei-gruppe */
 .sak-yesno-group    { display: flex; gap: var(--space-2); flex-shrink: 0; }
 .sak-yn-btn         { background: var(--surface2); border: 1px solid var(--border2);
@@ -2200,6 +2258,9 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
   <symbol id="ti-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><polyline points="7 11 12 16 17 11"/><line x1="12" y1="4" x2="12" y2="16"/>
   </symbol>
+  <symbol id="ti-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
+  </symbol>
 </svg>
 
   <input type="file" id="import-file-input" accept=".json" class="hidden-input" />
@@ -2240,6 +2301,10 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
         <a class="nav-tab" data-page="avsluttet" data-tooltip="Alle saker" href="#">
           <svg class="ti" aria-hidden="true"><use href="#ti-files"/></svg>
           <span class="nav-label">Alle saker</span>
+        </a>
+        <a class="nav-tab" data-page="medlesing" data-tooltip="Medlesing" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg>
+          <span class="nav-label">Medlesing</span>
         </a>
         <div class="nav-divider"></div>
         <a class="nav-tab" data-page="statistikk" data-tooltip="Statistikk" href="#">
@@ -2849,6 +2914,101 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
         </section>
 
       </div>
+
+      <!-- Medlesing -->
+      <div id="view-medlesing" style="display:none;">
+
+        <!-- Liste -->
+        <div id="medl-list-view">
+          <section class="top-bar">
+            <div>
+              <h1 class="page-title">Medlesing</h1>
+              <span class="case-count" id="medl-count"></span>
+            </div>
+            <button class="btn-add" id="btn-medl-new">+ Ny medlesing</button>
+          </section>
+
+          <div id="medl-new-form" class="medl-new-form" style="display:none;">
+            <input class="field-input" id="medl-new-casenumber" type="text" placeholder="Saksnummer" />
+            <input class="field-input" id="medl-new-saksbehandler" type="text" placeholder="Saksbehandler" />
+            <select class="s-sel" id="medl-new-type">
+              <option value="normal">Normal medvirkning</option>
+              <option value="medium_stor">Medium eller stor medvirkning</option>
+            </select>
+            <input class="field-input" id="medl-new-date" type="text" placeholder="åååå.mm.dd" maxlength="10" />
+            <button class="s-btn s-btn-accent" id="btn-medl-new-save">Opprett</button>
+            <button class="s-btn" id="btn-medl-new-cancel">Avbryt</button>
+            <span class="field-error" id="medl-new-error"></span>
+          </div>
+
+          <section class="table-section">
+            <div class="table-wrap">
+              <table class="case-table">
+                <thead>
+                  <tr>
+                    <th>Saksnummer</th>
+                    <th>Saksbehandler</th>
+                    <th>Type</th>
+                    <th>Dato</th>
+                    <th>Fremdrift</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="medl-tbody"></tbody>
+              </table>
+              <div class="table-empty" id="medl-empty">
+                Ingen medlesinger registrert. Bruk «+ Ny medlesing» for å opprette en.
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Detalj -->
+        <div id="medl-detail-view" style="display:none;">
+          <a class="medl-back" href="#" id="medl-back-link">&larr; Tilbake til medlesing</a>
+
+          <div class="medl-detail-head">
+            <div class="medl-detail-meta">
+              <div class="medl-meta-field">
+                <label>Saksnummer</label>
+                <div class="medl-meta-val" id="medl-d-casenumber"></div>
+              </div>
+              <div class="medl-meta-field">
+                <label>Saksbehandler</label>
+                <div class="medl-meta-val" id="medl-d-saksbehandler"></div>
+              </div>
+              <div class="medl-meta-field">
+                <label>Type medvirkning</label>
+                <select class="s-sel" id="medl-d-type">
+                  <option value="normal">Normal medvirkning</option>
+                  <option value="medium_stor">Medium eller stor medvirkning</option>
+                </select>
+              </div>
+              <div class="medl-meta-field">
+                <label>Dato</label>
+                <div class="medl-meta-val" id="medl-d-date"></div>
+              </div>
+            </div>
+            <div class="medl-detail-progress">
+              <div class="medl-progress-num" id="medl-d-progress-num"></div>
+              <div class="medl-progress-lbl">punkter avkrysset</div>
+            </div>
+          </div>
+
+          <div id="medl-phases"></div>
+
+          <div class="medl-notat-box">
+            <label for="medl-d-notat">Notat</label>
+            <textarea id="medl-d-notat" placeholder="Kommentarer til medlesingen…"></textarea>
+          </div>
+
+          <div class="medl-detail-footer">
+            <button class="s-btn s-btn-danger" id="btn-medl-delete">Slett medlesing</button>
+          </div>
+        </div>
+
+      </div>
+
   </div><!-- /.app-shell -->
 
   <!-- ══ MODALER ══ -->
@@ -3334,7 +3494,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.17.1';
+var APP_VERSION    = 'v4.18.0';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3399,6 +3559,81 @@ var CHECKLIST_DEFAULT = [
 
 // Sjekkliste-lagring: se SEKSJON 3
 // getChecklistTemplate(), saveChecklistTemplate(), resetChecklistTemplate() er definert i SEKSJON 3
+
+// ── Medlesing-mal (RBS) ────────────────────────────
+var MEDLESING_KEY = 'pt_medlesing';
+
+// Delt mellom begge medvirkningstyper, slik at et endret spørsmål her slår ut begge steder
+var MEDLESING_FASER_FELLES = [
+  { phase: 'Granskingsrapport', items: [
+    { id: 'mg-klassifisert',  label: 'Er søknaden klassifisert?' },
+    { id: 'mg-relevante',     label: 'Er det gransket i relevante klasser, databaser og evt. i ikke-patent litteratur?' },
+    { id: 'mg-hvor-klasser',  label: 'Er klasser angitt?',                                     group: 'Er det korrekt angitt hvor det er gransket?' },
+    { id: 'mg-hvor-baser',    label: 'Er elektroniske baser angitt?',                           group: 'Er det korrekt angitt hvor det er gransket?' },
+    { id: 'mg-dok-pat',       label: 'Patentlitteratur?',                                       group: 'Er dokumentene i granskingsrapporten riktig angitt?' },
+    { id: 'mg-dok-ikkepat',   label: 'Ikke-patentlitteratur?',                                  group: 'Er dokumentene i granskingsrapporten riktig angitt?' },
+    { id: 'mg-dok-deler',     label: 'Henvisning til relevante deler?',                         group: 'Er dokumentene i granskingsrapporten riktig angitt?' },
+    { id: 'mg-dok-krav',      label: 'Henvisning til relevante krav?',                          group: 'Er dokumentene i granskingsrapporten riktig angitt?' },
+    { id: 'mg-tilordnet',     label: 'Er alle krav som er gransket tilordnet et dokument?' },
+    { id: 'mg-ikke-gransket', label: 'Dersom noen krav ikke er gransket; er dette angitt?' }
+  ]},
+  { phase: 'Realitetsuttalelse', items: [
+    { id: 'mr-sprak-mal',     label: 'Språkvalg og mal — Riktig mal og språkvalg i rapport (Engelsk/Norsk)' },
+    { id: 'mr-konklusjon',    label: 'Konklusjonen — Er det overensstemmelse mellom konklusjonen og resten av uttalelsen?' },
+    { id: 'mr-vesentlige',    label: 'Vesentlige mangler av betydning for vurdering av patenterbarhet — Dersom noen krav ikke er gransket: er dette angitt? Hvis ja, er det skrevet en begrunnelse for det?' },
+    { id: 'mr-nyhet',         label: 'Nyhet — Er nyhetsvurdering angitt for alle krav.' },
+    { id: 'mr-oh-tilnaerm',   label: 'Er oppfinnelseshøyde vurdert ved hjelp av «problem-løsning»-tilnærming?',                                                          group: 'Oppfinnelseshøyde' },
+    { id: 'mr-oh-begrunn',    label: 'Er begrunnelsen for vurderingen av oppfinnelseshøyde fullstendig og tilstrekkelig klar til at medleser kan følge saksbehandlerens argumentasjon?', group: 'Oppfinnelseshøyde' },
+    { id: 'mr-oh-alle-krav',  label: 'Er oppfinnelseshøyde vurdert for alle krav som tilfredsstiller betingelsen til nyhet?',                                            group: 'Oppfinnelseshøyde' },
+    { id: 'mr-end-uenh',      label: 'Er evt. uenhetlighet kommentert?',                                                        group: 'Endringer i krav eller beskrivelse' },
+    { id: 'mr-end-pf2021',    label: 'Har saksbehandler henvist til pf §§20 og/eller 21 i tilfeller hvor endringer er foreslått eller sannsynlig?', group: 'Endringer i krav eller beskrivelse' },
+    { id: 'mr-palegg',        label: 'Pålegg — Kommer det klart frem hva søker må gjøre for å bringe søknaden nærmere en avgjørelse?' },
+    { id: 'mr-samsvar-dok',   label: 'Er det samsvar mellom anførte dokumenter i uttalelsen og det som fremgår av granskingsrapporten?', group: 'Samsvar med granskingsrapport' },
+    { id: 'mr-samsvar-arg',   label: 'Er det samsvar mellom argumentasjonen i uttalelsen og de angitte kategorier i rapporten?',         group: 'Samsvar med granskingsrapport' },
+    { id: 'mr-sprak',         label: 'Språk — Klart språk, lett å forstå' }
+  ]}
+];
+
+var MEDLESING_TEMPLATE_NORMAL = MEDLESING_FASER_FELLES;
+
+var MEDLESING_TEMPLATE_MEDIUM_STOR = [
+  { phase: 'Innledende sparring', items: [
+    { id: 'mi-sparre-konsult', label: 'Dersom patentsøknaden er så ufullstendig at den ikke kan behandles kan sparrer eller patentfaglig konsulteres.' },
+    { id: 'mi-vesentlige',     label: 'Vurder om søknaden inneholder vesentlige mangler av betydning for vurdering av patenterbarhet (f.eks. er så kompleks at den ikke kan granskes fullstendig.) Hvis ja, se kapittel 2.1 Vesentlige mangler av betydning for vurdering av patenterbarhet.' },
+    { id: 'mi-strategi',      label: 'Forslag til granskingsstrategi drøftes med sparringspartner' },
+    { id: 'mi-notat',         label: 'Ved behov lages det et internt notat etter innledende møte i SANT' }
+  ]},
+  { phase: 'Vesentlige mangler av betydning for vurdering', items: [
+    { id: 'mv-delvis-gransk',   label: 'Dersom søknaden er så kompleks at det ikke er mulig å gjøre en fullstendig gransking, bli enige om grunnlaget for delvis gransking basert på konkrete utførelsesformer angitt i beskrivelsen eller en rimelig generalisering av disse.' },
+    { id: 'mv-ingen-utforelse', label: 'Dersom søknaden er så kompleks at det ikke er mulig å gjøre en fullstendig gransking, og ingen konkrete utførelsesformer er angitt i beskrivelsen, eller kravene er for generelle, bli enige om innholdet i uttalelsen før gransking.' },
+    { id: 'mv-uklar-oppf',      label: 'Dersom oppfinnelsen er så uklart angitt, enten søknaden inneholder krav eller ikke, at det er tvil om hvordan oppfinnelsen skal forstås (patl. § 8 andre ledd første setning) bli enige om hvordan dette uttrykkes i første realitetsuttalelse' },
+    { id: 'mv-manglende-stotte', label: 'Dersom kravene mangler helt eller delvis støtte i beskrivelsen (patl. § 8 andre ledd tredje setning) bli enige om hvordan dette uttrykkes i første realitetsuttalelse' }
+  ]},
+  { phase: 'Granskingsstrategi og resultater', items: [
+    { id: 'mst-kun-a',    label: 'Hvis saksbehandler bare finner dokumenter av kategori A skal det sparres på resultat og granskingsstrategi.' },
+    { id: 'mst-dok-sparr', label: 'Gjennomført sparring dokumenteres ved å sende en utvalgsavgjørelse fra saksbehandler som så godkjennes av medleser når sparring er gjennomført' }
+  ]},
+  { phase: 'Drøfting av resultat fra gransking', items: [
+    { id: 'md-naermeste',  label: 'Vurdere hvilket dokument som utgjør nærmeste kjente teknikk' },
+    { id: 'md-problem',    label: 'Med utgangspunkt i nærmeste kjente teknikk, drøft formulering av det objektive tekniske problem' }
+  ]}
+].concat(MEDLESING_FASER_FELLES);
+
+function medlesingTemplateFor(type) {
+  return type === 'medium_stor' ? MEDLESING_TEMPLATE_MEDIUM_STOR : MEDLESING_TEMPLATE_NORMAL;
+}
+
+function medlesingProgress(template, checklist) {
+  checklist = checklist || {};
+  var total = 0, checked = 0;
+  template.forEach(function(phase) {
+    phase.items.forEach(function(item) {
+      total++;
+      if (checklist[item.id] === true) checked++;
+    });
+  });
+  return { checked: checked, total: total, done: total > 0 && checked === total };
+}
 
 // Frister i måneder
 var FRIST_NY_TIL_FRISTARKIV     = 6;
@@ -3930,6 +4165,19 @@ function saveChecklistTemplate(tpl) {
   lsSetSafe(CHECKLIST_KEY, JSON.stringify(tpl));
 }
 
+// ── Medlesing ───────────────────────────────────────
+function loadMedlesing() {
+  try {
+    var raw = localStorage.getItem(MEDLESING_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return [];
+}
+
+function saveMedlesing(list) {
+  lsSetSafe(MEDLESING_KEY, JSON.stringify(list));
+}
+
 function resetChecklistTemplate() {
   try { localStorage.removeItem(CHECKLIST_KEY); } catch(e) {}
 }
@@ -4312,6 +4560,8 @@ function _cpcTryLoadFromDb() {
 })();
 
 var stats = loadStats();
+var medlesing = loadMedlesing();
+var activeMedlesingId = null;
 var vacations = loadVacations();
 var productionGoal = loadGoal();
 var beleggHorizon  = loadBeleggHorizon();
@@ -4355,6 +4605,10 @@ var AppState = {
   set activePage(v)    { activePage = v; },
   get activeSakId()    { return activeSakId; },
   set activeSakId(v)   { activeSakId = v; },
+  get medlesing()       { return medlesing; },
+  set medlesing(v)      { medlesing = v; },
+  get activeMedlesingId(){ return activeMedlesingId; },
+  set activeMedlesingId(v){ activeMedlesingId = v; },
   get undoSnapshot()   { return undoSnapshot; },
   set undoSnapshot(v)  { undoSnapshot = v; },
   get settings() {
@@ -4795,6 +5049,56 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'MEDLESING_CREATE': {
+      var rec = {
+        id: uid(),
+        caseNumber: sanitizeText(payload.caseNumber),
+        saksbehandler: sanitizeText(payload.saksbehandler),
+        type: payload.type === 'medium_stor' ? 'medium_stor' : 'normal',
+        date: payload.date || todayStr(),
+        checklist: {},
+        notat: ''
+      };
+      AppState.medlesing = medlesing.concat([rec]);
+      saveMedlesing(medlesing);
+      navigateTo('medlesing/' + rec.id);
+      break;
+    }
+
+    case 'MEDLESING_ITEM_TOGGLE': {
+      var rec = medlesing.find(function(m) { return m.id === payload.id; });
+      if (!rec) break;
+      rec.checklist[payload.itemId] = payload.checked ? true : false;
+      saveMedlesing(medlesing);
+      renderMedlesingDetail(payload.id);
+      break;
+    }
+
+    case 'MEDLESING_TYPE_CHANGE': {
+      var rec = medlesing.find(function(m) { return m.id === payload.id; });
+      if (!rec) break;
+      rec.type = payload.type === 'medium_stor' ? 'medium_stor' : 'normal';
+      saveMedlesing(medlesing);
+      renderMedlesingDetail(payload.id);
+      break;
+    }
+
+    case 'MEDLESING_NOTAT_CHANGE': {
+      var rec = medlesing.find(function(m) { return m.id === payload.id; });
+      if (!rec) break;
+      rec.notat = sanitizeText(payload.notat || '');
+      saveMedlesing(medlesing);
+      break;
+    }
+
+    case 'MEDLESING_DELETE': {
+      AppState.medlesing = medlesing.filter(function(m) { return m.id !== payload.id; });
+      saveMedlesing(medlesing);
+      navigateTo('medlesing');
+      showToast('✓ Medlesing slettet');
+      break;
+    }
+
     case 'TAG_FILTER_SET': {
       AppState.ui.tagFilter = payload.tag;
       var inp = document.getElementById('tag-filter-input');
@@ -4946,6 +5250,10 @@ function updateNav() {
     if (page === 'hjem' || page === 'statistikk' || page === 'innstillinger') return;
     var badge = tab.querySelector('.nav-count');
     if (!badge) { badge = document.createElement('span'); badge.className = 'nav-count'; tab.appendChild(badge); }
+    if (page === 'medlesing') {
+      badge.textContent = medlesing.filter(function(m) { return !medlesingProgress(medlesingTemplateFor(m.type), m.checklist).done; }).length;
+      return;
+    }
     var list = byPage[page] || casesForPage(page);
     badge.textContent = list.length;
     // Oppdrag: farg badge etter alvorlighetsgrad
@@ -4963,12 +5271,14 @@ function showView(page) {
   var isStat     = page === 'statistikk';
   var isSettings = page === 'innstillinger';
   var isSak      = page === 'sak';
-  var isCases    = !isHjem && !isStat && !isSettings && !isSak;
+  var isMedlesing= page === 'medlesing';
+  var isCases    = !isHjem && !isStat && !isSettings && !isSak && !isMedlesing;
   document.getElementById('view-hjem').style.display          = isHjem     ? 'block' : 'none';
   document.getElementById('view-cases').style.display         = isCases    ? 'block' : 'none';
   document.getElementById('view-statistikk').style.display    = isStat     ? 'block' : 'none';
   document.getElementById('view-innstillinger').style.display = isSettings ? 'block' : 'none';
   document.getElementById('view-sak').style.display           = isSak      ? 'block' : 'none';
+  document.getElementById('view-medlesing').style.display     = isMedlesing? 'block' : 'none';
   document.body.setAttribute('data-page', page);
   // Close any open history rows when navigating away
   document.querySelectorAll('.hist-row.hist-open').forEach(function(r) { r.classList.remove('hist-open'); });
@@ -5123,6 +5433,7 @@ function render() {
   if (activePage === 'statistikk')    { renderStats();         return; }
   if (activePage === 'innstillinger') { renderInnstillinger(); return; }
   if (activePage === 'sak')           { renderSak(activeSakId); return; }
+  if (activePage === 'medlesing')     { renderMedlesing();      return; }
 
   var cfg    = PAGES[activePage];
   var sorted = sortedForPage(activePage);
@@ -6520,6 +6831,82 @@ function renderSakChecklist(data) {
     }).join('');
     return '<div class="sak-check-phase">' +
       '<div class="sak-check-phase-title">' + esc(phase.phase) + '</div>' +
+      items +
+    '</div>';
+  }).join('');
+}
+
+// ── Medlesing ───────────────────────────────────────
+function renderMedlesing() {
+  if (activeMedlesingId) { renderMedlesingDetail(activeMedlesingId); return; }
+  renderMedlesingList();
+}
+
+function _medlesingTypeLabel(type) {
+  return type === 'medium_stor' ? 'Medium/stor' : 'Normal';
+}
+
+function renderMedlesingList() {
+  document.getElementById('medl-list-view').style.display = 'block';
+  document.getElementById('medl-detail-view').style.display = 'none';
+
+  var sorted = medlesing.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+  document.getElementById('medl-count').textContent = sorted.length + ' medlesing' + (sorted.length !== 1 ? 'er' : '');
+  document.getElementById('medl-empty').style.display = sorted.length ? 'none' : 'block';
+
+  document.getElementById('medl-tbody').innerHTML = sorted.map(function(rec) {
+    var prog = medlesingProgress(medlesingTemplateFor(rec.type), rec.checklist);
+    var pct = prog.total ? Math.round(prog.checked / prog.total * 100) : 0;
+    return '<tr class="medl-row" data-id="' + rec.id + '">' +
+      '<td class="case-no">' + esc(rec.caseNumber) + '</td>' +
+      '<td>' + esc(rec.saksbehandler) + '</td>' +
+      '<td><span class="medl-type-pill medl-type-' + rec.type + '">' + _medlesingTypeLabel(rec.type) + '</span></td>' +
+      '<td class="medl-date-cell">' + esc(toDisplay(rec.date)) + '</td>' +
+      '<td>' +
+        '<div class="medl-progress-cell">' +
+          '<div class="medl-progress-track"><div class="medl-progress-fill" style="width:' + pct + '%"></div></div>' +
+          '<span class="medl-progress-txt">' + prog.checked + '/' + prog.total + '</span>' +
+        '</div>' +
+      '</td>' +
+      '<td><span class="medl-status-pill' + (prog.done ? ' medl-status-done' : '') + '">' + (prog.done ? 'Fullført' : 'Pågår') + '</span></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderMedlesingDetail(id) {
+  var rec = medlesing.find(function(m) { return m.id === id; });
+  if (!rec) { navigateTo('medlesing'); return; }
+
+  document.getElementById('medl-list-view').style.display = 'none';
+  document.getElementById('medl-detail-view').style.display = 'block';
+
+  document.getElementById('medl-d-casenumber').textContent   = rec.caseNumber;
+  document.getElementById('medl-d-saksbehandler').textContent = rec.saksbehandler;
+  document.getElementById('medl-d-date').textContent          = toDisplay(rec.date);
+  document.getElementById('medl-d-type').value                = rec.type;
+  document.getElementById('medl-d-notat').value                = rec.notat || '';
+
+  var template = medlesingTemplateFor(rec.type);
+  var prog = medlesingProgress(template, rec.checklist);
+  document.getElementById('medl-d-progress-num').textContent = prog.checked + '/' + prog.total;
+
+  document.getElementById('medl-phases').innerHTML = template.map(function(phase) {
+    var lastGroup = null;
+    var items = phase.items.map(function(item) {
+      var checked = rec.checklist[item.id] === true;
+      var groupHtml = '';
+      if (item.group && item.group !== lastGroup) {
+        groupHtml = '<div class="medl-check-group">' + esc(item.group) + '</div>';
+      }
+      lastGroup = item.group || null;
+      return groupHtml +
+        '<label class="medl-check-row' + (item.group ? ' medl-check-sub' : '') + (checked ? ' medl-check-done' : '') + '">' +
+          '<input type="checkbox" class="medl-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + ' />' +
+          '<span class="medl-check-label">' + esc(item.label) + '</span>' +
+        '</label>';
+    }).join('');
+    return '<div class="medl-phase">' +
+      '<div class="medl-phase-title">' + esc(phase.phase) + '</div>' +
       items +
     '</div>';
   }).join('');
@@ -9160,7 +9547,7 @@ function copyToClipboard(text, btn) {
 }
 
 // ── Hash-routing ───────────────────────────────────
-var VALID_PAGES = ['hjem','ny','fristarkiv','viderebehandling','avsluttet','statistikk','innstillinger','oppdrag'];
+var VALID_PAGES = ['hjem','ny','fristarkiv','viderebehandling','avsluttet','statistikk','innstillinger','oppdrag','medlesing'];
 
 var activeSakId = null;
 
@@ -9194,9 +9581,18 @@ function navigateTo(page, addToHistory) {
     render();
     return;
   }
+  if (typeof page === 'string' && page.indexOf('medlesing/') === 0) {
+    var medlesingId = page.slice(10);
+    AppState.activeMedlesingId = medlesingId;
+    AppState.activePage        = 'medlesing';
+    if (addToHistory !== false) history.pushState({ page: 'medlesing', medlesingId: medlesingId }, '', '#medlesing/' + medlesingId);
+    render();
+    return;
+  }
   if (VALID_PAGES.indexOf(page) === -1) page = 'hjem';
   AppState.activePage  = page;
   AppState.activeSakId = null;
+  AppState.activeMedlesingId = null;
   if (addToHistory !== false) {
     var urlSlug = page === 'avsluttet' ? 'alle-saker' : page;
     history.pushState({ page: page }, '', '#' + urlSlug);
@@ -9212,6 +9608,10 @@ function pageFromHash() {
     AppState.activeSakId = id;
     return 'sak';
   }
+  if (hash.indexOf('medlesing/') === 0) {
+    AppState.activeMedlesingId = hash.slice(10);
+    return 'medlesing';
+  }
   if (hash === 'alle-saker') return 'avsluttet';
   return VALID_PAGES.indexOf(hash) !== -1 ? hash : 'hjem';
 }
@@ -9220,10 +9620,14 @@ window.addEventListener('popstate', function(e) {
   if (e.state && e.state.page === 'sak') {
     AppState.activeSakId = e.state.sakId || null;
     AppState.activePage  = 'sak';
+  } else if (e.state && e.state.page === 'medlesing' && e.state.medlesingId) {
+    AppState.activeMedlesingId = e.state.medlesingId;
+    AppState.activePage        = 'medlesing';
   } else {
     var page = (e.state && e.state.page) || pageFromHash() || 'hjem';
-    AppState.activePage  = page;
-    AppState.activeSakId = null;
+    AppState.activePage        = page;
+    AppState.activeSakId       = null;
+    AppState.activeMedlesingId = null;
   }
   render();
 });
@@ -9494,13 +9898,26 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
 })();
 
 // ── Slett sak ──────────────────────────────────────
-var pendingDeleteId = null;
-function openConfirm(id)  { pendingDeleteId = id; openBackdrop('confirm-backdrop'); }
-function closeConfirm()   { pendingDeleteId = null; closeBackdrop('confirm-backdrop'); }
+var pendingDeleteId   = null;
+var pendingDeleteType = 'case';
+function openConfirm(id, type)  {
+  pendingDeleteId = id;
+  pendingDeleteType = type || 'case';
+  var isMedl = pendingDeleteType === 'medlesing';
+  document.getElementById('confirm-modal-title').textContent = isMedl ? 'Slett medlesing' : 'Slett sak';
+  var textEl = document.querySelector('#confirm-backdrop .modal-text');
+  if (textEl) textEl.textContent = isMedl
+    ? 'Er du sikker på at du vil slette denne medlesingen? Dette kan ikke angres.'
+    : 'Er du sikker på at du vil slette denne saken? Dette kan ikke angres.';
+  openBackdrop('confirm-backdrop');
+}
+function closeConfirm()   { pendingDeleteId = null; pendingDeleteType = 'case'; closeBackdrop('confirm-backdrop'); }
 document.getElementById('btn-confirm-cancel').addEventListener('click', closeConfirm);
 document.getElementById('confirm-backdrop').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
 document.getElementById('btn-confirm-delete').addEventListener('click', function() {
-  if (pendingDeleteId) { dispatch('CASE_DELETE', { id: pendingDeleteId }); }
+  if (pendingDeleteId) {
+    dispatch(pendingDeleteType === 'medlesing' ? 'MEDLESING_DELETE' : 'CASE_DELETE', { id: pendingDeleteId });
+  }
   closeConfirm();
 });
 
@@ -10070,6 +10487,79 @@ function _updateVacToggleLabel() {
       openForm();
       inpFrom.focus();
     }
+  });
+})();
+
+// ── Medlesing ───────────────────────────────────────
+(function() {
+  var btnNew       = document.getElementById('btn-medl-new');
+  var btnNewSave   = document.getElementById('btn-medl-new-save');
+  var btnNewCancel = document.getElementById('btn-medl-new-cancel');
+  var newForm      = document.getElementById('medl-new-form');
+  var inpCaseNum   = document.getElementById('medl-new-casenumber');
+  var inpSaksb     = document.getElementById('medl-new-saksbehandler');
+  var inpType      = document.getElementById('medl-new-type');
+  var inpDate      = document.getElementById('medl-new-date');
+  var errEl        = document.getElementById('medl-new-error');
+  if (!btnNew) return;
+
+  _dp.init(inpDate);
+
+  function resetNewForm() {
+    inpCaseNum.value = inpSaksb.value = '';
+    inpType.value = 'normal';
+    inpDate.value = toDisplay(todayStr());
+    if (errEl) errEl.textContent = '';
+    newForm.style.display = 'none';
+  }
+
+  btnNew.addEventListener('click', function() {
+    resetNewForm();
+    newForm.style.display = 'flex';
+    inpCaseNum.focus();
+  });
+  btnNewCancel.addEventListener('click', resetNewForm);
+
+  btnNewSave.addEventListener('click', function() {
+    if (errEl) errEl.textContent = '';
+    var caseNumber    = inpCaseNum.value.trim();
+    var saksbehandler = inpSaksb.value.trim();
+    var date          = parseDate(inpDate.value.trim());
+    if (!caseNumber)                       { errEl.textContent = 'Saksnummer må fylles ut.'; return; }
+    if (!saksbehandler)                    { errEl.textContent = 'Saksbehandler må fylles ut.'; return; }
+    if (!date || !isValidDate(inpDate.value.trim())) { errEl.textContent = 'Ugyldig dato.'; return; }
+    dispatch('MEDLESING_CREATE', { caseNumber: caseNumber, saksbehandler: saksbehandler, type: inpType.value, date: date });
+    resetNewForm();
+  });
+
+  document.getElementById('medl-tbody').addEventListener('click', function(e) {
+    var row = e.target.closest('.medl-row');
+    if (row) navigateTo('medlesing/' + row.dataset.id);
+  });
+
+  document.getElementById('medl-back-link').addEventListener('click', function(e) {
+    e.preventDefault();
+    navigateTo('medlesing');
+  });
+
+  document.getElementById('medl-phases').addEventListener('change', function(e) {
+    var cb = e.target.closest('.medl-checkbox');
+    if (!cb || !activeMedlesingId) return;
+    dispatch('MEDLESING_ITEM_TOGGLE', { id: activeMedlesingId, itemId: cb.dataset.itemId, checked: cb.checked });
+  });
+
+  document.getElementById('medl-d-type').addEventListener('change', function(e) {
+    if (!activeMedlesingId) return;
+    dispatch('MEDLESING_TYPE_CHANGE', { id: activeMedlesingId, type: e.target.value });
+  });
+
+  document.getElementById('medl-d-notat').addEventListener('change', function(e) {
+    if (!activeMedlesingId) return;
+    dispatch('MEDLESING_NOTAT_CHANGE', { id: activeMedlesingId, notat: e.target.value });
+  });
+
+  document.getElementById('btn-medl-delete').addEventListener('click', function() {
+    if (activeMedlesingId) openConfirm(activeMedlesingId, 'medlesing');
   });
 })();
 

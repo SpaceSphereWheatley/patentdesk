@@ -7,6 +7,20 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.18.0] - 2026-08-21
+### Added
+- Ny **Medlesing**-modul for å følge opp saker du medleser for andre
+  saksbehandlere — erstatter den manuelle Excel-oversikten. En liste viser
+  saksnummer, saksbehandler, dato, type medvirkning og fremdrift for hver
+  medlesing. Hver medlesing har en sjekkliste bygget på RBS
+  (Retningslinjer for behandling av søknader): **Normal medvirkning**
+  dekker Granskingsrapport og Realitetsuttalelse, mens **Medium eller stor
+  medvirkning** i tillegg dekker Innledende sparring, Vesentlige mangler av
+  betydning for vurdering, Granskingsstrategi og resultater, og Drøfting av
+  resultat fra gransking. Status (Pågår/Fullført) beregnes automatisk ut
+  fra hvor mange punkter som er krysset av, og hver medlesing har et fritt
+  notatfelt.
+
 ## [4.17.1] - 2026-08-07
 ### Fixed
 - Mothold-chipen ved siden av nyhet-/OH-knappene i kravsvurderingen kunne få
