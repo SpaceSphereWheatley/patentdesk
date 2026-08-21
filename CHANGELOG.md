@@ -17,9 +17,10 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   dekker Granskingsrapport og Realitetsuttalelse, mens **Medium eller stor
   medvirkning** i tillegg dekker Innledende sparring, Vesentlige mangler av
   betydning for vurdering, Granskingsstrategi og resultater, og Drøfting av
-  resultat fra gransking. Status (Pågår/Fullført) beregnes automatisk ut
-  fra hvor mange punkter som er krysset av, og hver medlesing har et fritt
-  notatfelt.
+  resultat fra gransking. Fremdriften (antall punkter krysset av) vises
+  løpende, men du markerer selv når medlesingen er **Fullført** — nyttig når
+  noe mangler og saksbehandleren får beskjed om det utenfor sjekklisten;
+  medlesingen kan da fullføres med mangelen notert i det frie notatfeltet.
 
 ## [4.17.1] - 2026-08-07
 ### Fixed

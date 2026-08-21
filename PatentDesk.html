@@ -1553,7 +1553,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .medl-notat-box textarea { width: 100%; min-height: 70px; font-family: var(--font-body); font-size: var(--text-base);
                       color: var(--text); border: 1px solid var(--border2); border-radius: var(--radius); padding: var(--space-4);
                       resize: vertical; }
-.medl-detail-footer  { margin-top: var(--space-6); }
+.medl-detail-footer  { margin-top: var(--space-6); display: flex; gap: var(--space-4); }
+.medl-incomplete-hint { margin-top: var(--space-4); font-size: var(--text-sm); color: var(--color-warn); }
+.medl-detail-progress .medl-status-pill { display: block; margin-bottom: var(--space-2); }
 
 /* Ja/Nei-gruppe */
 .sak-yesno-group    { display: flex; gap: var(--space-2); flex-shrink: 0; }
@@ -2990,6 +2992,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               </div>
             </div>
             <div class="medl-detail-progress">
+              <span class="medl-status-pill" id="medl-d-status"></span>
               <div class="medl-progress-num" id="medl-d-progress-num"></div>
               <div class="medl-progress-lbl">punkter avkrysset</div>
             </div>
@@ -2999,10 +3002,15 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 
           <div class="medl-notat-box">
             <label for="medl-d-notat">Notat</label>
-            <textarea id="medl-d-notat" placeholder="Kommentarer til medlesingen…"></textarea>
+            <textarea id="medl-d-notat" placeholder="Kommentarer til medlesingen… (f.eks. hva som mangler)"></textarea>
+          </div>
+
+          <div class="medl-incomplete-hint" id="medl-incomplete-hint" style="display:none;">
+            Ikke alle punkter er krysset av. Noter eventuelle mangler over — medlesingen kan likevel merkes fullført.
           </div>
 
           <div class="medl-detail-footer">
+            <button class="s-btn" id="btn-medl-complete"></button>
             <button class="s-btn s-btn-danger" id="btn-medl-delete">Slett medlesing</button>
           </div>
         </div>
@@ -5057,11 +5065,21 @@ function _dispatch(action, payload) {
         type: payload.type === 'medium_stor' ? 'medium_stor' : 'normal',
         date: payload.date || todayStr(),
         checklist: {},
-        notat: ''
+        notat: '',
+        completed: false
       };
       AppState.medlesing = medlesing.concat([rec]);
       saveMedlesing(medlesing);
       navigateTo('medlesing/' + rec.id);
+      break;
+    }
+
+    case 'MEDLESING_COMPLETE_TOGGLE': {
+      var rec = medlesing.find(function(m) { return m.id === payload.id; });
+      if (!rec) break;
+      rec.completed = !rec.completed;
+      saveMedlesing(medlesing);
+      renderMedlesingDetail(payload.id);
       break;
     }
 
@@ -5251,7 +5269,7 @@ function updateNav() {
     var badge = tab.querySelector('.nav-count');
     if (!badge) { badge = document.createElement('span'); badge.className = 'nav-count'; tab.appendChild(badge); }
     if (page === 'medlesing') {
-      badge.textContent = medlesing.filter(function(m) { return !medlesingProgress(medlesingTemplateFor(m.type), m.checklist).done; }).length;
+      badge.textContent = medlesing.filter(function(m) { return !m.completed; }).length;
       return;
     }
     var list = byPage[page] || casesForPage(page);
@@ -6868,7 +6886,7 @@ function renderMedlesingList() {
           '<span class="medl-progress-txt">' + prog.checked + '/' + prog.total + '</span>' +
         '</div>' +
       '</td>' +
-      '<td><span class="medl-status-pill' + (prog.done ? ' medl-status-done' : '') + '">' + (prog.done ? 'Fullført' : 'Pågår') + '</span></td>' +
+      '<td><span class="medl-status-pill' + (rec.completed ? ' medl-status-done' : '') + '">' + (rec.completed ? 'Fullført' : 'Pågår') + '</span></td>' +
     '</tr>';
   }).join('');
 }
@@ -6889,6 +6907,17 @@ function renderMedlesingDetail(id) {
   var template = medlesingTemplateFor(rec.type);
   var prog = medlesingProgress(template, rec.checklist);
   document.getElementById('medl-d-progress-num').textContent = prog.checked + '/' + prog.total;
+
+  var statusEl = document.getElementById('medl-d-status');
+  statusEl.textContent = rec.completed ? 'Fullført' : 'Pågår';
+  statusEl.className = 'medl-status-pill' + (rec.completed ? ' medl-status-done' : '');
+
+  var btnComplete = document.getElementById('btn-medl-complete');
+  btnComplete.textContent = rec.completed ? 'Gjenåpne' : 'Merk som fullført';
+  btnComplete.classList.toggle('s-btn-accent', !rec.completed);
+
+  var hintEl = document.getElementById('medl-incomplete-hint');
+  hintEl.style.display = (!rec.completed && prog.checked < prog.total) ? 'block' : 'none';
 
   document.getElementById('medl-phases').innerHTML = template.map(function(phase) {
     var lastGroup = null;
@@ -10556,6 +10585,11 @@ function _updateVacToggleLabel() {
   document.getElementById('medl-d-notat').addEventListener('change', function(e) {
     if (!activeMedlesingId) return;
     dispatch('MEDLESING_NOTAT_CHANGE', { id: activeMedlesingId, notat: e.target.value });
+  });
+
+  document.getElementById('btn-medl-complete').addEventListener('click', function() {
+    if (!activeMedlesingId) return;
+    dispatch('MEDLESING_COMPLETE_TOGGLE', { id: activeMedlesingId });
   });
 
   document.getElementById('btn-medl-delete').addEventListener('click', function() {
