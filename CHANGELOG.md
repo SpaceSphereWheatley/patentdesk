@@ -21,6 +21,8 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   løpende, men du markerer selv når medlesingen er **Fullført** — nyttig når
   noe mangler og saksbehandleren får beskjed om det utenfor sjekklisten;
   medlesingen kan da fullføres med mangelen notert i det frie notatfeltet.
+  Punkter som fortsatt ikke er krysset av når medlesingen merkes fullført,
+  får en tydelig **Mangler**-merking i sjekklisten.
 
 ## [4.17.1] - 2026-08-07
 ### Fixed

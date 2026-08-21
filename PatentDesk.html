@@ -1545,6 +1545,13 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .medl-check-label    { font-size: var(--text-base); line-height: var(--line-snug); }
 .medl-check-done .medl-check-label { color: var(--muted); text-decoration: line-through; }
 .medl-check-sub      { padding-left: 40px; }
+.medl-check-missing  { background: var(--badge-urgent-bg); box-shadow: inset 3px 0 0 var(--badge-urgent-border); }
+.medl-check-missing:hover { background: var(--badge-urgent-bg); }
+.medl-check-missing .medl-check-label { color: var(--badge-urgent-text); font-weight: var(--weight-medium); }
+.medl-check-missing-tag { flex-shrink: 0; align-self: center; font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+                      text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--badge-urgent-text);
+                      background: var(--surface); border: 1px solid var(--badge-urgent-border); border-radius: var(--radius-pill);
+                      padding: 2px var(--space-3); }
 
 .medl-notat-box      { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
                       padding: var(--space-6) var(--space-7); margin-top: var(--space-2); box-shadow: var(--shadow-card); }
@@ -6916,22 +6923,32 @@ function renderMedlesingDetail(id) {
   btnComplete.textContent = rec.completed ? 'Gjenåpne' : 'Merk som fullført';
   btnComplete.classList.toggle('s-btn-accent', !rec.completed);
 
+  var missing = prog.total - prog.checked;
   var hintEl = document.getElementById('medl-incomplete-hint');
-  hintEl.style.display = (!rec.completed && prog.checked < prog.total) ? 'block' : 'none';
+  if (missing === 0) {
+    hintEl.style.display = 'none';
+  } else {
+    hintEl.style.display = 'block';
+    hintEl.textContent = rec.completed
+      ? 'Fullført med ' + missing + ' punkt' + (missing !== 1 ? 'er' : '') + ' som ikke er krysset av — merket «Mangler» under.'
+      : 'Ikke alle punkter er krysset av. Noter eventuelle mangler over — medlesingen kan likevel merkes fullført.';
+  }
 
   document.getElementById('medl-phases').innerHTML = template.map(function(phase) {
     var lastGroup = null;
     var items = phase.items.map(function(item) {
       var checked = rec.checklist[item.id] === true;
+      var missingItem = rec.completed && !checked;
       var groupHtml = '';
       if (item.group && item.group !== lastGroup) {
         groupHtml = '<div class="medl-check-group">' + esc(item.group) + '</div>';
       }
       lastGroup = item.group || null;
       return groupHtml +
-        '<label class="medl-check-row' + (item.group ? ' medl-check-sub' : '') + (checked ? ' medl-check-done' : '') + '">' +
+        '<label class="medl-check-row' + (item.group ? ' medl-check-sub' : '') + (checked ? ' medl-check-done' : '') + (missingItem ? ' medl-check-missing' : '') + '">' +
           '<input type="checkbox" class="medl-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + ' />' +
           '<span class="medl-check-label">' + esc(item.label) + '</span>' +
+          (missingItem ? '<span class="medl-check-missing-tag">Mangler</span>' : '') +
         '</label>';
     }).join('');
     return '<div class="medl-phase">' +
