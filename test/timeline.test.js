@@ -52,6 +52,35 @@ test('filterCasesForTimeline returns nothing for an empty type filter', () => {
   assert.deepStrictEqual(filterCasesForTimeline(cases, null), []);
 });
 
+test('MODAL_TIMELINE_TYPES is every timeline type except fristarkiv', () => {
+  const { TIMELINE_TYPES, MODAL_TIMELINE_TYPES } = loadFunctions([], {
+    vars: ['TIMELINE_TYPES', 'MODAL_TIMELINE_TYPES'],
+  });
+  // Array.from: the vm sandbox has its own Array realm, so deepStrictEqual
+  // would fail on the prototype rather than the contents.
+  assert.deepStrictEqual(Array.from(MODAL_TIMELINE_TYPES), ['ny', 'viderebehandling', 'oppdrag']);
+  assert.deepStrictEqual(
+    Array.from(TIMELINE_TYPES).filter((t) => MODAL_TIMELINE_TYPES.indexOf(t) === -1),
+    ['fristarkiv']
+  );
+});
+
+test('the modal timeline filter hides fristarkiv cases but keeps the rest', () => {
+  const { MODAL_TIMELINE_TYPES } = loadFunctions([], {
+    vars: ['TIMELINE_TYPES', 'MODAL_TIMELINE_TYPES'],
+  });
+  const cases = [
+    makeCase({ id: 'a', status: 'ny' }),
+    makeCase({ id: 'b', status: 'fristarkiv' }),
+    makeCase({ id: 'c', status: 'viderebehandling' }),
+    makeCase({ id: 'd', type: 'oppdrag', status: 'ny' }),
+  ];
+  assert.deepStrictEqual(
+    filterCasesForTimeline(cases, MODAL_TIMELINE_TYPES).map((c) => c.id),
+    ['a', 'c', 'd']
+  );
+});
+
 test('assignTimelineRows keeps non-overlapping ranges on a single row', () => {
   const ranges = [{ start: 0, end: 5 }, { start: 10, end: 15 }, { start: 20, end: 25 }];
   const result = assignTimelineRows(ranges);

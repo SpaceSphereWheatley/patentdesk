@@ -22,6 +22,12 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   ikke trekkes fra akkurat nå.
 - Bjelker for fristarkivsaker på hjemtidslinjen kan ikke lenger dras for å
   justere buffer, siden en buffer der uansett ikke ville hatt noen effekt.
+- Tidslinjen i «Legg til / Rediger sak»-modalen viser ikke lenger saker i
+  Fristarkiv. Den er en forhåndsvisning av arbeidsplanen du legger en ny sak
+  inn i, og fristarkivsaker ligger bare og venter på forfall — de sier
+  ingenting om arbeidsbelastningen og gjorde bare bildet travlere enn det er.
+  Hjem- og sakslistetidslinjene er uendret; der kan Fristarkiv fortsatt slås
+  av og på med filterchipsene.
 
 ## [4.17.1] - 2026-08-07
 ### Fixed

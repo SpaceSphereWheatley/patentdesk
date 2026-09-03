@@ -4157,6 +4157,12 @@ function periodOverlapsVacation(c) {
 // saker, eller 'oppdrag' for saker med type==='oppdrag' (uavhengig av status).
 var TIMELINE_TYPES = ['ny', 'fristarkiv', 'viderebehandling', 'oppdrag'];
 
+// Sakstypene modaltidslinjen viser. Den er en forhåndsvisning av
+// arbeidsbelastningen du planlegger nye saker inn i, og fristarkivsaker ligger
+// bare og venter på forfall — de krever ikke arbeid nå og er derfor ikke
+// relevante når man legger inn nye saker. De utelates.
+var MODAL_TIMELINE_TYPES = TIMELINE_TYPES.filter(function(t) { return t !== 'fristarkiv'; });
+
 // Hvor mange dager tilbake i tid tidslinjen strekker seg, slik at man kan
 // scrolle tilbake og se saker som er mer enn et par uker over frist i stedet
 // for at de bare telles i "forfalt"-pinnen. Delt av buildTimelineDiv,
@@ -4337,7 +4343,7 @@ var fristBuffer    = loadFristBuffer();
 var _tlConfig = {
   'home-timeline':  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
   'cases-timeline': { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
-  'modal-timeline': { horizon: 90, axisMode: 'month', typeFilter: TIMELINE_TYPES.slice() },
+  'modal-timeline': { horizon: 90, axisMode: 'month', typeFilter: MODAL_TIMELINE_TYPES.slice() },
 };
 // Saksliste-tidslinjen forhåndskrysser av sakstypen(e) som svarer til siden du
 // står på; brukeren kan fritt overstyre valget mens den står på siden.
