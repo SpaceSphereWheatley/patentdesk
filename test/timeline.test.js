@@ -52,6 +52,68 @@ test('filterCasesForTimeline returns nothing for an empty type filter', () => {
   assert.deepStrictEqual(filterCasesForTimeline(cases, null), []);
 });
 
+const { countsInBelegg, timelineSpanDays } = loadFunctions(
+  ['countsInBelegg', 'timelineSpanDays'],
+  { vars: ['WORK_WINDOW_DAYS', 'MILESTONE_DAYS'] }
+);
+
+test('countsInBelegg counts only the statuses that are the examiner\'s own work', () => {
+  assert.strictEqual(countsInBelegg(makeCase({ status: 'ny' })), true);
+  assert.strictEqual(countsInBelegg(makeCase({ status: 'viderebehandling' })), true);
+  // Fristarkiv is the applicant's deadline to answer — no work for the examiner.
+  assert.strictEqual(countsInBelegg(makeCase({ status: 'fristarkiv' })), false);
+  assert.strictEqual(countsInBelegg(makeCase({ status: 'avsluttet' })), false);
+});
+
+test('countsInBelegg excludes oppdrag and cases without a due date', () => {
+  assert.strictEqual(countsInBelegg(makeCase({ type: 'oppdrag', status: 'ny' })), false);
+  assert.strictEqual(countsInBelegg(makeCase({ status: 'ny', dueDate: '' })), false);
+  assert.strictEqual(countsInBelegg(null), false);
+});
+
+test('timelineSpanDays gives fristarkiv a milestone and everything else a work window', () => {
+  assert.strictEqual(timelineSpanDays(makeCase({ status: 'ny' })), 14);
+  assert.strictEqual(timelineSpanDays(makeCase({ status: 'viderebehandling' })), 14);
+  assert.strictEqual(timelineSpanDays(makeCase({ status: 'fristarkiv' })), 1);
+});
+
+test('timelineSpanDays uses the oppdrag duration, with a floor of 2 days', () => {
+  assert.strictEqual(timelineSpanDays(makeCase({ type: 'oppdrag', duration: 5 })), 5);
+  assert.strictEqual(timelineSpanDays(makeCase({ type: 'oppdrag', duration: 1 })), 2);
+  assert.strictEqual(timelineSpanDays(makeCase({ type: 'oppdrag', duration: null })), 2);
+  // An oppdrag parked in fristarkiv still uses its duration, not the milestone.
+  assert.strictEqual(timelineSpanDays(makeCase({ type: 'oppdrag', status: 'fristarkiv', duration: 4 })), 4);
+});
+
+test('MODAL_TIMELINE_TYPES is every timeline type except fristarkiv', () => {
+  const { TIMELINE_TYPES, MODAL_TIMELINE_TYPES } = loadFunctions([], {
+    vars: ['TIMELINE_TYPES', 'MODAL_TIMELINE_TYPES'],
+  });
+  // Array.from: the vm sandbox has its own Array realm, so deepStrictEqual
+  // would fail on the prototype rather than the contents.
+  assert.deepStrictEqual(Array.from(MODAL_TIMELINE_TYPES), ['ny', 'viderebehandling', 'oppdrag']);
+  assert.deepStrictEqual(
+    Array.from(TIMELINE_TYPES).filter((t) => MODAL_TIMELINE_TYPES.indexOf(t) === -1),
+    ['fristarkiv']
+  );
+});
+
+test('the modal timeline filter hides fristarkiv cases but keeps the rest', () => {
+  const { MODAL_TIMELINE_TYPES } = loadFunctions([], {
+    vars: ['TIMELINE_TYPES', 'MODAL_TIMELINE_TYPES'],
+  });
+  const cases = [
+    makeCase({ id: 'a', status: 'ny' }),
+    makeCase({ id: 'b', status: 'fristarkiv' }),
+    makeCase({ id: 'c', status: 'viderebehandling' }),
+    makeCase({ id: 'd', type: 'oppdrag', status: 'ny' }),
+  ];
+  assert.deepStrictEqual(
+    filterCasesForTimeline(cases, MODAL_TIMELINE_TYPES).map((c) => c.id),
+    ['a', 'c', 'd']
+  );
+});
+
 test('assignTimelineRows keeps non-overlapping ranges on a single row', () => {
   const ranges = [{ start: 0, end: 5 }, { start: 10, end: 15 }, { start: 20, end: 25 }];
   const result = assignTimelineRows(ranges);

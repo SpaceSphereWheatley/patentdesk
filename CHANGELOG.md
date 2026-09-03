@@ -7,6 +7,70 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.19.0] - 2026-09-03
+Denne versjonen retter opp en gjennomgående feil: fristen på en sak i
+**Fristarkiv** er søkerens frist til å svare oss, ikke saksbehandlerens frist
+til å gjøre noe. Realitetsbrevet er allerede sendt ut. Appen behandlet likevel
+slike saker som arbeid — med 14-dagers arbeidsvindu, belegg, feriekonflikt,
+fristbuffer og fristvarsel. Det er nå ryddet opp overalt.
+
+### Fixed
+- **Belegg-kortet regnet på feil saker.** Det telte saker med status Ny og
+  Fristarkiv, men ikke Viderebehandling. Fristarkivsaker er ikke arbeid, mens
+  viderebehandling — å behandle søkerens svar — er det. Belegget regnes nå på
+  Ny og Viderebehandling. Prosenten vil endre seg merkbart, og viser nå faktisk
+  arbeidsbelastning.
+- **Forfalte saker kostet ingenting i belegget.** Arbeidsvinduet modellerer
+  tiden som er igjen fram til fristen, så det var tomt når fristen hadde
+  passert — og en sak du hadde sprukket på falt dermed helt ut av regnestykket.
+  Å bomme på en frist fikk altså belegget til å se *bedre* ut. En forfalt sak
+  koster nå en fast straff på tre arbeidsdager, bokført på de nærmeste
+  arbeidsdagene fra i dag. Straffen vokser ikke med hvor gammelt etterslepet
+  er — en sak som er ett år på overtid er ikke mer arbeid enn en som er én dag
+  på overtid — og den treffer bare inneværende periode.
+- Ferievarselet (⛱) dukket opp på fristarkivsaker fordi de fikk et
+  14-dagers arbeidsvindu de skulle hatt. En sak i Fristarkiv har ingen
+  arbeidsperiode og kan derfor ikke kollidere med ferie.
+
+### Changed
+- Fristbufferen gjelder ikke lenger for saker i **Fristarkiv**. Slike saker
+  vises nå med sin faktiske frist overalt — hjemtidslinjen, saksliste- og
+  modaltidslinjene, kortlistene, fristvarselet, sortering og
+  ferieoverlapp-varselet — på linje med hvordan oppdrag alltid har oppført seg.
+  Det gjelder både den globale bufferen og en eventuell buffer satt på den
+  enkelte saken: i fristarkivet er det den reelle fristen man forholder seg
+  til. Bufferen slår inn igjen av seg selv når saken går videre til
+  viderebehandling.
+- Buffer-verdien på en sak i Fristarkiv beholdes og vises fortsatt på
+  sakssiden, men er merket «ikke aktiv i Fristarkiv» så det går fram at den
+  ikke trekkes fra akkurat nå.
+- Bjelker for fristarkivsaker på hjemtidslinjen kan ikke lenger dras for å
+  justere buffer, siden en buffer der uansett ikke ville hatt noen effekt.
+- Tidslinjen i «Legg til / Rediger sak»-modalen viser ikke lenger saker i
+  Fristarkiv. Den er en forhåndsvisning av arbeidsplanen du legger en ny sak
+  inn i, og fristarkivsaker ligger bare og venter på forfall — de sier
+  ingenting om arbeidsbelastningen og gjorde bare bildet travlere enn det er.
+  Hjem- og sakslistetidslinjene er uendret; der kan Fristarkiv fortsatt slås
+  av og på med filterchipsene.
+- Fristarkivsaker tegnes nå som en **milepæl** på selve fristdatoen i stedet
+  for som en 14-dagers arbeidsbjelke. Bjelken markerte to uker med arbeid som
+  ikke finnes, og dyttet ekte arbeid ned i ekstra rader fordi radpakkingen
+  fordeler etter overlapp. Milepælen markerer når saken kan komme tilbake.
+  Saksnummeret vises i hover-popupen som før.
+- Fristvarselet på hjemsiden tar ikke lenger med fristarkivsaker. Varselet er
+  til for oppgaver du skal gjøre noe med; en svarfrist hos søkeren er ikke det.
+  «Kommende frister»-listen tok dem allerede ikke med.
+- `WORK_WINDOW_DAYS` (14) er trukket ut som én felles konstant. Belegget,
+  tidslinjen og ferieoverlapp-sjekken hadde hver sin lokale kopi av tallet og
+  kunne komme i utakt.
+- Belegg-beregningen summerer overlappende arbeidsvinduer, slik den alltid har
+  gjort — to saker med frist samme uke teller dobbelt. Kommentaren i koden sa
+  «unike arbeidsdager», noe koden aldri har gjort, og inviterte til en
+  «opprydding» som ville gjort tallet ubrukelig: ti saker med frist samme dag
+  ville gitt samme belegg som én. Kommentaren er rettet, og oppførselen er
+  låst med tester. Belegg over 100 % er derfor meningsfullt og betyr
+  overbooket.
+
 ## [4.18.0] - 2026-08-21
 ### Added
 - Ny **Medlesing**-modul for å følge opp saker du medleser for andre

@@ -2129,6 +2129,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 .tl-bar-fristarkiv       { background: rgba(107,114,128,0.55); }
 .tl-bar-viderebehandling { background: rgba(67,56,202,0.68); }
 .tl-bar-overdue { background: rgba(220,38,38,0.35) !important; border: 1px solid rgba(220,38,38,0.7) !important; }
+/* Milepæl: en dato det skjer noe på, ikke en periode det jobbes i. Smal
+   markør uten saksnummer-etikett — det er ikke plass, og saksnummeret vises
+   uansett i hover-popupen. */
+.tl-bar-milestone { min-width: 5px; border-radius: 2px; }
+.tl-bar-milestone .tl-bar-label { display: none; }
 .tl-bar-label {
   position: absolute; top: 50%; transform: translateY(-50%);
   left: 8px; right: 4px; font-size: var(--text-xs); font-weight: var(--weight-semibold);
@@ -3509,7 +3514,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.18.0';
+var APP_VERSION    = 'v4.19.0';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4364,12 +4369,22 @@ function saveFristBuffer(val) {
   try { localStorage.setItem(BUFFER_KEY, String(val)); }
   catch(e) { showToast('✗ Lagring feilet', true); }
 }
+// bufferAppliesTo: om fristbufferen — global eller per sak — skal gjelde for en
+// sak. Oppdrag viser alltid faktisk frist. Det samme gjør saker i Fristarkiv:
+// der er poenget nettopp å forholde seg til den reelle fristen, så verken den
+// globale bufferen eller en per-sak-buffer trekkes fra.
+function bufferAppliesTo(c) {
+  if (!c) return true;
+  if (c.type === 'oppdrag') return false;
+  if (c.status === 'fristarkiv') return false;
+  return true;
+}
 // getEffectiveDueDate: returnerer dueDate forskøvet med buffer dager tidligere.
 // Brukes overalt utad unntatt inne i saksdetaljvisning og fristarkiv.
-// Oppdrag påvirkes aldri av buffer — de viser alltid faktisk frist.
+// Saker bufferen ikke gjelder for (se bufferAppliesTo) viser faktisk frist.
 function getEffectiveDueDate(dueDateStr, caseObj) {
   if (!dueDateStr) return dueDateStr;
-  if (caseObj && caseObj.type === 'oppdrag') return dueDateStr;
+  if (!bufferAppliesTo(caseObj)) return dueDateStr;
   var buf = (caseObj && caseObj.caseBuffer != null) ? caseObj.caseBuffer : fristBuffer;
   if (buf === 0) return dueDateStr;
   var d = new Date(dueDateStr + 'T00:00:00');
@@ -4377,19 +4392,77 @@ function getEffectiveDueDate(dueDateStr, caseObj) {
   return d.toISOString().slice(0, 10);
 }
 // effDueFor: returns the effective due date for a case object.
-// Oppdrag always use their actual dueDate; regular cases get the buffer-adjusted date.
+// Oppdrag and cases in Fristarkiv always use their actual dueDate; other cases
+// get the buffer-adjusted date.
 function effDueFor(c) {
-  return (c && c.type === 'oppdrag') ? c.dueDate : getEffectiveDueDate(c ? c.dueDate : '', c);
+  return getEffectiveDueDate(c ? c.dueDate : '', c);
+}
+// caseBufferLabel: teksten i «Buffer (dager)»-feltet på sakssiden. En sak i
+// Fristarkiv beholder buffer-verdien sin — den slår inn igjen når saken går
+// videre — så verdien vises fortsatt, men merket som ikke aktiv.
+function caseBufferLabel(c) {
+  var base = (c && c.caseBuffer != null) ? String(c.caseBuffer) + ' dager' : 'Globalt';
+  return (c && c.status === 'fristarkiv') ? base + ' · ikke aktiv i Fristarkiv' : base;
+}
+
+// Arbeidsvinduet en vanlig sak legger beslag på: antall dager fram mot fristen
+// der saken regnes som arbeid. Delt av belegg-beregningen, tidslinjen og
+// ferieoverlapp-sjekken, så de tre alltid modellerer samme arbeidsmengde.
+var WORK_WINDOW_DAYS = 14;
+
+// Bredden på en milepælsbjelke på tidslinjen — en dato det skjer noe på, ikke
+// en periode det jobbes i. .tl-bar har min-width, så den er synlig uansett.
+var MILESTONE_DAYS = 1;
+
+// Hva en forfalt sak koster i belegget, målt i arbeidsdager fra og med i dag.
+//
+// Arbeidsvinduet modellerer tiden som er igjen fram til fristen, så det krymper
+// etter hvert som fristen nærmer seg og er tomt når fristen har passert. Uten
+// en straff ville en forfalt sak derfor kostet null — og det å sprekke på en
+// frist ville fått belegget til å se bedre ut, stikk i strid med hva tallet
+// skal fortelle deg.
+//
+// Straffen er fast, ikke voksende: en sak som er ett år på overtid er ikke mer
+// arbeid enn en som er én dag på overtid, og et etterslep skal ikke pinne
+// måleren til 100 % for alltid. Tre arbeidsdager er valgt fordi en sak med
+// frist i morgen allerede koster om lag én til to dager — straffen ligger like
+// over, slik at belegget stiger litt når fristen ryker, i stedet for å hoppe
+// eller falle.
+var OVERDUE_PENALTY_WORKDAYS = 3;
+
+// countsInBelegg: om saken legger beslag på arbeidstiden din i belegg-kortet.
+// Bare de statusene som faktisk er ditt arbeid teller: Ny (førstegangs
+// behandling) og Viderebehandling (behandle søkerens svar). Saker i Fristarkiv
+// teller ikke — realitetsbrevet er sendt ut, og fristen er søkerens frist til
+// å svare oss, ikke vår frist til å gjøre noe. Oppdrag holdes utenfor belegget
+// som før.
+function countsInBelegg(c) {
+  if (!c || !c.dueDate) return false;
+  if (c.type === 'oppdrag') return false;
+  return c.status === 'ny' || c.status === 'viderebehandling';
+}
+
+// timelineSpanDays: hvor mange dager bjelken til en sak dekker på tidslinjen.
+// Oppdrag bruker sin egen varighet. Vanlige saker tegnes som arbeidsvinduet
+// fram mot fristen. Saker i Fristarkiv er ikke arbeid, så de tegnes som en
+// milepæl på selve datoen — den markerer når saken kan komme tilbake, og
+// legger dermed heller ikke beslag på en hel rad i tidslinjen.
+function timelineSpanDays(c) {
+  if (c && c.type === 'oppdrag') return Math.max(2, parseInt(c.duration, 10) || 2);
+  if (c && c.status === 'fristarkiv') return MILESTONE_DAYS;
+  return WORK_WINDOW_DAYS;
 }
 
 // Returns true if any day in the case's working period overlaps a vacation.
-// For søknader: 14-day window ending on effDueDate.
+// For søknader: WORK_WINDOW_DAYS-day window ending on effDueDate.
 // For oppdrag: duration-day window ending on dueDate.
+// Fristarkiv-saker har ingen arbeidsperiode, så de kan aldri kollidere med ferie.
 function periodOverlapsVacation(c) {
   if (!c || !c.dueDate) return false;
+  if (c.status === 'fristarkiv') return false;
   var isOppdrag = c.type === 'oppdrag';
   var endStr  = effDueFor(c);  // buffer-justert for søknader, dueDate for oppdrag
-  var days    = isOppdrag ? (parseInt(c.duration, 10) || 1) : 14;
+  var days    = isOppdrag ? (parseInt(c.duration, 10) || 1) : WORK_WINDOW_DAYS;
   var end     = new Date(endStr + 'T00:00:00');
   end.setDate(end.getDate() - (days - 1));
   var sStr = end.getFullYear() + '-' + String(end.getMonth()+1).padStart(2,'0') + '-' + String(end.getDate()).padStart(2,'0');
@@ -4401,6 +4474,12 @@ function periodOverlapsVacation(c) {
 // Sakstyper (nøkler) en sak kan filtreres på i tidslinjen: status for vanlige
 // saker, eller 'oppdrag' for saker med type==='oppdrag' (uavhengig av status).
 var TIMELINE_TYPES = ['ny', 'fristarkiv', 'viderebehandling', 'oppdrag'];
+
+// Sakstypene modaltidslinjen viser. Den er en forhåndsvisning av
+// arbeidsbelastningen du planlegger nye saker inn i, og fristarkivsaker ligger
+// bare og venter på forfall — de krever ikke arbeid nå og er derfor ikke
+// relevante når man legger inn nye saker. De utelates.
+var MODAL_TIMELINE_TYPES = TIMELINE_TYPES.filter(function(t) { return t !== 'fristarkiv'; });
 
 // Hvor mange dager tilbake i tid tidslinjen strekker seg, slik at man kan
 // scrolle tilbake og se saker som er mer enn et par uker over frist i stedet
@@ -4584,7 +4663,7 @@ var fristBuffer    = loadFristBuffer();
 var _tlConfig = {
   'home-timeline':  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
   'cases-timeline': { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
-  'modal-timeline': { horizon: 90, axisMode: 'month', typeFilter: TIMELINE_TYPES.slice() },
+  'modal-timeline': { horizon: 90, axisMode: 'month', typeFilter: MODAL_TIMELINE_TYPES.slice() },
 };
 // Saksliste-tidslinjen forhåndskrysser av sakstypen(e) som svarer til siden du
 // står på; brukeren kan fritt overstyre valget mens den står på siden.
@@ -6321,7 +6400,6 @@ document.getElementById('log-tbody').addEventListener('click', function(e) {
 // ── Belegg-beregning ───────────────────────────────
 function computeBelegg(horizonDays) {
   var today = new Date(); today.setHours(0, 0, 0, 0);
-  var BUSY_DAYS = 14;
 
   // Beregn arbeidsdager i perioden (ekskl. helger, røde dager, ferie)
   function workdaysInRange(startOffset, endOffset) {
@@ -6336,15 +6414,39 @@ function computeBelegg(horizonDays) {
   var period1Work = workdaysInRange(0, horizonDays);
   var period2Work = workdaysInRange(horizonDays, horizonDays * 2);
 
-  // Opptatte dager = unike arbeidsdager dekket av en aktiv saks 14-dagersvindu
+  // Opptatte dager = summen av arbeidsdager i arbeidsvinduet til hver sak som
+  // faktisk er ditt arbeid (se countsInBelegg).
+  //
+  // Merk: dette er en sum, ikke et sett med unike datoer — to saker med
+  // overlappende vinduer teller den samme datoen to ganger. Det er med vilje.
+  // Arbeidsvinduet er et estimat på arbeidsmengde (~10 arbeidsdager per sak),
+  // og belegg = estimert arbeid / tilgjengelig kapasitet. Med unike datoer
+  // ville ti saker med frist samme dag gitt samme belegg som én sak — altså
+  // stille i det ene tilfellet der du mest trenger et varsel. Derfor kan
+  // prosenten passere 100, og skal gjøre det: det betyr overbooket.
   function busyWorkdays(startOffset, endOffset) {
     var busyCount = 0;
-    cases.filter(function(c) {
-      return (c.status === 'ny' || c.status === 'fristarkiv') && c.dueDate;
-    }).forEach(function(c) {
+    cases.filter(countsInBelegg).forEach(function(c) {
       var due      = new Date(effDueFor(c) + 'T00:00:00');
       var dueOff   = Math.round((due - today) / 86400000);
-      var winStart = dueOff - BUSY_DAYS;
+
+      // Forfalt: vinduet ligger i fortiden, men arbeidet er fortsatt ugjort.
+      // Bokfør straffen på de nærmeste arbeidsdagene fra i dag — det er der
+      // arbeidet må presses inn. Den treffer derfor bare periode 1; er saken
+      // fortsatt forfalt i neste periode, er det neste periodes problem.
+      if (dueOff < 0) {
+        var booked = 0;
+        // Øvre grense på letingen slik at løkken alltid terminerer, uansett
+        // hvor mange fridager som ligger på rad.
+        for (var j = 0; j < 60 && booked < OVERDUE_PENALTY_WORKDAYS; j++) {
+          if (isNonWorkday(new Date(today.getTime() + j * 86400000))) continue;
+          booked++;
+          if (j >= startOffset && j < endOffset) busyCount++;
+        }
+        return;
+      }
+
+      var winStart = dueOff - WORK_WINDOW_DAYS;
       var winEnd   = dueOff;
       for (var i = Math.max(startOffset, winStart); i < Math.min(endOffset, winEnd + 1); i++) {
         var d = new Date(today.getTime() + i * 86400000);
@@ -6747,7 +6849,7 @@ function renderSak(id) {
   var bufField = document.getElementById('sak-case-buffer-field');
   if (bufField) bufField.style.display = isOppdrag ? 'none' : '';
   var bufInp = document.getElementById('sak-case-buffer');
-  if (bufInp) bufInp.textContent = cas.caseBuffer != null ? String(cas.caseBuffer) + ' dager' : 'Globalt';
+  if (bufInp) bufInp.textContent = caseBufferLabel(cas);
 
   // Status-knapper — forenklet for oppdrag
   var statusBtns = document.getElementById('sak-status-btns');
@@ -8150,8 +8252,10 @@ function renderHjem() {
     } else if (c.status === 'viderebehandling' && d < 0) {
       countForfaltVidere++;
     }
-    // Fristvarsel: forfalte aktive saker/oppdrag, og frister innen 7 dager (inkl. fristarkiv)
-    if (active && c.dueDate) {
+    // Fristvarsel: forfalte aktive saker/oppdrag, og frister innen 7 dager.
+    // Fristarkiv holdes utenfor — den fristen er søkerens svarfrist, ikke en
+    // oppgave du skal gjøre noe med, og hører ikke hjemme i et varsel.
+    if (active && c.dueDate && c.status !== 'fristarkiv') {
       if (d < 0)              digestOverdue.push({ c: c, d: d });
       else if (d <= 7)        digestSoon.push({ c: c, d: d });
     }
@@ -8261,7 +8365,6 @@ function renderHjem() {
 // draftRows: valgfri liste med utkast-saker (bulk-modal), tegnes som tl-bar-draft
 // ── Felles tidslinje-bygger (div-basert) ─────────────
 function buildTimelineDiv(opts) {
-  var BUSY_DAYS = 14;
   var HORIZON   = opts.horizon || 365;
   var PAST      = TL_PAST_DAYS;
   var TOTAL     = PAST + HORIZON;
@@ -8302,7 +8405,7 @@ function buildTimelineDiv(opts) {
     var effDue    = effDueFor(cas);
     var due       = dueDateTime(effDue);
     var actualDue = dueDateTime(cas.dueDate);
-    var spanDays  = isOp ? Math.max(2, (parseInt(cas.duration, 10) || 2)) : BUSY_DAYS;
+    var spanDays  = timelineSpanDays(cas);
     var start     = new Date(due.getTime() - spanDays * 86400000);
     var effEnd    = Math.min(HORIZON, (due       - now) / 86400000);
     var actEnd    = Math.min(HORIZON, (actualDue - now) / 86400000);
@@ -8311,6 +8414,8 @@ function buildTimelineDiv(opts) {
       end:        effEnd,
       actualEnd:  actEnd,
       hasBuffer:  !isOp && cas.dueDate !== effDue,
+      canBuffer:  bufferAppliesTo(cas),
+      isMilestone: spanDays === MILESTONE_DAYS && !isOp,
       isOppdrag:  isOp,
       status:     cas.status,
       isOverdue:  effEnd < 0,
@@ -8384,7 +8489,7 @@ function buildTimelineDiv(opts) {
     var topPx = TOP_PAD + r.row * (barH + GAP);
     var bar = document.createElement('div');
     var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : 'tl-bar-' + r.status;
-    bar.className = 'tl-bar ' + typeCls + (opts.draggable && !r.isOppdrag ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '');
+    bar.className = 'tl-bar ' + typeCls + (r.isMilestone ? ' tl-bar-milestone' : '') + (opts.draggable && r.canBuffer ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '');
     var visStart = Math.max(-PAST, r.start);
     var visEnd   = Math.min(HORIZON, r.end);
     bar.style.left   = pct(visStart);
@@ -8422,7 +8527,7 @@ function buildTimelineDiv(opts) {
     opts.draftRows.forEach(function(row) {
       if (!row.checked || !row.date || !isValidDate(row.date)) return;
       var due = new Date(row.date + 'T00:00:00');
-      var s  = Math.max(0, Math.round((new Date(due.getTime() - BUSY_DAYS * 86400000) - today) / 86400000));
+      var s  = Math.max(0, Math.round((new Date(due.getTime() - WORK_WINDOW_DAYS * 86400000) - today) / 86400000));
       var e2 = Math.min(HORIZON, Math.round((due - today) / 86400000));
       if (e2 < 0 || s > HORIZON) return;
       var draft = document.createElement('div');
@@ -10782,7 +10887,7 @@ function init() {
       dragging.bar.classList.toggle('at-limit', atLimit);
 
       // Move bar visually
-      var spanDays = 14;
+      var spanDays = WORK_WINDOW_DAYS;
       var newStart = newEffEnd - spanDays;
       dragging.bar.style.left  = dragging.pct(newStart);
       dragging.bar.style.width = (spanDays / dragging.TOTAL * 100).toFixed(4) + '%';
