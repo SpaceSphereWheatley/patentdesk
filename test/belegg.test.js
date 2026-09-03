@@ -10,7 +10,7 @@ function load(cases) {
   return loadFunctions(
     ['computeBelegg', 'countsInBelegg', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo'],
     {
-      vars: ['WORK_WINDOW_DAYS'],
+      vars: ['WORK_WINDOW_DAYS', 'OVERDUE_PENALTY_WORKDAYS'],
       globals: {
         cases: cases || [],
         vacations: [],
@@ -81,6 +81,53 @@ test('computeBelegg ignores fristarkiv cases', () => {
 test('computeBelegg counts viderebehandling as real work', () => {
   const { computeBelegg } = load([makeCase({ id: 'a', status: 'viderebehandling' })]);
   assert.strictEqual(computeBelegg(60).pct1, ONE_CASE_PCT);
+});
+
+// An overdue case's work window lies entirely in the past, so without a
+// penalty it would cost nothing and missing a deadline would make belegg look
+// better. The penalty is flat: how far overdue a case is does not change it.
+test('computeBelegg charges a flat penalty for an overdue case', () => {
+  const { computeBelegg, OVERDUE_PENALTY_WORKDAYS } = load([
+    makeCase({ id: 'a', dueDate: inDays(-5) }),
+  ]);
+  assert.strictEqual(computeBelegg(60).busy, OVERDUE_PENALTY_WORKDAYS);
+});
+
+test('the overdue penalty does not grow with how late the case is', () => {
+  const dayLate = load([makeCase({ id: 'a', dueDate: inDays(-1) })]).computeBelegg(60).busy;
+  const yearLate = load([makeCase({ id: 'a', dueDate: inDays(-365) })]).computeBelegg(60).busy;
+  assert.strictEqual(dayLate, yearLate);
+});
+
+test('going overdue raises belegg rather than dropping it', () => {
+  const dueTomorrow = load([makeCase({ id: 'a', dueDate: inDays(1) })]).computeBelegg(60).busy;
+  const justOverdue = load([makeCase({ id: 'a', dueDate: inDays(-1) })]).computeBelegg(60).busy;
+  assert.ok(
+    justOverdue >= dueTomorrow,
+    'an overdue case (' + justOverdue + ') must not cost less than one still due (' + dueTomorrow + ')'
+  );
+});
+
+test('overdue penalties stack across cases', () => {
+  const { computeBelegg, OVERDUE_PENALTY_WORKDAYS } = load([
+    makeCase({ id: 'a', dueDate: inDays(-2) }),
+    makeCase({ id: 'b', dueDate: inDays(-40) }),
+  ]);
+  assert.strictEqual(computeBelegg(60).busy, OVERDUE_PENALTY_WORKDAYS * 2);
+});
+
+test('the overdue penalty lands in the current period, not the next one', () => {
+  // pct2 covers offsets 60..120; the penalty is booked on the days right after
+  // today, so the next-period forecast must not carry it.
+  const { computeBelegg } = load([makeCase({ id: 'a', dueDate: inDays(-5) })]);
+  assert.strictEqual(computeBelegg(60).pct2, 0);
+});
+
+test('an overdue fristarkiv case is still ignored entirely', () => {
+  const { computeBelegg } = load([
+    makeCase({ id: 'a', status: 'fristarkiv', dueDate: inDays(-5) }),
+  ]);
+  assert.strictEqual(computeBelegg(60).busy, 0);
 });
 
 test('computeBelegg ignores avsluttet cases and oppdrag', () => {

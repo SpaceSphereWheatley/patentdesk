@@ -62,7 +62,11 @@ These two stores have distinct responsibilities. Do not conflate them.
 - **Whose deadline is it.** The meaning of `dueDate` depends on the status, and
   this drives most workload logic:
   - `Ny` — the examiner's own deadline to examine the application. Real work,
-    modelled as a 14-day working window (`BUSY_DAYS`) ending on the due date.
+    modelled as a 14-day working window (`WORK_WINDOW_DAYS`) ending on the due
+    date. The window represents time remaining, so it shrinks as the deadline
+    approaches; once a case is overdue it costs a flat
+    `OVERDUE_PENALTY_WORKDAYS` in belegg instead, so missing a deadline can
+    never make the occupancy figure look better.
   - `Fristarkiv` — the office action has **already been sent out**. The due date
     is the **applicant's** deadline to answer, not the examiner's. It costs the
     examiner no work: no 14-day window, no occupancy (belegg), no vacation

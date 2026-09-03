@@ -20,6 +20,14 @@ fristbuffer og fristvarsel. Det er nå ryddet opp overalt.
   viderebehandling — å behandle søkerens svar — er det. Belegget regnes nå på
   Ny og Viderebehandling. Prosenten vil endre seg merkbart, og viser nå faktisk
   arbeidsbelastning.
+- **Forfalte saker kostet ingenting i belegget.** Arbeidsvinduet modellerer
+  tiden som er igjen fram til fristen, så det var tomt når fristen hadde
+  passert — og en sak du hadde sprukket på falt dermed helt ut av regnestykket.
+  Å bomme på en frist fikk altså belegget til å se *bedre* ut. En forfalt sak
+  koster nå en fast straff på tre arbeidsdager, bokført på de nærmeste
+  arbeidsdagene fra i dag. Straffen vokser ikke med hvor gammelt etterslepet
+  er — en sak som er ett år på overtid er ikke mer arbeid enn en som er én dag
+  på overtid — og den treffer bare inneværende periode.
 - Ferievarselet (⛱) dukket opp på fristarkivsaker fordi de fikk et
   14-dagers arbeidsvindu de skulle hatt. En sak i Fristarkiv har ingen
   arbeidsperiode og kan derfor ikke kollidere med ferie.

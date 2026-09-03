@@ -4151,6 +4151,22 @@ var WORK_WINDOW_DAYS = 14;
 // en periode det jobbes i. .tl-bar har min-width, så den er synlig uansett.
 var MILESTONE_DAYS = 1;
 
+// Hva en forfalt sak koster i belegget, målt i arbeidsdager fra og med i dag.
+//
+// Arbeidsvinduet modellerer tiden som er igjen fram til fristen, så det krymper
+// etter hvert som fristen nærmer seg og er tomt når fristen har passert. Uten
+// en straff ville en forfalt sak derfor kostet null — og det å sprekke på en
+// frist ville fått belegget til å se bedre ut, stikk i strid med hva tallet
+// skal fortelle deg.
+//
+// Straffen er fast, ikke voksende: en sak som er ett år på overtid er ikke mer
+// arbeid enn en som er én dag på overtid, og et etterslep skal ikke pinne
+// måleren til 100 % for alltid. Tre arbeidsdager er valgt fordi en sak med
+// frist i morgen allerede koster om lag én til to dager — straffen ligger like
+// over, slik at belegget stiger litt når fristen ryker, i stedet for å hoppe
+// eller falle.
+var OVERDUE_PENALTY_WORKDAYS = 3;
+
 // countsInBelegg: om saken legger beslag på arbeidstiden din i belegg-kortet.
 // Bare de statusene som faktisk er ditt arbeid teller: Ny (førstegangs
 // behandling) og Viderebehandling (behandle søkerens svar). Saker i Fristarkiv
@@ -6077,6 +6093,23 @@ function computeBelegg(horizonDays) {
     cases.filter(countsInBelegg).forEach(function(c) {
       var due      = new Date(effDueFor(c) + 'T00:00:00');
       var dueOff   = Math.round((due - today) / 86400000);
+
+      // Forfalt: vinduet ligger i fortiden, men arbeidet er fortsatt ugjort.
+      // Bokfør straffen på de nærmeste arbeidsdagene fra i dag — det er der
+      // arbeidet må presses inn. Den treffer derfor bare periode 1; er saken
+      // fortsatt forfalt i neste periode, er det neste periodes problem.
+      if (dueOff < 0) {
+        var booked = 0;
+        // Øvre grense på letingen slik at løkken alltid terminerer, uansett
+        // hvor mange fridager som ligger på rad.
+        for (var j = 0; j < 60 && booked < OVERDUE_PENALTY_WORKDAYS; j++) {
+          if (isNonWorkday(new Date(today.getTime() + j * 86400000))) continue;
+          booked++;
+          if (j >= startOffset && j < endOffset) busyCount++;
+        }
+        return;
+      }
+
       var winStart = dueOff - WORK_WINDOW_DAYS;
       var winEnd   = dueOff;
       for (var i = Math.max(startOffset, winStart); i < Math.min(endOffset, winEnd + 1); i++) {
