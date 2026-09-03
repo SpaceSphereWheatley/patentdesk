@@ -55,6 +55,13 @@ fristbuffer og fristvarsel. Det er nå ryddet opp overalt.
 - `WORK_WINDOW_DAYS` (14) er trukket ut som én felles konstant. Belegget,
   tidslinjen og ferieoverlapp-sjekken hadde hver sin lokale kopi av tallet og
   kunne komme i utakt.
+- Belegg-beregningen summerer overlappende arbeidsvinduer, slik den alltid har
+  gjort — to saker med frist samme uke teller dobbelt. Kommentaren i koden sa
+  «unike arbeidsdager», noe koden aldri har gjort, og inviterte til en
+  «opprydding» som ville gjort tallet ubrukelig: ti saker med frist samme dag
+  ville gitt samme belegg som én. Kommentaren er rettet, og oppførselen er
+  låst med tester. Belegg over 100 % er derfor meningsfullt og betyr
+  overbooket.
 
 ## [4.17.1] - 2026-08-07
 ### Fixed

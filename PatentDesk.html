@@ -6062,8 +6062,16 @@ function computeBelegg(horizonDays) {
   var period1Work = workdaysInRange(0, horizonDays);
   var period2Work = workdaysInRange(horizonDays, horizonDays * 2);
 
-  // Opptatte dager = arbeidsdager dekket av arbeidsvinduet til en sak som
+  // Opptatte dager = summen av arbeidsdager i arbeidsvinduet til hver sak som
   // faktisk er ditt arbeid (se countsInBelegg).
+  //
+  // Merk: dette er en sum, ikke et sett med unike datoer — to saker med
+  // overlappende vinduer teller den samme datoen to ganger. Det er med vilje.
+  // Arbeidsvinduet er et estimat på arbeidsmengde (~10 arbeidsdager per sak),
+  // og belegg = estimert arbeid / tilgjengelig kapasitet. Med unike datoer
+  // ville ti saker med frist samme dag gitt samme belegg som én sak — altså
+  // stille i det ene tilfellet der du mest trenger et varsel. Derfor kan
+  // prosenten passere 100, og skal gjøre det: det betyr overbooket.
   function busyWorkdays(startOffset, endOffset) {
     var busyCount = 0;
     cases.filter(countsInBelegg).forEach(function(c) {
