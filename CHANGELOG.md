@@ -8,6 +8,22 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 ## [Unreleased]
 
 ## [4.18.0] - 2026-09-03
+Denne versjonen retter opp en gjennomgående feil: fristen på en sak i
+**Fristarkiv** er søkerens frist til å svare oss, ikke saksbehandlerens frist
+til å gjøre noe. Realitetsbrevet er allerede sendt ut. Appen behandlet likevel
+slike saker som arbeid — med 14-dagers arbeidsvindu, belegg, feriekonflikt,
+fristbuffer og fristvarsel. Det er nå ryddet opp overalt.
+
+### Fixed
+- **Belegg-kortet regnet på feil saker.** Det telte saker med status Ny og
+  Fristarkiv, men ikke Viderebehandling. Fristarkivsaker er ikke arbeid, mens
+  viderebehandling — å behandle søkerens svar — er det. Belegget regnes nå på
+  Ny og Viderebehandling. Prosenten vil endre seg merkbart, og viser nå faktisk
+  arbeidsbelastning.
+- Ferievarselet (⛱) dukket opp på fristarkivsaker fordi de fikk et
+  14-dagers arbeidsvindu de skulle hatt. En sak i Fristarkiv har ingen
+  arbeidsperiode og kan derfor ikke kollidere med ferie.
+
 ### Changed
 - Fristbufferen gjelder ikke lenger for saker i **Fristarkiv**. Slike saker
   vises nå med sin faktiske frist overalt — hjemtidslinjen, saksliste- og
@@ -28,6 +44,17 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   ingenting om arbeidsbelastningen og gjorde bare bildet travlere enn det er.
   Hjem- og sakslistetidslinjene er uendret; der kan Fristarkiv fortsatt slås
   av og på med filterchipsene.
+- Fristarkivsaker tegnes nå som en **milepæl** på selve fristdatoen i stedet
+  for som en 14-dagers arbeidsbjelke. Bjelken markerte to uker med arbeid som
+  ikke finnes, og dyttet ekte arbeid ned i ekstra rader fordi radpakkingen
+  fordeler etter overlapp. Milepælen markerer når saken kan komme tilbake.
+  Saksnummeret vises i hover-popupen som før.
+- Fristvarselet på hjemsiden tar ikke lenger med fristarkivsaker. Varselet er
+  til for oppgaver du skal gjøre noe med; en svarfrist hos søkeren er ikke det.
+  «Kommende frister»-listen tok dem allerede ikke med.
+- `WORK_WINDOW_DAYS` (14) er trukket ut som én felles konstant. Belegget,
+  tidslinjen og ferieoverlapp-sjekken hadde hver sin lokale kopi av tallet og
+  kunne komme i utakt.
 
 ## [4.17.1] - 2026-08-07
 ### Fixed

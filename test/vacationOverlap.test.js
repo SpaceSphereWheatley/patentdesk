@@ -6,7 +6,10 @@ const { loadFunctions } = require('./extractFunctions');
 function load(vacations, fristBuffer) {
   return loadFunctions(
     ['bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'periodOverlapsVacation'],
-    { globals: { vacations: vacations || [], fristBuffer: fristBuffer != null ? fristBuffer : 0 } }
+    {
+      vars: ['WORK_WINDOW_DAYS'],
+      globals: { vacations: vacations || [], fristBuffer: fristBuffer != null ? fristBuffer : 0 },
+    }
   );
 }
 
@@ -74,12 +77,20 @@ test('effDueFor uses the raw dueDate for cases in fristarkiv', () => {
   );
 });
 
-test('periodOverlapsVacation uses the unbuffered window for fristarkiv cases', () => {
-  const { periodOverlapsVacation } = load([{ from: '2026-06-20', to: '2026-06-24' }], 10);
-  // Buffered, the 14-day window would end 2026-07-05 and start 2026-06-22 (overlap).
+test('periodOverlapsVacation ignores fristarkiv cases entirely', () => {
+  // A vacation sitting squarely on the due date would overlap for any status
+  // that had a working period — a fristarkiv case has none, so it never does.
+  const { periodOverlapsVacation } = load([{ from: '2026-07-13', to: '2026-07-17' }], 0);
   assert.strictEqual(periodOverlapsVacation({ type: 'sak', status: 'ny', dueDate: '2026-07-15' }), true);
-  // Unbuffered, it ends 2026-07-15 and starts 2026-07-02 — no overlap.
   assert.strictEqual(periodOverlapsVacation({ type: 'sak', status: 'fristarkiv', dueDate: '2026-07-15' }), false);
+});
+
+test('periodOverlapsVacation still measures the buffered window for other statuses', () => {
+  const { periodOverlapsVacation } = load([{ from: '2026-06-20', to: '2026-06-24' }], 10);
+  // Buffered, the 14-day window ends 2026-07-05 and starts 2026-06-22 (overlap).
+  assert.strictEqual(periodOverlapsVacation({ type: 'sak', status: 'ny', dueDate: '2026-07-15' }), true);
+  // Without the buffer it would end 2026-07-15 and start 2026-07-02 — no overlap.
+  assert.strictEqual(periodOverlapsVacation({ type: 'sak', status: 'viderebehandling', dueDate: '2026-07-15' }), true);
 });
 
 test('caseBufferLabel marks the buffer as inactive for fristarkiv cases only', () => {
