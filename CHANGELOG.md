@@ -7,6 +7,22 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.18.0] - 2026-09-03
+### Changed
+- Fristbufferen gjelder ikke lenger for saker i **Fristarkiv**. Slike saker
+  vises nå med sin faktiske frist overalt — hjemtidslinjen, saksliste- og
+  modaltidslinjene, kortlistene, fristvarselet, sortering og
+  ferieoverlapp-varselet — på linje med hvordan oppdrag alltid har oppført seg.
+  Det gjelder både den globale bufferen og en eventuell buffer satt på den
+  enkelte saken: i fristarkivet er det den reelle fristen man forholder seg
+  til. Bufferen slår inn igjen av seg selv når saken går videre til
+  viderebehandling.
+- Buffer-verdien på en sak i Fristarkiv beholdes og vises fortsatt på
+  sakssiden, men er merket «ikke aktiv i Fristarkiv» så det går fram at den
+  ikke trekkes fra akkurat nå.
+- Bjelker for fristarkivsaker på hjemtidslinjen kan ikke lenger dras for å
+  justere buffer, siden en buffer der uansett ikke ville hatt noen effekt.
+
 ## [4.17.1] - 2026-08-07
 ### Fixed
 - Mothold-chipen ved siden av nyhet-/OH-knappene i kravsvurderingen kunne få

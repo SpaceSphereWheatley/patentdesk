@@ -3334,7 +3334,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.17.1';
+var APP_VERSION    = 'v4.18.0';
 var SCHEMA_VERSION = 4;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4101,12 +4101,22 @@ function saveFristBuffer(val) {
   try { localStorage.setItem(BUFFER_KEY, String(val)); }
   catch(e) { showToast('✗ Lagring feilet', true); }
 }
+// bufferAppliesTo: om fristbufferen — global eller per sak — skal gjelde for en
+// sak. Oppdrag viser alltid faktisk frist. Det samme gjør saker i Fristarkiv:
+// der er poenget nettopp å forholde seg til den reelle fristen, så verken den
+// globale bufferen eller en per-sak-buffer trekkes fra.
+function bufferAppliesTo(c) {
+  if (!c) return true;
+  if (c.type === 'oppdrag') return false;
+  if (c.status === 'fristarkiv') return false;
+  return true;
+}
 // getEffectiveDueDate: returnerer dueDate forskøvet med buffer dager tidligere.
 // Brukes overalt utad unntatt inne i saksdetaljvisning og fristarkiv.
-// Oppdrag påvirkes aldri av buffer — de viser alltid faktisk frist.
+// Saker bufferen ikke gjelder for (se bufferAppliesTo) viser faktisk frist.
 function getEffectiveDueDate(dueDateStr, caseObj) {
   if (!dueDateStr) return dueDateStr;
-  if (caseObj && caseObj.type === 'oppdrag') return dueDateStr;
+  if (!bufferAppliesTo(caseObj)) return dueDateStr;
   var buf = (caseObj && caseObj.caseBuffer != null) ? caseObj.caseBuffer : fristBuffer;
   if (buf === 0) return dueDateStr;
   var d = new Date(dueDateStr + 'T00:00:00');
@@ -4114,9 +4124,17 @@ function getEffectiveDueDate(dueDateStr, caseObj) {
   return d.toISOString().slice(0, 10);
 }
 // effDueFor: returns the effective due date for a case object.
-// Oppdrag always use their actual dueDate; regular cases get the buffer-adjusted date.
+// Oppdrag and cases in Fristarkiv always use their actual dueDate; other cases
+// get the buffer-adjusted date.
 function effDueFor(c) {
-  return (c && c.type === 'oppdrag') ? c.dueDate : getEffectiveDueDate(c ? c.dueDate : '', c);
+  return getEffectiveDueDate(c ? c.dueDate : '', c);
+}
+// caseBufferLabel: teksten i «Buffer (dager)»-feltet på sakssiden. En sak i
+// Fristarkiv beholder buffer-verdien sin — den slår inn igjen når saken går
+// videre — så verdien vises fortsatt, men merket som ikke aktiv.
+function caseBufferLabel(c) {
+  var base = (c && c.caseBuffer != null) ? String(c.caseBuffer) + ' dager' : 'Globalt';
+  return (c && c.status === 'fristarkiv') ? base + ' · ikke aktiv i Fristarkiv' : base;
 }
 
 // Returns true if any day in the case's working period overlaps a vacation.
@@ -6411,7 +6429,7 @@ function renderSak(id) {
   var bufField = document.getElementById('sak-case-buffer-field');
   if (bufField) bufField.style.display = isOppdrag ? 'none' : '';
   var bufInp = document.getElementById('sak-case-buffer');
-  if (bufInp) bufInp.textContent = cas.caseBuffer != null ? String(cas.caseBuffer) + ' dager' : 'Globalt';
+  if (bufInp) bufInp.textContent = caseBufferLabel(cas);
 
   // Status-knapper — forenklet for oppdrag
   var statusBtns = document.getElementById('sak-status-btns');
@@ -7878,6 +7896,7 @@ function buildTimelineDiv(opts) {
       end:        effEnd,
       actualEnd:  actEnd,
       hasBuffer:  !isOp && cas.dueDate !== effDue,
+      canBuffer:  bufferAppliesTo(cas),
       isOppdrag:  isOp,
       status:     cas.status,
       isOverdue:  effEnd < 0,
@@ -7951,7 +7970,7 @@ function buildTimelineDiv(opts) {
     var topPx = TOP_PAD + r.row * (barH + GAP);
     var bar = document.createElement('div');
     var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : 'tl-bar-' + r.status;
-    bar.className = 'tl-bar ' + typeCls + (opts.draggable && !r.isOppdrag ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '');
+    bar.className = 'tl-bar ' + typeCls + (opts.draggable && r.canBuffer ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '');
     var visStart = Math.max(-PAST, r.start);
     var visEnd   = Math.min(HORIZON, r.end);
     bar.style.left   = pct(visStart);
