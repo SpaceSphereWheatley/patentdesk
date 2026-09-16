@@ -104,7 +104,8 @@
   --belegg-high: #ef4444;
   /* Misc */
   --color-warning-text: #f6ad55;
-  --sak-sticky-cr: #6ea8d8;
+  --phase-bg:     #eef0f3;
+  --phase-border: #dfe3e8;
   --soon-nav-dark: #fcd34d;
   --cpc-loaded:   #1D9E75;
   --dp-sel-text:  #000000;
@@ -254,17 +255,6 @@ svg.ti { width: 16px; height: 16px; flex-shrink: 0; vertical-align: middle; disp
 .top-bar {
   display: flex; align-items: center;
   justify-content: space-between; gap: var(--space-6); flex-wrap: wrap;
-}
-.sak-due-hero { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
-.sak-due-hero-eff {
-  font-family: var(--font-head); font-size: var(--text-xl); font-weight: var(--weight-bold);
-  color: var(--text); letter-spacing: var(--tracking-tight); line-height: var(--line-tight);
-}
-.sak-due-hero-eff.urgent  { color: var(--color-urgent); }
-.sak-due-hero-eff.overdue { color: var(--danger); }
-.sak-due-hero-actual {
-  font-size: var(--text-xs); color: var(--muted);
-  display: flex; align-items: center; gap: var(--space-1);
 }
 .page-title {
   font-family: var(--font-head); font-size: var(--text-xl);
@@ -973,10 +963,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 
 
 
-
-
-
-
 /* ── Hjem-side ────────────────────────────────────── */
 .drawer-logo:hover { opacity: 0.8; }
 
@@ -1433,12 +1419,116 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-progress-fill-checklist { background: var(--accent); }
 .sak-progress-fill-claims    { background: var(--primary); }
 
-/* Seksjoner */
-.sak-section        { padding: 0 0 1.75rem; }
+/* ── Faser: to nivåer ───────────────────────────────
+   Fasen er en egen flate; seksjonene inni er hvite kort. Fargen ligger bare i
+   fase-merket — grønt, rødt og gult betyr allerede noe i kravtabellen, og en
+   kulørt fase-flate ville lest som en tilstand. */
+.sak-phase          { background: var(--phase-bg); border: 1px solid var(--phase-border);
+                      border-radius: var(--radius-xl); padding: var(--space-6) var(--space-7) var(--space-7);
+                      margin-bottom: var(--space-6); }
+.sak-phase-head     { display: flex; align-items: center; gap: var(--space-5); width: 100%;
+                      background: none; border: none; padding: 0 var(--space-1) var(--space-1);
+                      font-family: var(--font-body); text-align: left; cursor: pointer; color: var(--text); }
+.sak-phase-head:hover .sak-phase-name { color: var(--accent-dim); }
+.sak-phase-key      { display: inline-flex; align-items: center; justify-content: center;
+                      width: 24px; height: 24px; flex: none; border-radius: var(--radius-sm);
+                      background: var(--accent); color: var(--accent-btn-text);
+                      font-size: var(--text-sm); font-weight: var(--weight-bold); }
+.sak-phase-name     { font-size: var(--text-md); font-weight: var(--weight-bold); }
+.sak-phase-desc     { font-size: var(--text-sm); color: var(--muted); }
+.sak-phase-chev     { margin-left: auto; font-size: var(--text-xs); color: var(--muted);
+                      transition: transform var(--dur-base) ease; }
+.sak-phase-collapsed .sak-phase-chev { transform: rotate(-90deg); }
+.sak-phase-collapsed .sak-phase-body { display: none; }
+.sak-phase-body     { display: flex; flex-direction: column; gap: var(--space-5);
+                      margin-top: var(--space-5); }
+
+/* Seksjoner — hvite kort inne i fasen */
+.sak-section        { background: var(--surface); border: 1px solid var(--border);
+                      border-radius: var(--radius-lg); padding: var(--space-6) var(--space-7) var(--space-7); }
 .sak-section-title  { font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--muted);
                       text-transform: uppercase; letter-spacing: var(--tracking-label);
-                      margin-bottom: 0.9rem; padding-bottom: var(--space-3);
+                      margin: 0 0 0.9rem; padding-bottom: var(--space-3);
                       border-bottom: 1px solid var(--border); }
+
+/* ── Fristblokk ────────────────────────────────────
+   Erstatter hero + «Forfallsdato» + «Buffer», og sier hvem fristen tilhører. */
+.sak-frist          { background: var(--surface); border: 1px solid var(--border);
+                      border-left: 3px solid var(--s-ny-text); border-radius: var(--radius-lg);
+                      padding: var(--space-5) var(--space-7); margin-bottom: var(--space-6);
+                      max-width: 34rem; }
+.sak-frist-applicant { border-left-color: var(--s-frist-text); }
+.sak-frist-owner    { display: inline-block; font-size: var(--text-2xs); font-weight: var(--weight-bold);
+                      letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+                      color: var(--s-ny-text); background: var(--s-ny-bg);
+                      border: 1px solid var(--s-ny-border); padding: 1px var(--space-3);
+                      border-radius: var(--radius-pill); margin-bottom: var(--space-3); }
+.sak-frist-applicant .sak-frist-owner { color: var(--s-frist-text); background: var(--s-frist-bg);
+                      border-color: var(--s-frist-border); }
+.sak-frist-main     { display: flex; align-items: baseline; gap: var(--space-4); flex-wrap: wrap; }
+.sak-frist-date     { font-size: var(--text-xl); font-weight: var(--weight-bold);
+                      font-variant-numeric: tabular-nums; line-height: var(--line-tight); }
+.sak-frist-left     { font-size: var(--text-sm); color: var(--muted); }
+.sak-frist-left.urgent  { color: var(--color-urgent); font-weight: var(--weight-semibold); }
+.sak-frist-left.overdue { color: var(--danger); font-weight: var(--weight-semibold); }
+.sak-frist-meta     { font-size: var(--text-xs); color: var(--muted); margin-top: var(--space-2); }
+.sak-frist-note     { font-size: var(--text-sm); color: var(--muted); line-height: var(--line-snug);
+                      margin-top: var(--space-3); padding-top: var(--space-3);
+                      border-top: 1px dashed var(--border); }
+
+/* ── Saksinformasjon som lesefelt ──────────────────
+   Faste opplysninger redigeres via «Rediger sak», ikke inline — så de skal
+   ikke se ut som skjemafelt. */
+.sak-info-dl        { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+                      gap: var(--space-5) var(--space-8); margin: 0 0 var(--space-6); }
+.sak-info-pair      { min-width: 0; }
+.sak-info-pair-wide { grid-column: span 2; }
+.sak-info-dl dt     { font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+                      letter-spacing: var(--tracking-label); text-transform: uppercase;
+                      color: var(--muted); margin-bottom: 2px; }
+.sak-info-dl dd     { margin: 0; font-size: var(--text-base); color: var(--text);
+                      font-variant-numeric: tabular-nums; min-height: 1.4em; }
+.sak-info-block     { display: flex; flex-direction: column; gap: var(--space-2);
+                      margin-top: var(--space-6); }
+
+/* Antall krav, nå i Kravsvurdering-hodet */
+.sak-numclaims-label { font-size: var(--text-xs); color: var(--muted); text-transform: none;
+                      letter-spacing: 0; font-weight: var(--weight-regular); }
+.sak-numclaims-input { width: 4.5rem; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* Notatfeltene, med hvem som ser dem */
+.sak-notes-grid     { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); }
+.sak-note-field     { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.sak-note-head      { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.sak-note-head label { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text); }
+.sak-note-badge     { font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+                      letter-spacing: var(--tracking-wide); text-transform: uppercase;
+                      padding: 1px var(--space-2); border-radius: var(--radius-sm); border: 1px solid; }
+.sak-note-badge-vis { background: var(--s-ny-bg); color: var(--s-ny-text); border-color: var(--s-ny-border); }
+.sak-note-badge-int { background: var(--surface2); color: var(--muted); border-color: var(--border2); }
+
+/* ── Framoverknappen: eneste primærknapp på siden ── */
+.btn-sak-forward    { background: var(--accent); color: var(--accent-btn-text);
+                      border: 1px solid var(--accent-dim); border-radius: var(--radius);
+                      padding: var(--space-3) 1.1rem; font-family: var(--font-body);
+                      font-size: var(--text-sm); font-weight: var(--weight-semibold);
+                      letter-spacing: var(--tracking-wide); cursor: pointer; white-space: nowrap;
+                      display: inline-flex; align-items: center; gap: var(--space-2);
+                      transition: opacity var(--dur-base), transform var(--dur-instant); }
+.btn-sak-forward:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-sak-forward-sm { padding: var(--space-2) var(--space-5); font-size: var(--text-xs); }
+
+/* ── Sticky-bar: ankere og handlinger ───────────── */
+.sak-anchors        { display: flex; gap: var(--space-1); flex: none; flex-wrap: nowrap; }
+.sak-anchor         { background: none; border: 1px solid transparent; border-radius: var(--radius-pill);
+                      color: var(--muted); font-family: var(--font-body); font-size: var(--text-xs);
+                      padding: var(--space-1) var(--space-4); cursor: pointer; white-space: nowrap; }
+.sak-anchor:hover   { color: var(--text); }
+.sak-anchor.active  { background: var(--surface2); border-color: var(--border2);
+                      color: var(--text); font-weight: var(--weight-semibold); }
+.sak-sticky-actions { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); flex: none; }
+.sak-sticky-actions .btn-secondary { white-space: nowrap; flex: none; }
+.sak-docs-wrap      { position: relative; }
 
 /* Saksinformasjon-felt */
 .sak-info-grid      { display: flex; gap: var(--space-8); }
@@ -1470,6 +1560,10 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 /* Sjekkliste */
 .sak-checklist      { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-8); align-items: start; }
 @media (max-width: 900px) { .sak-checklist { grid-template-columns: 1fr; } }
+
+/* Saksvisningen på smalere skjerm. Kravtabellen er sju kolonner med fast
+   layout, så kravtreet må under den før den klemmes. */
+
 @media (max-width: 800px) {
   .case-card-notes        { display: none; }
   .home-upcoming-row .case-card-notes { display: none; }
@@ -1727,15 +1821,24 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-id              { font-weight: var(--weight-bold); font-size: var(--text-base);
                       color: var(--primary); font-variant-numeric: tabular-nums; }
 .mh-row-bg .mh-id   { color: var(--muted); }
-.mh-ref-inp, .mh-title-inp {
-                      background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
+.mh-ref-inp         { background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
                       color: var(--text); font-family: var(--font-body); font-size: var(--text-sm);
-                      padding: var(--space-1) var(--space-2); width: 100%; min-width: 0; }
-.mh-ref-inp         { font-variant-numeric: tabular-nums; }
-.mh-title-inp       { color: var(--muted); }
-.mh-ref-inp:hover, .mh-title-inp:hover     { border-color: var(--border2); }
-.mh-ref-inp:focus, .mh-title-inp:focus     { outline: none; border-color: var(--accent-dim); background: var(--surface); }
-.mh-ref-inp::placeholder, .mh-title-inp::placeholder { color: var(--muted); opacity: 0.5; }
+                      padding: var(--space-1) var(--space-2); width: 100%; min-width: 0;
+                      font-variant-numeric: tabular-nums; }
+.mh-ref-inp:hover   { border-color: var(--border2); }
+.mh-ref-inp:focus   { outline: none; border-color: var(--accent-dim); background: var(--surface); }
+.mh-ref-inp::placeholder { color: var(--muted); opacity: 0.5; }
+
+/* Utledet kategori per mothold — overtar kolonnen tittelfeltet hadde */
+.mh-cats            { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; min-width: 0; }
+.mh-cat             { display: inline-flex; align-items: center; gap: var(--space-1);
+                      font-size: var(--text-xs); padding: 1px var(--space-3); border-radius: var(--radius-sm);
+                      border: 1px solid; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mh-cat b           { font-weight: var(--weight-bold); }
+.mh-cat-x           { background: rgba(224,85,85,0.10); border-color: rgba(224,85,85,0.35); color: #a52121; }
+.mh-cat-y           { background: rgba(234,179,8,0.14); border-color: rgba(234,179,8,0.45); color: #8a6708; }
+.mh-cat-a           { background: var(--surface2); border-color: var(--border2); color: var(--muted); }
+.mh-cats-none       { font-size: var(--text-xs); color: var(--muted); opacity: 0.6; }
 .mh-flags           { display: flex; gap: var(--space-2); }
 .mh-flag            { font-size: var(--text-2xs); font-weight: var(--weight-semibold); font-family: var(--font-body);
                       min-width: 1.6rem; padding: 2px var(--space-2); border-radius: var(--radius-sm); cursor: pointer;
@@ -1797,33 +1900,17 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       border-top: 1px solid var(--border); margin-top: var(--space-2); }
 
 /* ── Granskingsrapport ────────────────────────────── */
-.gr-empty           { font-size: var(--text-sm); color: var(--muted); }
-.gr-table           { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-.gr-table th        { padding: var(--space-3) var(--space-5); text-align: left; font-size: var(--text-xs);
-                      font-weight: var(--weight-semibold); color: var(--muted);
-                      text-transform: uppercase; letter-spacing: var(--tracking-label);
-                      border-bottom: 1px solid var(--border); }
-.gr-table td        { padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border); vertical-align: top; }
-.gr-doc             { width: 18rem; }
-.gr-doc-id          { font-weight: var(--weight-bold); color: var(--primary); font-size: var(--text-base); }
-.gr-doc-id-bg       { color: var(--muted); }
-.gr-doc-bg-tag      { font-size: var(--text-2xs); color: var(--muted); }
-.gr-doc-ref         { display: block; font-size: var(--text-xs); color: var(--muted);
-                      font-variant-numeric: tabular-nums; margin-top: 1px; }
-.gr-cat             { width: 9rem; }
-.gr-cat-badge       { display: inline-block; min-width: 2.4rem; text-align: center;
-                      font-size: var(--text-2xs); font-weight: var(--weight-bold); letter-spacing: var(--tracking-wide);
-                      padding: 1px var(--space-3); border-radius: var(--radius-sm); margin-bottom: 3px; }
-.gr-x               { background: rgba(224,85,85,0.16); color: var(--danger); border: 1px solid rgba(224,85,85,0.4); }
-.gr-y               { background: rgba(234,179,8,0.18); color: #8a6708; border: 1px solid rgba(234,179,8,0.5); }
-.gr-a               { background: var(--surface2); color: var(--muted); border: 1px solid var(--border2); }
-.gr-nums            { font-family: monospace; font-variant-numeric: tabular-nums; font-size: var(--text-sm); }
-.gr-nums-empty      { color: var(--muted); opacity: 0.5; }
-.gr-foot            { margin-top: var(--space-5); font-size: var(--text-xs); color: var(--muted); }
+/* Advarsel om uvurderte krav — hører til hele mothold-seksjonen, ikke én rad.
+   Seksjonshodet er i versaler, så badgen må melde seg ut av det. */
+.gr-warn            { font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+                      text-transform: none; letter-spacing: 0; white-space: nowrap;
+                      background: var(--badge-urgent-bg); color: var(--badge-urgent-text);
+                      border: 1px solid var(--badge-urgent-border);
+                      padding: 1px var(--space-3); border-radius: var(--radius-pill); }
 
 @media (max-width: 720px) {
   .mh-row           { grid-template-columns: 2.2rem 1fr; row-gap: var(--space-2); }
-  .mh-title-inp, .mh-flags, .mh-bg-toggle { grid-column: 2; }
+  .mh-cats, .mh-flags, .mh-bg-toggle { grid-column: 2; }
 }
 
 /* Kravstabell: gul rad for patenterbar med formelle feil */
@@ -1844,8 +1931,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .res-footnote           { font-size: var(--text-xs); color: var(--muted); margin-top: var(--space-3); padding-left: var(--space-3); }
 
 /* Resultatoversikt: kolonner */
-.sak-result-cols        { display: grid; grid-template-columns: repeat(3, 2fr) 3fr; gap: var(--space-8); margin-top: var(--space-5); }
-.sak-result-col         { display: flex; flex-direction: column; gap: 0.1rem; min-width: 180px; }
+.sak-result-cols        { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+                          gap: var(--space-6) var(--space-8); margin-top: var(--space-5); }
+.sak-result-col         { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
 .sak-result-col-title   { font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--muted);
                            text-transform: uppercase; letter-spacing: var(--tracking-label);
                            margin-bottom: var(--space-1); padding-bottom: var(--space-1);
@@ -1856,6 +1944,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 /* ── Kravtre og side-ved-side layout ─────────────── */
 .krav-layout        { display: grid; grid-template-columns: 1fr auto; gap: var(--space-5); align-items: start; }
+/* Grid-elementer har min-width:auto og vokser derfor til tabellens
+   minstebredde i stedet for å la .table-wrap scrolle internt. */
+.krav-layout > .table-wrap { min-width: 0; }
 .kt-tree            { min-width: 120px; max-width: 260px; }
 .kt-outer           { border: 1px solid var(--border); border-radius: var(--radius);
                       padding: var(--space-1); background: var(--surface); }
@@ -1967,8 +2058,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 .sak-sticky-bar {
   position: fixed; top: 0; left: 260px; right: 0; z-index: 40;
   background: var(--surface); border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: var(--space-7);
-  padding: var(--space-3) var(--space-10);
+  display: flex; align-items: center; gap: var(--space-6);
+  padding: var(--space-3) var(--space-7);
   transform: translateY(-100%);
   transition: transform var(--dur-slow) ease, opacity var(--dur-slow) ease;
   opacity: 0; pointer-events: none;
@@ -1991,11 +2082,39 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                         font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* To-rad kravgrid */
-.sak-sticky-grid     { display: grid; grid-template-columns: 28px 1fr 1px 1fr 1px 1fr;
+#sak-sticky-summary  { flex: none; }
+.sak-sticky-grid     { display: grid; grid-template-columns: 28px auto 1px auto 1px auto;
                         align-items: center; row-gap: var(--space-1); column-gap: 0; }
 .ss-row-lbl          { font-size: var(--text-2xs); color: var(--muted); white-space: nowrap; }
 .ss-col-sep          { width: 1px; background: transparent; align-self: stretch; margin: 0 var(--space-3); }
 .ss-cell             { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; min-width: 0; }
+
+/* Sticky-baren er inneklemt av sidemenyen (left: 260px), så den har mindre
+   plass enn vindusbredden tilsier. Status vikes før navigasjon og handling:
+   saksnummer, ankere og de to knappene blir stående lengst. */
+@media (max-width: 1500px) {
+  #sak-sticky-summary { display: none; }
+}
+@media (max-width: 1300px) {
+  .sak-sticky-progress { display: none; }
+}
+@media (max-width: 1000px) {
+  .krav-layout      { grid-template-columns: 1fr; }
+  .kt-tree          { width: 100%; }
+}
+@media (max-width: 900px) {
+  .sak-anchors      { display: none; }
+  .sak-sticky-actions .btn-label { display: none; }
+  .sak-sticky-actions .btn-sak-forward { padding: var(--space-2) var(--space-4); }
+  .sak-sticky-bar   { gap: var(--space-4); padding-inline: var(--space-5); }
+  .sak-notes-grid   { grid-template-columns: 1fr; }
+  .sak-info-pair-wide { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  .sak-phase        { padding: var(--space-5) var(--space-5) var(--space-6); }
+  .sak-section      { padding: var(--space-5); }
+  .sak-phase-desc   { display: none; }
+}
 
 /* Badges */
 .ss-badge            { display: inline-flex; align-items: center; padding: 1px var(--space-2);
@@ -2018,9 +2137,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 .input-narrow         { width: 100px; }
 .input-narrow-settings { max-width: 100px; }
 .select-narrow        { max-width: 120px; }
-.sak-section-title-row   { display: flex; align-items: center; justify-content: space-between; }
-.sak-section-title-left  { display: flex; align-items: center; gap: var(--space-5); }
-.sak-section-title-right { display: flex; align-items: center; gap: var(--space-2); }
+.sak-section-title-row   { display: flex; align-items: center; justify-content: space-between;
+                           flex-wrap: wrap; gap: var(--space-2) var(--space-5); }
+.sak-section-title-left  { display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+.sak-section-title-right { display: flex; align-items: center; gap: var(--space-2);
+                           text-transform: none; letter-spacing: 0; flex-wrap: wrap; }
 .cpc-load-banner-inner   { display: flex; align-items: center; gap: var(--space-2); padding: 2px var(--space-3);
                             border-radius: var(--radius-sm); background: var(--surface2); border: 1px solid var(--border2); }
 .cpc-banner-text         { font-size: var(--text-xs); color: var(--muted); font-weight: var(--weight-regular); letter-spacing: 0; }
@@ -2717,6 +2838,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
         <!-- Sticky-bar (vises når sammendragsboksen scroller ut av syne) -->
         <div id="sak-sticky-bar" class="sak-sticky-bar" aria-hidden="true">
           <span class="sak-sticky-cn" id="sak-sticky-cn"></span>
+          <nav class="sak-anchors" id="sak-anchors" aria-label="Gå til seksjon">
+            <button class="sak-anchor" data-anchor="saken">Saken</button>
+            <button class="sak-anchor" data-anchor="gransking">Gransking</button>
+            <button class="sak-anchor" data-anchor="vurdering">Vurdering</button>
+          </nav>
           <div class="sak-sticky-progress">
             <span class="sak-sticky-label">Sjekkliste</span>
             <div class="sak-sticky-track"><div class="sak-sticky-fill sak-sticky-fill-cl" id="sak-sticky-cl-bar"></div></div>
@@ -2728,7 +2854,14 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
             <span class="sak-sticky-pct" id="sak-sticky-cr-pct"></span>
           </div>
           <div id="sak-sticky-summary"></div>
+          <div class="sak-sticky-actions">
+            <div class="sak-docs-wrap">
+              <button class="btn-secondary btn-sm btn-sak-docs" id="btn-sak-docs-sticky" title="Åpne saksdokumenter" aria-label="Åpne saksdokumenter"><svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> <span class="btn-label">Dokumenter</span></button>
+            </div>
+            <button class="btn-sak-forward btn-sak-forward-sm" id="btn-sak-forward-sticky" style="display:none;"></button>
+          </div>
         </div>
+
         <section class="top-bar">
           <div class="sak-top-left">
             <button class="btn-back" id="btn-sak-back"><svg class="ti" aria-hidden="true"><use href="#ti-arrow-left"/></svg> Tilbake</button>
@@ -2738,8 +2871,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
             </div>
           </div>
           <div class="sak-topbar-right">
-            <div style="position:relative;">
-              <button class="btn-secondary btn-sm" id="btn-sak-docs" title="Åpne saksdokumenter"><svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> Dokumenter</button>
+            <div class="sak-docs-wrap">
+              <button class="btn-secondary btn-sm btn-sak-docs" id="btn-sak-docs" title="Åpne saksdokumenter"><svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> Dokumenter</button>
               <div class="sak-docs-dropdown" id="sak-docs-dropdown" style="display:none;">
                 <div id="sak-docs-list"></div>
                 <div class="sak-docs-add-row">
@@ -2756,15 +2889,23 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
             <div class="sak-more-wrap" style="position:relative;">
               <button class="btn-secondary btn-sm btn-card-more" id="btn-sak-more" title="Flere handlinger" aria-label="Flere handlinger">⋯</button>
             </div>
-            <div class="sak-due-hero" id="sak-due-hero" style="display:none;">
-              <div class="sak-due-hero-eff" id="sak-due-hero-eff"></div>
-              <div class="sak-due-hero-actual" id="sak-due-hero-actual" style="display:none;"></div>
-            </div>
+            <button class="btn-sak-forward" id="btn-sak-forward" style="display:none;"></button>
           </div>
         </section>
 
+        <!-- Fristblokk: hvem fristen tilhører avhenger av status -->
+        <div class="sak-frist" id="sak-frist" style="display:none;">
+          <span class="sak-frist-owner" id="sak-frist-owner"></span>
+          <div class="sak-frist-main">
+            <span class="sak-frist-date" id="sak-frist-date"></span>
+            <span class="sak-frist-left" id="sak-frist-left"></span>
+          </div>
+          <div class="sak-frist-meta" id="sak-frist-meta"></div>
+          <div class="sak-frist-note" id="sak-frist-note"></div>
+        </div>
+
         <!-- Progress bar + resultatsammendrag -->
-        <section class="sak-progress-section">
+        <section class="sak-progress-section" id="sak-summary-section">
           <div class="sak-summary-box">
             <div class="sak-progress-bars">
               <div class="sak-progress-item">
@@ -2791,140 +2932,181 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
         </section>
         <div id="sak-summary-sentinel"></div>
 
-        <!-- Saksinformasjon -->
-        <section class="sak-section">
-          <h2 class="sak-section-title">Saksinformasjon</h2>
-          <div class="sak-info-grid sak-info-grid-full">
-            <div class="sak-info-field">
-              <span class="sak-info-label" id="lbl-sak-case-number">Saksnummer</span>
-              <span class="sak-info-value" id="sak-case-number" aria-labelledby="lbl-sak-case-number"></span>
-            </div>
-            <div class="sak-info-field sak-info-field-wide">
-              <span class="sak-info-label" id="lbl-sak-title">Tittel</span>
-              <span class="sak-info-value" id="sak-title" aria-labelledby="lbl-sak-title"></span>
-            </div>
-            <div class="sak-info-field">
-              <span class="sak-info-label" id="lbl-sak-due-date">Forfallsdato</span>
-              <span class="sak-info-value" id="sak-due-date" aria-labelledby="lbl-sak-due-date"></span>
-            </div>
-            <div class="sak-info-field" id="sak-case-buffer-field">
-              <span class="sak-info-label" id="lbl-sak-case-buffer">Buffer (dager)</span>
-              <span class="sak-info-value" id="sak-case-buffer" aria-labelledby="lbl-sak-case-buffer"></span>
-            </div>
-            <div class="sak-info-field">
-              <span class="sak-info-label" id="lbl-sak-filing-date">Innleveringsdato</span>
-              <span class="sak-info-value" id="sak-filing-date" aria-labelledby="lbl-sak-filing-date"></span>
-            </div>
-            <div class="sak-info-field">
-              <label class="sak-info-label" for="sak-num-claims">Antall krav</label>
-              <input class="field-input sak-info-input input-w100" id="sak-num-claims" type="number" min="1" max="200" placeholder="f.eks. 10" />
-            </div>
-            <div class="sak-info-field" id="sak-duration-field" style="display:none;">
-              <span class="sak-info-label" id="lbl-sak-duration">Varighet (dager)</span>
-              <span class="sak-info-value" id="sak-duration" aria-labelledby="lbl-sak-duration"></span>
-            </div>
-            <div class="sak-info-field sak-info-field-wide">
-              <span class="sak-info-label" id="lbl-sak-status">Status</span>
-              <div class="sak-status-btn-group" id="sak-status-btns" role="group" aria-labelledby="lbl-sak-status">
-                <button class="sak-status-btn" data-status="ny"><svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg> Ny</button>
-                <button class="sak-status-btn" data-status="viderebehandling"><svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg> Viderebehandling</button>
-                <button class="sak-status-btn" data-status="fristarkiv"><svg class="ti" aria-hidden="true"><use href="#ti-archive"/></svg> Fristarkiv</button>
-                <button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>
-              </div>
-            </div>
-            <div class="sak-info-field sak-info-field-full">
-              <label class="sak-info-label" for="sak-tags">Stikkord</label>
-              <div class="sak-tags-wrap" id="sak-tags-wrap">
-                <div class="tag-pill-editor" id="sak-tags-editor">
-                  <div id="sak-tags-pills" class="tag-pill-list"></div>
-                  <input class="tag-pill-input" id="sak-tags" type="text" placeholder="Legg til stikkord…" autocomplete="off" />
+        <!-- ══ FASE A — Saken ══ -->
+        <section class="sak-phase" data-phase="saken" id="sak-phase-saken">
+          <button class="sak-phase-head" id="sak-phase-head-saken" aria-expanded="true" aria-controls="sak-phase-body-saken">
+            <span class="sak-phase-key">A</span>
+            <span class="sak-phase-name">Saken</span>
+            <span class="sak-phase-desc">Frist, status og metadata</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-saken">
+
+            <section class="sak-section" data-sak-section="info">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Saksinformasjon</span>
+                <span class="sak-section-title-right">
+                  <button class="btn-icon btn-icon-sm" id="btn-sak-edit-fields" title="Rediger saksopplysninger">✏ Rediger sak</button>
+                </span>
+              </h2>
+              <dl class="sak-info-dl">
+                <div class="sak-info-pair">
+                  <dt>Saksnummer</dt><dd id="sak-case-number"></dd>
+                </div>
+                <div class="sak-info-pair">
+                  <dt>Innleveringsdato</dt><dd id="sak-filing-date"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-case-buffer-field">
+                  <dt>Buffer (dager)</dt><dd id="sak-case-buffer"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-duration-field" style="display:none;">
+                  <dt>Varighet (dager)</dt><dd id="sak-duration"></dd>
+                </div>
+                <div class="sak-info-pair sak-info-pair-wide">
+                  <dt>Tittel</dt><dd id="sak-title"></dd>
+                </div>
+              </dl>
+
+              <div class="sak-info-block">
+                <span class="sak-info-label" id="lbl-sak-status">Status</span>
+                <div class="sak-status-btn-group" id="sak-status-btns" role="group" aria-labelledby="lbl-sak-status">
+                  <button class="sak-status-btn" data-status="ny"><svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg> Ny</button>
+                  <button class="sak-status-btn" data-status="viderebehandling"><svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg> Viderebehandling</button>
+                  <button class="sak-status-btn" data-status="fristarkiv"><svg class="ti" aria-hidden="true"><use href="#ti-archive"/></svg> Fristarkiv</button>
+                  <button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>
                 </div>
               </div>
-              <input type="hidden" id="sak-tags-value" />
-              <span class="field-hint">Enter eller komma legger til</span>
-            </div>
-            <div class="sak-info-field sak-info-field-full">
-              <label class="sak-info-label" for="sak-case-notes">Notater <span class="field-label-sub">(vises i saksoversikten)</span></label>
-              <textarea class="field-input sak-info-input" id="sak-case-notes" rows="3" placeholder="Valgfrie notater…"></textarea>
-            </div>
-            <div class="sak-info-field sak-info-field-full">
-              <label class="sak-info-label" for="sak-notes">Interne notater <span class="field-label-sub">(vises ikke i saksoversikten)</span></label>
-              <textarea class="field-input sak-notes-area" id="sak-notes" rows="4" placeholder="Interne notater for denne saken…"></textarea>
-            </div>
+
+              <div class="sak-info-block">
+                <label class="sak-info-label" for="sak-tags">Stikkord</label>
+                <div class="sak-tags-wrap" id="sak-tags-wrap">
+                  <div class="tag-pill-editor" id="sak-tags-editor">
+                    <div id="sak-tags-pills" class="tag-pill-list"></div>
+                    <input class="tag-pill-input" id="sak-tags" type="text" placeholder="Legg til stikkord…" autocomplete="off" />
+                  </div>
+                </div>
+                <input type="hidden" id="sak-tags-value" />
+                <span class="field-hint">Enter eller komma legger til</span>
+              </div>
+            </section>
+
+            <section class="sak-section" data-sak-section="notes">
+              <h2 class="sak-section-title">Notater</h2>
+              <div class="sak-notes-grid">
+                <div class="sak-note-field">
+                  <div class="sak-note-head">
+                    <label for="sak-case-notes">Notater</label>
+                    <span class="sak-note-badge sak-note-badge-vis">Synlig i oversikten</span>
+                  </div>
+                  <textarea class="field-input sak-info-input" id="sak-case-notes" rows="4" placeholder="Valgfrie notater…"></textarea>
+                </div>
+                <div class="sak-note-field">
+                  <div class="sak-note-head">
+                    <label for="sak-notes">Interne notater</label>
+                    <span class="sak-note-badge sak-note-badge-int">Kun her</span>
+                  </div>
+                  <textarea class="field-input sak-notes-area" id="sak-notes" rows="4" placeholder="Interne notater for denne saken…"></textarea>
+                </div>
+              </div>
+            </section>
+
           </div>
         </section>
 
-        <!-- Sjekkliste -->
-        <section class="sak-section">
-          <h2 class="sak-section-title">Sjekkliste</h2>
-          <div id="sak-checklist" class="sak-checklist"></div>
-        </section>
+        <!-- ══ FASE B — Gransking ══ -->
+        <section class="sak-phase" data-phase="gransking" id="sak-phase-gransking">
+          <button class="sak-phase-head" id="sak-phase-head-gransking" aria-expanded="true" aria-controls="sak-phase-body-gransking">
+            <span class="sak-phase-key">B</span>
+            <span class="sak-phase-name">Gransking</span>
+            <span class="sak-phase-desc">Klassifisering og fremdrift</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-gransking">
 
-        <!-- CPC-klasser -->
-        <section class="sak-section">
-          <h2 class="sak-section-title sak-section-title-row">
-            <span class="sak-section-title-left">
-              CPC-klasser
-              <span id="cpc-load-banner" class="cpc-load-banner-inner">
-                <span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>
-                <button class="cpc-load-banner-btn" id="btn-cpc-load">Last inn</button>
-              </span>
-            </span>
-            <span class="sak-section-title-right">
-              <button class="btn-icon btn-icon-sm" id="btn-copy-classes-rough" title="Kopier grovklasser (4 tegn)">📋 Grovklasser</button>
-              <button class="btn-icon btn-icon-sm" id="btn-copy-classes" title="Kopier alle klasser med /low">📋 Alle klasser</button>
-            </span>
-          </h2>
-          <input type="file" id="cpc-file-input" accept=".json" />
-          <div id="sak-classes-list" class="sak-classes-list-unified"></div>
-          <div class="sak-classes-add-row">
-            <div class="sak-class-input-wrap">
-              <input class="field-input sak-class-input" id="sak-class-assumed-input" type="text" placeholder="f.eks. H04L 9/00" maxlength="30" autocomplete="off" />
-              <div class="cpc-suggestions" id="cpc-suggestions" style="display:none;"></div>
-            </div>
+            <section class="sak-section" data-sak-section="cpc">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">
+                  CPC-klasser
+                  <span id="cpc-load-banner" class="cpc-load-banner-inner">
+                    <span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>
+                    <button class="cpc-load-banner-btn" id="btn-cpc-load">Last inn</button>
+                  </span>
+                </span>
+                <span class="sak-section-title-right">
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes-rough" title="Kopier grovklasser (4 tegn)">📋 Grovklasser</button>
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes" title="Kopier alle klasser med /low">📋 Alle klasser</button>
+                </span>
+              </h2>
+              <input type="file" id="cpc-file-input" accept=".json" />
+              <div id="sak-classes-list" class="sak-classes-list-unified"></div>
+              <div class="sak-classes-add-row">
+                <div class="sak-class-input-wrap">
+                  <input class="field-input sak-class-input" id="sak-class-assumed-input" type="text" placeholder="f.eks. H04L 9/00" maxlength="30" autocomplete="off" />
+                  <div class="cpc-suggestions" id="cpc-suggestions" style="display:none;"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="sak-section" data-sak-section="checklist">
+              <h2 class="sak-section-title">Sjekkliste</h2>
+              <div id="sak-checklist" class="sak-checklist"></div>
+            </section>
+
           </div>
         </section>
 
-        <!-- Mothold -->
-        <section class="sak-section">
-          <h2 class="sak-section-title">Mothold</h2>
-          <div id="sak-docs-mothold" class="mh-list"></div>
-          <button class="mh-add" id="btn-mothold-add">+ Legg til mothold</button>
-        </section>
+        <!-- ══ FASE C — Vurdering ══ -->
+        <section class="sak-phase" data-phase="vurdering" id="sak-phase-vurdering">
+          <button class="sak-phase-head" id="sak-phase-head-vurdering" aria-expanded="true" aria-controls="sak-phase-body-vurdering">
+            <span class="sak-phase-key">C</span>
+            <span class="sak-phase-name">Vurdering</span>
+            <span class="sak-phase-desc">Krav, mothold og rapport</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-vurdering">
 
-        <!-- Kravsvurdering -->
-        <section class="sak-section">
-          <h2 class="sak-section-title">Kravsvurdering</h2>
-          <div class="krav-layout">
-            <div class="table-wrap">
-              <table class="case-table sak-claims-table">
-                <thead>
-                  <tr>
-                    <th class="sak-th-krav">Krav</th>
-                    <th class="sak-th-tag"></th>
-                    <th class="sak-th-dep">Avh. av</th>
-                    <th class="sak-th-check" id="sak-th-novelty">Nyhet</th>
-                    <th class="sak-th-check" id="sak-th-inventive">Oppfinnelseshøyde</th>
-                    <th class="sak-th-check" id="sak-th-formal">Formelle feil</th>
-                    <th class="sak-th-notes">Notater</th>
-                  </tr>
-                </thead>
-                <tbody id="sak-claims-tbody"></tbody>
-              </table>
-            </div>
-            <div class="kt-tree" id="sak-claims-tree"></div>
+            <section class="sak-section" data-sak-section="claims">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Kravsvurdering</span>
+                <span class="sak-section-title-right">
+                  <label class="sak-numclaims-label" for="sak-num-claims">Antall krav</label>
+                  <input class="field-input sak-numclaims-input" id="sak-num-claims" type="number" min="1" max="200" placeholder="—" />
+                </span>
+              </h2>
+              <div class="krav-layout">
+                <div class="table-wrap">
+                  <table class="case-table sak-claims-table">
+                    <thead>
+                      <tr>
+                        <th class="sak-th-krav">Krav</th>
+                        <th class="sak-th-tag"></th>
+                        <th class="sak-th-dep">Avh. av</th>
+                        <th class="sak-th-check" id="sak-th-novelty">Nyhet</th>
+                        <th class="sak-th-check" id="sak-th-inventive">Oppfinnelseshøyde</th>
+                        <th class="sak-th-check" id="sak-th-formal">Formelle feil</th>
+                        <th class="sak-th-notes">Notater</th>
+                      </tr>
+                    </thead>
+                    <tbody id="sak-claims-tbody"></tbody>
+                  </table>
+                </div>
+                <div class="kt-tree" id="sak-claims-tree"></div>
+              </div>
+            </section>
+
+            <section class="sak-section" data-sak-section="mothold">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Mothold og granskingsrapport</span>
+                <span class="sak-section-title-right">
+                  <span class="gr-warn" id="sak-gr-warn" style="display:none;"></span>
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-search-report" title="Kopier granskingsrapport">📋 Kopier rapport</button>
+                </span>
+              </h2>
+              <div id="sak-docs-mothold" class="mh-list"></div>
+              <button class="mh-add" id="btn-mothold-add">+ Legg til mothold</button>
+            </section>
+
           </div>
-        </section>
-
-        <!-- Granskingsrapport -->
-        <section class="sak-section">
-          <h2 class="sak-section-title sak-section-title-row">
-            <span class="sak-section-title-left">Granskingsrapport</span>
-            <span class="sak-section-title-right">
-              <button class="btn-icon btn-icon-sm" id="btn-copy-search-report" title="Kopier granskingsrapport">📋 Kopier rapport</button>
-            </span>
-          </h2>
-          <div id="sak-search-report"></div>
         </section>
 
       </div>
@@ -3514,8 +3696,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.19.1';
-var SCHEMA_VERSION = 5;
+var APP_VERSION    = 'v4.20.0';
+var SCHEMA_VERSION = 6;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
 var DEFAULT_DOC_ROOT = 'C:\\Users\\brukernavn\\Dokumenter\\Saksdokumenter';
@@ -3720,6 +3902,27 @@ function statusTransition(fromStatus, toStatus, isOppdrag) {
   // et hopp som ikke finnes i den. Slike flyttinger skal verken kreve en ny
   // frist eller blåse opp statistikken.
   return t;
+}
+
+// Den framoverrettede handlingen fra en gitt status: det ene trykket som
+// bringer saken videre i flyten. Gir «Marker som fullført»-knappen etikett og
+// mål, slik at knappen er en avledning av statusmodellen og ikke enda en
+// hardkodet overgang. null betyr at saken ikke har noe neste steg.
+// Ren funksjon — se test/sakLayout.test.js.
+function forwardAction(status, isOppdrag) {
+  if (status === 'avsluttet') return null;
+
+  // Et oppdrag er enten aktivt eller utført — ingen mellomstasjoner.
+  if (isOppdrag) return { label: 'Merk som utført', toStatus: 'avsluttet', choice: null };
+
+  if (status === 'ny' || status === 'viderebehandling') {
+    return { label: 'Marker som fullført', toStatus: 'fristarkiv', choice: null };
+  }
+  // Fra Fristarkiv kan saken gå to veier, så brukeren må velge selv.
+  if (status === 'fristarkiv') {
+    return { label: 'Registrer svar …', toStatus: null, choice: 'fristarkiv' };
+  }
+  return null;
 }
 
 // ── Dato-hjelper: auto-formatering ────────────────
@@ -4181,6 +4384,20 @@ var SCHEMA_MIGRATIONS = {
       try { data = JSON.parse(raw); } catch(e) { continue; } // ugyldig JSON røres ikke
       if (migrateClaimNotes(data)) localStorage.setItem(key, JSON.stringify(data));
     }
+  },
+  // v5 → v6: motholdenes tittelfelt er fjernet fra saksvisningen. En tittel
+  // uten referanse blir referansen, slik at ingen skrevet tekst blir liggende
+  // usynlig og uredigerbar.
+  5: function() {
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (!key || key.indexOf(SAK_KEY_PREFIX) !== 0) continue;
+      var raw = localStorage.getItem(key);
+      if (!raw) continue;
+      var data;
+      try { data = JSON.parse(raw); } catch(e) { continue; } // ugyldig JSON røres ikke
+      if (migrateDocTitles(data)) localStorage.setItem(key, JSON.stringify(data));
+    }
   }
 };
 
@@ -4476,6 +4693,28 @@ function effDueFor(c) {
 // caseBufferLabel: teksten i «Buffer (dager)»-feltet på sakssiden. En sak i
 // Fristarkiv beholder buffer-verdien sin — den slår inn igjen når saken går
 // videre — så verdien vises fortsatt, men merket som ikke aktiv.
+// Hvem fristen tilhører avhenger av status, og det er den viktigste
+// domeneregelen på sakssiden: i Fristarkiv er realitetsbrevet sendt, og datoen
+// er søkerens frist til å svare oss — ikke vår egen. Den skilnaden skal stå
+// skrevet i UI-et, ikke bare ligge i beleggberegningen.
+// Rene funksjoner — se test/sakLayout.test.js.
+function fristOwnerLabel(c) {
+  if (!c || c.type === 'oppdrag') return 'Frist';
+  if (c.status === 'fristarkiv') return 'Søkers frist';
+  if (c.status === 'ny' || c.status === 'viderebehandling') return 'Din frist';
+  return 'Frist';
+}
+
+function fristOwnerNote(c) {
+  if (!c || c.type === 'oppdrag') return 'Avtalt frist for oppdraget.';
+  if (c.status === 'fristarkiv') {
+    return 'Realitetsbrevet er sendt. Dette er søkerens frist til å svare oss — den koster deg ikke arbeid og teller ikke i belegget.';
+  }
+  if (c.status === 'ny')               return 'Din frist til å behandle søknaden. Teller i belegget.';
+  if (c.status === 'viderebehandling') return 'Din frist til å behandle søkerens svar. Teller i belegget.';
+  return '';
+}
+
 function caseBufferLabel(c) {
   var base = (c && c.caseBuffer != null) ? String(c.caseBuffer) + ' dager' : 'Globalt';
   return (c && c.status === 'fristarkiv') ? base + ' · ikke aktiv i Fristarkiv' : base;
@@ -5004,10 +5243,9 @@ function _dispatch(action, payload) {
     case 'DOC_ADD': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       ensureSakDocs(data);
-      data.docs.push({ id: nextDocId(data.docs), ref: '', title: '', p: false, e: false, background: false });
+      data.docs.push({ id: nextDocId(data.docs), ref: '', p: false, e: false, background: false });
       saveSakData(payload.id, data);
       renderSakDocs(data);
-      renderSakSearchReport(data);
       break;
     }
 
@@ -5020,7 +5258,6 @@ function _dispatch(action, payload) {
       saveSakData(payload.id, data);
       renderSakDocs(data);
       renderSakClaimsTable(data);
-      renderSakSearchReport(data);
       break;
     }
 
@@ -5029,19 +5266,18 @@ function _dispatch(action, payload) {
       ensureSakDocs(data);
       var doc = data.docs[payload.idx];
       if (!doc) break;
-      doc[payload.field] = payload.field === 'ref' || payload.field === 'title'
+      doc[payload.field] = payload.field === 'ref'
         ? sanitizeText(payload.value)
         : !!payload.value;
       // Bakgrunnsmothold kan ikke være X eller Y — rydd bort kravsreferansene
       if (payload.field === 'background' && doc.background) ensureSakDocs(data);
       saveSakData(payload.id, data);
-      // Ref/tittel skrives i feltet som allerede står i DOM-en; å tegne lista
-      // på nytt ville tømt et søskenfelt som er under redigering.
-      if (payload.field !== 'ref' && payload.field !== 'title') {
+      // Referansen skrives i feltet som allerede står i DOM-en; å tegne lista
+      // på nytt midt i redigeringen ville flyttet markøren.
+      if (payload.field !== 'ref') {
         renderSakDocs(data);
         renderSakClaimsTable(data);
       }
-      renderSakSearchReport(data);
       break;
     }
 
@@ -5054,8 +5290,7 @@ function _dispatch(action, payload) {
       // Nyhet tar nøyaktig ett mothold, så velgeren lukkes etter valget
       if (payload.field === 'novelty') _sakOpenDocPop = null;
       saveSakData(payload.id, data);
-      renderSakClaimsTable(data);
-      renderSakSearchReport(data);
+      renderSakAssessment(data);
       break;
     }
 
@@ -6746,6 +6981,22 @@ function migrateClaimNotes(sakData) {
   return changed;
 }
 
+// Motholdene hadde tidligere et eget tittelfelt ved siden av referansen. Det
+// er fjernet fra raden — publikasjonsnummeret er det som brukes — men tekst som
+// allerede er skrevet skal ikke bli liggende usynlig: en tittel uten referanse
+// blir referansen. Returnerer true hvis noe ble endret.
+function migrateDocTitles(sakData) {
+  if (!sakData || !Array.isArray(sakData.docs)) return false;
+  var changed = false;
+  sakData.docs.forEach(function(d) {
+    if (!d || typeof d.title !== 'string') return;
+    if (d.title && !d.ref) d.ref = d.title;
+    delete d.title;
+    changed = true;
+  });
+  return changed;
+}
+
 // Tri-state-knappene i kravstabellen viser bare en glyf, så de trenger et
 // tilgjengelig navn som sier hvilket krav og hvilken kolonne de hører til.
 function triAriaLabel(claimNum, field, val, isCascade, isLocked) {
@@ -6844,7 +7095,7 @@ function ensureSakDocs(data) {
   if (!Array.isArray(data.docs)) data.docs = [];
   data.docs = data.docs.map(function(d, i) {
     d = d || {};
-    return { id: 'D' + (i + 1), ref: d.ref || '', title: d.title || '',
+    return { id: 'D' + (i + 1), ref: d.ref || '',
              p: !!d.p, e: !!d.e, background: !!d.background };
   });
   var selectable = {};
@@ -6940,7 +7191,7 @@ function formatSearchReport(claims, docs) {
   var rows = buildSearchReport(claims, docs);
   return rows.map(function(row, i) {
     var doc  = docs[i];
-    var head = doc.id + (doc.ref ? '  ' + doc.ref : '') + (doc.title ? ' — ' + doc.title : '');
+    var head = doc.id + (doc.ref ? '  ' + doc.ref : '');
     var body = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) { return '  ' + docCategoryLabel(doc, cat) + ': krav ' + formatClaimRanges(row[cat]); });
     return head + '\n' + (body.length ? body.join('\n') : '  (ingen vurderte krav)');
@@ -6954,6 +7205,10 @@ function triLabel(val, inverted) {
 }
 
 // ── Saksdetaljer: render ───────────────────────────
+// Hvilke seksjoner som hører til et oppdrag. Oppdrag har verken krav,
+// klassifisering eller mothold — bare de administrative opplysningene.
+var OPPDRAG_HIDDEN_SECTIONS = ['cpc', 'checklist', 'claims', 'mothold'];
+
 function renderSak(id) {
   var cas = cases.find(function(c) { return c.id === id; });
   if (!cas) { navigateTo('hjem'); return; }
@@ -6976,35 +7231,16 @@ function renderSak(id) {
   document.title = cas.caseNumber + (cas.title ? ' — ' + cas.title : '') + ' — PatentDesk';
   document.getElementById('sak-sticky-cn').textContent = cas.caseNumber;
 
-  // Due date hero — oppdrag bruker alltid faktisk frist (ingen buffer)
-  var heroEl    = document.getElementById('sak-due-hero');
-  var heroEff   = document.getElementById('sak-due-hero-eff');
-  var heroAct   = document.getElementById('sak-due-hero-actual');
-  if (cas.dueDate) {
-    var effDue  = effDueFor(cas);
-    var days    = daysUntil(effDue);
-    heroEff.textContent = toDisplay(effDue);
-    heroEff.className = 'sak-due-hero-eff' + (days < 0 ? ' overdue' : days <= 14 ? ' urgent' : '');
-    var hasBuffer = !isOppdrag && effDue !== cas.dueDate;
-    if (hasBuffer) {
-      heroAct.textContent = 'Faktisk frist: ' + toDisplay(cas.dueDate);
-      heroAct.style.display = '';
-    } else {
-      heroAct.style.display = 'none';
-    }
-    heroEl.style.display = '';
-  } else {
-    heroEl.style.display = 'none';
-  }
+  renderSakFrist(cas);
+  renderSakForwardButtons(cas);
 
   document.getElementById('btn-sak-back')._sakId = id;
 
-  // Saksinformasjon — cases-felt
+  // Saksinformasjon — cases-felt (lesefelt; redigeres via «Rediger sak»)
   document.getElementById('sak-case-number').textContent = cas.caseNumber || '';
-  document.getElementById('sak-title').textContent        = cas.title || '';
-  document.getElementById('sak-due-date').textContent     = toDisplay(cas.dueDate) || '—';
-  document.getElementById('sak-case-notes').value   = cas.notes || '';
-  document.getElementById('sak-tags').value         = '';
+  document.getElementById('sak-title').textContent       = cas.title || '';
+  document.getElementById('sak-case-notes').value        = cas.notes || '';
+  document.getElementById('sak-tags').value              = '';
   renderTagPills(cas.tags || '');
 
   // Varighet (oppdrag-felt)
@@ -7039,43 +7275,41 @@ function renderSak(id) {
     }
   });
 
-  // Seksjoner: skjul det som ikke gjelder oppdrag
-  var progressSection = document.querySelector('.sak-progress-section');
-  if (progressSection) progressSection.style.display = isOppdrag ? 'none' : '';
-  var sakkSentinel = document.getElementById('sak-summary-sentinel');
-  if (sakkSentinel) sakkSentinel.style.display = isOppdrag ? 'none' : '';
-
-  document.querySelectorAll('.sak-section').forEach(function(sec) {
-    var h2 = sec.querySelector('.sak-section-title');
-    if (!h2) return;
-    var txt = h2.textContent.trim();
-    if (isOppdrag && (txt === 'Sjekkliste' || txt.indexOf('CPC') === 0 || txt === 'Kravsvurdering' ||
-                      txt === 'Mothold' || txt.indexOf('Granskingsrapport') === 0)) {
-      sec.style.display = 'none';
-    } else {
-      sec.style.display = '';
-    }
+  // Seksjoner skjules på data-sak-section, ikke på overskriftsteksten — den
+  // endrer seg, attributtet gjør det ikke.
+  document.querySelectorAll('.sak-section[data-sak-section]').forEach(function(sec) {
+    var hide = isOppdrag && OPPDRAG_HIDDEN_SECTIONS.indexOf(sec.dataset.sakSection) !== -1;
+    sec.style.display = hide ? 'none' : '';
   });
+  // En fase uten synlige seksjoner skal ikke stå igjen som en tom flate.
+  document.querySelectorAll('.sak-phase').forEach(function(phase) {
+    var visible = Array.prototype.filter.call(
+      phase.querySelectorAll('.sak-section[data-sak-section]'),
+      function(sec) { return sec.style.display !== 'none'; }
+    ).length;
+    phase.style.display = visible ? '' : 'none';
+  });
+  applyPhaseCollapse();
 
   if (!isOppdrag) {
-    // Saksinformasjon — pt_sak-felt
-    var numClaimsEl  = document.getElementById('sak-num-claims');
-    var filingDateEl = document.getElementById('sak-filing-date');
-    numClaimsEl.value        = data.numClaims  || '';
-    filingDateEl.textContent = toDisplay(data.filingDate) || '—';
-
-    // Nullstill oppdrag-spesifikt felt så stale verdi ikke forurenser søknad
-    if (durInp) durInp.value = '';
+    document.getElementById('sak-num-claims').value        = data.numClaims || '';
+    document.getElementById('sak-filing-date').textContent = toDisplay(data.filingDate) || '—';
 
     renderSakChecklist(data);
     renderSakClasses(data);
-    renderSakDocs(data);
     renderSakAssessment(data);
   } else {
     // Nullstill søknad-spesifikke felt så stale verdi ikke forurenser oppdrag
     document.getElementById('sak-num-claims').value        = '';
-    document.getElementById('sak-filing-date').textContent = '';
+    document.getElementById('sak-filing-date').textContent = '—';
   }
+
+  // Sammendraget summerer krav — uten krav har det ingenting å vise.
+  var showSummary = !isOppdrag && (data.numClaims || 0) > 0;
+  var summarySection = document.getElementById('sak-summary-section');
+  if (summarySection) summarySection.style.display = showSummary ? '' : 'none';
+  var sentinel = document.getElementById('sak-summary-sentinel');
+  if (sentinel) sentinel.style.display = showSummary ? '' : 'none';
 
   // Notater
   document.getElementById('sak-notes').value = data.sakNotes || '';
@@ -7083,9 +7317,142 @@ function renderSak(id) {
   // Saksdokumenter
   renderSakFileList(data);
 
-  // Sticky-bar: skjul for oppdrag (ingen sjekkliste/krav-fremgang)
-  initSakStickyBar(isOppdrag);
+  // Sticky-bar: uten sammendrag finnes ingen sentinel å observere
+  initSakStickyBar(!showSummary);
+  updateSakAnchors();
 }
+
+// ── Faser: kollaps ────────────────────────────────
+// Valget huskes globalt, ikke per sak: kollapser du «Saken» én gang fordi du
+// sjelden trenger den, skal den være lukket på neste sak også.
+var PHASE_COLLAPSE_KEY = 'pt_sak_phases_collapsed';
+
+function loadPhaseCollapse() {
+  try { return JSON.parse(localStorage.getItem(PHASE_COLLAPSE_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+function savePhaseCollapse(state) { lsSetSafe(PHASE_COLLAPSE_KEY, JSON.stringify(state)); }
+
+function applyPhaseCollapse() {
+  var state = loadPhaseCollapse();
+  document.querySelectorAll('.sak-phase').forEach(function(phase) {
+    var collapsed = !!state[phase.dataset.phase];
+    phase.classList.toggle('sak-phase-collapsed', collapsed);
+    var head = phase.querySelector('.sak-phase-head');
+    if (head) head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  });
+}
+
+document.querySelectorAll('.sak-phase-head').forEach(function(head) {
+  head.addEventListener('click', function() {
+    var phase = head.closest('.sak-phase');
+    if (!phase) return;
+    var state = loadPhaseCollapse();
+    state[phase.dataset.phase] = !state[phase.dataset.phase];
+    savePhaseCollapse(state);
+    applyPhaseCollapse();
+    updateSakAnchors();
+  });
+});
+
+// ── Sticky-bar: ankere ────────────────────────────
+function updateSakAnchors() {
+  document.querySelectorAll('.sak-anchor').forEach(function(a) {
+    var phase = document.getElementById('sak-phase-' + a.dataset.anchor);
+    a.style.display = (phase && phase.style.display !== 'none') ? '' : 'none';
+  });
+}
+
+document.getElementById('sak-anchors').addEventListener('click', function(e) {
+  var btn = e.target.closest('.sak-anchor'); if (!btn) return;
+  var phase = document.getElementById('sak-phase-' + btn.dataset.anchor);
+  if (!phase) return;
+  // Et anker som peker inn i en lukket fase åpner den, ellers hopper man til
+  // en overskrift uten innhold.
+  var state = loadPhaseCollapse();
+  if (state[phase.dataset.phase]) {
+    state[phase.dataset.phase] = false;
+    savePhaseCollapse(state);
+    applyPhaseCollapse();
+  }
+  phase.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.sak-anchor').forEach(function(a) {
+    a.classList.toggle('active', a === btn);
+  });
+});
+
+// ── Framoverknappen ───────────────────────────────
+// Etiketten og målet leses ut av statusmodellen, slik at knappen aldri kan
+// komme i utakt med hva overgangen faktisk gjør.
+function renderSakForwardButtons(cas) {
+  var action = forwardAction(cas.status || 'ny', cas.type === 'oppdrag');
+  ['btn-sak-forward', 'btn-sak-forward-sticky'].forEach(function(btnId) {
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+    if (!action) { btn.style.display = 'none'; return; }
+    btn.innerHTML = '<svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> ' +
+                    '<span class="btn-label">' + esc(action.label) + '</span>';
+    btn.setAttribute('aria-label', action.label);
+    btn.style.display = '';
+  });
+}
+
+function runForwardAction() {
+  var id  = activeSakId; if (!id) return;
+  var cas = cases.find(function(c) { return c.id === id; }); if (!cas) return;
+  var action = forwardAction(cas.status || 'ny', cas.type === 'oppdrag');
+  if (!action) return;
+  if (action.choice === 'fristarkiv') { openFristarkivChoice(id, cas.caseNumber); return; }
+  // Selve trykket er bekreftelsen; stikkord og frist spørres det fortsatt om.
+  runStatusTransition(id, action.toStatus, { skipConfirm: true });
+}
+
+document.getElementById('btn-sak-forward').addEventListener('click', runForwardAction);
+document.getElementById('btn-sak-forward-sticky').addEventListener('click', runForwardAction);
+
+// «Rediger sak» åpner den samme modalen som ⋯-menyen bruker.
+document.getElementById('btn-sak-edit-fields').addEventListener('click', function() {
+  var cas = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
+  if (cas) openModal(cas);
+});
+
+// Fristblokken: én visning av fristen, som sier hvem den tilhører.
+function renderSakFrist(cas) {
+  var box = document.getElementById('sak-frist');
+  if (!box) return;
+  if (!cas.dueDate) { box.style.display = 'none'; return; }
+
+  var effDue = effDueFor(cas);
+  var days   = daysUntil(effDue);
+  var isApplicant = cas.type !== 'oppdrag' && cas.status === 'fristarkiv';
+
+  box.className = 'sak-frist' + (isApplicant ? ' sak-frist-applicant' : '');
+  document.getElementById('sak-frist-owner').textContent = fristOwnerLabel(cas);
+  document.getElementById('sak-frist-date').textContent  = toDisplay(effDue);
+
+  var left = document.getElementById('sak-frist-left');
+  left.textContent = days < 0
+    ? Math.abs(days) + ' dager på overtid'
+    : days === 0 ? 'i dag' : workDaysUntil(effDue) + ' arbeidsdager igjen';
+  // Søkerens frist er ikke vårt etterslep, så den skal ikke farges som hastesak.
+  left.className = 'sak-frist-left' +
+    (isApplicant ? '' : days < 0 ? ' overdue' : days <= 14 ? ' urgent' : '');
+
+  var meta = document.getElementById('sak-frist-meta');
+  if (cas.type !== 'oppdrag' && effDue !== cas.dueDate) {
+    meta.textContent = 'Faktisk frist ' + toDisplay(cas.dueDate) + '  ·  ' + caseBufferLabel(cas) + ' dagers buffer trukket fra';
+    meta.style.display = '';
+  } else {
+    meta.style.display = 'none';
+  }
+
+  var note = document.getElementById('sak-frist-note');
+  var noteText = fristOwnerNote(cas);
+  note.textContent = noteText;
+  note.style.display = noteText ? '' : 'none';
+  box.style.display = '';
+}
+
 
 // Kravstabellen, kravtreet, resultatsammendraget, granskingsrapporten og
 // progressbarene er alle avledet av de samme kravdataene — og av cascaden
@@ -7094,7 +7461,7 @@ function renderSak(id) {
 function renderSakAssessment(data) {
   renderSakClaimsTable(data);   // tegner også kravtreet
   renderSakResultSummary(data);
-  renderSakSearchReport(data);
+  renderSakDocs(data);          // kategoriene per mothold er avledet av kravene
   updateSakProgress(data);
 }
 
@@ -7541,15 +7908,44 @@ function renderSakDocs(data) {
   var el = document.getElementById('sak-docs-mothold');
   if (!el) return;
   var docs = data.docs || [];
+
+  // Advarselen om uvurderte krav hører til hele seksjonen, ikke til én rad.
+  var warn = document.getElementById('sak-gr-warn');
+  if (warn) {
+    var unassessed = (data.claims || []).filter(function(c) {
+      return effectiveClaimValue(data.claims, c, 'novelty')   === null ||
+             effectiveClaimValue(data.claims, c, 'inventive') === null;
+    }).map(function(c) { return c.num; });
+    if (docs.length && unassessed.length) {
+      warn.textContent = 'Krav ' + formatClaimRanges(unassessed) + ' ikke ferdig vurdert';
+      warn.style.display = '';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+
   if (!docs.length) {
     el.innerHTML = '<span class="mh-empty">Ingen mothold lagt til.</span>';
     return;
   }
+
+  // Kategoriene utledes av kravsvurderingen — samme kilde som den kopierbare
+  // rapporten, så raden og «Kopier rapport» aldri kan si ulike ting.
+  var rows = buildSearchReport(data.claims || [], docs);
+
   el.innerHTML = docs.map(function(d, i) {
+    var row  = rows[i];
+    var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
+      .map(function(cat) {
+        return '<span class="mh-cat mh-cat-' + cat.toLowerCase() + '">' +
+          '<b>' + esc(docCategoryLabel(d, cat)) + '</b> ' + esc(formatClaimRanges(row[cat])) +
+        '</span>';
+      }).join('');
+
     return '<div class="mh-row' + (d.background ? ' mh-row-bg' : '') + '" data-idx="' + i + '">' +
       '<span class="mh-id">' + esc(d.id) + '</span>' +
-      '<input class="mh-ref-inp" type="text" data-idx="' + i + '" value="' + esc(d.ref) + '" placeholder="f.eks. WO 2020/123456 A1" aria-label="Referanse for ' + esc(d.id) + '" />' +
-      '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '" placeholder="Tittel…" aria-label="Tittel for ' + esc(d.id) + '" />' +
+      '<input class="mh-ref-inp" type="text" data-idx="' + i + '" value="' + esc(d.ref) + '" placeholder="f.eks. WO 2020/123456 A1" aria-label="Publikasjonsnummer for ' + esc(d.id) + '" />' +
+      '<span class="mh-cats">' + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' +
         '<button class="mh-flag" data-flag="p" data-idx="' + i + '" aria-pressed="' + (d.p ? 'true' : 'false') + '" title="P — mellomliggende dokument">P</button>' +
         '<button class="mh-flag" data-flag="e" data-idx="' + i + '" aria-pressed="' + (d.e ? 'true' : 'false') + '" title="E — eldre søknad publisert på eller etter inngivelsesdagen">E</button>' +
@@ -7559,6 +7955,7 @@ function renderSakDocs(data) {
     '</div>';
   }).join('');
 }
+
 
 // Chip ved siden av tri-state-knappen: vises bare når vurderingen er ✗, altså
 // når et mothold faktisk har tatt nyheten eller oppfinnelseshøyden.
@@ -7603,7 +8000,7 @@ function claimDocPopHtml(data, c, field, ids) {
       (full ? ' disabled' : '') +
       ' data-doc-pick="' + esc(d.id) + '" data-claim="' + c.num + '" data-field="' + field + '">' +
       '<span class="doc-pop-box">' + (on ? '✓' : '') + '</span>' +
-      '<strong>' + esc(d.id) + '</strong><span>' + esc(d.ref || d.title || '') + '</span>' +
+      '<strong>' + esc(d.id) + '</strong><span>' + esc(d.ref || '') + '</span>' +
     '</button>';
   }).join('');
   return '<span class="doc-pop">' +
@@ -7630,57 +8027,6 @@ function positionDocPop() {
   if (top + h > window.innerHeight - edge) top = Math.max(edge, r.top - h - gap);
   pop.style.left = left + 'px';
   pop.style.top  = top + 'px';
-}
-
-// ── Granskingsrapport: render ──────────────────────
-function renderSakSearchReport(data) {
-  var el = document.getElementById('sak-search-report');
-  if (!el) return;
-  var docs = data.docs || [];
-  if (!docs.length) {
-    el.innerHTML = '<p class="gr-empty">Legg til mothold for å bygge granskingsrapporten.</p>';
-    return;
-  }
-
-  var rows = buildSearchReport(data.claims || [], docs);
-  var body = rows.map(function(row, i) {
-    var d = docs[i];
-    var cats = ['X', 'Y', 'A'];
-    var badges = cats.map(function(cat) {
-      var empty = row[cat].length === 0;
-      return '<div><span class="gr-cat-badge gr-' + cat.toLowerCase() + (empty ? ' gr-nums-empty' : '') + '">' +
-        esc(docCategoryLabel(d, cat)) + '</span></div>';
-    }).join('');
-    var nums = cats.map(function(cat) {
-      var empty = row[cat].length === 0;
-      return '<div class="gr-nums' + (empty ? ' gr-nums-empty' : '') + '">' +
-        (empty ? '—' : esc(formatClaimRanges(row[cat]))) + '</div>';
-    }).join('');
-    return '<tr>' +
-      '<td class="gr-doc">' +
-        '<span class="gr-doc-id' + (d.background ? ' gr-doc-id-bg' : '') + '">' + esc(d.id) + '</span>' +
-        (d.background ? ' <span class="gr-doc-bg-tag">bakgrunn</span>' : '') +
-        '<span class="gr-doc-ref">' + esc(d.ref || d.title || '—') + '</span>' +
-      '</td>' +
-      '<td class="gr-cat">' + badges + '</td>' +
-      '<td>' + nums + '</td>' +
-    '</tr>';
-  }).join('');
-
-  var unassessed = (data.claims || []).filter(function(c) {
-    return effectiveClaimValue(data.claims, c, 'novelty')   === null ||
-           effectiveClaimValue(data.claims, c, 'inventive') === null;
-  }).map(function(c) { return c.num; });
-
-  el.innerHTML =
-    '<div class="table-wrap"><table class="gr-table">' +
-      '<thead><tr><th class="gr-doc">Dokument</th><th class="gr-cat">Kategori</th><th>Krav</th></tr></thead>' +
-      '<tbody>' + body + '</tbody>' +
-    '</table></div>' +
-    '<div class="gr-foot">' + (unassessed.length
-      ? 'Krav ' + esc(formatClaimRanges(unassessed)) + ' er ikke ferdig vurdert og inngår ikke i rapporten.'
-      : 'Alle ' + (data.claims || []).length + ' krav er vurdert.') +
-    '</div>';
 }
 
 function formatClaimRanges(nums) {
@@ -8069,8 +8415,6 @@ document.getElementById('sak-status-btns').addEventListener('click', function(e)
   runStatusTransition(id, btn.dataset.status, { skipConfirm: true });
 });
 
-
-
 document.getElementById('sak-num-claims').addEventListener('change', function() {
   var id = activeSakId; if (!id) return;
   var cas = cases.find(function(c) { return c.id === id; });
@@ -8197,9 +8541,9 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
 
 document.getElementById('sak-docs-mothold').addEventListener('change', function(e) {
   var id = activeSakId; if (!id) return;
-  var inp = e.target.closest('.mh-ref-inp, .mh-title-inp'); if (!inp) return;
+  var inp = e.target.closest('.mh-ref-inp'); if (!inp) return;
   dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(inp.dataset.idx, 10),
-    field: inp.classList.contains('mh-ref-inp') ? 'ref' : 'title', value: inp.value.trim() });
+    field: 'ref', value: inp.value.trim() });
 });
 
 // Granskingsrapport: kopier til utklippstavle
@@ -10073,18 +10417,23 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
 
 // ── Saksdokumenter dropdown ─────────────────────────
 (function() {
-  var btn = document.getElementById('btn-sak-docs');
-  var dd  = document.getElementById('sak-docs-dropdown');
+  var dd = document.getElementById('sak-docs-dropdown');
 
-  btn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    dd.style.display = dd.style.display === 'none' ? '' : 'none';
-  });
-
+  // Dokumenter finnes to steder — i topplinja og i sticky-baren — men det er
+  // ett nedtrekk. Det flyttes inn i wrapperen til knappen som åpnet det, slik
+  // at den absolutte plasseringen og lytterne under fortsetter å virke uendret.
   document.addEventListener('click', function(e) {
-    if (!dd.contains(e.target) && e.target !== btn) {
-      dd.style.display = 'none';
+    var trigger = e.target.closest('.btn-sak-docs');
+    if (trigger) {
+      e.stopPropagation();
+      var wrap = trigger.closest('.sak-docs-wrap');
+      if (!wrap) return;
+      if (dd.style.display !== 'none' && wrap.contains(dd)) { dd.style.display = 'none'; return; }
+      if (!wrap.contains(dd)) wrap.appendChild(dd);
+      dd.style.display = '';
+      return;
     }
+    if (!dd.contains(e.target)) dd.style.display = 'none';
   });
 
   function activeSakFile(idx) {
