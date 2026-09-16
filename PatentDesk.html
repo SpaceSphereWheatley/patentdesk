@@ -1535,6 +1535,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .btn-sak-forward-sm { padding: var(--space-2) var(--space-5); font-size: var(--text-xs); }
 
 /* ── Sticky-bar: ankere og handlinger ───────────── */
+.sak-saved          { font-size: var(--text-2xs); color: var(--muted); white-space: nowrap;
+                      flex: none; opacity: 0; transition: opacity var(--dur-slow) ease; }
+.sak-saved.is-on    { opacity: 1; }
 .sak-anchors        { display: flex; gap: var(--space-1); flex: none; flex-wrap: nowrap; }
 .sak-anchor         { background: none; border: 1px solid transparent; border-radius: var(--radius-pill);
                       color: var(--muted); font-family: var(--font-body); font-size: var(--text-xs);
@@ -1574,8 +1577,8 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-status-btn.active-oppdrag         { background: var(--s-oppdrag-bg); color: var(--s-oppdrag-text); border-color: var(--s-oppdrag-border); }
 
 /* Sjekkliste */
-.sak-checklist      { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-8); align-items: start; }
-@media (max-width: 900px) { .sak-checklist { grid-template-columns: 1fr; } }
+.sak-checklist      { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+                      gap: var(--space-7) var(--space-8); align-items: start; }
 
 /* Saksvisningen på smalere skjerm. Kravtabellen er sju kolonner med fast
    layout, så kravtreet må under den før den klemmes. */
@@ -1697,6 +1700,14 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       border-radius: var(--radius); padding: var(--space-1) var(--space-4); position: relative; }
 .sak-class-tag      { font-size: var(--text-sm); font-family: monospace; color: var(--accent); font-weight: var(--weight-semibold); }
 .sak-class-empty    { font-size: var(--text-sm); color: var(--muted); padding: var(--space-1) 0; }
+/* Tomtilstander er handlinger, ikke bare konstateringer */
+.sak-empty-action   { display: inline-flex; align-items: center; gap: var(--space-2);
+                      background: none; border: 1px dashed var(--border2); border-radius: var(--radius);
+                      color: var(--muted); font-family: var(--font-body); font-size: var(--text-sm);
+                      padding: var(--space-3) var(--space-5); cursor: pointer; width: 100%;
+                      justify-content: center;
+                      transition: color var(--dur-base), border-color var(--dur-base); }
+.sak-empty-action:hover { color: var(--accent); border-color: var(--accent-dim); }
 .sak-classes-add-row { display: flex; gap: var(--space-3); margin-top: var(--space-1); align-items: flex-start; }
 .sak-class-input-wrap { flex: 1; position: relative; }
 .cpc-suggestions { position: absolute; top: 100%; left: 0; right: 0; z-index: 200;
@@ -1771,6 +1782,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 /* ikke-vurdert: ingen bakgrunn */
 
 .sak-claim-active-row { background: rgba(200,169,110,0.06) !important; }
+.sak-claim-active-cell { box-shadow: inset 0 0 0 2px var(--accent-dim); border-radius: var(--radius-sm); }
+.shortcuts-subhead  { font-size: var(--text-xs); font-weight: var(--weight-semibold);
+                      text-transform: uppercase; letter-spacing: var(--tracking-label);
+                      color: var(--muted); margin: var(--space-7) 0 var(--space-2); }
+.shortcuts-note     { font-size: var(--text-xs); color: var(--muted); margin: 0 0 var(--space-4); }
 
 /* Kravsnote-input */
 .sak-claim-note     { background: transparent; border: 1px solid transparent;
@@ -2887,6 +2903,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
             <span class="sak-sticky-pct" id="sak-sticky-cr-pct"></span>
           </div>
           <div id="sak-sticky-summary"></div>
+          <span class="sak-saved" id="sak-saved" aria-live="polite"></span>
           <div class="sak-sticky-actions">
             <div class="sak-docs-wrap">
               <button class="btn-secondary btn-sm btn-sak-docs" id="btn-sak-docs-sticky" title="Åpne saksdokumenter" aria-label="Åpne saksdokumenter"><svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> <span class="btn-label">Dokumenter</span></button>
@@ -3702,6 +3719,15 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
           <tr><td><kbd>?</kbd></td><td>Denne oversikten</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>Lukk dialog</td></tr>
         </table>
+        <h3 class="shortcuts-subhead">I kravtabellen</h3>
+        <p class="shortcuts-note">Gjelder når markøren står i tabellen — tabb inn i den eller klikk en ja/nei-knapp.</p>
+        <table class="shortcuts-table">
+          <tr><td><kbd>J</kbd> / <kbd>K</kbd></td><td>Neste / forrige krav</td></tr>
+          <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Nyhet / oppfinnelseshøyde / formelle feil</td></tr>
+          <tr><td><kbd>Y</kbd> / <kbd>N</kbd> / <kbd>?</kbd></td><td>Ja / nei / ikke vurdert</td></tr>
+          <tr><td><kbd>Mellomrom</kbd></td><td>Veksle verdien</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Forlat tabellen</td></tr>
+        </table>
       </div>
     </div>
   </div>
@@ -3729,7 +3755,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.21.0';
+var APP_VERSION    = 'v4.22.0';
 var SCHEMA_VERSION = 6;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5074,6 +5100,17 @@ var AppState = {
 function dispatch(action, payload) {
   _dispatch(action, payload);
   scheduleAutoBackup();
+  noteSaved();
+}
+
+// Alt lagres stille og umiddelbart. Indikatoren er der bare for å bekrefte at
+// det faktisk skjedde — uten å be om oppmerksomhet.
+function noteSaved() {
+  var el = document.getElementById('sak-saved');
+  if (!el || activePage !== 'sak') return;
+  var d = new Date();
+  el.textContent = 'Lagret ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  el.classList.add('is-on');
 }
 
 function _dispatch(action, payload) {
@@ -5331,6 +5368,23 @@ function _dispatch(action, payload) {
       var data = loadSakData(payload.id) || defaultSakData(0);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
       if (claim) { claim.notes = sanitizeText(payload.note); saveSakData(payload.id, data); }
+      break;
+    }
+
+    case 'CLAIM_SET': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
+      if (!claim) break;
+      // Oppfinnelseshøyde er låst når kravet mangler nyhet — samme regel som
+      // knappen håndhever.
+      if (payload.field === 'inventive' &&
+          effectiveClaimValue(data.claims, claim, 'novelty') === false) break;
+      claim[payload.field] = payload.value;
+      if (payload.field === 'novelty') {
+        claim.inventive = payload.value === false ? false : null;
+      }
+      saveSakData(payload.id, data);
+      renderSakAssessmentRows(data, claimsAffectedBy(data.claims, payload.claimNum));
       break;
     }
 
@@ -7350,6 +7404,9 @@ function renderSak(id) {
   // Saksdokumenter
   renderSakFileList(data);
 
+  var savedEl = document.getElementById('sak-saved');
+  if (savedEl) { savedEl.textContent = ''; savedEl.classList.remove('is-on'); }
+
   // Sticky-bar: uten sammendrag finnes ingen sentinel å observere
   initSakStickyBar(!showSummary);
   updateSakAnchors();
@@ -7754,7 +7811,8 @@ function renderSakClasses(data) {
   var el = document.getElementById('sak-classes-list');
   var arr = data.classes || [];
   if (!arr.length) {
-    el.innerHTML = '<span class="sak-class-empty">Ingen klasser lagt til.</span>';
+    el.innerHTML = '<button type="button" class="sak-empty-action" id="btn-cpc-empty-add">' +
+      '<svg class="ti" aria-hidden="true"><use href="#ti-plus"/></svg> Ingen klasser lagt til — legg til den første</button>';
     return;
   }
   el.innerHTML = arr.map(function(cls, i) {
@@ -8037,7 +8095,8 @@ function renderSakDocs(data) {
   }
 
   if (!docs.length) {
-    el.innerHTML = '<span class="mh-empty">Ingen mothold lagt til.</span>';
+    el.innerHTML = '<button type="button" class="sak-empty-action" id="btn-mh-empty-add">' +
+      '<svg class="ti" aria-hidden="true"><use href="#ti-plus"/></svg> Ingen mothold lagt til — legg til det første</button>';
     return;
   }
 
@@ -8607,6 +8666,17 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && _cpcOpenTip) hideCpcTooltip(null);
 });
 
+// Tomtilstandene fører rett til handlingen de beskriver
+document.getElementById('sak-classes-list').addEventListener('click', function(e) {
+  if (!e.target.closest('#btn-cpc-empty-add')) return;
+  var inp = document.getElementById('sak-class-assumed-input');
+  if (inp) inp.focus();
+});
+document.getElementById('sak-docs-mothold').addEventListener('click', function(e) {
+  if (!e.target.closest('#btn-mh-empty-add')) return;
+  if (activeSakId) dispatch('DOC_ADD', { id: activeSakId });
+});
+
 // CPC-klasser: slett og toggle inUse (delegert)
 document.getElementById('sak-classes-list').addEventListener('click', function(e) {
   var btn = e.target.closest('.btn-sak-class-del'); if (!btn) return;
@@ -8759,6 +8829,86 @@ document.getElementById('sak-claims-tbody').addEventListener('change', function(
   var inp = e.target.closest('.sak-claim-note'); if (!inp) return;
   var id  = activeSakId; if (!id) return;
   dispatch('CLAIM_NOTE_CHANGE', { id: id, claimNum: parseInt(inp.dataset.claim, 10), note: inp.value.trim() });
+});
+
+// ── Kravtabellen: tastaturmarkør ──────────────────
+// Markøren aktiveres ved å fokusere en ja/nei-knapp — altså ved å tabbe inn i
+// tabellen eller klikke i den — og forlates med Escape. Så lenge den er aktiv
+// eier kravtabellen tastene; ellers gjelder de globale snarveiene som før.
+var _sakKeyField = 'novelty';
+
+function sakClaimCursorActive() {
+  return activePage === 'sak' && _sakActiveClaimNum !== null;
+}
+
+function paintClaimCursor() {
+  var tbody = document.getElementById('sak-claims-tbody');
+  if (!tbody) return;
+  tbody.querySelectorAll('.sak-claim-active-cell').forEach(function(td) {
+    td.classList.remove('sak-claim-active-cell');
+  });
+  tbody.querySelectorAll('tr').forEach(function(tr) {
+    tr.classList.toggle('sak-claim-active-row', +tr.dataset.claim === _sakActiveClaimNum);
+  });
+  if (_sakActiveClaimNum === null) return;
+  var btn = tbody.querySelector('[data-claim="' + _sakActiveClaimNum + '"][data-field="' + _sakKeyField + '"]');
+  var td  = btn && btn.closest('td');
+  if (td) td.classList.add('sak-claim-active-cell');
+}
+
+function moveClaimCursor(delta, data) {
+  var n = data.numClaims || 0;
+  if (!n) return;
+  var next = (_sakActiveClaimNum || 0) + delta;
+  _sakActiveClaimNum = Math.min(n, Math.max(1, next));
+  var btn = document.querySelector('#sak-claims-tbody [data-claim="' + _sakActiveClaimNum + '"][data-field="' + _sakKeyField + '"]');
+  if (btn && !btn.disabled) btn.focus();
+  paintClaimCursor();
+  renderSakClaimsTree(data, _sakActiveClaimNum);
+}
+
+document.getElementById('sak-claims-tbody').addEventListener('focusin', function(e) {
+  var btn = e.target.closest('.sak-tri-btn[data-claim][data-field]');
+  if (!btn) return;
+  _sakActiveClaimNum = parseInt(btn.dataset.claim, 10);
+  _sakKeyField       = btn.dataset.field;
+  paintClaimCursor();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (_isTypingTarget(e.target)) return;
+  if (_anyBackdropOpen()) return;
+  if (!sakClaimCursorActive()) return;
+
+  var action = claimKeyAction(e.key);
+  if (!action) return;
+  var id = activeSakId; if (!id) return;
+  var data = loadSakData(id) || defaultSakData(0);
+  if (!data.numClaims) return;
+  e.preventDefault();
+
+  if (action.type === 'move')  { moveClaimCursor(action.delta, data); return; }
+  if (action.type === 'exit')  {
+    _sakActiveClaimNum = null;
+    paintClaimCursor();
+    renderSakClaimsTree(data, null);
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    return;
+  }
+  if (action.type === 'field') {
+    _sakKeyField = action.field;
+    var b = document.querySelector('#sak-claims-tbody [data-claim="' + _sakActiveClaimNum + '"][data-field="' + _sakKeyField + '"]');
+    if (b && !b.disabled) b.focus();
+    paintClaimCursor();
+    return;
+  }
+  if (action.type === 'toggle') {
+    dispatch('CLAIM_TOGGLE', { id: id, claimNum: _sakActiveClaimNum, field: _sakKeyField });
+  } else if (action.type === 'set') {
+    dispatch('CLAIM_SET', { id: id, claimNum: _sakActiveClaimNum, field: _sakKeyField, value: action.value });
+  }
+  paintClaimCursor();
 });
 
 // ── Kravtre: klikk på node ─────────────────────────
@@ -10151,6 +10301,24 @@ function initTagAutocomplete(inputEl) {
 // ── Escape ─────────────────────────────────────────
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAllBackdrops(); });
 
+// Tastaturkartet for kravtabellen. Rent oppslag — lytteren under gjør resten.
+// Se test/claimKeyboard.test.js.
+function claimKeyAction(key) {
+  switch (key) {
+    case 'j': case 'J': case 'ArrowDown': return { type: 'move', delta: 1 };
+    case 'k': case 'K': case 'ArrowUp':   return { type: 'move', delta: -1 };
+    case '1': return { type: 'field', field: 'novelty' };
+    case '2': return { type: 'field', field: 'inventive' };
+    case '3': return { type: 'field', field: 'formal' };
+    case 'y': case 'Y': return { type: 'set', value: true };
+    case 'n': case 'N': return { type: 'set', value: false };
+    case '?': return { type: 'set', value: null };
+    case ' ': return { type: 'toggle' };
+    case 'Escape': return { type: 'exit' };
+    default: return null;
+  }
+}
+
 // ── Tastatursnarveier ──────────────────────────────
 function _isTypingTarget(el) {
   if (!el) return false;
@@ -10165,6 +10333,8 @@ document.addEventListener('keydown', function(e) {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (_isTypingTarget(e.target)) return;
   if (_anyBackdropOpen()) return;
+  // Står markøren i kravtabellen, eier den 1–5 og ?; sidenavigasjonen viker.
+  if (sakClaimCursorActive()) return;
   switch (e.key) {
     case '?': e.preventDefault(); openBackdrop('shortcuts-backdrop'); break;
     case 'n': case 'N': e.preventDefault(); openModal(null); break;
