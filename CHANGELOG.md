@@ -7,6 +7,32 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.22.0] - 2026-09-16
+Siste etappe i oppryddingen av saksvisningen. Kravtabellen kan nå betjenes uten
+mus, og de små tingene som irriterte er borte.
+
+### Added
+- **Tastaturnavigasjon i kravtabellen.** Dette er tabellen du går gjennom tjue
+  ganger på rad, så nå slipper du å flytte hånden til musa mellom hvert krav.
+  Tabb inn i tabellen eller klikk en ja/nei-knapp, så eier tabellen tastene:
+  <kbd>J</kbd> og <kbd>K</kbd> flytter mellom krav, <kbd>1</kbd> <kbd>2</kbd>
+  <kbd>3</kbd> velger nyhet, oppfinnelseshøyde eller formelle feil, og
+  <kbd>Y</kbd> <kbd>N</kbd> <kbd>?</kbd> setter verdien. Mellomrom veksler.
+  <kbd>Esc</kbd> forlater tabellen, og da gjelder de vanlige snarveiene igjen.
+  Det aktive kravet og den aktive kolonnen er markert mens du holder på.
+  Snarveiene står i oversikten du får med <kbd>?</kbd>.
+- **Lagret-indikator.** Alt har alltid blitt lagret umiddelbart, men ingenting
+  sa det. En diskré «Lagret 14:32» i topplinja bekrefter at det skjedde.
+
+### Changed
+- **Tomtilstandene er blitt handlinger.** «Ingen klasser lagt til» og «Ingen
+  mothold lagt til» var konstateringer du ikke kunne gjøre noe med. Nå er de
+  knapper som fører rett til det de beskriver.
+- **Sjekklista fyller bredden.** Den sto alltid i tre kolonner uansett hvor
+  mange faser malen har, noe som ga ujevn underkant og unødig tomrom. Kolonnene
+  tilpasser seg nå både antall faser og skjermbredden.
+
+
 ## [4.21.0] - 2026-09-16
 Denne versjonen rydder under overflaten. Det eneste du ser rett på er at
 ikonene er blitt like, og at CPC-radene ikke lenger ser ødelagte ut uten
