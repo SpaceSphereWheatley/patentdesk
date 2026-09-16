@@ -7,6 +7,42 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.21.0] - 2026-09-16
+Denne versjonen rydder under overflaten. Det eneste du ser rett på er at
+ikonene er blitt like, og at CPC-radene ikke lenger ser ødelagte ut uten
+CPC-databasen. Det du derimot merker, er at kravtabellen ikke lenger rykker
+til under fingrene.
+
+### Fixed
+- **Kravtabellen tok fokus fra deg.** Hvert klikk på en ja/nei-knapp bygget hele
+  tabellkroppen på nytt, så et notatfelt du holdt på i mistet både fokus og
+  markørposisjon. Nå tegnes bare kravet du endret — og de kravene som arver fra
+  det. Står markøren i et felt, blir den stående der den var. Ved 60–80 krav er
+  forskjellen godt merkbar.
+- **CPC-radene manglet en kolonne uten CPC-databasen.** Beskrivelsen ble bare
+  skrevet ut når den fantes, så slettekrysset gled inn i dens plass i stedet for
+  å stå ytterst. Kolonnen er nå alltid der, og sier «beskrivelse ikke
+  tilgjengelig» når databasen ikke er lastet — så det er tydelig at det er
+  databasen som mangler, ikke noe ved klassen. «Last inn»-knappen står i samme
+  seksjonshode.
+
+### Changed
+- **Ett ikonspråk.** Saksvisningen blandet SVG-ikoner og fargeemoji, ofte i
+  samme knapperad. Emojiene ble tegnet av systemfonten, så de så forskjellige ut
+  på Windows, Mac og Linux og tok ikke farge fra knappen de satt i. Kopier,
+  rediger, fjern, åpne-mappe og legg-til er nå tegnede ikoner i samme stil som
+  resten. ✓ og ✗ i kravtabellen er verdier og ikke ikoner, og står som før; det
+  samme gjør filtype-ikonene i dokumentlista, der fargen skiller filtyper.
+- **Hierarki-tooltipen på CPC-klasser kan nås fra tastaturet.** Den kom bare på
+  museblikk. Nå vises den straks du tabber inn i raden, og lukkes med Escape.
+  Ingen nye tabbstopp er lagt til.
+- Fargene i kravtabellen, resultatsammendraget og motholdradene er samlet som
+  navngitte verdier ett sted i stedet for å ligge hardkodet på hvert brukssted.
+  Ingenting ser annerledes ut; det gjør bare fremtidige justeringer til én
+  endring i stedet for tolv. Samtidig er to regler som overskrev hverandre
+  ryddet bort.
+
+
 ## [4.20.0] - 2026-09-16
 Saksvisningen er bygget om. Sju likeverdige seksjoner på rad er blitt tre faser
 som følger arbeidsflyten, fristen sier nå hvem den tilhører, og saken har fått

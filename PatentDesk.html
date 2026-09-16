@@ -106,6 +106,21 @@
   --color-warning-text: #f6ad55;
   --phase-bg:     #eef0f3;
   --phase-border: #dfe3e8;
+  /* Semantiske flater i saksvisningen. Fargene fantes fra før, hardkodet på
+     hvert brukssted; her er de samlet ett sted. */
+  --tone-ok-strong:     rgba(16,185,129,0.18);
+  --tone-ok-soft:       rgba(16,185,129,0.10);
+  --tone-ok-faint:      rgba(16,185,129,0.07);
+  --tone-no-strong:     rgba(224,85,85,0.18);
+  --tone-no-soft:       rgba(224,85,85,0.10);
+  --tone-no-faint:      rgba(224,85,85,0.07);
+  --tone-formal-strong: rgba(234,179,8,0.18);
+  --tone-formal-soft:   rgba(234,179,8,0.14);
+  --tone-formal-faint:  rgba(234,179,8,0.09);
+  --edge-no:            rgba(224,85,85,0.35);
+  --edge-formal:        rgba(234,179,8,0.45);
+  --text-on-formal:     #8a6708;
+  --text-on-no:         #a52121;
   --soon-nav-dark: #fcd34d;
   --cpc-loaded:   #1D9E75;
   --dp-sel-text:  #000000;
@@ -379,6 +394,7 @@ a:focus-visible,
   border-radius: var(--radius-sm); color: var(--muted); cursor: pointer;
   padding: var(--space-1) var(--space-3); font-size: var(--text-xs);
   transition: color var(--dur-base), border-color var(--dur-base); line-height: 1;
+  display: inline-flex; align-items: center; gap: var(--space-2);
 }
 .btn-icon:hover         { color: var(--accent); border-color: var(--accent-dim); }
 .btn-icon.btn-del:hover { color: var(--danger);  border-color: var(--danger); }
@@ -1665,9 +1681,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       padding: var(--space-1) var(--space-4); border-radius: var(--radius); cursor: pointer;
                       transition: all var(--dur-base); }
 .sak-yn-btn:hover   { border-color: var(--accent-dim); color: var(--text); }
-.sak-yn-yes         { background: rgba(16,185,129,0.18); border-color: var(--color-ok);
+.sak-yn-yes         { background: var(--tone-ok-strong); border-color: var(--color-ok);
                       color: var(--color-ok) !important; font-weight: var(--weight-semibold); }
-.sak-yn-no          { background: rgba(224,85,85,0.18); border-color: var(--danger);
+.sak-yn-no          { background: var(--tone-no-strong); border-color: var(--danger);
                       color: var(--danger) !important; font-weight: var(--weight-semibold); }
 
 /* CPC-klasser */
@@ -1732,11 +1748,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 /* Tilstand: positiv (✓) */
 .sak-tri-btn .tri-ok  { color: inherit; font-weight: inherit; }
-.sak-tri-btn-ok       { background: rgba(16,185,129,0.18); color: var(--color-ok) !important;
+.sak-tri-btn-ok       { background: var(--tone-ok-strong); color: var(--color-ok) !important;
                          border-color: var(--color-ok); }
 /* Tilstand: negativ (✗) */
 .sak-tri-btn .tri-no  { color: inherit; font-weight: inherit; }
-.sak-tri-btn-no       { background: rgba(224,85,85,0.18); color: var(--danger) !important;
+.sak-tri-btn-no       { background: var(--tone-no-strong); color: var(--danger) !important;
                          border-color: var(--danger); }
 /* Tilstand: ikke vurdert (—) */
 .sak-tri-btn-null     { background: var(--surface2); color: var(--muted) !important;
@@ -1745,13 +1761,13 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-tri-locked       { opacity: 0.45; cursor: not-allowed !important;
                          filter: none !important; transform: none !important; border-style: dashed; }
 /* Arvet (cascade) */
-.sak-tri-btn-cascade  { background: rgba(16,185,129,0.10); color: var(--color-ok) !important;
+.sak-tri-btn-cascade  { background: var(--tone-ok-soft); color: var(--color-ok) !important;
                          border-color: var(--color-ok); border-style: dashed; opacity: 0.75; }
 
 /* Radfarger basert på samlet vurdering */
-.claim-row-ok         { background: rgba(16,185,129,0.07); }
-.claim-row-no         { background: rgba(224,85,85,0.07); }
-.claim-row-formal     { background: rgba(234,179,8,0.09); }
+.claim-row-ok         { background: var(--tone-ok-faint); }
+.claim-row-no         { background: var(--tone-no-faint); }
+.claim-row-formal     { background: var(--tone-formal-faint); }
 /* ikke-vurdert: ingen bakgrunn */
 
 .sak-claim-active-row { background: rgba(200,169,110,0.06) !important; }
@@ -1771,7 +1787,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .result-rejected    { color: var(--danger); font-weight: var(--weight-semibold); font-size: var(--text-sm); }
 .claim-unassessed   { opacity: 0.6; }
 .claim-ok           { }
-.claim-rejected     { background: rgba(224,85,85,0.06); }
+.claim-rejected     { background: var(--tone-no-faint); }
 
 /* ── 26. Saksdetaljer v2 ──────────────────────────── */
 
@@ -1791,8 +1807,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 #settings-cpc-row.cpc-drop-active { background: var(--s-oppdrag-bg); outline: 1px dashed var(--s-oppdrag-border); outline-offset: -1px; border-radius: var(--radius); }
 .sak-class-inuse-label  { display: flex; align-items: center; cursor: pointer; flex-shrink: 0; }
 .sak-class-inuse-label input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
-.sak-class-tag-active   { background: #e6f1fb; color: #185fa5 !important; border-radius: var(--radius-sm); padding: 1px var(--space-2); }
+.sak-class-tag-active   { background: var(--s-ny-bg); color: var(--s-ny-text) !important; border-radius: var(--radius-sm); padding: 1px var(--space-2); }
 .sak-class-desc         { font-size: var(--text-sm); color: var(--muted); flex: 1; padding-left: var(--space-1); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sak-class-desc-missing { font-style: italic; opacity: 0.7; }
 .sak-class-tooltip      { display: none; position: absolute; bottom: calc(100% + 6px); left: 0;
                            min-width: 420px; max-width: 600px;
                            background: var(--surface); border: 1px solid var(--border2);
@@ -1835,8 +1852,8 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       font-size: var(--text-xs); padding: 1px var(--space-3); border-radius: var(--radius-sm);
                       border: 1px solid; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .mh-cat b           { font-weight: var(--weight-bold); }
-.mh-cat-x           { background: rgba(224,85,85,0.10); border-color: rgba(224,85,85,0.35); color: #a52121; }
-.mh-cat-y           { background: rgba(234,179,8,0.14); border-color: rgba(234,179,8,0.45); color: #8a6708; }
+.mh-cat-x           { background: var(--tone-no-soft); border-color: var(--edge-no); color: var(--text-on-no); }
+.mh-cat-y           { background: var(--tone-formal-soft); border-color: var(--edge-formal); color: var(--text-on-formal); }
 .mh-cat-a           { background: var(--surface2); border-color: var(--border2); color: var(--muted); }
 .mh-cats-none       { font-size: var(--text-xs); color: var(--muted); opacity: 0.6; }
 .mh-flags           { display: flex; gap: var(--space-2); }
@@ -1914,7 +1931,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 }
 
 /* Kravstabell: gul rad for patenterbar med formelle feil */
-.claim-row-formal       { background: rgba(234,179,8,0.10); }
+/* .claim-row-formal er definert lenger oppe, sammen med de andre radfargene */
 
 /* Resultatoppsummering */
 .sak-result-summary     { display: flex; flex-direction: column; gap: 0; }
@@ -1925,8 +1942,8 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .res-nums               { font-variant-numeric: tabular-nums; font-family: monospace; font-size: var(--text-sm); text-align: right; flex: 1; }
 .res-ok                 { color: var(--color-ok); }
 .res-no                 { color: var(--danger); }
-.res-patent             { color: var(--color-ok); background: rgba(16,185,129,0.07); }
-.res-patent-formal      { color: var(--color-formal); background: rgba(234,179,8,0.08); }
+.res-patent             { color: var(--color-ok); background: var(--tone-ok-faint); }
+.res-patent-formal      { color: var(--color-formal); background: var(--tone-formal-faint); }
 .res-unassessed         { color: var(--muted); }
 .res-footnote           { font-size: var(--text-xs); color: var(--muted); margin-top: var(--space-3); padding-left: var(--space-3); }
 
@@ -2076,8 +2093,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                         border-radius: 3px; overflow: hidden; }
 .sak-sticky-fill     { height: 100%; border-radius: 3px; transition: width var(--dur-slower); }
 .sak-sticky-fill-cl  { background: var(--accent); }
-.sak-sticky-fill-cr  { background: var(--sak-sticky-cr); }
-.sak-sticky-fill-cr { background: var(--primary); }
+.sak-sticky-fill-cr  { background: var(--primary); }
 .sak-sticky-pct      { font-size: var(--text-xs); color: var(--muted);
                         font-variant-numeric: tabular-nums; white-space: nowrap; }
 
@@ -2120,10 +2136,10 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 .ss-badge            { display: inline-flex; align-items: center; padding: 1px var(--space-2);
                         border-radius: var(--radius-sm); font-size: var(--text-2xs); font-weight: var(--weight-semibold); white-space: nowrap; }
 .ss-badge-lbl        { font-weight: var(--weight-regular); margin-right: 2px; opacity: 0.75; }
-.ss-badge-ok         { background: rgba(16,185,129,0.18); color: var(--color-ok); }
-.ss-badge-no         { background: rgba(224,85,85,0.18); color: var(--danger); }
+.ss-badge-ok         { background: var(--tone-ok-strong); color: var(--color-ok); }
+.ss-badge-no         { background: var(--tone-no-strong); color: var(--danger); }
 .ss-badge-null       { background: var(--surface2); color: var(--muted); }
-.ss-badge-patf       { background: rgba(234,179,8,0.18); color: var(--color-formal); }
+.ss-badge-patf       { background: var(--tone-formal-strong); color: var(--color-formal); }
 
 
 /* ── 28. Inline-stil-erstatninger ─────────────────── */
@@ -2377,6 +2393,23 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
   </symbol>
   <symbol id="ti-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="5 12 11 18"/><polyline points="5 12 11 6"/>
+  </symbol>
+  <symbol id="ti-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 10a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/>
+    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"/>
+  </symbol>
+  <symbol id="ti-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4"/>
+    <path d="M13.5 6.5l4 4"/>
+  </symbol>
+  <symbol id="ti-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 6l-12 12"/><path d="M6 6l12 12"/>
+  </symbol>
+  <symbol id="ti-folder-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2"/>
+  </symbol>
+  <symbol id="ti-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 5l0 14"/><path d="M5 12l14 0"/>
   </symbol>
   <symbol id="ti-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2"/>
@@ -2880,8 +2913,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                   <button class="s-btn s-btn-accent" id="btn-sak-docs-add">+ Legg til</button>
                 </div>
                 <div class="sak-docs-footer-row">
-                  <button class="sak-docs-folder" id="btn-sak-docs-folder" title="Kopier sti til sakmappen">📋 Kopier mappe-sti</button>
-                  <button class="sak-docs-folder" id="btn-sak-docs-openall" title="Åpne alle PDF-dokumenter i bakgrunnsfaner">🗂️ Åpne alle PDF-er</button>
+                  <button class="sak-docs-folder" id="btn-sak-docs-folder" title="Kopier sti til sakmappen"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier mappe-sti</button>
+                  <button class="sak-docs-folder" id="btn-sak-docs-openall" title="Åpne alle PDF-dokumenter i bakgrunnsfaner"><svg class="ti" aria-hidden="true"><use href="#ti-folder-open"/></svg> Åpne alle PDF-er</button>
                 </div>
               </div>
             </div>
@@ -2946,7 +2979,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               <h2 class="sak-section-title sak-section-title-row">
                 <span class="sak-section-title-left">Saksinformasjon</span>
                 <span class="sak-section-title-right">
-                  <button class="btn-icon btn-icon-sm" id="btn-sak-edit-fields" title="Rediger saksopplysninger">✏ Rediger sak</button>
+                  <button class="btn-icon btn-icon-sm" id="btn-sak-edit-fields" title="Rediger saksopplysninger"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>
                 </span>
               </h2>
               <dl class="sak-info-dl">
@@ -3033,8 +3066,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                   </span>
                 </span>
                 <span class="sak-section-title-right">
-                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes-rough" title="Kopier grovklasser (4 tegn)">📋 Grovklasser</button>
-                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes" title="Kopier alle klasser med /low">📋 Alle klasser</button>
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes-rough" title="Kopier grovklasser (4 tegn)"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Grovklasser</button>
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes" title="Kopier alle klasser med /low"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Alle klasser</button>
                 </span>
               </h2>
               <input type="file" id="cpc-file-input" accept=".json" />
@@ -3099,11 +3132,11 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                 <span class="sak-section-title-left">Mothold og granskingsrapport</span>
                 <span class="sak-section-title-right">
                   <span class="gr-warn" id="sak-gr-warn" style="display:none;"></span>
-                  <button class="btn-icon btn-icon-sm" id="btn-copy-search-report" title="Kopier granskingsrapport">📋 Kopier rapport</button>
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-search-report" title="Kopier granskingsrapport"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier rapport</button>
                 </span>
               </h2>
               <div id="sak-docs-mothold" class="mh-list"></div>
-              <button class="mh-add" id="btn-mothold-add">+ Legg til mothold</button>
+              <button class="mh-add" id="btn-mothold-add"><svg class="ti" aria-hidden="true"><use href="#ti-plus"/></svg> Legg til mothold</button>
             </section>
 
           </div>
@@ -3696,7 +3729,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.20.0';
+var APP_VERSION    = 'v4.21.0';
 var SCHEMA_VERSION = 6;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5236,7 +5269,7 @@ function _dispatch(action, payload) {
         if (field === 'novelty' && claim.novelty !== false) claim.inventive = null;
       }
       saveSakData(id, data);
-      renderSakAssessment(data);
+      renderSakAssessmentRows(data, claimsAffectedBy(data.claims, claimNum));
       break;
     }
 
@@ -5290,7 +5323,7 @@ function _dispatch(action, payload) {
       // Nyhet tar nøyaktig ett mothold, så velgeren lukkes etter valget
       if (payload.field === 'novelty') _sakOpenDocPop = null;
       saveSakData(payload.id, data);
-      renderSakAssessment(data);
+      renderSakAssessmentRows(data, claimsAffectedBy(data.claims, payload.claimNum));
       break;
     }
 
@@ -5318,7 +5351,7 @@ function _dispatch(action, payload) {
       if (!claim) break;
       claim.label = sanitizeText(payload.label);
       saveSakData(payload.id, data);
-      renderSakAssessment(data);
+      renderClaimRows(data, [payload.claimNum]);
       break;
     }
 
@@ -7465,6 +7498,15 @@ function renderSakAssessment(data) {
   updateSakProgress(data);
 }
 
+// Samme som over, men bytter bare ut de oppgitte kravradene. De avledede
+// visningene må uansett regnes om — de summerer alle krav.
+function renderSakAssessmentRows(data, claimNums) {
+  renderClaimRows(data, claimNums);
+  renderSakResultSummary(data);
+  renderSakDocs(data);
+  updateSakProgress(data);
+}
+
 function renderSakFileList(data) {
   var list = document.getElementById('sak-docs-list');
   if (!list) return;
@@ -7481,9 +7523,9 @@ function renderSakFileList(data) {
       : '#';
     return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
       '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span>' + esc(_fileDisplayName(f.name)) + '</a>' +
-      '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti">📋</button>' +
-      '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn">✏️</button>' +
-      '<button class="sak-docs-del" data-idx="' + i + '" title="Slett">✕</button>' +
+      '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
+      '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
+      '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
     '</div>';
   }).join('');
 }
@@ -7738,16 +7780,28 @@ function renderSakClasses(data) {
         '</div>';
       }
     }
-    return '<div class="sak-class-row">' +
-      tooltipHtml +
-      '<label class="sak-class-inuse-label" title="I bruk">' +
-        '<input type="checkbox" class="sak-class-inuse-cb" data-idx="' + i + '"' + (cls.inUse ? ' checked' : '') + ' />' +
-      '</label>' +
-      '<span class="sak-class-tag' + (cls.inUse ? ' sak-class-tag-active' : '') + '">' + esc(cls.code) + '</span>' +
-      (desc ? '<span class="sak-class-desc">' + esc(desc) + '</span>' : '') +
-      '<button class="btn-icon btn-sak-class-del" data-idx="' + i + '" title="Fjern" aria-label="Fjern klasse">✕</button>' +
-    '</div>';
+    return cpcRowHtml(cls, i, desc, tooltipHtml);
   }).join('');
+}
+
+// Raden ligger i et rutenett med fire faste kolonner. Beskrivelsen ble
+// tidligere bare skrevet ut når den fantes, og da gled slettekrysset inn i dens
+// plass. Kolonnen skrives derfor alltid — og når CPC-databasen ikke er lastet
+// sier den det, i stedet for å stå tom og se ut som en mangel ved klassen.
+// Ren funksjon — se test/sakRender.test.js.
+function cpcRowHtml(cls, i, desc, tooltipHtml) {
+  var descHtml = desc
+    ? '<span class="sak-class-desc">' + esc(desc) + '</span>'
+    : '<span class="sak-class-desc sak-class-desc-missing">beskrivelse ikke tilgjengelig</span>';
+  return '<div class="sak-class-row">' +
+    (tooltipHtml || '') +
+    '<label class="sak-class-inuse-label" title="I bruk">' +
+      '<input type="checkbox" class="sak-class-inuse-cb" data-idx="' + i + '"' + (cls.inUse ? ' checked' : '') + ' />' +
+    '</label>' +
+    '<span class="sak-class-tag' + (cls.inUse ? ' sak-class-tag-active' : '') + '">' + esc(cls.code) + '</span>' +
+    descHtml +
+    '<button class="btn-icon btn-sak-class-del" data-idx="' + i + '" title="Fjern" aria-label="Fjern klasse"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
+  '</div>';
 }
 
 function triButtonClass(val, isFormal) {
@@ -7836,14 +7890,10 @@ var _sakActiveClaimNum = null;
 // Åpen mothold-velger i kravstabellen: { claimNum, field } eller null
 var _sakOpenDocPop = null;
 
-function renderSakClaimsTable(data) {
-  var tbody = document.getElementById('sak-claims-tbody');
-  if (!data.numClaims || data.numClaims < 1) {
-    tbody.innerHTML = '<tr><td colspan="7" class="table-empty table-empty-center">Angi antall krav øverst for å generere tabellen.</td></tr>';
-    renderSakClaimsTree(data, null);
-    return;
-  }
-  tbody.innerHTML = data.claims.map(function(c) {
+// Én kravrad. Trukket ut som egen funksjon slik at en endring kan tegne bare
+// radene den faktisk påvirker, i stedet for å bytte ut hele tabellkroppen —
+// det siste tok fokus og markørposisjon fra notat- og etikettfeltene.
+function claimRowHtml(data, c) {
     var effNovelty   = effectiveClaimValue(data.claims, c, 'novelty');
     var effInventive = effectiveClaimValue(data.claims, c, 'inventive');
     var noveltyIsCascade   = c.novelty === null && effNovelty === true;
@@ -7898,10 +7948,72 @@ function renderSakClaimsTable(data) {
       '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim="' + c.num + '" data-field="formal"' + ariaFor('formal', c.formal, false, false) + '>' + triLabel(c.formal,   true)  + '</button></td>' +
       '<td class="sak-td-notes"><input class="sak-claim-note" type="text" data-claim="' + c.num + '" value="' + esc(c.notes || '') + '" placeholder="Notat…" /></td>' +
     '</tr>';
-  }).join('');
+}
+
+// Endres ett krav, arver alle krav som henger under det den nye verdien. Det er
+// nøyaktig de radene som må tegnes på nytt. Ren funksjon — se
+// test/sakRender.test.js.
+function claimsAffectedBy(claims, claimNum) {
+  var out = [claimNum], queue = [claimNum];
+  while (queue.length) {
+    var cur = queue.shift();
+    (claims || []).forEach(function(c) {
+      if (c.dep === cur && out.indexOf(c.num) === -1) { out.push(c.num); queue.push(c.num); }
+    });
+  }
+  return out.sort(function(a, b) { return a - b; });
+}
+
+function renderSakClaimsTable(data) {
+  var tbody = document.getElementById('sak-claims-tbody');
+  if (!data.numClaims || data.numClaims < 1) {
+    tbody.innerHTML = '<tr><td colspan="7" class="table-empty table-empty-center">Angi antall krav i seksjonshodet for å generere tabellen.</td></tr>';
+    renderSakClaimsTree(data, null);
+    return;
+  }
+  tbody.innerHTML = data.claims.map(function(c) { return claimRowHtml(data, c); }).join('');
   renderSakClaimsTree(data, _sakActiveClaimNum);
   positionDocPop();
 }
+
+// Bytter ut de oppgitte radene uten å røre resten av tabellen. Feltet som har
+// fokus beholder det, med markøren der den sto.
+function renderClaimRows(data, claimNums) {
+  var tbody = document.getElementById('sak-claims-tbody');
+  if (!tbody || !data.numClaims) { renderSakClaimsTable(data); return; }
+
+  var active = document.activeElement;
+  var keep = active && tbody.contains(active) && active.dataset && active.dataset.claim
+    ? { claim: active.dataset.claim, field: active.dataset.field || null,
+        cls: (active.className || '').split(' ')[0],
+        start: active.selectionStart, end: active.selectionEnd }
+    : null;
+
+  claimNums.forEach(function(num) {
+    var c  = data.claims.find(function(x) { return x.num === num; });
+    var tr = tbody.querySelector('tr[data-claim="' + num + '"]');
+    if (!c || !tr) return;
+    var tmp = document.createElement('tbody');
+    tmp.innerHTML = claimRowHtml(data, c);
+    tr.replaceWith(tmp.firstElementChild);
+  });
+
+  if (keep) {
+    var sel = '[data-claim="' + keep.claim + '"]' + (keep.cls ? '.' + keep.cls : '') +
+              (keep.field ? '[data-field="' + keep.field + '"]' : '');
+    var again = tbody.querySelector(sel);
+    if (again) {
+      again.focus();
+      if (again.setSelectionRange && keep.start !== null && keep.start !== undefined) {
+        try { again.setSelectionRange(keep.start, keep.end); } catch(e) {}
+      }
+    }
+  }
+
+  renderSakClaimsTree(data, _sakActiveClaimNum);
+  positionDocPop();
+}
+
 
 // ── Mothold: render ────────────────────────────────
 function renderSakDocs(data) {
@@ -7951,7 +8063,7 @@ function renderSakDocs(data) {
         '<button class="mh-flag" data-flag="e" data-idx="' + i + '" aria-pressed="' + (d.e ? 'true' : 'false') + '" title="E — eldre søknad publisert på eller etter inngivelsesdagen">E</button>' +
       '</span>' +
       '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
-      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '" title="Fjern" aria-label="Fjern ' + esc(d.id) + '">✕</button>' +
+      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '" title="Fjern" aria-label="Fjern ' + esc(d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
     '</div>';
   }).join('');
 }
@@ -8442,23 +8554,57 @@ document.getElementById('sak-class-assumed-input').addEventListener('keydown', f
     dispatch('CPC_ADD', { id: id, code: code });
   }
 });
-// CPC-klasser: tooltip med forsinkelse
+// CPC-klasser: hierarki-tooltip.
+// Med mus kommer den etter en liten forsinkelse, så den ikke blinker mens man
+// beveger seg over lista. Med tastatur kommer den med én gang — der er
+// fokuseringen allerede en bevisst handling. Raden har fokuserbare barn
+// (avkryssingsboksen og fjern-knappen), så tabbing inn i raden holder; ingen
+// nye tabbstopp er lagt til.
 var _tooltipTimer = null;
-document.getElementById('sak-classes-list').addEventListener('mouseover', function(e) {
-  var row = e.target.closest('.sak-class-row');
-  if (!row) return;
-  var tip = row.querySelector('.sak-class-tooltip');
-  if (!tip) return;
+var _cpcOpenTip   = null;
+
+function showCpcTooltip(row, delay) {
+  var tip = row && row.querySelector('.sak-class-tooltip');
   clearTimeout(_tooltipTimer);
-  _tooltipTimer = setTimeout(function() { tip.style.display = 'block'; }, 600);
-});
-document.getElementById('sak-classes-list').addEventListener('mouseout', function(e) {
-  var row = e.target.closest('.sak-class-row');
-  if (!row) return;
-  var tip = row.querySelector('.sak-class-tooltip');
   if (!tip) return;
+  if (delay) {
+    _tooltipTimer = setTimeout(function() { tip.style.display = 'block'; _cpcOpenTip = tip; }, delay);
+  } else {
+    tip.style.display = 'block';
+    _cpcOpenTip = tip;
+  }
+}
+
+function hideCpcTooltip(row) {
   clearTimeout(_tooltipTimer);
-  tip.style.display = 'none';
+  var tip = row ? row.querySelector('.sak-class-tooltip') : _cpcOpenTip;
+  if (tip) tip.style.display = 'none';
+  if (tip === _cpcOpenTip) _cpcOpenTip = null;
+}
+
+(function() {
+  var list = document.getElementById('sak-classes-list');
+  list.addEventListener('mouseover', function(e) {
+    var row = e.target.closest('.sak-class-row');
+    if (row) showCpcTooltip(row, 600);
+  });
+  list.addEventListener('mouseout', function(e) {
+    var row = e.target.closest('.sak-class-row');
+    if (row) hideCpcTooltip(row);
+  });
+  list.addEventListener('focusin', function(e) {
+    var row = e.target.closest('.sak-class-row');
+    if (row) showCpcTooltip(row, 0);
+  });
+  list.addEventListener('focusout', function(e) {
+    var row = e.target.closest('.sak-class-row');
+    // Flyttes fokus innad i raden, skal tooltipen bli stående.
+    if (row && !row.contains(e.relatedTarget)) hideCpcTooltip(row);
+  });
+})();
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && _cpcOpenTip) hideCpcTooltip(null);
 });
 
 // CPC-klasser: slett og toggle inUse (delegert)
@@ -9689,7 +9835,7 @@ function renderEventLog() {
       '<span class="case-card-title">' + esc(lookupTitle(e)) + '</span>' +
       '<span class="case-card-notes">' + esc(notes) + '</span>' +
       '<div class="case-card-menu">' +
-        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato">✏</button>' +
+        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -10319,9 +10465,9 @@ document.getElementById('case-list').addEventListener('click', function(e) {
     var dropdown = document.createElement('div');
     dropdown.className = 'card-dropdown';
     dropdown.innerHTML =
-      '<button class="card-dropdown-item btn-copy-path" data-cn="' + esc(c.caseNumber) + '">📋 Kopier mappe-sti</button>' +
-      '<button class="card-dropdown-item btn-edit" data-id="' + id + '">✏ Rediger</button>' +
-      '<button class="card-dropdown-item danger btn-del" data-id="' + id + '">✕ Slett</button>';
+      '<button class="card-dropdown-item btn-copy-path" data-cn="' + esc(c.caseNumber) + '"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier mappe-sti</button>' +
+      '<button class="card-dropdown-item btn-edit" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger</button>' +
+      '<button class="card-dropdown-item danger btn-del" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Slett</button>';
     moreBtn.closest('.case-card-menu').appendChild(dropdown);
 
     dropdown.addEventListener('click', function(ev) {
@@ -10396,9 +10542,9 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
   var dropdown = document.createElement('div');
   dropdown.className = 'card-dropdown';
   dropdown.innerHTML =
-    '<button class="card-dropdown-item btn-sak-edit">✏ Rediger sak</button>' +
-    '<button class="card-dropdown-item btn-sak-copy-path" data-cn="' + esc(c.caseNumber) + '">📋 Kopier mappe-sti</button>' +
-    '<button class="card-dropdown-item danger btn-sak-del" data-id="' + id + '">✕ Slett sak</button>';
+    '<button class="card-dropdown-item btn-sak-edit"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>' +
+    '<button class="card-dropdown-item btn-sak-copy-path" data-cn="' + esc(c.caseNumber) + '"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier mappe-sti</button>' +
+    '<button class="card-dropdown-item danger btn-sak-del" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Slett sak</button>';
   this.closest('.sak-more-wrap').appendChild(dropdown);
   dropdown.addEventListener('click', function(ev) {
     var btn = ev.target.closest('button');
@@ -10461,7 +10607,7 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
       var path = _docRootJoin(loadDocRoot(), ctx2.cas.caseNumber, _fileResolvedName(ctx2.file.name));
       navigator.clipboard.writeText(path).then(function() {
         var orig = copyBtn.innerHTML;
-        copyBtn.innerHTML = '✓';
+        copyBtn.innerHTML = '<svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg>';
         copyBtn.classList.add('copied');
         setTimeout(function() {
           copyBtn.innerHTML = orig;
@@ -10902,8 +11048,8 @@ function handleHomeListClick(e) {
     var dropdown = document.createElement('div');
     dropdown.className = 'card-dropdown';
     dropdown.innerHTML =
-      '<button class="card-dropdown-item btn-home-edit" data-id="' + id + '">✏ Rediger sak</button>' +
-      '<button class="card-dropdown-item danger btn-home-del" data-id="' + id + '">✕ Slett sak</button>';
+      '<button class="card-dropdown-item btn-home-edit" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>' +
+      '<button class="card-dropdown-item danger btn-home-del" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Slett sak</button>';
     moreBtn.closest('.home-row-more').appendChild(dropdown);
     dropdown.addEventListener('click', function(ev) {
       var btn = ev.target.closest('button');
