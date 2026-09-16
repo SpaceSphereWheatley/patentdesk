@@ -7,6 +7,40 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.19.1] - 2026-09-16
+Denne versjonen retter fire feil i saksvisningen. To av dem kostet arbeid: den
+ene slettet kravnotater, den andre lot en sak havne i Fristarkiv med feil frist.
+
+### Fixed
+- **Kravnotater forsvant.** Notatet ble lagret på ett felt og lest fra et annet,
+  så det forsvant fra skjermen med én gang kravstabellen ble tegnet på nytt —
+  i praksis ved neste klikk på en nyhets- eller oppfinnelseshøydeknapp. Teksten
+  har hele tiden ligget trygt lagret uten å bli vist, og hentes nå fram igjen
+  automatisk når appen åpnes. Gamle notater du trodde var tapt, kommer tilbake.
+- **Statusknappene på sakssiden hoppet over fristdialogen.** Flyttet du en sak
+  til Fristarkiv fra sakslista, ble du bedt om søkerens svarfrist. Gjorde du det
+  samme fra knappene inne på saken, skjedde det ingenting — saken beholdt din
+  egen frist, nå tolket som om den var søkerens. Det ga feil frist i
+  fristarkivoversikten og feil belegg. Begge veier går nå gjennom nøyaktig samme
+  flyt, med de samme dialogene og den samme statistikkføringen.
+- **Endring av «Avh. av» oppdaterte bare tabellen.** Avhengigheten mellom krav
+  styrer arven av nyhet og oppfinnelseshøyde, og dermed også
+  resultatsammendraget, granskingsrapporten og fremdriftsindikatorene. Disse ble
+  stående med gamle tall til du forlot saken og gikk inn i den igjen. Nå
+  oppdateres alt sammen med én gang.
+- **To felt ble lagret utenom den vanlige veien.** Avhengighet og kravetikett
+  ble skrevet direkte til lagringen og havnet dermed ikke i den automatiske
+  sikkerhetskopien. Begge går nå samme vei som alt annet, og saneres for
+  ugyldige tegn slik resten av tekstfeltene gjør.
+
+### Changed
+- Kravstabellens ja/nei-knapper har fått tilgjengelige navn, slik at en
+  skjermleser sier «Krav 3 — nyhet: ikke vurdert» i stedet for å lese sju
+  navnløse knapper per rad. Låste og arvede verdier forklarer hvorfor de er det.
+- Etikettene for saksnummer, tittel, frist, buffer, innleveringsdato og varighet
+  er nå riktig knyttet til verdiene sine i oppmerkingen.
+
+
 ## [4.19.0] - 2026-09-03
 Denne versjonen retter opp en gjennomgående feil: fristen på en sak i
 **Fristarkiv** er søkerens frist til å svare oss, ikke saksbehandlerens frist
