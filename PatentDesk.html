@@ -2796,36 +2796,36 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
           <h2 class="sak-section-title">Saksinformasjon</h2>
           <div class="sak-info-grid sak-info-grid-full">
             <div class="sak-info-field">
-              <label class="sak-info-label">Saksnummer</label>
-              <span class="sak-info-value" id="sak-case-number"></span>
+              <span class="sak-info-label" id="lbl-sak-case-number">Saksnummer</span>
+              <span class="sak-info-value" id="sak-case-number" aria-labelledby="lbl-sak-case-number"></span>
             </div>
             <div class="sak-info-field sak-info-field-wide">
-              <label class="sak-info-label">Tittel</label>
-              <span class="sak-info-value" id="sak-title"></span>
+              <span class="sak-info-label" id="lbl-sak-title">Tittel</span>
+              <span class="sak-info-value" id="sak-title" aria-labelledby="lbl-sak-title"></span>
             </div>
             <div class="sak-info-field">
-              <label class="sak-info-label">Forfallsdato</label>
-              <span class="sak-info-value" id="sak-due-date"></span>
+              <span class="sak-info-label" id="lbl-sak-due-date">Forfallsdato</span>
+              <span class="sak-info-value" id="sak-due-date" aria-labelledby="lbl-sak-due-date"></span>
             </div>
             <div class="sak-info-field" id="sak-case-buffer-field">
-              <label class="sak-info-label">Buffer (dager)</label>
-              <span class="sak-info-value" id="sak-case-buffer"></span>
+              <span class="sak-info-label" id="lbl-sak-case-buffer">Buffer (dager)</span>
+              <span class="sak-info-value" id="sak-case-buffer" aria-labelledby="lbl-sak-case-buffer"></span>
             </div>
             <div class="sak-info-field">
-              <label class="sak-info-label">Innleveringsdato</label>
-              <span class="sak-info-value" id="sak-filing-date"></span>
+              <span class="sak-info-label" id="lbl-sak-filing-date">Innleveringsdato</span>
+              <span class="sak-info-value" id="sak-filing-date" aria-labelledby="lbl-sak-filing-date"></span>
             </div>
             <div class="sak-info-field">
               <label class="sak-info-label" for="sak-num-claims">Antall krav</label>
               <input class="field-input sak-info-input input-w100" id="sak-num-claims" type="number" min="1" max="200" placeholder="f.eks. 10" />
             </div>
             <div class="sak-info-field" id="sak-duration-field" style="display:none;">
-              <label class="sak-info-label">Varighet (dager)</label>
-              <span class="sak-info-value" id="sak-duration"></span>
+              <span class="sak-info-label" id="lbl-sak-duration">Varighet (dager)</span>
+              <span class="sak-info-value" id="sak-duration" aria-labelledby="lbl-sak-duration"></span>
             </div>
             <div class="sak-info-field sak-info-field-wide">
-              <label class="sak-info-label">Status</label>
-              <div class="sak-status-btn-group" id="sak-status-btns">
+              <span class="sak-info-label" id="lbl-sak-status">Status</span>
+              <div class="sak-status-btn-group" id="sak-status-btns" role="group" aria-labelledby="lbl-sak-status">
                 <button class="sak-status-btn" data-status="ny"><svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg> Ny</button>
                 <button class="sak-status-btn" data-status="viderebehandling"><svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg> Viderebehandling</button>
                 <button class="sak-status-btn" data-status="fristarkiv"><svg class="ti" aria-hidden="true"><use href="#ti-archive"/></svg> Fristarkiv</button>
@@ -3514,8 +3514,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.19.0';
-var SCHEMA_VERSION = 4;
+var APP_VERSION    = 'v4.19.1';
+var SCHEMA_VERSION = 5;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
 var DEFAULT_DOC_ROOT = 'C:\\Users\\brukernavn\\Dokumenter\\Saksdokumenter';
@@ -3659,6 +3659,68 @@ function medlesingProgress(template, checklist) {
 var FRIST_NY_TIL_FRISTARKIV     = 6;
 var FRIST_FRISTARKIV_TIL_VIDERE = 3;
 var FRIST_VIDERE_TIL_FRISTARKIV = 6;
+
+// Beskriver hva en statusovergang krever av dialoger, og hvordan den skal
+// bokføres. Dette er den ene fasiten for saksflyten: både sakslista og
+// statusknappene på sakssiden kjører overgangene gjennom den, slik at en sak
+// ikke kan havne i Fristarkiv med saksbehandlerens egen frist stående som om
+// den var søkerens. Returnerer null når det ikke er noen reell overgang.
+// Ren funksjon — se test/caseStatus.test.js.
+function statusTransition(fromStatus, toStatus, isOppdrag) {
+  if (!toStatus || fromStatus === toStatus) return null;
+
+  var t = {
+    needsConfirm:  false,
+    needsTags:     false,
+    needsDueDate:  false,
+    suggestMonths: 0,
+    logType:       null,
+    confirmDesc:   '',
+    dueDateDesc:   ''
+  };
+
+  // Oppdrag har ingen saksflyt — de er enten aktive eller utført.
+  if (isOppdrag) {
+    if (toStatus === 'avsluttet') t.logType = 'oppdrag';
+    return t;
+  }
+
+  // Avslutning: stikkord, men ingen ny frist — saken skal ikke tilbake.
+  if (toStatus === 'avsluttet') {
+    t.needsTags = true;
+    t.logType   = 'avsluttet';
+    return t;
+  }
+
+  // Realitetsbrevet sendes ut. Fristen som settes nå er søkerens frist til å
+  // svare, ikke vår egen, og må derfor alltid oppgis eksplisitt.
+  if (toStatus === 'fristarkiv' && (fromStatus === 'ny' || fromStatus === 'viderebehandling')) {
+    var fromNy = fromStatus === 'ny';
+    t.needsConfirm  = fromNy;
+    t.needsTags     = fromNy;
+    t.needsDueDate  = true;
+    t.suggestMonths = fromNy ? FRIST_NY_TIL_FRISTARKIV : FRIST_VIDERE_TIL_FRISTARKIV;
+    t.logType       = fromNy ? 'ny' : 'videre';
+    t.confirmDesc   = 'registreres som nybehandlet og sendes til Fristarkiv';
+    t.dueDateDesc   = fromNy
+      ? 'Saken markeres som fullført og sendes til Fristarkiv. Foreslått frist er ' + FRIST_NY_TIL_FRISTARKIV + ' måneder fra i dag.'
+      : 'Saken sendes tilbake til Fristarkiv. Foreslått frist er ' + FRIST_VIDERE_TIL_FRISTARKIV + ' måneder fra i dag.';
+    return t;
+  }
+
+  // Søkeren har svart, og svaret skal behandles. Ny frist er vår egen.
+  if (toStatus === 'viderebehandling' && fromStatus === 'fristarkiv') {
+    t.needsDueDate  = true;
+    t.suggestMonths = FRIST_FRISTARKIV_TIL_VIDERE;
+    t.dueDateDesc   = 'Saken sendes til Viderebehandling. Foreslått frist er ' + FRIST_FRISTARKIV_TIL_VIDERE + ' måneder fra i dag.';
+    return t;
+  }
+
+  // Alt annet er en korreksjon av en feilplassert sak — bakover i flyten, eller
+  // et hopp som ikke finnes i den. Slike flyttinger skal verken kreve en ny
+  // frist eller blåse opp statistikken.
+  return t;
+}
 
 // ── Dato-hjelper: auto-formatering ────────────────
 function autoFormatDateInput(el) {
@@ -4105,6 +4167,20 @@ var SCHEMA_MIGRATIONS = {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(upgraded));
     localStorage.removeItem(AUTOSAVE_KEY);
     localStorage.removeItem('pt_cpc_welcomed');
+  },
+  // v4 → v5: kravnotater lagret på `note` flyttes til `notes`, som er feltet
+  // kravstabellen faktisk leser. Notatene har ligget der hele tiden uten å bli
+  // vist; her hentes de tilbake.
+  4: function() {
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (!key || key.indexOf(SAK_KEY_PREFIX) !== 0) continue;
+      var raw = localStorage.getItem(key);
+      if (!raw) continue;
+      var data;
+      try { data = JSON.parse(raw); } catch(e) { continue; } // ugyldig JSON røres ikke
+      if (migrateClaimNotes(data)) localStorage.setItem(key, JSON.stringify(data));
+    }
   }
 };
 
@@ -4759,6 +4835,7 @@ function _dispatch(action, payload) {
       if (logType && theCase) logEvent(logType, theCase.caseNumber, theCase.title);
       // Render
       render();
+      if (activeSakId === id) renderSak(id);
       showUndoToast('Sak ' + AppState.undoSnapshot.label + ' flyttet');
       break;
     }
@@ -4840,7 +4917,7 @@ function _dispatch(action, payload) {
     }
 
     case 'CASE_COMPLETE': {
-      // Handled via moveCase/tag-modal flow; re-route to CASE_STATUS_CHANGE
+      // Håndteres av runStatusTransition; rutes hit som CASE_STATUS_CHANGE
       dispatch('CASE_STATUS_CHANGE', payload);
       break;
     }
@@ -4895,10 +4972,7 @@ function _dispatch(action, payload) {
       data.numClaims = payload.count;
       ensureClaims(data);
       saveSakData(id, data);
-      renderSakClaimsTable(data);
-      renderSakResultSummary(data);
-      renderSakSearchReport(data);
-      updateSakProgress(data);
+      renderSakAssessment(data);
       break;
     }
 
@@ -4923,10 +4997,7 @@ function _dispatch(action, payload) {
         if (field === 'novelty' && claim.novelty !== false) claim.inventive = null;
       }
       saveSakData(id, data);
-      renderSakClaimsTable(data);
-      renderSakResultSummary(data);
-      renderSakSearchReport(data);
-      updateSakProgress(data);
+      renderSakAssessment(data);
       break;
     }
 
@@ -4991,7 +5062,28 @@ function _dispatch(action, payload) {
     case 'CLAIM_NOTE_CHANGE': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
-      if (claim) { claim.note = payload.note; saveSakData(payload.id, data); }
+      if (claim) { claim.notes = sanitizeText(payload.note); saveSakData(payload.id, data); }
+      break;
+    }
+
+    case 'CLAIM_DEP_CHANGE': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      if (!isValidDep(payload.claimNum, payload.dep)) break;
+      if (!applyDepChange(data.claims, payload.claimNum, payload.dep).length) break;
+      saveSakData(payload.id, data);
+      // Avhengigheten styrer cascaden, som styrer de effektive verdiene — altså
+      // sammendraget, rapporten og fremdriften, ikke bare tabellraden.
+      renderSakAssessment(data);
+      break;
+    }
+
+    case 'CLAIM_LABEL_CHANGE': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
+      if (!claim) break;
+      claim.label = sanitizeText(payload.label);
+      saveSakData(payload.id, data);
+      renderSakAssessment(data);
       break;
     }
 
@@ -5410,11 +5502,6 @@ function lookupTitle(logEntry) {
   return (match && match.title) || logEntry.title || '';
 }
 
-// ── Flytt sak ──────────────────────────────────────
-function moveCase(id, toStatus, logType, newDueDate) {
-  dispatch('CASE_STATUS_CHANGE', { id: id, toStatus: toStatus, logType: logType, newDueDate: newDueDate });
-}
-
 // ── Historikk-hjelper ──────────────────────────────
 function appendHistory(c, fromStatus, toStatus, type, fromVal, toVal) {
   var hist = Array.isArray(c.history) ? c.history.slice() : [];
@@ -5718,8 +5805,9 @@ function closeAllBackdrops() {
     el.setAttribute('aria-hidden', 'true');
   });
   _removeFocusTrap();
-  pendingConfirmId = pendingFristarkivId = pendingVidereId = pendingDeleteId =
-  pendingTagId = pendingTagStatus = pendingTagLogType = pendingFristCallback = null;
+  pendingConfirmId = pendingConfirmCallback = pendingFristarkivId = pendingVidereId =
+  pendingDeleteId = pendingTagId = pendingTagStatus = pendingTagCallback =
+  pendingFristCallback = null;
 }
 
 // ── Frist-modal ────────────────────────────────────
@@ -5746,12 +5834,14 @@ document.getElementById('btn-frist-confirm').addEventListener('click', function(
 });
 
 // ── Stikkord-modal ─────────────────────────────────
-var pendingTagId = null, pendingTagStatus = null, pendingTagLogType = null;
+var pendingTagId = null, pendingTagStatus = null, pendingTagCallback = null;
 
-function openTagModal(id, toStatus, logType) {
-  pendingTagId      = id;
-  pendingTagStatus  = toStatus || 'avsluttet';
-  pendingTagLogType = logType  || 'avsluttet';
+// Samler inn stikkord og gir dem videre til callback. Modalen avgjør ikke selv
+// hva som skjer etterpå — det eier runStatusTransition.
+function openTagModal(id, toStatus, callback) {
+  pendingTagId       = id;
+  pendingTagStatus   = toStatus || 'avsluttet';
+  pendingTagCallback = callback || null;
   var theCase   = cases.find(function(c) { return c.id === id; });
   var isClosing = pendingTagStatus === 'avsluttet';
   document.getElementById('tag-case-number').textContent = theCase ? theCase.caseNumber : '';
@@ -5764,7 +5854,7 @@ function openTagModal(id, toStatus, logType) {
   openBackdrop('tag-backdrop');
   setTimeout(function() { document.getElementById('f-tags').focus(); }, 50);
 }
-function closeTagModal() { closeBackdrop('tag-backdrop'); pendingTagId = pendingTagStatus = pendingTagLogType = null; }
+function closeTagModal() { closeBackdrop('tag-backdrop'); pendingTagId = pendingTagStatus = pendingTagCallback = null; }
 
 document.getElementById('btn-tag-cancel').addEventListener('click', closeTagModal);
 document.getElementById('tag-backdrop').addEventListener('click', function(e) { if (e.target === this) closeTagModal(); });
@@ -5774,48 +5864,85 @@ document.getElementById('f-tags').addEventListener('keydown', function(e) {
 
 document.getElementById('btn-tag-confirm').addEventListener('click', function() {
   if (!pendingTagId) return;
-  var tags      = normaliseTags(document.getElementById('f-tags').value);
-  var theCase   = cases.find(function(c) { return c.id === pendingTagId; });
-  var newStatus = pendingTagStatus  || 'avsluttet';
-  var logType   = pendingTagLogType || 'avsluttet';
-  var id        = pendingTagId;
-
+  var tags = normaliseTags(document.getElementById('f-tags').value);
+  var cb   = pendingTagCallback;
   if (fModalTags) fModalTags.value = tags;
   closeTagModal();
-
-  if (newStatus === 'fristarkiv') {
-    openFristModal(
-      theCase ? theCase.caseNumber : '',
-      monthsFromToday(FRIST_NY_TIL_FRISTARKIV),
-      'Saken markeres som fullført og sendes til Fristarkiv. Foreslått frist er ' + FRIST_NY_TIL_FRISTARKIV + ' måneder fra i dag.',
-      function(date) {
-        dispatch('CASE_FIELD_UPDATE', { id: id, patch: { tags: tags } });
-        dispatch('CASE_STATUS_CHANGE', { id: id, toStatus: newStatus, logType: logType, newDueDate: date });
-      }
-    );
-  } else {
-    dispatch('CASE_FIELD_UPDATE', { id: id, patch: { tags: tags } });
-    dispatch('CASE_STATUS_CHANGE', { id: id, toStatus: newStatus, logType: logType });
-  }
+  if (cb) cb(tags);
 });
 
 // ── Bekreft fullføring (Ny → Fristarkiv) ──────────
-var pendingConfirmId = null;
+var pendingConfirmId = null, pendingConfirmCallback = null;
 
-function openCompleteConfirm(id, caseNumber) {
-  pendingConfirmId = id;
+// Teksten kommer fra overgangen, ikke fra hvilken side man tilfeldigvis står
+// på — modalen brukes nå også fra sakssiden, der PAGES[activePage] er «sak».
+function openCompleteConfirm(id, caseNumber, desc, callback) {
+  pendingConfirmId       = id;
+  pendingConfirmCallback = callback || null;
   document.getElementById('complete-case-number').textContent = caseNumber;
-  document.getElementById('complete-action-desc').textContent = PAGES[activePage].actionDesc;
+  document.getElementById('complete-action-desc').textContent = desc || '';
   openBackdrop('complete-backdrop');
 }
-document.getElementById('btn-complete-cancel').addEventListener('click', function() { closeBackdrop('complete-backdrop'); pendingConfirmId = null; });
-document.getElementById('complete-backdrop').addEventListener('click', function(e) { if (e.target === this) { closeBackdrop('complete-backdrop'); pendingConfirmId = null; } });
+function closeCompleteConfirm() {
+  closeBackdrop('complete-backdrop');
+  pendingConfirmId = pendingConfirmCallback = null;
+}
+document.getElementById('btn-complete-cancel').addEventListener('click', closeCompleteConfirm);
+document.getElementById('complete-backdrop').addEventListener('click', function(e) { if (e.target === this) closeCompleteConfirm(); });
 document.getElementById('btn-complete-confirm').addEventListener('click', function() {
-  if (!pendingConfirmId) { closeBackdrop('complete-backdrop'); return; }
-  var id = pendingConfirmId;
-  closeBackdrop('complete-backdrop'); pendingConfirmId = null;
-  openTagModal(id, 'fristarkiv', 'ny');
+  if (!pendingConfirmId) { closeCompleteConfirm(); return; }
+  var cb = pendingConfirmCallback;
+  closeCompleteConfirm();
+  if (cb) cb();
 });
+
+// ── Statusoverganger: én vei inn ───────────────────
+// Kjører en overgang med de dialogene den krever — bekreftelse, stikkord og ny
+// frist, i den rekkefølgen — og bokfører den til slutt. Både sakslista og
+// statusknappene på sakssiden går gjennom denne, slik at en sak ikke kan skifte
+// status uten at fristen blir tatt stilling til. Hva som kreves avgjøres av
+// statusTransition; her håndteres bare dialogkjeden.
+function runStatusTransition(id, toStatus, opts) {
+  opts = opts || {};
+  var theCase = cases.find(function(c) { return c.id === id; });
+  if (!theCase) return;
+  var isOppdrag = theCase.type === 'oppdrag';
+  var t = statusTransition(theCase.status, toStatus, isOppdrag);
+  if (!t) return;
+
+  // Oppdrag har sin egen avslutning, som også fører statistikken.
+  if (isOppdrag && toStatus === 'avsluttet') { completeOppdrag(id); return; }
+
+  var steps = [];
+  if (t.needsConfirm && !opts.skipConfirm) steps.push('confirm');
+  if (t.needsTags)    steps.push('tags');
+  if (t.needsDueDate) steps.push('due');
+
+  var tags = null;
+
+  function commit(dueDate) {
+    if (tags !== null) dispatch('CASE_FIELD_UPDATE', { id: id, patch: { tags: tags } });
+    dispatch('CASE_STATUS_CHANGE', {
+      id: id, toStatus: toStatus, logType: t.logType, newDueDate: dueDate || null
+    });
+  }
+
+  // Hvert steg kaller next() når brukeren har fullført det. Avbryter brukeren
+  // en dialog, stopper kjeden der — ingenting er lagret underveis.
+  function next() {
+    var step = steps.shift();
+    if (step === 'confirm') {
+      openCompleteConfirm(id, theCase.caseNumber, t.confirmDesc, next);
+    } else if (step === 'tags') {
+      openTagModal(id, toStatus, function(chosenTags) { tags = chosenTags; next(); });
+    } else if (step === 'due') {
+      openFristModal(theCase.caseNumber, monthsFromToday(t.suggestMonths), t.dueDateDesc, commit);
+    } else {
+      commit(null);
+    }
+  }
+  next();
+}
 
 // ── Fristarkiv-valgpopup ───────────────────────────
 var pendingFristarkivId = null;
@@ -5831,19 +5958,13 @@ document.getElementById('btn-fristarkiv-cancel').addEventListener('click', close
 document.getElementById('fristarkiv-choice-backdrop').addEventListener('click', function(e) { if (e.target === this) closeFristarkivChoice(); });
 document.getElementById('btn-fristarkiv-videre').addEventListener('click', function() {
   if (!pendingFristarkivId) return;
-  var id  = pendingFristarkivId;
-  var cas = cases.find(function(c) { return c.id === id; });
+  var id = pendingFristarkivId;
   closeFristarkivChoice();
-  openFristModal(
-    cas ? cas.caseNumber : '',
-    monthsFromToday(FRIST_FRISTARKIV_TIL_VIDERE),
-    'Saken sendes til Viderebehandling. Foreslått frist er ' + FRIST_FRISTARKIV_TIL_VIDERE + ' måneder fra i dag.',
-    function(date) { moveCase(id, 'viderebehandling', null, date); }
-  );
+  runStatusTransition(id, 'viderebehandling');
 });
 document.getElementById('btn-fristarkiv-avslutt').addEventListener('click', function() {
   if (!pendingFristarkivId) return;
-  var id = pendingFristarkivId; closeFristarkivChoice(); openTagModal(id, 'avsluttet', 'avsluttet');
+  var id = pendingFristarkivId; closeFristarkivChoice(); runStatusTransition(id, 'avsluttet');
 });
 
 // ── Viderebehandling-valgpopup ─────────────────────
@@ -5860,19 +5981,13 @@ document.getElementById('btn-videre-cancel').addEventListener('click', closeVide
 document.getElementById('videre-choice-backdrop').addEventListener('click', function(e) { if (e.target === this) closeVidereChoice(); });
 document.getElementById('btn-videre-fristarkiv').addEventListener('click', function() {
   if (!pendingVidereId) return;
-  var id  = pendingVidereId;
-  var cas = cases.find(function(c) { return c.id === id; });
+  var id = pendingVidereId;
   closeVidereChoice();
-  openFristModal(
-    cas ? cas.caseNumber : '',
-    monthsFromToday(FRIST_VIDERE_TIL_FRISTARKIV),
-    'Saken sendes tilbake til Fristarkiv. Foreslått frist er ' + FRIST_VIDERE_TIL_FRISTARKIV + ' måneder fra i dag.',
-    function(date) { moveCase(id, 'fristarkiv', 'videre', date); }
-  );
+  runStatusTransition(id, 'fristarkiv');
 });
 document.getElementById('btn-videre-avslutt').addEventListener('click', function() {
   if (!pendingVidereId) return;
-  var id = pendingVidereId; closeVidereChoice(); openTagModal(id, 'avsluttet', 'avsluttet');
+  var id = pendingVidereId; closeVidereChoice(); runStatusTransition(id, 'avsluttet');
 });
 
 // ── Fullfør oppdrag ────────────────────────────────
@@ -6591,6 +6706,59 @@ function ensureClaims(data) {
   return data;
 }
 
+// Et krav kan bare avhenge av et krav som kommer før det. null betyr at
+// kravet er selvstendig. Ren funksjon — se test/claimMutations.test.js.
+function isValidDep(claimNum, val) {
+  if (val === null) return true;
+  return typeof val === 'number' && !isNaN(val) && val >= 1 && val < claimNum;
+}
+
+// Setter avhengigheten på ett krav og lar den renne nedover til etterfølgende
+// krav som ikke er satt manuelt — kravsett er som regel skrevet slik at en
+// hel hale av uselvstendige krav henger på det samme selvstendige kravet.
+// Muterer claims og returnerer kravnumrene som faktisk ble endret.
+function applyDepChange(claims, claimNum, val) {
+  var idx = claims.findIndex(function(c) { return c.num === claimNum; });
+  if (idx < 0) return [];
+  var touched = [claimNum];
+  claims[idx].dep = val;
+  claims[idx].depManual = (val !== null);
+  for (var i = idx + 1; i < claims.length; i++) {
+    if (claims[i].depManual) break;
+    claims[i].dep = val;
+    touched.push(claims[i].num);
+  }
+  return touched;
+}
+
+// Kravnotater ble en periode skrevet til `note` mens de ble lest fra `notes`,
+// så de forsvant ved neste tegning av kravstabellen. Teksten ligger fortsatt
+// lagret, og hentes tilbake her. Returnerer true hvis noe ble endret.
+function migrateClaimNotes(sakData) {
+  if (!sakData || !Array.isArray(sakData.claims)) return false;
+  var changed = false;
+  sakData.claims.forEach(function(c) {
+    if (!c || typeof c.note !== 'string') return;
+    if (c.note && !c.notes) c.notes = c.note;
+    delete c.note;
+    changed = true;
+  });
+  return changed;
+}
+
+// Tri-state-knappene i kravstabellen viser bare en glyf, så de trenger et
+// tilgjengelig navn som sier hvilket krav og hvilken kolonne de hører til.
+function triAriaLabel(claimNum, field, val, isCascade, isLocked) {
+  var fieldLabel = field === 'novelty'   ? 'nyhet'
+                 : field === 'inventive' ? 'oppfinnelseshøyde'
+                 : 'formelle feil';
+  var valLabel = val === true ? 'ja' : val === false ? 'nei' : 'ikke vurdert';
+  var label = 'Krav ' + claimNum + ' — ' + fieldLabel + ': ' + valLabel;
+  if (isLocked)       label += ' (låst, krav mangler nyhet)';
+  else if (isCascade) label += ' (arvet fra overordnet krav)';
+  return label;
+}
+
 function ensureSakFiles(data, cas) {
   if (!Array.isArray(data.files)) {
     var isOppdrag = cas && cas.type === 'oppdrag';
@@ -6902,11 +7070,7 @@ function renderSak(id) {
     renderSakChecklist(data);
     renderSakClasses(data);
     renderSakDocs(data);
-    renderSakClaimsTable(data);
-    renderSakClaimsTree(data, null);
-    renderSakResultSummary(data);
-    renderSakSearchReport(data);
-    updateSakProgress(data);
+    renderSakAssessment(data);
   } else {
     // Nullstill søknad-spesifikke felt så stale verdi ikke forurenser oppdrag
     document.getElementById('sak-num-claims').value        = '';
@@ -6921,6 +7085,17 @@ function renderSak(id) {
 
   // Sticky-bar: skjul for oppdrag (ingen sjekkliste/krav-fremgang)
   initSakStickyBar(isOppdrag);
+}
+
+// Kravstabellen, kravtreet, resultatsammendraget, granskingsrapporten og
+// progressbarene er alle avledet av de samme kravdataene — og av cascaden
+// mellom dem. Endres ett krav kan alle fem bli utdaterte, så de tegnes under
+// ett i stedet for at hvert kallsted må huske hele settet.
+function renderSakAssessment(data) {
+  renderSakClaimsTable(data);   // tegner også kravtreet
+  renderSakResultSummary(data);
+  renderSakSearchReport(data);
+  updateSakProgress(data);
 }
 
 function renderSakFileList(data) {
@@ -7307,23 +7482,29 @@ function renderSakClaimsTable(data) {
     var noveltyIsCascade   = c.novelty === null && effNovelty === true;
     var inventiveIsCascade = c.inventive === null && effInventive === true;
 
+    // Knappene viser bare en glyf, så hver av dem må si hvilket krav og hvilken
+    // kolonne den hører til — ellers leser en skjermleser sju like knapper.
+    function ariaFor(field, val, isCascade, isLocked) {
+      return ' aria-label="' + esc(triAriaLabel(c.num, field, val, isCascade, isLocked)) + '"';
+    }
+
     // Nyhet-knapp
     var noveltyBtn;
     if (noveltyIsCascade) {
-      noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim="' + c.num + '" data-field="novelty" title="Arvet fra overordnet krav">' + triLabel(true, false) + '</button>';
+      noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim="' + c.num + '" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + '>' + triLabel(true, false) + '</button>';
     } else {
-      noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim="' + c.num + '" data-field="novelty">' + triLabel(c.novelty, false) + '</button>';
+      noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim="' + c.num + '" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + '>' + triLabel(c.novelty, false) + '</button>';
     }
 
     // Oppfinnelseshøyde-knapp
     var inventiveLocked = effNovelty === false;
     var inventiveBtn;
     if (inventiveLocked) {
-      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet">' + triLabel(false, false) + '</button>';
+      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
     } else if (inventiveIsCascade) {
-      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim="' + c.num + '" data-field="inventive" title="Arvet fra overordnet krav">' + triLabel(true, false) + '</button>';
+      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim="' + c.num + '" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + '>' + triLabel(true, false) + '</button>';
     } else {
-      inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim="' + c.num + '" data-field="inventive">' + triLabel(c.inventive, false) + '</button>';
+      inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim="' + c.num + '" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + '>' + triLabel(c.inventive, false) + '</button>';
     }
 
     // Radklasse basert på effektive verdier
@@ -7347,7 +7528,7 @@ function renderSakClaimsTable(data) {
       '<td class="sak-td-check">' + depCell + '</td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + noveltyBtn + claimDocChipHtml(data, c, 'novelty', effNovelty) + '</span></td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + inventiveBtn + claimDocChipHtml(data, c, 'inventive', effNovelty) + '</span></td>' +
-      '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim="' + c.num + '" data-field="formal">'    + triLabel(c.formal,   true)  + '</button></td>' +
+      '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim="' + c.num + '" data-field="formal"' + ariaFor('formal', c.formal, false, false) + '>' + triLabel(c.formal,   true)  + '</button></td>' +
       '<td class="sak-td-notes"><input class="sak-claim-note" type="text" data-claim="' + c.num + '" value="' + esc(c.notes || '') + '" placeholder="Notat…" /></td>' +
     '</tr>';
   }).join('');
@@ -7880,28 +8061,14 @@ document.getElementById('sak-tags-editor').addEventListener('click', function() 
 document.getElementById('sak-status-btns').addEventListener('click', function(e) {
   var btn = e.target.closest('.sak-status-btn'); if (!btn) return;
   var id  = activeSakId; if (!id) return;
-  var newStatus = btn.dataset.status;
-  var theCase   = cases.find(function(c) { return c.id === id; });
-  if (!theCase || theCase.status === newStatus) return;
-  var isOppdrag = theCase.type === 'oppdrag';
-  var logType = isOppdrag && newStatus === 'avsluttet' ? 'oppdrag'
-    : newStatus === 'avsluttet' ? 'avsluttet'
-    : newStatus === 'viderebehandling' ? 'videre'
-    : newStatus === 'fristarkiv' ? 'ny' : null;
-  dispatch('CASE_STATUS_CHANGE', { id: id, toStatus: newStatus, logType: logType });
-  // Oppdater UI for statusknapper
-  document.querySelectorAll('.sak-status-btn').forEach(function(b) {
-    b.className = 'sak-status-btn';
-    if (b.dataset.status === newStatus) {
-      b.classList.add(isOppdrag && newStatus === 'ny' ? 'active-oppdrag' : 'active-' + newStatus);
-    }
-  });
-  var cfg = isOppdrag ? { label: newStatus === 'avsluttet' ? 'Avsluttet' : 'Aktiv' } : (STATUS_CONFIG[newStatus] || {});
-  var updated = cases.find(function(c) { return c.id === id; });
-  if (updated) {
-    document.getElementById('sak-page-sub').textContent = (updated.title || '') + (cfg.label ? '  ·  ' + cfg.label : '');
-  }
+  var theCase = cases.find(function(c) { return c.id === id; });
+  if (!theCase || theCase.status === btn.dataset.status) return;
+  // Samme flyt som fra sakslista — inkludert fristdialogen. Å trykke på en
+  // statusknapp er i seg selv en bekreftelse, så bekreftelsesmodalen hoppes
+  // over; stikkord og frist spørres det fortsatt om.
+  runStatusTransition(id, btn.dataset.status, { skipConfirm: true });
 });
+
 
 
 document.getElementById('sak-num-claims').addEventListener('change', function() {
@@ -8139,12 +8306,10 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
 document.getElementById('sak-claims-tbody').addEventListener('blur', function(e) {
   var inp = e.target.closest('.sak-tag-input'); if (!inp) return;
   var id = activeSakId; if (!id) return;
-  var claimNum = parseInt(inp.dataset.claim, 10);
-  var data = loadSakData(id) || defaultSakData(0);
-  var claim = data.claims.find(function(c) { return c.num === claimNum; });
-  if (claim) { claim.label = inp.value.trim(); saveSakData(id, data); }
   _sakEditingLabelNum = null;
-  renderSakClaimsTable(data);
+  dispatch('CLAIM_LABEL_CHANGE', {
+    id: id, claimNum: parseInt(inp.dataset.claim, 10), label: inp.value.trim()
+  });
 }, true);
 
 document.getElementById('sak-claims-tbody').addEventListener('keydown', function(e) {
@@ -8158,23 +8323,15 @@ document.getElementById('sak-claims-tbody').addEventListener('change', function(
   var inp = e.target.closest('.sak-dep-inp'); if (!inp) return;
   var id = activeSakId; if (!id) return;
   var claimNum = parseInt(inp.dataset.claimDep, 10);
-  var data = loadSakData(id) || defaultSakData(0);
-  var claimIdx = data.claims.findIndex(function(c) { return c.num === claimNum; });
-  if (claimIdx < 0) return;
   var val = inp.value.trim() === '' ? null : parseInt(inp.value, 10);
-  if (val !== null && (isNaN(val) || val < 1 || val >= claimNum)) {
-    inp.value = data.claims[claimIdx].dep || '';
+  if (!isValidDep(claimNum, val)) {
+    // Ugyldig verdi: sett feltet tilbake til det som faktisk er lagret.
+    var data = loadSakData(id) || defaultSakData(0);
+    var claim = data.claims.find(function(c) { return c.num === claimNum; });
+    inp.value = (claim && claim.dep) || '';
     return;
   }
-  data.claims[claimIdx].dep = val;
-  data.claims[claimIdx].depManual = (val !== null);
-  // Cascade: update following claims that are still "auto-copied"
-  for (var i = claimIdx + 1; i < data.claims.length; i++) {
-    if (data.claims[i].depManual) break;
-    data.claims[i].dep = val;
-  }
-  saveSakData(id, data);
-  renderSakClaimsTable(data);
+  dispatch('CLAIM_DEP_CHANGE', { id: id, claimNum: claimNum, dep: val });
 });
 
 // Saksnotater: auto-lagre ved input
@@ -9845,7 +10002,7 @@ document.getElementById('case-list').addEventListener('click', function(e) {
     var c   = cases.find(function(x) { return x.id === moveId; });
     if (!c) return;
     var cfg = PAGES[activePage];
-    if      (cfg.actionType === 'confirm')           openCompleteConfirm(moveId, c.caseNumber);
+    if      (cfg.actionType === 'confirm')           runStatusTransition(moveId, 'fristarkiv');
     else if (cfg.actionType === 'choice-fristarkiv') openFristarkivChoice(moveId, c.caseNumber);
     else if (cfg.actionType === 'choice-videre')     openVidereChoice(moveId, c.caseNumber);
     else if (cfg.actionType === 'complete-oppdrag')  completeOppdrag(moveId);
