@@ -7,6 +7,65 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.20.0] - 2026-09-16
+Saksvisningen er bygget om. Sju likeverdige seksjoner på rad er blitt tre faser
+som følger arbeidsflyten, fristen sier nå hvem den tilhører, og saken har fått
+en «Marker som fullført»-knapp der arbeidet faktisk gjøres.
+
+### Added
+- **«Marker som fullført» på sakssiden.** Handlingen fantes bare i sakslista, så
+  du måtte gå tilbake og finne saken igjen for å avslutte noe du nettopp var
+  ferdig med. Knappen står nå øverst til høyre på saken, og speiles i
+  sticky-baren når du har scrollet ned — for det er nederst i kravtabellen du
+  blir ferdig, ikke øverst. Teksten følger statusen: «Marker som fullført» på en
+  ny sak, «Registrer svar …» i Fristarkiv, «Merk som utført» på et oppdrag, og
+  ingen knapp på en avsluttet sak. Den kjører nøyaktig samme flyt som fra
+  lista — bekreftelse, stikkord og fristdialog.
+- **Dokumenter i sticky-baren.** Dokumentmappen brukes gjennom hele arbeidet, og
+  er nå tilgjengelig uten å måtte scrolle til toppen.
+- **Fristblokk som sier hvem fristen tilhører.** Fristen sto tre steder — øverst
+  til høyre, som «Forfallsdato» og som «Buffer» — uten å si hvem den gjaldt. Nå
+  er det én blokk, merket «Din frist» på en sak du skal behandle og «Søkers
+  frist» i Fristarkiv, med en linje som forklarer forskjellen. Søkerens frist
+  farges ikke lenger som en hastesak, for den er ikke ditt etterslep.
+- **Seksjonsankere** i sticky-baren, så du kan hoppe mellom de tre fasene.
+
+### Changed
+- **Tre faser i stedet for sju sidestilte seksjoner.** Saken (frist, status,
+  metadata, notater) → Gransking (klassifisering, sjekkliste) → Vurdering (krav,
+  mothold, rapport). Hver fase er en egen flate med seksjonene som hvite kort
+  inni, og hver fase kan slås sammen. Valget huskes på tvers av saker, så
+  kollapser du «Saken» én gang, er den lukket neste gang også.
+- **Mothold og granskingsrapport er slått sammen til én seksjon.** De to listet
+  de samme dokumentene rett etter hverandre. Nå bærer hver motholdrad sin egen
+  utledede kategori og kravnumre — `X 1–2  A 4–6` — rett ved siden av
+  publikasjonsnummeret. «Kopier rapport» gir nøyaktig samme tekst som før.
+- **Tittelfeltet på mothold er fjernet.** Publikasjonsnummeret er det som
+  brukes. Titler som allerede var skrevet, blir ikke borte: der referansefeltet
+  var tomt, flyttes tittelen dit ved oppgradering.
+- **Advarselen om uvurderte krav** har flyttet fra en fotnote under rapporten
+  opp i seksjonshodet, der den er til å få øye på.
+- **Saksopplysningene er blitt lesefelt.** Saksnummer, tittel, innleveringsdato
+  og buffer så ut som skjemafelt, men kunne bare endres via ⋯-menyen. De vises
+  nå som ren tekst, med en synlig «Rediger sak»-knapp i seksjonshodet.
+- **«Antall krav» er flyttet** til Kravsvurdering-seksjonen, der tabellen det
+  styrer faktisk står.
+- **Notatfeltene** står nå side ved side med merkene «Synlig i oversikten» og
+  «Kun her», i stedet for å forklare forskjellen i en parentes.
+- **Sammendraget vises først når saken har krav.** På en fersk sak var det bare
+  `0 / 0` og fire kolonner med streker.
+
+### Fixed
+- Saksvisningen tålte ikke smale vinduer: kravtabellen og kravtreet lå side om
+  side uten brytepunkt, og resultatkolonnene sprengte bredden. Kravtreet legger
+  seg nå under tabellen, kolonnene brytes, og sticky-baren viker status —
+  først resultatbadgene, så fremdriften, så ankerne — mens saksnummeret og de
+  to knappene blir stående.
+- Seksjoner ble skjult for oppdrag ved å sammenligne overskriftsteksten mot
+  faste strenger, noe som ville brutt ved neste omskriving av en overskrift.
+  De merkes nå eksplisitt.
+
+
 ## [4.19.1] - 2026-09-16
 Denne versjonen retter fire feil i saksvisningen. To av dem kostet arbeid: den
 ene slettet kravnotater, den andre lot en sak havne i Fristarkiv med feil frist.
