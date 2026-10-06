@@ -7,6 +7,41 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.23.0] - 2026-10-06
+Sakene vises nå som et forløpsspor med fire faste steg, og Oversikt viser
+hvor mange saker som står på hvert av dem. Du ser med ett blikk hvor langt
+saken er kommet og hvor mange runder den har gått, uten statusmerker og
+knapper i hver rad.
+
+### Added
+- **Forløpsspor på alle sakslister.** Hver sak har fire piler: Formalia →
+  1. brev → Svar → Avgjørelse. Søk og første realitetsbrev er ett steg, og
+  alle svarrunder deler det tredje: «Venter på svar» mens søkeren har fristen,
+  «2. brev» når svaret skal behandles, og «3. brev» og oppover i rav som et
+  varsel om at saken trekker ut. Runden regnes ut fra sakens historikk.
+- **Utfall når en sak avsluttes.** Avslutningsdialogen spør nå om saken ble
+  meddelt, avslått eller henlagt, og utfallet vises i siste pil. Utfallet kan
+  endres senere fra ⋯-menyen, eller ved å trykke «Avsluttet» på sakssiden.
+  Saker som ble avsluttet før denne versjonen står uten utfall og vises
+  nøytralt som «Avsluttet».
+- **Saksflyt på Oversikt.** Kortene «Nye saker» og «Fristarkiv» er erstattet
+  av fire pilkort: 1. brev, Venter på svar, Svarrunder og Avgjort i år.
+  Viderebehandling har nå et eget tall, med et varsel når saker er i tredje
+  runde eller senere. «Avgjort» teller kalenderåret, fordelt på meddelt,
+  avslått og henlagt.
+
+### Changed
+- **Ryddigere saksrader.** Hver rad viser nå frist, saksnummer, tittel og
+  sporet. Notater vises ikke i lista lenger, men de er fortsatt søkbare.
+  Ferieoverlapp står i verktøytipset på fristen. Handlingsknappen («Marker som
+  fullført», «Registrer svar …») har flyttet inn i ⋯-menyen, og fungerer nå
+  også fra «Alle saker».
+- **Søkerens frist ser annerledes ut.** I Fristarkiv er fristen stiplet og
+  nøytral, uansett hvor nær den er. Den er søkerens svarfrist, ikke din.
+- **Kommende frister** på Oversikt viser et lite spor med steget saken står på,
+  i stedet for statusmerket.
+- Datamodellen er løftet til schema-versjon 7 (feltet `outcome`).
+
 ## [4.22.0] - 2026-09-16
 Siste etappe i oppryddingen av saksvisningen. Kravtabellen kan nå betjenes uten
 mus, og de små tingene som irriterte er borte.

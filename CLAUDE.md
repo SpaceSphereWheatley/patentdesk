@@ -35,7 +35,7 @@ These two stores have distinct responsibilities. Do not conflate them.
 
 ### Versioning
 - Version string: `APP_VERSION` (SemVer, e.g. `v4.4.4`)
-- Schema version: `SCHEMA_VERSION` (integer, currently `4`)
+- Schema version: `SCHEMA_VERSION` (integer, currently `7`)
 - Versioning follows **Semantic Versioning**: bump patch for fixes, minor for
   meaningful features, major for breaking changes. Do not bump mid-session —
   only at the end of a batch of related changes.
