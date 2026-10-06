@@ -4,8 +4,8 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { _validateImportCase, migrateCases } = loadFunctions(
-  ['_validateImportCase', 'migrateCases', 'parseDate', 'sanitizeText', 'uid'],
-  { vars: ['VALID_IMPORT_STATUSES'] }
+  ['_validateImportCase', 'migrateCases', 'parseDate', 'sanitizeText', 'uid', 'normaliseOutcome'],
+  { vars: ['VALID_IMPORT_STATUSES', 'OUTCOMES'] }
 );
 
 function validCase(overrides) {
@@ -63,4 +63,18 @@ test('migrateCases preserves an existing non-empty history', () => {
 test('migrateCases sanitizes notes of control characters', () => {
   const [migrated] = migrateCases([{ id: 'x', dueDate: '2026-07-01', notes: 'ok\x00bad' }]);
   assert.strictEqual(migrated.notes, 'okbad');
+});
+
+test('migrateCases keeps a valid outcome on a closed case', () => {
+  const [migrated] = migrateCases([{ id: 'x', dueDate: '2026-07-01', status: 'avsluttet', outcome: 'meddelt' }]);
+  assert.strictEqual(migrated.outcome, 'meddelt');
+});
+
+test('migrateCases drops an outcome on an open case or an unknown outcome', () => {
+  const [open] = migrateCases([{ id: 'x', dueDate: '2026-07-01', status: 'ny', outcome: 'meddelt' }]);
+  assert.strictEqual(open.outcome, null);
+  const [bogus] = migrateCases([{ id: 'y', dueDate: '2026-07-01', status: 'avsluttet', outcome: 'kanskje' }]);
+  assert.strictEqual(bogus.outcome, null);
+  const [legacy] = migrateCases([{ id: 'z', dueDate: '2026-07-01', status: 'avsluttet' }]);
+  assert.strictEqual(legacy.outcome, null);
 });
