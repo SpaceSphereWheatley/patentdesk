@@ -818,6 +818,17 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .bk-snap-count { font-size: var(--text-xs); color: var(--muted); flex: 1; }
 .bk-snap-empty { font-size: var(--text-sm); color: var(--muted); padding: var(--space-5) var(--space-1); }
 
+/* Arbeidsfil: sammenligning ved oppstart og tilgangsmelding */
+.wf-compare    { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.wf-compare th,
+.wf-compare td { padding: var(--space-2) var(--space-3); text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.wf-compare thead th { font-size: var(--text-xs); color: var(--muted); font-weight: 600; }
+.wf-compare tbody th { color: var(--muted); font-weight: 400; }
+.wf-compare tr:last-child th,
+.wf-compare tr:last-child td { border-bottom: none; }
+.undo-toast.wf-perm-bar { top: var(--space-6); bottom: auto; }
+.wf-perm-bar .wf-later { background: transparent; color: var(--muted); border: 1px solid var(--border2); }
+
 /* Innstillinger: felles kontrollhøyde 32px */
 .s-btn, .s-inp, .s-sel {
   height: 32px; box-sizing: border-box;
@@ -2818,21 +2829,22 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
                 <svg class="ti" aria-hidden="true"><use href="#ti-upload"/></svg> Velg fil
               </button>
             </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Automatisk sikkerhetskopi</span>
-                <span class="settings-label-sub" id="backup-status-sub">Tar et øyeblikksbilde etter hver endring (de 20 siste beholdes)</span>
-              </div>
-              <input type="checkbox" class="settings-checkbox" id="backup-enabled-cb" title="Slå automatisk sikkerhetskopi på/av" />
-            </div>
             <div class="settings-row" id="backup-folder-row" style="display:none;">
               <div class="settings-label">
-                <span class="settings-label-title">Sikkerhetskopimappe</span>
-                <span class="settings-label-sub" id="backup-folder-sub">Skriver én datert JSON-fil per dag til valgt mappe</span>
+                <span class="settings-label-title">Datamappe</span>
+                <span class="settings-label-sub" id="backup-folder-sub">Data lagres kun i nettleseren</span>
+                <span class="settings-label-sub" id="backup-folder-sub2">Velg en mappe for arbeidsfil og daglige kopier</span>
               </div>
               <button class="s-btn" id="btn-backup-folder">
                 <svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> Velg mappe
               </button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-label-title">Automatisk sikkerhetskopi</span>
+                <span class="settings-label-sub" id="backup-status-sub">Øyeblikksbilder etter hver endring (de 20 siste) + daglig kopi</span>
+              </div>
+              <input type="checkbox" class="settings-checkbox" id="backup-enabled-cb" title="Slå automatisk sikkerhetskopi på/av" />
             </div>
             <div class="settings-row">
               <div class="settings-label">
@@ -3587,6 +3599,28 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
     </div>
   </div>
 
+  <!-- Arbeidsfilen avviker fra nettleseren ved oppstart. Ingen lukkeknapp:
+       brukeren må velge, og arbeidsfilen skrives ikke før valget er tatt. -->
+  <div class="modal-backdrop" id="workfile-conflict-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="workfile-conflict-title">
+      <div class="modal-header"><h2 class="modal-title" id="workfile-conflict-title">Arbeidsfilen er nyere</h2></div>
+      <div class="modal-body">
+        <table class="wf-compare">
+          <thead><tr><th scope="col"></th><th scope="col">Arbeidsfil</th><th scope="col">Nettleser</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Sist lagret</th><td id="wf-file-saved"></td><td id="wf-local-saved"></td></tr>
+            <tr><th scope="row">Saker</th><td id="wf-file-count"></td><td id="wf-local-count"></td></tr>
+          </tbody>
+        </table>
+        <p class="modal-text modal-text-mt" id="wf-diff-text"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-wf-keep-local">Behold nettleseren</button>
+        <button class="btn-primary" id="btn-wf-use-file">Bruk arbeidsfilen</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Sjekkliste-editor modal -->
   <div class="modal-backdrop" id="cle-backdrop" aria-hidden="true">
     <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="cle-modal-title">
@@ -3755,7 +3789,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.22.0';
+var APP_VERSION    = 'v4.23.0';
 var SCHEMA_VERSION = 6;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5096,10 +5130,13 @@ var AppState = {
 
 // ── dispatch() ─────────────────────────────────────
 // Alle handlinger går via dispatch() — wrapperen (se sikkerhetskopi-seksjonen)
-// planlegger automatisk sikkerhetskopi etter hver handling.
+// stempler lagringstidspunktet og planlegger sikkerhetskopi og skriving av
+// arbeidsfilen etter hver handling.
 function dispatch(action, payload) {
   _dispatch(action, payload);
+  _wfStampSaved();
   scheduleAutoBackup();
+  scheduleWorkFileWrite();
   noteSaved();
 }
 
@@ -5663,8 +5700,8 @@ function _dispatch(action, payload) {
       }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
-      navigateTo('ny');
-      showToast(mergeMode ? '✓ Saker slått sammen' : '✓ Saker lastet inn');
+      navigateTo(payload.page || 'ny');
+      showToast(payload.toast || (mergeMode ? '✓ Saker slått sammen' : '✓ Saker lastet inn'));
       break;
     }
 
@@ -6439,12 +6476,25 @@ document.getElementById('btn-delete-all-final').addEventListener('click', functi
   dispatch('DATA_DELETE_ALL');
 });
 
-// ── Automatisk sikkerhetskopi ──────────────────────
-// To lag: (1) øyeblikksbilder i IndexedDB (alle nettlesere), (2) én datert
-// JSON-fil per dag til en valgt mappe via File System Access API (Chromium).
+// ── Automatisk sikkerhetskopi og datamappe ─────────
+// Tre lag: (1) øyeblikksbilder i IndexedDB (alle nettlesere), og i en valgt
+// datamappe via File System Access API (Chromium): (2) arbeidsfilen, som
+// speiler dataene etter hver endring og leses ved oppstart, og (3) én fast
+// daglig kopi i backup/.
 var BACKUP_ENABLED_KEY   = 'pt_backup_enabled';
 var BACKUP_LAST_KEY      = 'pt_backup_last';
 var BACKUP_LAST_FILE_KEY = 'pt_backup_last_file_date';
+var SAVED_AT_KEY         = 'pt_saved_at';        // når nettleserens data sist ble endret
+var WORKFILE_LAST_KEY    = 'pt_workfile_last';   // når arbeidsfilen sist ble skrevet
+var WORKFILE_SYNCED_KEY  = 'pt_workfile_synced'; // arbeidsfilens savedAt sist denne nettleseren skrev/leste den
+var WORKFILE_NAME        = 'patentdesk-data.json';
+var DAILY_BACKUP_DIR     = 'backup';
+var DAILY_BACKUP_KEEP    = 30;
+var _WF_DEBOUNCE_MS      = 1500;
+var _wfTimer        = null;
+var _wfReady        = false; // true når arbeidsfilen er avstemt mot nettleseren denne økten
+var _wfDailyDoneFor = null;  // dato dagens daglige kopi er bekreftet tatt
+var _wfPendingFile  = null;  // arbeidsfil som venter på brukerens valg i konfliktdialogen
 var _BK_DB_NAME       = 'patentdesk_backups';
 var _BK_VERSION       = 1; // øk ved framtidige endringer i backup-lagerets struktur
 var _BK_SNAP_STORE    = 'snapshots';
@@ -6491,12 +6541,11 @@ function runAutoBackup() {
   if (!backupEnabled()) return;
   var payload;
   try { payload = makeExportPayload(); } catch(e) { return; }
-  var sig = JSON.stringify(Object.assign({}, payload, { exported: null }));
+  var sig = workFileSignature(payload);
   if (sig !== _bkLastSig) {
     _bkLastSig = sig;
     _bkSaveSnapshot(payload);
   }
-  _bkMaybeWriteDailyFile(payload);
 }
 
 var _bkWarnedFail = false;
@@ -6560,26 +6609,310 @@ function _bkLoadDirHandle(cb) {
   });
 }
 
-function _bkMaybeWriteDailyFile(payload) {
+// ── Arbeidsfil: rene hjelpere ──────────────────────
+// Hva som skal skje ved oppstart når arbeidsfilen er lest.
+// local = { savedAt, caseCount, syncedAt } fra nettleseren; syncedAt er filens
+// savedAt sist denne nettleseren skrev eller leste den.
+// file  = null (ingen fil) eller { savedAt, caseCount, identical }.
+// 'write' = skriv nettleserens data til filen, 'load' = hent inn filen uten å
+// spørre, 'ask' = la brukeren velge, 'none' = ingenting å gjøre.
+function workFileStartupAction(local, file) {
+  if (!file) return 'write';
+  if (file.identical) return 'none';
+  // Tom nettleser (aldri lagret, ingen saker): ingenting kan gå tapt
+  if (!local.savedAt && !local.caseCount) return 'load';
+  // Filen bærer fortsatt stempelet vi sist så: ingen andre har rørt den
+  if (local.syncedAt && file.savedAt === local.syncedAt) return 'write';
+  return 'ask';
+}
+
+// Sammenligningsnøkkel for en eksportfil som ser bort fra tidsstemplene.
+function workFileSignature(payload) {
+  return JSON.stringify(Object.assign({}, payload, { exported: null, savedAt: null }));
+}
+
+// Antall saker som finnes bare på én side, eller er ulike (inkl. saksdetaljer).
+function countDifferingCases(a, b) {
+  function index(p) {
+    var m = {};
+    (p.cases || []).forEach(function(c) {
+      m[c.id] = JSON.stringify([c, (p.sakDetails || {})[c.id] || null]);
+    });
+    return m;
+  }
+  var ia = index(a), ib = index(b), n = 0;
+  var has = Object.prototype.hasOwnProperty;
+  Object.keys(ia).forEach(function(id) { if (ia[id] !== ib[id]) n++; });
+  Object.keys(ib).forEach(function(id) { if (!has.call(ia, id)) n++; });
+  return n;
+}
+
+// Daglige kopier som skal slettes for å beholde de `keep` nyeste. Rører bare
+// filer som heter nøyaktig patentdesk-backup-ÅÅÅÅ-MM-DD.json.
+function dailyBackupsToPrune(names, keep) {
+  var daily = names.filter(function(n) {
+    return /^patentdesk-backup-\d{4}-\d{2}-\d{2}\.json$/.test(n);
+  }).sort();
+  return daily.slice(0, Math.max(0, daily.length - keep));
+}
+
+// ── Arbeidsfil: filoperasjoner ─────────────────────
+function _fsWriteText(dir, name, text) {
+  return dir.getFileHandle(name, { create: true }).then(function(fh) {
+    return fh.createWritable();
+  }).then(function(w) {
+    return w.write(text).then(function() { return w.close(); });
+  });
+}
+
+// Gir null hvis filen ikke finnes
+function _fsReadText(dir, name) {
+  return dir.getFileHandle(name).then(function(fh) {
+    return fh.getFile();
+  }).then(function(f) {
+    return f.text();
+  }).catch(function(e) {
+    if (e && e.name === 'NotFoundError') return null;
+    throw e;
+  });
+}
+
+function _fsListNames(dir) {
+  var it = dir.keys(), names = [];
+  function step() {
+    return it.next().then(function(r) {
+      if (r.done) return names;
+      names.push(r.value);
+      return step();
+    });
+  }
+  return step();
+}
+
+function _lsGet(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
+function _lsSet(key, v) { try { localStorage.setItem(key, v); } catch(e) {} }
+
+function _wfStampSaved() { _lsSet(SAVED_AT_KEY, new Date().toISOString()); }
+
+function _wfPayload() {
+  return Object.assign(makeExportPayload(), { savedAt: _lsGet(SAVED_AT_KEY) || new Date().toISOString() });
+}
+
+function scheduleWorkFileWrite() {
   if (!_bkDirHandle || !_bkFsaSupported()) return;
+  if (_wfTimer) clearTimeout(_wfTimer);
+  _wfTimer = setTimeout(_wfFlush, _WF_DEBOUNCE_MS);
+}
+
+function _wfFlush() {
+  _wfTimer = null;
+  // Ikke avstemt ennå (tilgang mangler eller konfliktdialogen er åpen): filen
+  // skrives først når oppstartsavstemmingen er gjort
+  if (!_wfReady || !_bkDirHandle) return;
   _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
-    if (perm === 'granted') _bkWriteDailyFile(payload);
-    else _bkUpdateSettingsUI(); // viser «Gi tilgang» på knappen
+    if (perm !== 'granted') { _wfReady = false; _wfShowPermBar(); _bkUpdateSettingsUI(); return; }
+    return _wfWrite();
   }).catch(function() {});
 }
 
-function _bkWriteDailyFile(payload) {
-  var name = 'patentdesk-backup-' + todayStr() + '.json';
-  _bkDirHandle.getFileHandle(name, { create: true }).then(function(fh) {
-    return fh.createWritable();
-  }).then(function(w) {
-    return w.write(JSON.stringify(payload || makeExportPayload(), null, 2)).then(function() { return w.close(); });
+var _wfWarnedFail = false;
+function _wfWrite() {
+  var dir = _bkDirHandle;
+  var payload;
+  return _wfEnsureDailyCopy(dir).then(function() {
+    payload = _wfPayload(); // etter dagens kopi, så den rekker å fange filen slik den lå
+    return _fsWriteText(dir, WORKFILE_NAME, JSON.stringify(payload, null, 2));
   }).then(function() {
-    try { localStorage.setItem(BACKUP_LAST_FILE_KEY, new Date().toISOString()); } catch(e) {}
+    _lsSet(WORKFILE_LAST_KEY, new Date().toISOString());
+    _lsSet(WORKFILE_SYNCED_KEY, payload.savedAt);
+    _wfWarnedFail = false;
     _bkUpdateSettingsUI();
   }).catch(function() {
-    showToast('✗ Kunne ikke skrive sikkerhetskopi til mappen', true);
+    if (_wfWarnedFail) return; // varsle kun én gang per feilperiode
+    _wfWarnedFail = true;
+    showToast('✗ Kunne ikke skrive arbeidsfilen i datamappen', true);
   });
+}
+
+// Før arbeidsfilen skrives første gang hver dag, kopieres den slik den lå til
+// backup/patentdesk-backup-ÅÅÅÅ-MM-DD.json. Dagens kopi endres ikke etterpå.
+var _wfDailyWarned = false;
+function _wfEnsureDailyCopy(dir) {
+  var today = todayStr();
+  if (!backupEnabled() || _wfDailyDoneFor === today) return Promise.resolve();
+  var name = 'patentdesk-backup-' + today + '.json';
+  return dir.getDirectoryHandle(DAILY_BACKUP_DIR, { create: true }).then(function(bdir) {
+    return bdir.getFileHandle(name).then(function() {
+      _wfDailyDoneFor = today; // finnes allerede
+    }, function(e) {
+      if (!e || e.name !== 'NotFoundError') throw e;
+      return _fsReadText(dir, WORKFILE_NAME).then(function(text) {
+        return _fsWriteText(bdir, name, text || JSON.stringify(_wfPayload(), null, 2));
+      }).then(function() {
+        _wfDailyDoneFor = today;
+        _lsSet(BACKUP_LAST_FILE_KEY, new Date().toISOString());
+        return _fsListNames(bdir).then(function(names) {
+          return Promise.all(dailyBackupsToPrune(names, DAILY_BACKUP_KEEP).map(function(n) {
+            return bdir.removeEntry(n);
+          }));
+        }).catch(function() {}); // mislykket opprydding er ikke kritisk
+      });
+    });
+  }).catch(function() {
+    // Arbeidsfilen skal skrives selv om dagens kopi feilet
+    if (_wfDailyWarned) return;
+    _wfDailyWarned = true;
+    showToast('✗ Kunne ikke ta daglig kopi i backup-mappen', true);
+  });
+}
+
+// ── Arbeidsfil: avstemming ved oppstart ────────────
+function _wfSync() {
+  var dir = _bkDirHandle;
+  if (!dir) return;
+  _wfReady = false;
+  _fsReadText(dir, WORKFILE_NAME).then(function(text) {
+    var file = null;
+    if (text && text.trim()) {
+      try { file = JSON.parse(text); } catch(e) { file = undefined; }
+      if (file && (typeof file !== 'object' || !Array.isArray(file.cases))) file = undefined;
+    }
+    if (file === undefined) {
+      // Ulesbar arbeidsfil: ta vare på den før den overskrives
+      var keep = 'patentdesk-data-ulesbar-' + todayStr() + '.json';
+      return dir.getDirectoryHandle(DAILY_BACKUP_DIR, { create: true }).then(function(bdir) {
+        return _fsWriteText(bdir, keep, text);
+      }).then(function() {
+        showToast('✗ Arbeidsfilen kunne ikke leses — den er lagt i backup/' + keep + ' og skrevet på nytt', true);
+        _wfReady = true;
+        return _wfWrite();
+      });
+    }
+    var localPayload = makeExportPayload();
+    var info = file && {
+      savedAt:   file.savedAt || null,
+      caseCount: file.cases.length,
+      identical: workFileSignature(file) === workFileSignature(localPayload)
+    };
+    var action = workFileStartupAction({
+      savedAt:   _lsGet(SAVED_AT_KEY),
+      caseCount: cases.length,
+      syncedAt:  _lsGet(WORKFILE_SYNCED_KEY)
+    }, info);
+
+    if (action === 'none') {
+      if (file.savedAt) { _lsSet(SAVED_AT_KEY, file.savedAt); _lsSet(WORKFILE_SYNCED_KEY, file.savedAt); }
+      _wfReady = true;
+      _bkUpdateSettingsUI();
+    } else if (action === 'write') {
+      _wfReady = true;
+      return _wfWrite();
+    } else if (action === 'load') {
+      var n = file.cases.length;
+      _wfLoad(file, '✓ Hentet ' + n + ' sak' + (n !== 1 ? 'er' : '') + ' fra ' + WORKFILE_NAME);
+      _wfReady = true; // først etter vellykket innlasting, så en tom nettleser aldri overskriver filen
+    } else {
+      _wfOpenConflict(file, localPayload);
+    }
+  }).catch(function() {
+    showToast('✗ Kunne ikke lese arbeidsfilen i datamappen', true);
+  });
+}
+
+function _wfLoad(file, toast) {
+  var data = prepareImportData(JSON.parse(JSON.stringify(file))).data;
+  dispatch('DATA_IMPORT', { data: data, mode: 'replace', toast: toast,
+    page: activePage === 'sak' ? 'hjem' : activePage });
+}
+
+function _wfFmtShort(iso) {
+  var d = new Date(iso);
+  if (!iso || isNaN(d)) return '—';
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return p(d.getDate()) + '.' + p(d.getMonth() + 1) +
+    (d.getFullYear() !== new Date().getFullYear() ? '.' + d.getFullYear() : '') +
+    ' kl. ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function _wfOpenConflict(file, localPayload) {
+  _wfPendingFile = file;
+  var localSaved = _lsGet(SAVED_AT_KEY);
+  var newer = (Date.parse(file.savedAt) || 0) > (Date.parse(localSaved) || 0);
+  document.getElementById('workfile-conflict-title').textContent =
+    newer ? 'Arbeidsfilen er nyere' : 'Arbeidsfilen er endret';
+  document.getElementById('wf-file-saved').textContent  = _wfFmtShort(file.savedAt);
+  document.getElementById('wf-local-saved').textContent = _wfFmtShort(localSaved);
+  document.getElementById('wf-file-count').textContent  = file.cases.length;
+  document.getElementById('wf-local-count').textContent = cases.length;
+  var diff = countDifferingCases(localPayload, file);
+  document.getElementById('wf-diff-text').textContent =
+    (diff === 0
+      ? 'Sakene er like, men annen data (statistikk, ferier eller innstillinger) er ulik. '
+      : diff + (diff !== 1 ? ' saker er ulike. ' : ' sak er ulik. ')) +
+    'Det du velger bort, lagres som et øyeblikksbilde og kan hentes tilbake.';
+  openBackdrop('workfile-conflict-backdrop');
+}
+
+document.getElementById('btn-wf-use-file').addEventListener('click', function() {
+  var file = _wfPendingFile;
+  if (!file) return;
+  _wfPendingFile = null;
+  _bkSaveSnapshot(makeExportPayload()); // nettleserens data kan hentes tilbake
+  closeBackdrop('workfile-conflict-backdrop');
+  try { _wfLoad(file, '✓ Arbeidsfilen er lastet inn'); _wfReady = true; }
+  catch(e) { showToast('✗ Kunne ikke lese arbeidsfilen', true); }
+});
+
+document.getElementById('btn-wf-keep-local').addEventListener('click', function() {
+  var file = _wfPendingFile;
+  if (!file) return;
+  _wfPendingFile = null;
+  // Arbeidsfilens data kan hentes tilbake. Stemples nå, så øyeblikksbildet ikke
+  // ryddes bort med en gang fordi filen er eldre enn de andre.
+  _bkSaveSnapshot(Object.assign({}, file, { exported: new Date().toISOString() }));
+  closeBackdrop('workfile-conflict-backdrop');
+  _wfStampSaved();
+  _wfReady = true;
+  _wfWrite();
+  showToast('✓ Beholdt nettleserens data');
+});
+
+// ── Arbeidsfil: tilgang ────────────────────────────
+// Chrome krever et klikk for å gi tilgang igjen etter omstart av nettleseren.
+function _wfShowPermBar() {
+  if (document.getElementById('wf-perm-bar')) return;
+  var bar = document.createElement('div');
+  bar.id = 'wf-perm-bar';
+  bar.className = 'undo-toast wf-perm-bar';
+  bar.setAttribute('role', 'status');
+  var span = document.createElement('span');
+  span.textContent = 'Datamappen er ikke tilkoblet';
+  var grant = document.createElement('button');
+  grant.textContent = 'Gi tilgang';
+  var later = document.createElement('button');
+  later.className = 'wf-later';
+  later.textContent = 'Senere';
+  bar.appendChild(span);
+  bar.appendChild(grant);
+  bar.appendChild(later);
+  document.body.appendChild(bar);
+  grant.addEventListener('click', _wfRequestAccess);
+  later.addEventListener('click', _wfHidePermBar);
+}
+
+function _wfHidePermBar() {
+  var bar = document.getElementById('wf-perm-bar');
+  if (bar) bar.parentNode.removeChild(bar);
+}
+
+function _wfRequestAccess() {
+  if (!_bkDirHandle) return;
+  _bkDirHandle.requestPermission({ mode: 'readwrite' }).then(function(p) {
+    if (p !== 'granted') { showToast('Tilgang ble ikke gitt'); return; }
+    _wfHidePermBar();
+    _bkUpdateSettingsUI();
+    _wfSync();
+  }).catch(function() {});
 }
 
 // ── UI ─────────────────────────────────────────────
@@ -6597,30 +6930,46 @@ function _bkUpdateSettingsUI() {
   var sub = document.getElementById('backup-status-sub');
   var last = localStorage.getItem(BACKUP_LAST_KEY);
   if (sub) {
+    var daily = _bkFsaSupported() ? ' + daglig kopi' : '';
     sub.textContent = !backupEnabled()
-      ? 'Avslått — ingen automatiske kopier tas'
+      ? 'Avslått — ingen øyeblikksbilder eller daglige kopier tas'
       : last
-        ? 'Siste kopi: ' + _bkFmtTime(last) + ' (de ' + _BK_MAX_SNAPSHOTS + ' siste beholdes)'
-        : 'Tar et øyeblikksbilde etter hver endring (de ' + _BK_MAX_SNAPSHOTS + ' siste beholdes)';
+        ? 'Siste øyeblikksbilde: ' + _bkFmtTime(last) + ' (de ' + _BK_MAX_SNAPSHOTS + ' siste)' + daily
+        : 'Øyeblikksbilder etter hver endring (de ' + _BK_MAX_SNAPSHOTS + ' siste)' + daily;
   }
   var row = document.getElementById('backup-folder-row');
   if (!row) return;
   if (!_bkFsaSupported()) { row.style.display = 'none'; return; }
   row.style.display = '';
-  var folderSub = document.getElementById('backup-folder-sub');
-  var btn = document.getElementById('btn-backup-folder');
+  var sub1 = document.getElementById('backup-folder-sub');
+  var sub2 = document.getElementById('backup-folder-sub2');
+  var btn  = document.getElementById('btn-backup-folder');
+  function setBtn(label) {
+    if (btn) btn.innerHTML = '<svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> ' + label;
+  }
   if (!_bkDirHandle) {
-    if (folderSub) folderSub.textContent = 'Skriver én datert JSON-fil per dag til valgt mappe';
-    if (btn) btn.textContent = 'Velg mappe';
+    if (sub1) sub1.textContent = 'Data lagres kun i nettleseren';
+    if (sub2) sub2.textContent = 'Velg en mappe for arbeidsfil og daglige kopier';
+    setBtn('Velg mappe');
     return;
   }
+  var dirName = _bkDirHandle.name;
   _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
-    if (folderSub) {
-      folderSub.textContent = perm === 'granted'
-        ? 'Mappe: ' + _bkDirHandle.name + (localStorage.getItem(BACKUP_LAST_FILE_KEY) ? ' — sist skrevet ' + _bkFmtTime(localStorage.getItem(BACKUP_LAST_FILE_KEY)) : '')
-        : 'Mappe: ' + _bkDirHandle.name + ' — tilgang må bekreftes på nytt';
+    if (perm !== 'granted') {
+      if (sub1) sub1.textContent = '⚠ Tilgang ikke gitt — ' + dirName;
+      if (sub2) sub2.textContent = 'Arbeidsfilen oppdateres når tilgang er gitt';
+      setBtn('Gi tilgang');
+      return;
     }
-    if (btn) btn.textContent = perm === 'granted' ? 'Bytt mappe' : 'Gi tilgang';
+    var wfLast = _lsGet(WORKFILE_LAST_KEY), dayLast = _lsGet(BACKUP_LAST_FILE_KEY);
+    if (sub1) sub1.textContent = dirName + (wfLast ? ' — arbeidsfil lagret ' + _bkFmtTime(wfLast) : ' — arbeidsfil ikke skrevet ennå');
+    if (sub2) {
+      sub2.textContent = !backupEnabled()
+        ? 'Daglige kopier er avslått'
+        : 'Daglige kopier i ' + DAILY_BACKUP_DIR + '/ (' + DAILY_BACKUP_KEEP + ' siste beholdes)' +
+          (dayLast ? ' · siste: ' + _bkFmtTime(dayLast).split(' kl.')[0] : '');
+    }
+    setBtn('Bytt mappe');
   }).catch(function() {});
 }
 
@@ -6652,12 +7001,7 @@ function _bkRestoreSnapshot(key, btn) {
     var snap = snaps.find(function(s) { return s.exported === key; });
     if (!snap) { resetBtn(); showToast('✗ Fant ikke sikkerhetskopien', true); return; }
     try {
-      var data = JSON.parse(JSON.stringify(snap));
-      if (!Array.isArray(data.cases)) throw new Error('Ugyldig format');
-      var migrated = migrateCases(data.cases.map(decodeCase));
-      data.cases = migrated.filter(_validateImportCase);
-      if (data.stats && (typeof data.stats !== 'object' || !Array.isArray(data.stats.log))) delete data.stats;
-      pendingImportData = data;
+      pendingImportData = prepareImportData(JSON.parse(JSON.stringify(snap))).data;
       _prepareImportModal(0);
       closeBackdrop('backup-restore-backdrop');
       openBackdrop('import-backdrop');
@@ -6679,17 +7023,24 @@ document.getElementById('btn-backup-folder').addEventListener('click', function(
     window.showDirectoryPicker({ mode: 'readwrite' }).then(function(handle) {
       _bkDirHandle = handle;
       _bkSaveDirHandle(handle);
-      try { localStorage.removeItem(BACKUP_LAST_FILE_KEY); } catch(e) {}
+      // Ny mappe: ingen kjent arbeidsfil eller daglig kopi ennå
+      try {
+        localStorage.removeItem(BACKUP_LAST_FILE_KEY);
+        localStorage.removeItem(WORKFILE_LAST_KEY);
+        localStorage.removeItem(WORKFILE_SYNCED_KEY);
+      } catch(e) {}
+      _wfDailyDoneFor = null;
+      _wfHidePermBar();
       _bkUpdateSettingsUI();
-      showToast('✓ Sikkerhetskopimappe valgt: ' + handle.name);
-      if (backupEnabled()) _bkMaybeWriteDailyFile();
+      showToast('✓ Datamappe valgt: ' + handle.name);
+      _wfSync();
     }).catch(function() {}); // avbrutt av bruker
   };
   if (_bkDirHandle) {
     _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
       if (perm === 'granted') { pick(); return; } // bytt mappe
       _bkDirHandle.requestPermission({ mode: 'readwrite' }).then(function(p2) {
-        if (p2 === 'granted') { _bkUpdateSettingsUI(); if (backupEnabled()) _bkMaybeWriteDailyFile(); }
+        if (p2 === 'granted') { _wfHidePermBar(); _bkUpdateSettingsUI(); _wfSync(); }
         else pick();
       }).catch(pick);
     }).catch(pick);
@@ -6707,18 +7058,23 @@ document.getElementById('backup-snapshot-list').addEventListener('click', functi
   _bkRestoreSnapshot(btn.dataset.bkKey, btn);
 });
 
-// Ta ventende kopi umiddelbart når fanen skjules/lukkes
+// Ta ventende kopi og skriv arbeidsfilen umiddelbart når fanen skjules/lukkes
 document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'hidden' && _bkTimer) {
-    clearTimeout(_bkTimer);
-    runAutoBackup();
-  }
+  if (document.visibilityState !== 'hidden') return;
+  if (_bkTimer) { clearTimeout(_bkTimer); runAutoBackup(); }
+  if (_wfTimer) { clearTimeout(_wfTimer); _wfFlush(); }
 });
 
 function _bkInit() {
   _bkLoadDirHandle(function() {
     _bkUpdateSettingsUI();
     if (backupEnabled()) scheduleAutoBackup();
+    if (!_bkDirHandle || !_bkFsaSupported()) return;
+    // Arbeidsfilen avstemmes mot nettleseren før noe skrives til den
+    _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
+      if (perm === 'granted') _wfSync();
+      else _wfShowPermBar();
+    }).catch(function() {});
   });
 }
 
@@ -6747,6 +7103,21 @@ document.getElementById('btn-export-csv').addEventListener('click', function() {
 
 // ── Import ─────────────────────────────────────────
 var pendingImportData = null;
+
+// Dekoder, migrerer og validerer en eksportfil før den lastes inn — felles for
+// filimport, øyeblikksbilder og arbeidsfilen. Kaster ved ugyldig format.
+// skipped = antall saker forkastet ved validering.
+function prepareImportData(data) {
+  if (!data || typeof data !== 'object' || !Array.isArray(data.cases)) throw new Error('Ugyldig format');
+  var migrated = migrateCases(data.cases.map(decodeCase));
+  var valid    = migrated.filter(_validateImportCase);
+  data.cases   = valid;
+  // Validate stats structure — ignore if malformed
+  if (data.stats && (typeof data.stats !== 'object' || !Array.isArray(data.stats.log))) {
+    delete data.stats;
+  }
+  return { data: data, skipped: migrated.length - valid.length };
+}
 
 // Fyller import-modalen med antall og fletteforklaring (matcher på sakens id),
 // og nullstiller modus til «Erstatt alt». skipped = antall rader forkastet ved validering.
@@ -6783,18 +7154,9 @@ document.getElementById('import-file-input').addEventListener('change', function
   var reader = new FileReader();
   reader.onload = function(ev) {
     try {
-      var data = JSON.parse(ev.target.result);
-      if (!data || typeof data !== 'object' || !Array.isArray(data.cases)) throw new Error('Ugyldig format');
-      var migrated = migrateCases(data.cases.map(decodeCase));
-      var valid   = migrated.filter(_validateImportCase);
-      var skipped = migrated.length - valid.length;
-      data.cases  = valid;
-      // Validate stats structure — ignore if malformed
-      if (data.stats && (typeof data.stats !== 'object' || !Array.isArray(data.stats.log))) {
-        delete data.stats;
-      }
-      pendingImportData = data;
-      _prepareImportModal(skipped);
+      var prep = prepareImportData(JSON.parse(ev.target.result));
+      pendingImportData = prep.data;
+      _prepareImportModal(prep.skipped);
       openBackdrop('import-backdrop');
     } catch(err) { showToast('✗ Kunne ikke lese filen — ugyldig format', true); }
   };
