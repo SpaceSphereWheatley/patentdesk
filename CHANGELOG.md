@@ -7,6 +7,39 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.23.0] - 2026-10-14
+Dataene dine kan nå leve i en fil du selv kontrollerer, ikke bare i nettleseren.
+Blir nettleserdata slettet, henter PatentDesk sakene tilbake av seg selv.
+
+### Added
+- **Arbeidsfil i datamappen.** Når du har valgt en mappe under Innstillinger →
+  Sikkerhetskopiering (Chrome/Edge), skrives alle data til
+  `patentdesk-data.json` et par sekunder etter hver endring. Filen leses når
+  PatentDesk starter. Er nettleseren tom, for eksempel etter opprydding av
+  nettleserdata eller en ny profil, hentes sakene inn igjen automatisk.
+  Nettleseren er fortsatt arbeidskopien mens appen er åpen, så alt går like
+  raskt som før. Arbeidsfilen skrives også når automatisk sikkerhetskopi er
+  slått av.
+- **Dialog når arbeidsfilen og nettleseren er uenige.** Er arbeidsfilen endret
+  siden PatentDesk sist skrev den, får du se når hver versjon sist ble lagret,
+  hvor mange saker hver har og hvor mange som er ulike, og velger selv hvilken
+  som gjelder. Den du velger bort, lagres som et øyeblikksbilde og kan hentes
+  tilbake. Arbeidsfilen skrives ikke før du har valgt.
+- **Melding når datamappen ikke er tilkoblet.** Chrome krever et klikk for å
+  gi tilgang til mappen igjen etter omstart. En melding øverst med «Gi
+  tilgang» blir stående til du har gjort det eller valgt «Senere». Endringer
+  du gjør i mellomtiden, skrives til filen når tilgangen er på plass.
+
+### Changed
+- **Daglige kopier er faste punkter.** Dagens kopi ble før skrevet over ved hver
+  endring og ble dermed lik arbeidsfilen. Nå tas den én gang per dag, rett før
+  dagens første endring, og endres ikke etterpå. Kopiene havner i undermappen
+  `backup/`, og de 30 nyeste beholdes. Eldre daglige filer som ligger direkte i
+  mappen, røres ikke.
+- **«Sikkerhetskopimappe» heter nå «Datamappe»** og står øverst blant
+  sikkerhetsinnstillingene. Den viser når arbeidsfilen sist ble lagret og når
+  siste daglige kopi ble tatt.
+
 ## [4.22.0] - 2026-09-16
 Siste etappe i oppryddingen av saksvisningen. Kravtabellen kan nå betjenes uten
 mus, og de små tingene som irriterte er borte.

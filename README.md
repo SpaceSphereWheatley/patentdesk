@@ -6,7 +6,7 @@ HTML/CSS/JS — ingen byggprosess, ingen avhengigheter, ingen server.
 ## Kom i gang
 
 1. [📥 Last ned PatentDesk.html](https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/PatentDesk.html)
-2. Åpne filen i en nettleser (Chrome eller Edge anbefales — mappesikkerhetskopi
+2. Åpne filen i en nettleser (Chrome eller Edge anbefales — datamappen
    krever File System Access API)
 3. Det er alt. Alt kjører lokalt; ingenting forlater maskinen din.
 
@@ -25,13 +25,16 @@ All data lever i nettleseren, begrenset til filens opprinnelse:
 | `localStorage` (diverse `pt_*` nøkler) | Innstillinger: mål, ferieavsnitt, dokumentrot, osv. |
 | IndexedDB `PatentDeskCPC` | CPC-klassifikasjonsdatabase (valgfritt) |
 | IndexedDB `patentdesk_backups` | Automatiske øyeblikksbilder (20 nyeste) |
+| Datamappe: `patentdesk-data.json` | Arbeidsfil — speiler dataene etter hver endring, leses ved oppstart (Chrome/Edge) |
+| Datamappe: `backup/patentdesk-backup-ÅÅÅÅ-MM-DD.json` | Én fast kopi per dag (30 nyeste) |
 
-**Viktig:** Hvis du sletter nettstedsdata i nettleseren, slettes alt. Bruk
-Innstillinger → Sikkerhetskopi for å eksportere et JSON-øyeblikksbilde jevnlig,
-eller aktiver den automatiske mappesikkerhetsopien (Chrome/Edge) som skriver
-én datert fil per dag til en mappe du velger. CPC-databasen er ikke inkludert
-i sikkerhetskopier — last inn `cpc_v2.json` på nytt etter å ha gjenopprettet
-på en ny maskin.
+**Viktig:** Hvis du sletter nettstedsdata i nettleseren, slettes alt som bare
+ligger der. Velg en datamappe under Innstillinger → Sikkerhetskopiering
+(Chrome/Edge): da skrives dataene også til en arbeidsfil du kontrollerer, og
+PatentDesk henter dem inn igjen automatisk hvis nettleseren er tømt. Uten
+datamappe bør du eksportere et JSON-øyeblikksbilde jevnlig. CPC-databasen er
+ikke inkludert — last inn `cpc_v2.json` på nytt etter å ha gjenopprettet på en
+ny maskin.
 
 ## Arbeidsflyt
 
@@ -61,7 +64,7 @@ HTML/CSS/JS — no build step, no dependencies, no server.
 ## Getting started
 
 1. [📥 Download PatentDesk.html](https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/PatentDesk.html)
-2. Open it in a browser (Chrome or Edge recommended — folder backup
+2. Open it in a browser (Chrome or Edge recommended — the data folder
    requires the File System Access API)
 3. That's it. Everything runs locally; nothing leaves your machine.
 
@@ -80,12 +83,15 @@ All data lives in the browser, scoped to the file's origin:
 | `localStorage` (misc `pt_*` keys) | Settings: goals, vacations, document root, etc. |
 | IndexedDB `PatentDeskCPC` | CPC classification database (optional) |
 | IndexedDB `patentdesk_backups` | Automatic snapshots (20 most recent) |
+| Data folder: `patentdesk-data.json` | Work file — mirrors the data after every change, read at startup (Chrome/Edge) |
+| Data folder: `backup/patentdesk-backup-YYYY-MM-DD.json` | One fixed copy per day (30 most recent) |
 
-**Important:** clearing browser site data deletes everything. Use
-Settings → Backup to export a JSON snapshot regularly, or enable the
-automatic folder backup (Chrome/Edge) which writes one dated file per
-day to a folder you choose. The CPC database is not included in
-backups — re-load `cpc_v2.json` after restoring on a new machine.
+**Important:** clearing browser site data deletes everything that only
+lives there. Choose a data folder under Settings → Backup (Chrome/Edge):
+the data is then also written to a work file you control, and PatentDesk
+loads it back automatically if the browser has been wiped. Without a data
+folder, export a JSON snapshot regularly. The CPC database is not
+included — re-load `cpc_v2.json` after restoring on a new machine.
 
 ## Workflow
 

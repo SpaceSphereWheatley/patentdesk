@@ -64,3 +64,34 @@ test('migrateCases sanitizes notes of control characters', () => {
   const [migrated] = migrateCases([{ id: 'x', dueDate: '2026-07-01', notes: 'ok\x00bad' }]);
   assert.strictEqual(migrated.notes, 'okbad');
 });
+
+// ── prepareImportData: shared by file import, snapshot restore and work file ──
+const { prepareImportData } = loadFunctions(
+  ['prepareImportData', '_validateImportCase', 'migrateCases', 'decodeCase', 'parseDate', 'sanitizeText', 'uid'],
+  { vars: ['VALID_IMPORT_STATUSES', 'INT_TO_STATUS'] }
+);
+
+test('prepareImportData decodes integer statuses and keeps valid cases', () => {
+  const r = prepareImportData({ cases: [validCase({ status: 2 })] });
+  assert.strictEqual(r.skipped, 0);
+  assert.strictEqual(r.data.cases.length, 1);
+  assert.strictEqual(r.data.cases[0].status, 'fristarkiv');
+});
+
+test('prepareImportData drops invalid cases and reports how many', () => {
+  const r = prepareImportData({ cases: [validCase(), validCase({ id: 'x2', caseNumber: '' })] });
+  assert.strictEqual(r.data.cases.length, 1);
+  assert.strictEqual(r.skipped, 1);
+});
+
+test('prepareImportData discards malformed stats but keeps well-formed stats', () => {
+  assert.strictEqual(prepareImportData({ cases: [], stats: { log: 'x' } }).data.stats, undefined);
+  const stats = { nyTotal: 1, log: [] };
+  assert.deepStrictEqual(prepareImportData({ cases: [], stats }).data.stats, stats);
+});
+
+test('prepareImportData throws on data without a cases array', () => {
+  assert.throws(() => prepareImportData(null));
+  assert.throws(() => prepareImportData({}));
+  assert.throws(() => prepareImportData({ cases: 'nei' }));
+});
