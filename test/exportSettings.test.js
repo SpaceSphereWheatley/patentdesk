@@ -1,0 +1,74 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert');
+const { loadFunctions } = require('./extractFunctions');
+
+const { readImportSettings, isValidChecklistTemplate } = loadFunctions(
+  ['readImportSettings', 'isValidChecklistTemplate']
+);
+
+const TPL = [
+  { phase: 'Forberedelse', items: [{ id: 'a', label: 'Les søknaden', type: 'check' }] },
+  { phase: 'Gransking', items: [] }
+];
+
+// ── isValidChecklistTemplate ────────────────────────
+
+test('isValidChecklistTemplate: accepts phases with labelled items (empty phases allowed)', () => {
+  assert.strictEqual(isValidChecklistTemplate(TPL), true);
+});
+
+test('isValidChecklistTemplate: rejects anything that would break the checklist', () => {
+  assert.strictEqual(isValidChecklistTemplate(null), false);
+  assert.strictEqual(isValidChecklistTemplate([]), false);
+  assert.strictEqual(isValidChecklistTemplate('x'), false);
+  assert.strictEqual(isValidChecklistTemplate([{ phase: 'P' }]), false);
+  assert.strictEqual(isValidChecklistTemplate([{ phase: 1, items: [] }]), false);
+  assert.strictEqual(isValidChecklistTemplate([{ phase: 'P', items: [{ id: 'a' }] }]), false);
+  assert.strictEqual(isValidChecklistTemplate([{ phase: 'P', items: [null] }]), false);
+});
+
+// ── readImportSettings ──────────────────────────────
+
+test('readImportSettings: older export files without the fields change nothing', () => {
+  assert.deepStrictEqual(Object.keys(readImportSettings({ cases: [] })), []);
+});
+
+test('readImportSettings: reads name, template, buffer and medlesing', () => {
+  const med = [{ id: 'm1', caseNumber: 'P-1', checklist: {} }];
+  const r = readImportSettings({ userName: '  Kari ', checklistTemplate: TPL, fristBuffer: 3, medlesing: med });
+  assert.strictEqual(r.userName, 'Kari');
+  assert.deepStrictEqual(r.checklistTemplate, TPL);
+  assert.strictEqual(r.fristBuffer, 3);
+  assert.deepStrictEqual(r.medlesing, med);
+});
+
+test('readImportSettings: null template means "use the default" and is passed on', () => {
+  const r = readImportSettings({ checklistTemplate: null });
+  assert.ok('checklistTemplate' in r);
+  assert.strictEqual(r.checklistTemplate, null);
+});
+
+test('readImportSettings: an invalid template is ignored, not applied', () => {
+  assert.ok(!('checklistTemplate' in readImportSettings({ checklistTemplate: [{ phase: 'P' }] })));
+});
+
+test('readImportSettings: fristBuffer must be a non-negative number, rounded down', () => {
+  assert.strictEqual(readImportSettings({ fristBuffer: 0 }).fristBuffer, 0);
+  assert.strictEqual(readImportSettings({ fristBuffer: 4.7 }).fristBuffer, 4);
+  assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: -1 })));
+  assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: '3' })));
+  assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: NaN })));
+  assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: Infinity })));
+});
+
+test('readImportSettings: medlesing keeps only records with an id', () => {
+  const r = readImportSettings({ medlesing: [{ id: 'm1' }, null, { caseNumber: 'x' }, { id: '' }, 'x'] });
+  assert.deepStrictEqual(r.medlesing, [{ id: 'm1' }]);
+  assert.ok(!('medlesing' in readImportSettings({ medlesing: 'nei' })));
+});
+
+test('readImportSettings: a non-string name is ignored; an empty name is passed on', () => {
+  assert.ok(!('userName' in readImportSettings({ userName: 42 })));
+  assert.strictEqual(readImportSettings({ userName: '' }).userName, '');
+});

@@ -7,6 +7,28 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.25.0] - 2026-10-19
+Eksporten, og dermed arbeidsfilen og de daglige kopiene, tar nå med alt du har
+lagt inn selv. Blir nettleseren tømt, får du tilbake hele oppsettet, ikke bare
+sakene.
+
+### Added
+- **Navn, sjekkliste-mal og fristbuffer følger med i eksporten.** De hentes
+  inn igjen når du laster inn en eksportfil, et øyeblikksbilde eller
+  arbeidsfilen med «Erstatt alt». Har du ikke endret sjekkliste-malen, lagres
+  den som «standardmal», slik at du fortsatt får forbedringer i standardmalen
+  i nye versjoner. Eldre eksportfiler uten disse feltene endrer ingenting.
+- **Ingen velkomstdialog etter gjenoppretting.** Når navnet ditt kommer
+  tilbake fra arbeidsfilen etter at nettleseren er tømt, lukkes
+  velkomstdialogen av seg selv.
+
+### Fixed
+- **Medlesingene var ikke med i eksporten.** Dermed var de heller ikke med i
+  arbeidsfilen, de daglige kopiene eller øyeblikksbildene, og de ville gått
+  tapt hvis nettleserdata ble slettet. Nå er de med og hentes inn igjen ved
+  «Erstatt alt». «Flett» rører dem fortsatt ikke, på samme måte som andre
+  data enn sakene.
+
 ## [4.24.0] - 2026-10-19
 Sakene vises nå som et forløpsspor med fire faste steg, og Oversikt viser
 hvor mange saker som står på hvert av dem. Du ser med ett blikk hvor langt
