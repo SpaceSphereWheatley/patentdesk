@@ -1688,9 +1688,16 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-status-btn.active-avsluttet       { background: var(--s-avsl-bg); color: var(--s-avsl-text); border-color: var(--s-avsl-border); }
 .sak-status-btn.active-oppdrag         { background: var(--s-oppdrag-bg); color: var(--s-oppdrag-text); border-color: var(--s-oppdrag-border); }
 
-/* Sjekkliste */
+/* Sjekkliste. Reserveplassen i fase B har gruppeblokker som barn og trenger
+   luft mellom dem; en fases egen liste har enkeltpunkter som barn, og da er
+   den samme avstanden et hull. */
 .sak-checklist      { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
                       gap: var(--space-7) var(--space-8); align-items: start; }
+/* Punktene flyter nedover hver kolonne i stedet for bortover radene: et
+   rutenett lar den høyeste cellen bestemme radhøyden, så lange punkter river
+   opp rytmen. */
+.sak-checklist-flat { display: block; columns: 280px auto; column-gap: var(--space-8); }
+.sak-checklist-flat .sak-check-row { break-inside: avoid; }
 
 /* Saksvisningen på smalere skjerm. Kravtabellen er sju kolonner med fast
    layout, så kravtreet må under den før den klemmes. */
@@ -2116,8 +2123,13 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-tag-display    { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
                       font-size: var(--text-xs); color: var(--muted); cursor: pointer; white-space: nowrap; }
 .sak-tag-display:hover { color: var(--text); }
-.sak-tag-display.sak-tag-empty { opacity: 0; pointer-events: none; }
-tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
+/* Plassholderen er alltid synlig, men dempet: er den usynlig til raden hovres,
+   finnes feltet ikke for den som bruker tastatur. Stiplet strek sier at den kan
+   fylles ut, uten å ta oppmerksomhet fra kravnummeret. */
+.sak-tag-display.sak-tag-empty { opacity: 0.55; border-bottom: 1px dashed var(--border2); }
+tr:hover .sak-tag-display.sak-tag-empty,
+.sak-tag-display.sak-tag-empty:hover,
+.sak-tag-display.sak-tag-empty:focus { opacity: 1; color: var(--text); border-bottom-color: var(--accent); }
 .sak-tag-input      { background: var(--surface2); border: 1px solid var(--accent-dim);
                       color: var(--text); font-family: var(--font-body); font-size: var(--text-xs);
                       padding: 2px var(--space-2); border-radius: var(--radius); width: 90px; }
@@ -3183,6 +3195,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               </div>
             </section>
 
+            <div class="sak-checklist-slot" id="sak-checklist-saken"></div>
+
           </div>
         </section>
 
@@ -3191,7 +3205,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
           <button class="sak-phase-head" id="sak-phase-head-gransking" aria-expanded="true" aria-controls="sak-phase-body-gransking">
             <span class="sak-phase-key">B</span>
             <span class="sak-phase-name">Gransking</span>
-            <span class="sak-phase-desc">Klassifisering og fremdrift</span>
+            <span class="sak-phase-desc">Klasser og søk</span>
             <span class="sak-phase-chev" aria-hidden="true">▾</span>
           </button>
           <div class="sak-phase-body" id="sak-phase-body-gransking">
@@ -3220,10 +3234,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               </div>
             </section>
 
-            <section class="sak-section" data-sak-section="checklist">
-              <h2 class="sak-section-title">Sjekkliste</h2>
-              <div id="sak-checklist" class="sak-checklist"></div>
-            </section>
+            <div class="sak-checklist-slot" id="sak-checklist-gransking"></div>
+            <div class="sak-checklist-slot" id="sak-checklist-rest"></div>
 
           </div>
         </section>
@@ -3278,6 +3290,8 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
               <div id="sak-docs-mothold" class="mh-list"></div>
               <button class="mh-add" id="btn-mothold-add"><svg class="ti" aria-hidden="true"><use href="#ti-plus"/></svg> Legg til mothold</button>
             </section>
+
+            <div class="sak-checklist-slot" id="sak-checklist-vurdering"></div>
 
           </div>
         </section>
@@ -3909,7 +3923,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.25.1';
+var APP_VERSION    = 'v4.26.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5449,14 +5463,23 @@ function dispatch(action, payload) {
   noteSaved();
 }
 
+function savedLabelText(d) {
+  return 'Lagret ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
 // Alt lagres stille og umiddelbart. Indikatoren er der bare for å bekrefte at
-// det faktisk skjedde — uten å be om oppmerksomhet.
+// det faktisk skjedde — uten å be om oppmerksomhet. Den toner ut igjen: blir
+// den stående, viser den etter hvert et klokkeslett som ikke lenger sier noe
+// om det du nettopp gjorde.
+var SAVED_VISIBLE_MS = 4000;
+var _savedHideTimer = null;
 function noteSaved() {
   var el = document.getElementById('sak-saved');
   if (!el || activePage !== 'sak') return;
-  var d = new Date();
-  el.textContent = 'Lagret ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  el.textContent = savedLabelText(new Date());
   el.classList.add('is-on');
+  clearTimeout(_savedHideTimer);
+  _savedHideTimer = setTimeout(function() { el.classList.remove('is-on'); }, SAVED_VISIBLE_MS);
 }
 
 function _dispatch(action, payload) {
@@ -7901,6 +7924,14 @@ function claimFieldAriaLabel(claimNum, kind) {
   return 'Krav ' + claimNum + (what ? ' — ' + what : '');
 }
 
+// Visningen av etiketten er en knapp som åpner redigering. Et rent «Krav 2 —
+// etikett» ville overstyrt teksten i knappen, slik at en utfylt etikett aldri
+// ble lest opp — så verdien må være med i navnet.
+function claimLabelAriaLabel(claimNum, label) {
+  var v = (label || '').trim();
+  return claimFieldAriaLabel(claimNum, 'label') + (v ? ': ' + v : ' (ikke satt)');
+}
+
 // Tri-state-knappene i kravstabellen viser bare en glyf, så de trenger et
 // tilgjengelig navn som sier hvilket krav og hvilken kolonne de hører til.
 function triAriaLabel(claimNum, field, val, isCascade, isLocked) {
@@ -8183,6 +8214,8 @@ function renderSak(id) {
     }
   });
 
+  renderSakChecklist(isOppdrag ? null : data);
+
   // Seksjoner skjules på data-sak-section, ikke på overskriftsteksten — den
   // endrer seg, attributtet gjør det ikke.
   document.querySelectorAll('.sak-section[data-sak-section]').forEach(function(sec) {
@@ -8203,7 +8236,6 @@ function renderSak(id) {
     document.getElementById('sak-num-claims').value        = data.numClaims || '';
     document.getElementById('sak-filing-date').textContent = toDisplay(data.filingDate) || '—';
 
-    renderSakChecklist(data);
     renderSakClasses(data);
     renderSakAssessment(data);
   } else {
@@ -8226,6 +8258,7 @@ function renderSak(id) {
   renderSakFileList(data);
 
   var savedEl = document.getElementById('sak-saved');
+  clearTimeout(_savedHideTimer);
   if (savedEl) { savedEl.textContent = ''; savedEl.classList.remove('is-on'); }
 
   // Sticky-bar: uten sammendrag finnes ingen sentinel å observere
@@ -8435,21 +8468,81 @@ function renderSakFileList(data) {
   }).join('');
 }
 
-function renderSakChecklist(data) {
-  var el = document.getElementById('sak-checklist');
-  el.innerHTML = getChecklistTemplate().map(function(phase) {
-    var items = phase.items.map(function(item) {
-      var checked = data.checklist[item.id] === true;
-      return '<label class="sak-check-row sak-check-clickable' + (checked ? ' sak-check-done' : '') + '">' +
-        '<input type="checkbox" class="sak-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + ' />' +
-        '<span class="sak-check-label">' + esc(item.label) + '</span>' +
-      '</label>';
-    }).join('');
-    return '<div class="sak-check-phase">' +
-      '<div class="sak-check-phase-title">' + esc(phase.phase) + '</div>' +
-      items +
-    '</div>';
+// Sjekklistens egne grupper — Forberedelse, Gransking, Rapport — er de samme
+// stegene som sakssiden deler seg inn i som fase A, B og C. Lå hele listen i
+// fase B, sto «Rapport»-punktene en fase unna rapporten de gjelder. Gruppene
+// legges derfor i fasen de hører til. Malen er brukerens egen, så en gruppe vi
+// ikke kjenner igjen havner samlet i fase B, der hele listen lå før — ingen
+// punkter forsvinner av at noen har døpt om en gruppe.
+var CHECKLIST_PHASE_MAP = {
+  'forberedelse': 'saken',
+  'gransking':    'gransking',
+  'rapport':      'vurdering'
+};
+
+function checklistGroupPhase(name) {
+  var key = String(name == null ? '' : name).trim().toLowerCase();
+  return Object.prototype.hasOwnProperty.call(CHECKLIST_PHASE_MAP, key)
+    ? CHECKLIST_PHASE_MAP[key] : null;
+}
+
+function groupChecklistByPhase(template) {
+  var out = { saken: [], gransking: [], vurdering: [], rest: [] };
+  (template || []).forEach(function(g) {
+    out[checklistGroupPhase(g.phase) || 'rest'].push(g);
+  });
+  return out;
+}
+
+function _checklistItemsHtml(data, group) {
+  return group.items.map(function(item) {
+    var checked = data.checklist[item.id] === true;
+    return '<label class="sak-check-row sak-check-clickable' + (checked ? ' sak-check-done' : '') + '">' +
+      '<input type="checkbox" class="sak-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + ' />' +
+      '<span class="sak-check-label">' + esc(item.label) + '</span>' +
+    '</label>';
   }).join('');
+}
+
+// Én gruppe per fase er normalen, og da er gruppenavnet seksjonens overskrift.
+// Reserveplassen i fase B kan ha flere, og beholder da gruppetitlene inni.
+function _checklistSlotHtml(data, groups, fallbackTitle) {
+  if (!groups.length) return '';
+  if (fallbackTitle) {
+    var inner = groups.map(function(g) {
+      return '<div class="sak-check-phase">' +
+        '<div class="sak-check-phase-title">' + esc(g.phase) + '</div>' +
+        _checklistItemsHtml(data, g) +
+      '</div>';
+    }).join('');
+    return '<section class="sak-section" data-sak-section="checklist">' +
+      '<h2 class="sak-section-title">' + esc(fallbackTitle) + '</h2>' +
+      '<div class="sak-checklist">' + inner + '</div>' +
+    '</section>';
+  }
+  return groups.map(function(g) {
+    return '<section class="sak-section" data-sak-section="checklist">' +
+      '<h2 class="sak-section-title">' + esc(g.phase) + '</h2>' +
+      '<div class="sak-checklist sak-checklist-flat">' + _checklistItemsHtml(data, g) + '</div>' +
+    '</section>';
+  }).join('');
+}
+
+function renderSakChecklist(data) {
+  if (!data) {
+    ['saken', 'gransking', 'vurdering', 'rest'].forEach(function(slot) {
+      var el = document.getElementById('sak-checklist-' + slot);
+      if (el) el.innerHTML = '';
+    });
+    return;
+  }
+  var g = groupChecklistByPhase(getChecklistTemplate());
+  ['saken', 'gransking', 'vurdering'].forEach(function(phase) {
+    var el = document.getElementById('sak-checklist-' + phase);
+    if (el) el.innerHTML = _checklistSlotHtml(data, g[phase], null);
+  });
+  var rest = document.getElementById('sak-checklist-rest');
+  if (rest) rest.innerHTML = _checklistSlotHtml(data, g.rest, 'Sjekkliste');
 }
 
 // ── Medlesing ───────────────────────────────────────
@@ -8843,7 +8936,8 @@ function claimRowHtml(data, c) {
     // Label cell
     var labelCell = (c.num === _sakEditingLabelNum)
       ? '<input class="sak-tag-input" type="text" data-claim="' + c.num + '" value="' + esc(c.label || '') + '" placeholder="Etikett…" aria-label="' + esc(claimFieldAriaLabel(c.num, 'label')) + '" />'
-      : '<span class="sak-tag-display' + (!c.label ? ' sak-tag-empty' : '') + '" data-claim-label="' + c.num + '">' + esc(c.label || 'etikett') + '</span>';
+      : '<span class="sak-tag-display' + (!c.label ? ' sak-tag-empty' : '') + '" data-claim-label="' + c.num + '"' +
+        ' tabindex="0" role="button" aria-label="' + esc(claimLabelAriaLabel(c.num, c.label)) + '">' + esc(c.label || 'etikett') + '</span>';
 
     return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + ' data-claim="' + c.num + '">' +
       '<td class="sak-td-krav"><strong>' + c.num + '</strong></td>' +
@@ -9447,7 +9541,7 @@ document.getElementById('sak-num-claims').addEventListener('change', function() 
   dispatch('SAK_CLAIM_COUNT_CHANGE', { id: id, count: Math.max(0, parseInt(this.value, 10) || 0) });
 });
 
-document.getElementById('sak-checklist').addEventListener('change', function(e) {
+document.getElementById('view-sak').addEventListener('change', function(e) {
   var cb = e.target.closest('.sak-checkbox'); if (!cb) return;
   var id = activeSakId; if (!id) return;
   var label = cb.closest('.sak-check-row');
@@ -9726,7 +9820,11 @@ function sakClaimCursorActive() {
   // 1–5 og ? bety det de betyr ellers i appen. Dette er også det
   // snarveismodalen lover — «tabb inn i den eller klikk en ja/nei-knapp».
   var tbody = document.getElementById('sak-claims-tbody');
-  return !!(tbody && tbody.contains(document.activeElement));
+  var el    = document.activeElement;
+  if (!tbody || !el || !tbody.contains(el)) return false;
+  // Etikettvisningen svarer selv på Enter og mellomrom. Står fokus der, skal
+  // ikke markøren i tillegg slå om en verdi på raden den tilfeldigvis står på.
+  return !(el.closest && el.closest('.sak-tag-display'));
 }
 
 function paintClaimCursor() {
@@ -9839,6 +9937,13 @@ document.getElementById('sak-claims-tbody').addEventListener('blur', function(e)
     id: id, claimNum: parseInt(inp.dataset.claim, 10), label: inp.value.trim()
   });
 }, true);
+
+document.getElementById('sak-claims-tbody').addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  var span = e.target.closest('.sak-tag-display'); if (!span) return;
+  e.preventDefault();
+  span.click();
+});
 
 document.getElementById('sak-claims-tbody').addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;

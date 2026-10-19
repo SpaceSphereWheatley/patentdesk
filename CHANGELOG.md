@@ -7,6 +7,39 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.26.0] - 2026-10-19
+Sjekklisten ligger nå i fasen den hører til, i stedet for samlet under
+Gransking. «Rapport»-punktene står rett under granskingsrapporten,
+forberedelsespunktene sammen med saksopplysningene. Kravetiketten er
+synlig uten å måtte lete etter den.
+
+### Changed
+- **Sjekklisten er fordelt på fasene.** Sjekklisten var delt i Forberedelse,
+  Gransking og Rapport — de samme stegene som sakssiden deler seg inn i som
+  A, B og C — men hele listen lå inni fase B. «Rapport»-punktene sto dermed
+  en fase unna rapporten de gjelder, og forberedelsespunktene en fase unna
+  saksopplysningene. Hver gruppe ligger nå i sin egen fase. Har du endret
+  sjekkliste-malen og gitt gruppene andre navn, samles de der hele listen lå
+  før, nederst i Gransking — ingen punkter forsvinner, og malen redigeres som
+  før. Avkryssingene dine er uendret.
+- **Fase B heter nå «Klasser og søk».** Den beskrev seg selv som
+  «Klassifisering og fremdrift», men fremdriften er ikke lenger dens alene.
+
+### Fixed
+- **Kravetiketten var usynlig til du hovret over raden.** Feltet var helt
+  gjennomsiktig og dukket bare opp når musepekeren var over kravet, så det
+  gikk ikke an å se at det fantes — og med tastatur fikk du det aldri å se.
+  Plassholderen er nå alltid synlig, dempet og med en stiplet strek som viser
+  at den kan fylles ut. Den kan også nås med tabulator og åpnes med Enter
+  eller mellomrom.
+- **«Lagret 12:34» ble stående for alltid.** Indikatoren ble tent ved hver
+  lagring, men slukket aldri, så den viste etter hvert et klokkeslett som
+  ikke sa noe om det du nettopp hadde gjort. Den toner nå ut etter noen
+  sekunder, og tennes på nytt ved neste lagring.
+- **Skjermleser leste ikke opp etiketter som var fylt ut.** Etikettens navn
+  overstyrte verdien, så «fremgangsmåte» ble aldri lest opp. Verdien er nå
+  med i navnet.
+
 ## [4.25.1] - 2026-10-19
 Opprydding etter omleggingen av sakssiden: tekst du skriver blir ikke
 lenger borte når du forlater siden, tastatursnarveiene i kravtabellen
