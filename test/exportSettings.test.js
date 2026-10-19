@@ -4,7 +4,8 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { readImportSettings, isValidChecklistTemplate } = loadFunctions(
-  ['readImportSettings', 'isValidChecklistTemplate']
+  ['readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter'],
+  { vars: ['HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS'] }
 );
 
 const TPL = [
@@ -71,4 +72,14 @@ test('readImportSettings: medlesing keeps only records with an id', () => {
 test('readImportSettings: a non-string name is ignored; an empty name is passed on', () => {
   assert.ok(!('userName' in readImportSettings({ userName: 42 })));
   assert.strictEqual(readImportSettings({ userName: '' }).userName, '');
+});
+
+test('readImportSettings: the Oversikt deadline filter is read and normalised', () => {
+  const r = readImportSettings({ homeDeadlineFilter: { fristarkiv: { overdue: true }, horizon: 30 } });
+  assert.strictEqual(r.homeDeadlineFilter.fristarkiv.overdue, true);
+  assert.strictEqual(r.homeDeadlineFilter.fristarkiv.upcoming, false);
+  assert.strictEqual(r.homeDeadlineFilter.ny.upcoming, true);
+  assert.strictEqual(r.homeDeadlineFilter.horizon, 30);
+  assert.ok(!('homeDeadlineFilter' in readImportSettings({ homeDeadlineFilter: 'x' })));
+  assert.ok(!('homeDeadlineFilter' in readImportSettings({})));
 });
