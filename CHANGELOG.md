@@ -7,6 +7,31 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.27.0] - 2026-10-19
+Oversikt har nå én samlet fristliste, og du velger selv hva den skal vise.
+
+### Added
+- **Filter på fristlista.** «Filter ▾» ved siden av overskriften åpner et
+  lite rutenett der du krysser av forfalte og kommende frister for hver type
+  for seg: førstesøknader (Ny), viderebehandlinger, svarfrister i Fristarkiv
+  og oppdrag. Du kan også begrense de kommende til 14, 30, 60 eller 90 dager.
+  Forfalte frister vises uansett denne grensen. Endringene gjelder med én
+  gang og blir husket. De følger også med i eksporten og arbeidsfilen.
+  «Tilbakestill» gir standardvalget: alt unntatt svarfrister, uten
+  tidsgrense.
+- **Linjen «Viser: …»** under overskriften sier hva lista tar med, så du ikke
+  glemmer at noe er filtrert bort.
+
+### Changed
+- **«Kommende frister» og «Viderebehandlinger over frist» er slått sammen**
+  til én liste, «Frister», sortert etter dato med de eldste forfalte øverst.
+  Forfalte står i rødt som før. Lista har ikke lenger tak på 8 og 3 rader,
+  og forfalte førstesøknader forsvinner ikke etter 30 dager. Kommende
+  viderebehandlinger vises nå også.
+- **Svarfrister i lista** beholder den stiplede, nøytrale stilen fordi
+  fristen er søkerens. Er den passert, står teksten i rødt. Svarfristene
+  påvirker fortsatt ikke belegg eller fristvarsel.
+
 ## [4.26.0] - 2026-10-19
 Sjekklisten ligger nå i fasen den hører til, i stedet for samlet under
 Gransking. «Rapport»-punktene står rett under granskingsrapporten,

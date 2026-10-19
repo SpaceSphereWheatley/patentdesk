@@ -1189,7 +1189,34 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 
 .home-upcoming { display: flex; flex-direction: column; gap: var(--space-2); }
-.home-upcoming-divider { font-size: var(--text-2xs); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--muted); font-weight: var(--weight-semibold); margin: var(--space-5) 0 var(--space-2); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+/* Fristlista: tittel med filterknapp, og en linje som sier hva som vises */
+.home-dl-head        { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.home-dl-count       { font-family: var(--font-body); font-size: var(--text-xs); font-weight: normal; color: var(--muted); }
+.home-dl-summary     { font-size: var(--text-xs); color: var(--muted); margin-top: calc(-1 * var(--space-2)); }
+.home-dl-filter-wrap { position: relative; }
+.home-dl-filter-btn  { background: none; border: 1px solid var(--border2); color: var(--muted); font-family: var(--font-body);
+                       font-size: var(--text-xs); padding: var(--space-1) var(--space-4); border-radius: var(--radius-sm); cursor: pointer;
+                       transition: color var(--dur-base), border-color var(--dur-base); }
+.home-dl-filter-btn:hover, .home-dl-filter-btn[aria-expanded="true"] { color: var(--text); border-color: var(--text); }
+.home-dl-filter      { position: absolute; right: 0; top: calc(100% + 4px); z-index: 100; min-width: 280px;
+                       background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
+                       box-shadow: var(--shadow-toast); padding: var(--space-4) var(--space-5);
+                       display: flex; flex-direction: column; gap: var(--space-4); font-size: var(--text-sm); }
+.home-dl-filter[hidden] { display: none; }
+.home-dl-grid        { border-collapse: collapse; width: 100%; }
+.home-dl-grid th, .home-dl-grid td { padding: var(--space-2) var(--space-2); text-align: center; }
+.home-dl-grid thead th { font-size: var(--text-2xs); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--muted); font-weight: var(--weight-semibold); }
+.home-dl-grid tbody th { text-align: left; font-weight: normal; color: var(--text); white-space: nowrap; }
+.home-dl-grid input  { cursor: pointer; accent-color: var(--accent); }
+.home-dl-horizon     { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); color: var(--muted); font-size: var(--text-xs);
+                       padding-top: var(--space-3); border-top: 1px solid var(--border); }
+.home-dl-horizon select { font-family: var(--font-body); font-size: var(--text-xs); background: var(--surface2); color: var(--text);
+                       border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: var(--space-1) var(--space-2); }
+.home-dl-reset       { align-self: flex-start; background: none; border: none; padding: 0; color: var(--muted); font-family: var(--font-body);
+                       font-size: var(--text-xs); text-decoration: underline; cursor: pointer; }
+.home-dl-reset:hover { color: var(--text); }
+/* Søkerens frist er fortsatt stiplet og ikke din, men er den passert, står den i rødt */
+.days-badge.theirs.theirs-overdue { color: var(--badge-overdue-text); }
 .home-upcoming-row {
   display: flex;
   align-items: center;
@@ -2698,12 +2725,43 @@ tr:hover .sak-tag-display.sak-tag-empty,
         </section>
 
         <section class="home-section">
-          <h2 class="home-section-title">Kommende frister</h2>
-          <div id="home-upcoming-list" class="home-upcoming"></div>
-          <div id="home-upcoming-low-section" style="display:none;">
-            <div class="home-upcoming-divider">Viderebehandlinger over frist</div>
-            <div id="home-upcoming-low-list" class="home-upcoming"></div>
+          <div class="home-dl-head">
+            <h2 class="home-section-title">Frister <span class="home-dl-count" id="home-dl-count"></span></h2>
+            <div class="home-dl-filter-wrap">
+              <button type="button" class="home-dl-filter-btn" id="home-dl-filter-btn" aria-expanded="false" aria-controls="home-dl-filter">Filter ▾</button>
+              <div class="home-dl-filter" id="home-dl-filter" role="dialog" aria-label="Velg frister" hidden>
+                <table class="home-dl-grid">
+                  <thead><tr><th></th><th scope="col">Forfalt</th><th scope="col">Kommende</th></tr></thead>
+                  <tbody>
+                    <tr><th scope="row">Førstesøknad (Ny)</th>
+                      <td><input type="checkbox" data-kind="ny" data-when="overdue" aria-label="Førstesøknad, forfalt"></td>
+                      <td><input type="checkbox" data-kind="ny" data-when="upcoming" aria-label="Førstesøknad, kommende"></td></tr>
+                    <tr><th scope="row">Viderebehandling</th>
+                      <td><input type="checkbox" data-kind="viderebehandling" data-when="overdue" aria-label="Viderebehandling, forfalt"></td>
+                      <td><input type="checkbox" data-kind="viderebehandling" data-when="upcoming" aria-label="Viderebehandling, kommende"></td></tr>
+                    <tr><th scope="row">Svarfrist (Fristarkiv)</th>
+                      <td><input type="checkbox" data-kind="fristarkiv" data-when="overdue" aria-label="Svarfrist, forfalt"></td>
+                      <td><input type="checkbox" data-kind="fristarkiv" data-when="upcoming" aria-label="Svarfrist, kommende"></td></tr>
+                    <tr><th scope="row">Oppdrag</th>
+                      <td><input type="checkbox" data-kind="oppdrag" data-when="overdue" aria-label="Oppdrag, forfalt"></td>
+                      <td><input type="checkbox" data-kind="oppdrag" data-when="upcoming" aria-label="Oppdrag, kommende"></td></tr>
+                  </tbody>
+                </table>
+                <label class="home-dl-horizon">Kommende innen
+                  <select id="home-dl-horizon">
+                    <option value="14">14 dager</option>
+                    <option value="30">30 dager</option>
+                    <option value="60">60 dager</option>
+                    <option value="90">90 dager</option>
+                    <option value="0">alle</option>
+                  </select>
+                </label>
+                <button type="button" class="home-dl-reset" id="home-dl-reset">Tilbakestill</button>
+              </div>
+            </div>
           </div>
+          <div class="home-dl-summary" id="home-dl-summary"></div>
+          <div id="home-upcoming-list" class="home-upcoming"></div>
         </section>
       </div>
 
@@ -3923,7 +3981,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.26.0';
+var APP_VERSION    = 'v4.27.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3937,6 +3995,7 @@ var STATS_KEY    = 'pt_stats';
 var GOAL_KEY     = 'pt_goal';
 var BELEGG_KEY   = 'pt_belegg_horizon';
 var BUFFER_KEY   = 'pt_frist_buffer';
+var HOME_DEADLINE_KEY = 'pt_home_frister';
 var AUTOSAVE_KEY = 'pt_autosave';
 var SAK_KEY_PREFIX = 'pt_sak_';
 
@@ -4693,6 +4752,7 @@ function makeExportPayload() {
     // fortsatt følger med når standardmalen endres i en ny versjon
     checklistTemplate: _customChecklistTemplate(),
     fristBuffer: fristBuffer,
+    homeDeadlineFilter: homeDeadlineFilter,
     medlesing:  medlesing
   };
 }
@@ -4712,7 +4772,8 @@ function _customChecklistTemplate() {
   } catch(e) { return null; }
 }
 
-// Navn, sjekkliste-mal, fristbuffer og medlesinger fra en eksportfil, validert.
+// Navn, sjekkliste-mal, fristbuffer, medlesinger og fristfilteret på Oversikt
+// fra en eksportfil, validert.
 // Bare felt som finnes og er gyldige tas med, så eldre filer uten feltene ikke
 // endrer noe. checklistTemplate: null betyr «bruk standardmalen».
 function readImportSettings(d) {
@@ -4728,7 +4789,81 @@ function readImportSettings(d) {
       return m && typeof m === 'object' && typeof m.id === 'string' && m.id !== '';
     });
   }
+  if (d.homeDeadlineFilter && typeof d.homeDeadlineFilter === 'object') {
+    out.homeDeadlineFilter = normalizeHomeDeadlineFilter(d.homeDeadlineFilter);
+  }
   return out;
+}
+
+// ── Fristlista på Oversikt ─────────────────────────
+// Én liste med de fristene du selv velger: per sakstype kan forfalte og
+// kommende slås av og på hver for seg. Fristarkiv er søkerens svarfrist og er
+// derfor av som standard. horizon begrenser bare kommende (0 = ingen grense) —
+// forfalte vises alltid, så en glemt frist ikke kan gjemme seg bak grensen.
+// Rene funksjoner — se test/homeDeadlines.test.js.
+var HOME_DEADLINE_KINDS    = ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag'];
+var HOME_DEADLINE_HORIZONS = [0, 14, 30, 60, 90];
+
+function defaultHomeDeadlineFilter() {
+  return {
+    ny:               { overdue: true,  upcoming: true },
+    viderebehandling: { overdue: true,  upcoming: true },
+    fristarkiv:       { overdue: false, upcoming: false },
+    oppdrag:          { overdue: true,  upcoming: true },
+    horizon: 0
+  };
+}
+
+function normalizeHomeDeadlineFilter(raw) {
+  var f = defaultHomeDeadlineFilter();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return f;
+  HOME_DEADLINE_KINDS.forEach(function(k) {
+    var r = raw[k];
+    if (!r || typeof r !== 'object') return;
+    if (typeof r.overdue === 'boolean')  f[k].overdue  = r.overdue;
+    if (typeof r.upcoming === 'boolean') f[k].upcoming = r.upcoming;
+  });
+  if (HOME_DEADLINE_HORIZONS.indexOf(raw.horizon) !== -1) f.horizon = raw.horizon;
+  return f;
+}
+
+// Hvilken rad i filteret en sak hører til; null for avsluttede saker og oppdrag
+function homeDeadlineKind(c) {
+  if (!c || c.status === 'avsluttet') return null;
+  if (c.type === 'oppdrag') return 'oppdrag';
+  return HOME_DEADLINE_KINDS.indexOf(c.status) !== -1 ? c.status : null;
+}
+
+// daysFn(c) gir dager til sakens frist (negativt = forfalt). Gir [{c, d, kind}]
+// sortert etter frist, eldste forfalte først.
+function selectHomeDeadlines(list, filter, daysFn) {
+  var rows = [];
+  list.forEach(function(c) {
+    var kind = homeDeadlineKind(c);
+    if (!kind) return;
+    var d = daysFn(c);
+    if (typeof d !== 'number' || !isFinite(d)) return;
+    var sel = filter[kind];
+    if (d < 0 ? !sel.overdue : (!sel.upcoming || (filter.horizon && d > filter.horizon))) return;
+    rows.push({ c: c, d: d, kind: kind });
+  });
+  rows.sort(function(a, b) { return a.d - b.d; });
+  return rows;
+}
+
+// Kort tekst som sier hva lista viser, så et skjult valg ikke glemmes
+function homeDeadlineFilterSummary(filter) {
+  var names = { ny: 'Førstesøknader', viderebehandling: 'Viderebehandlinger', fristarkiv: 'Svarfrister', oppdrag: 'Oppdrag' };
+  var parts = [];
+  HOME_DEADLINE_KINDS.forEach(function(k) {
+    var s = filter[k];
+    if (s.overdue && s.upcoming) parts.push(names[k]);
+    else if (s.overdue)          parts.push(names[k] + ' (forfalte)');
+    else if (s.upcoming)         parts.push(names[k] + ' (kommende)');
+  });
+  if (!parts.length) return 'Ingenting valgt';
+  if (filter.horizon) parts.push('kommende innen ' + filter.horizon + ' dager');
+  return parts.join(' · ');
 }
 
 // ── Saksmappe ──────────────────────────────────────
@@ -5062,6 +5197,13 @@ function saveFristBuffer(val) {
   try { localStorage.setItem(BUFFER_KEY, String(val)); }
   catch(e) { showToast('✗ Lagring feilet', true); }
 }
+function loadHomeDeadlineFilter() {
+  try { return normalizeHomeDeadlineFilter(JSON.parse(localStorage.getItem(HOME_DEADLINE_KEY))); }
+  catch(e) { return defaultHomeDeadlineFilter(); }
+}
+function saveHomeDeadlineFilter(f) {
+  lsSetSafe(HOME_DEADLINE_KEY, JSON.stringify(f));
+}
 // bufferAppliesTo: om fristbufferen — global eller per sak — skal gjelde for en
 // sak. Oppdrag viser alltid faktisk frist. Det samme gjør saker i Fristarkiv:
 // der er poenget nettopp å forholde seg til den reelle fristen, så verken den
@@ -5391,6 +5533,7 @@ var vacations = loadVacations();
 var productionGoal = loadGoal();
 var beleggHorizon  = loadBeleggHorizon();
 var fristBuffer    = loadFristBuffer();
+var homeDeadlineFilter = loadHomeDeadlineFilter();
 var _tlConfig = {
   'home-timeline':  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
   'cases-timeline': { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
@@ -5911,6 +6054,13 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'HOME_DEADLINE_FILTER_SET': {
+      homeDeadlineFilter = normalizeHomeDeadlineFilter(payload.filter);
+      saveHomeDeadlineFilter(homeDeadlineFilter);
+      if (activePage === 'hjem') renderHomeDeadlines();
+      break;
+    }
+
     case 'SETTINGS_DOC_ROOT_CHANGE': {
       saveDocRoot(payload.value);
       showToast('✓ Saksmappe-rot lagret');
@@ -6049,6 +6199,7 @@ function _dispatch(action, payload) {
         }
         if ('fristBuffer' in s) { fristBuffer = s.fristBuffer; saveFristBuffer(fristBuffer); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
+        if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
       }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
@@ -10081,40 +10232,38 @@ function renderHjem() {
   renderTimeline();
   renderBeleggCard();
 
-  // ── Kommende frister (liste) ───────────────────────
-  function isHighPri(c) {
-    return c.type === 'oppdrag' ? c.status !== 'avsluttet' : c.status === 'ny';
-  }
-  function isLowPri(c) {
-    if (c.type === 'oppdrag') return false;
-    return c.status === 'viderebehandling' && daysUntil(effDueFor(c)) < 0;
-  }
-  function byDue(a, b) { return daysUntil(effDueFor(a)) - daysUntil(effDueFor(b)); }
+  renderHomeDeadlines();
+}
 
-  var highPool = cases.filter(isHighPri).sort(byDue)
-    .filter(function(c) { return daysUntil(effDueFor(c)) >= -30; });
-  var lowPool  = cases.filter(isLowPri).sort(byDue)
-    .filter(function(c) { return c.status !== 'avsluttet'; });
-
-  // Overdue viderebehandlinger sorteres alltid øverst i lavpri-seksjonen
-  lowPool.sort(function(a, b) {
-    var aOverdue = a.status === 'viderebehandling' && daysUntil(effDueFor(a)) < 0 ? 0 : 1;
-    var bOverdue = b.status === 'viderebehandling' && daysUntil(effDueFor(b)) < 0 ? 0 : 1;
-    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
-    return byDue(a, b);
+// ── Fristlista på Oversikt ─────────────────────────
+// Én liste sortert etter frist. Hva som er med, styres av homeDeadlineFilter
+// (se selectHomeDeadlines); forfalte står i rødt der de er i lista.
+function renderHomeDeadlines() {
+  var list    = document.getElementById('home-upcoming-list');
+  var countEl = document.getElementById('home-dl-count');
+  var sumEl   = document.getElementById('home-dl-summary');
+  if (!list) return;
+  var rows = selectHomeDeadlines(cases, homeDeadlineFilter, function(c) {
+    return c.dueDate ? daysUntil(effDueFor(c)) : NaN;
   });
+  if (countEl) countEl.textContent = rows.length ? '(' + rows.length + ')' : '';
+  if (sumEl)   sumEl.textContent   = 'Viser: ' + homeDeadlineFilterSummary(homeDeadlineFilter);
 
-  var highItems = highPool.slice(0, 8);
-  var lowItems  = lowPool.slice(0, 3);
-
-  function renderRow(c) {
-    var isOppdrag = c.type === 'oppdrag';
-    var effDue  = effDueFor(c);
-    var d       = daysUntil(effDue);
-    var cls     = d < 0 ? 'overdue' : d <= 3 ? 'urgent' : d <= 14 ? 'soon' : 'ok';
+  function renderRow(r) {
+    var c = r.c, d = r.d;
+    var isOppdrag = r.kind === 'oppdrag';
+    var cls  = d < 0 ? 'overdue' : d <= 3 ? 'urgent' : d <= 14 ? 'soon' : 'ok';
+    var tips = [];
+    // I Fristarkiv er fristen søkerens: stiplet og nøytral, men rød når den er passert
+    if (r.kind === 'fristarkiv') {
+      cls = 'theirs' + (d < 0 ? ' theirs-overdue' : '');
+      tips.push(d < 0 ? 'Søkerens svarfrist er passert' : 'Søkerens svarfrist — ikke din arbeidsfrist');
+    }
+    if (periodOverlapsVacation(c)) tips.push('Perioden overlapper ferie');
     var vacBadge = periodOverlapsVacation(c) ? '<span class="vac-badge" title="Perioden overlapper ferie">⛱</span>' : '';
     return '<div class="home-upcoming-row" data-id="' + c.id + '" data-page="' + (isOppdrag ? 'oppdrag' : c.status) + '">' +
-      '<span class="days-badge ' + cls + '">' + (d < 0 ? Math.abs(d)+'d forfalt' : d === 0 ? 'I dag' : d+'d') + '</span>' +
+      '<span class="days-badge ' + cls + '"' + (tips.length ? ' title="' + esc(tips.join(' · ')) + '"' : '') + '>' +
+        (d < 0 ? Math.abs(d)+'d forfalt' : d === 0 ? 'I dag' : d+'d') + '</span>' +
       '<span class="home-upcoming-cn' + (isOppdrag ? ' case-card-cn-oppdrag' : '') + '">' + esc(c.caseNumber) + '</span>' +
       '<span class="home-upcoming-title">' + esc(c.title) + '</span>' +
       vacBadge +
@@ -10125,22 +10274,23 @@ function renderHjem() {
     '</div>';
   }
 
-  var list = document.getElementById('home-upcoming-list');
-  var lowSection = document.getElementById('home-upcoming-low-section');
-  var lowList    = document.getElementById('home-upcoming-low-list');
-
-  if (!highItems.length && !lowItems.length) {
-    list.innerHTML = '<p class="home-empty">Ingen aktive saker.</p>';
-    lowSection.style.display = 'none';
+  if (!rows.length) {
+    var nothing = homeDeadlineFilterSummary(homeDeadlineFilter) === 'Ingenting valgt';
+    list.innerHTML = '<p class="home-empty">' + (nothing
+      ? 'Ingen fristtyper er valgt. Åpne «Filter» for å velge hva som skal vises.'
+      : 'Ingen frister med dette filteret.') + '</p>';
     return;
   }
-  list.innerHTML = highItems.length ? highItems.map(renderRow).join('') : '<p class="home-empty">Ingen førstesøknader eller oppdrag.</p>';
-  if (lowItems.length) {
-    lowSection.style.display = '';
-    lowList.innerHTML = lowItems.map(renderRow).join('');
-  } else {
-    lowSection.style.display = 'none';
-  }
+  list.innerHTML = rows.map(renderRow).join('');
+}
+
+function syncHomeDeadlineFilterUi() {
+  var panel = document.getElementById('home-dl-filter');
+  if (!panel) return;
+  panel.querySelectorAll('input[data-kind]').forEach(function(inp) {
+    inp.checked = !!homeDeadlineFilter[inp.dataset.kind][inp.dataset.when];
+  });
+  document.getElementById('home-dl-horizon').value = String(homeDeadlineFilter.horizon);
 }
 
 // ── Arbeidsplan-tidslinje ──────────────────────────
@@ -12251,7 +12401,39 @@ function handleHomeListClick(e) {
   navigateTo('sak/' + row.dataset.id);
 }
 document.getElementById('home-upcoming-list').addEventListener('click', handleHomeListClick);
-document.getElementById('home-upcoming-low-list').addEventListener('click', handleHomeListClick);
+
+// ── Hjem: filter for fristlista ───────────────────
+(function() {
+  var btn   = document.getElementById('home-dl-filter-btn');
+  var panel = document.getElementById('home-dl-filter');
+  function setOpen(open) {
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) syncHomeDeadlineFilterUi();
+  }
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    setOpen(panel.hidden);
+  });
+  // Hver endring gjelder med én gang; panelet blir stående åpent
+  panel.addEventListener('change', function(e) {
+    var f = normalizeHomeDeadlineFilter(homeDeadlineFilter);
+    var t = e.target;
+    if (t.dataset.kind) f[t.dataset.kind][t.dataset.when] = t.checked;
+    else if (t.id === 'home-dl-horizon') f.horizon = parseInt(t.value, 10);
+    dispatch('HOME_DEADLINE_FILTER_SET', { filter: f });
+  });
+  document.getElementById('home-dl-reset').addEventListener('click', function() {
+    dispatch('HOME_DEADLINE_FILTER_SET', { filter: defaultHomeDeadlineFilter() });
+    syncHomeDeadlineFilterUi();
+  });
+  document.addEventListener('click', function(e) {
+    if (!panel.hidden && !e.target.closest('.home-dl-filter-wrap')) setOpen(false);
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !panel.hidden) { setOpen(false); btn.focus(); }
+  });
+})();
 
 // ── Tidslinje: hover-popup + klikk-navigasjon ──────
 (function() {
