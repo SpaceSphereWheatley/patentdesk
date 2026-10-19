@@ -7,6 +7,39 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.25.1] - 2026-10-19
+Opprydding etter omleggingen av sakssiden: tekst du skriver blir ikke
+lenger borte når du forlater siden, tastatursnarveiene i kravtabellen
+gjelder bare når du faktisk står i tabellen, og søkerens frist regnes i
+kalenderdager slik den faktisk løper.
+
+### Fixed
+- **Tekst forsvant ved navigering bort.** Kravnotat, motholdreferanse,
+  antall krav og kravetikett ble bare lagret når feltet mistet fokus.
+  Trykket du på en annen side, lukket fanen eller byttet vindu mens
+  markøren sto i feltet, var teksten tapt. Feltene lagres nå løpende
+  mens du skriver, og eventuelle ulagrede endringer skrives ned før
+  siden forlates.
+- **Tastatursnarveiene i kravtabellen tok over tastaturet.** Så lenge en
+  kravrad var markert, fanget `1`–`3`, `y`, `n` og `?` tastetrykkene
+  dine selv om fokus sto et helt annet sted på siden. Snarveiene virker
+  nå bare når fokus er inne i kravtabellen, så `?` åpner igjen
+  snarveisoversikten ellers på sakssiden.
+- **Søkerens frist ble regnet i arbeidsdager.** I Fristarkiv er fristen
+  søkerens, og den løper i kalenderdager. Nedtellingen viser nå «133
+  dager igjen» der den før viste et arbeidsdagstall som ikke svarte til
+  noen faktisk frist. Din egen frist i Ny og Viderebehandling regnes
+  fortsatt i arbeidsdager.
+- **Seksjonsankrene fulgte ikke rulling.** Lenkene øverst på sakssiden
+  markerte bare den seksjonen du sist klikket på. De følger nå hvilken
+  seksjon du faktisk ser.
+- **Skjermleser i kravtabellen.** Feltene for avhengighet, notat og
+  etikett hadde ingen tilgjengelig navn, og ble lest opp uten å si
+  hvilket krav de hørte til.
+
+### Removed
+- Ubrukt CSS fra omleggingen av sakssiden.
+
 ## [4.25.0] - 2026-10-19
 Eksporten, og dermed arbeidsfilen og de daglige kopiene, tar nå med alt du har
 lagt inn selv. Blir nettleseren tømt, får du tilbake hele oppsettet, ikke bare
