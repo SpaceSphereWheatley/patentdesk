@@ -3930,7 +3930,7 @@ tr:hover .sak-tag-display.sak-tag-empty { opacity: 0.25; pointer-events: auto; }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.24.0';
+var APP_VERSION    = 'v4.25.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4694,8 +4694,48 @@ function makeExportPayload() {
     vacations:  vacations,
     goal:       productionGoal,
     beleggHorizon: beleggHorizon,
-    docRoot:    loadDocRoot() || null
+    docRoot:    loadDocRoot() || null,
+    userName:   loadUserName() || null,
+    // Bare en egendefinert mal eksporteres; null = standardmalen, så den
+    // fortsatt følger med når standardmalen endres i en ny versjon
+    checklistTemplate: _customChecklistTemplate(),
+    fristBuffer: fristBuffer,
+    medlesing:  medlesing
   };
+}
+
+function isValidChecklistTemplate(tpl) {
+  return Array.isArray(tpl) && tpl.length > 0 && tpl.every(function(p) {
+    return p && typeof p.phase === 'string' && Array.isArray(p.items) && p.items.every(function(i) {
+      return i && typeof i.id === 'string' && typeof i.label === 'string';
+    });
+  });
+}
+
+function _customChecklistTemplate() {
+  try {
+    var tpl = JSON.parse(localStorage.getItem(CHECKLIST_KEY));
+    return isValidChecklistTemplate(tpl) ? tpl : null;
+  } catch(e) { return null; }
+}
+
+// Navn, sjekkliste-mal, fristbuffer og medlesinger fra en eksportfil, validert.
+// Bare felt som finnes og er gyldige tas med, så eldre filer uten feltene ikke
+// endrer noe. checklistTemplate: null betyr «bruk standardmalen».
+function readImportSettings(d) {
+  var out = {};
+  if (typeof d.userName === 'string') out.userName = d.userName.trim();
+  if (d.checklistTemplate === null) out.checklistTemplate = null;
+  else if (isValidChecklistTemplate(d.checklistTemplate)) out.checklistTemplate = d.checklistTemplate;
+  if (typeof d.fristBuffer === 'number' && isFinite(d.fristBuffer) && d.fristBuffer >= 0) {
+    out.fristBuffer = Math.floor(d.fristBuffer);
+  }
+  if (Array.isArray(d.medlesing)) {
+    out.medlesing = d.medlesing.filter(function(m) {
+      return m && typeof m === 'object' && typeof m.id === 'string' && m.id !== '';
+    });
+  }
+  return out;
 }
 
 // ── Saksmappe ──────────────────────────────────────
@@ -5944,7 +5984,8 @@ function _dispatch(action, payload) {
       var mergeMode = payload.mode === 'merge';
       if (mergeMode) {
         // Flett saker på id: eksisterende oppdateres, nye legges til. Øvrige data
-        // (stats, ferier, mål, dokumentrot) røres ikke — kun saker og deres detaljer.
+        // (stats, ferier, mål, dokumentrot, navn, sjekkliste-mal, fristbuffer,
+        // medlesinger) røres ikke — kun saker og deres detaljer.
         var idx = {};
         cases.forEach(function(c, i) { idx[c.id] = i; });
         var merged = cases.slice();
@@ -5972,6 +6013,24 @@ function _dispatch(action, payload) {
           var inp = document.getElementById('input-doc-root');
           if (inp) inp.value = d.docRoot;
         }
+        var s = readImportSettings(d);
+        if ('userName' in s) {
+          saveUserName(s.userName);
+          // Med navnet tilbake er det ingen grunn til å vise velkomstdialogen igjen
+          // (den kan allerede være åpnet ved oppstart, før arbeidsfilen er lest)
+          if (s.userName) {
+            try { localStorage.setItem(ONBOARDING_KEY, '1'); } catch(e) {}
+            var ob = document.getElementById('onboarding-backdrop');
+            if (ob && ob.classList.contains('open')) { closeBackdrop('onboarding-backdrop'); _cpcShowNotice(); }
+          }
+        }
+        if ('checklistTemplate' in s) {
+          if (s.checklistTemplate) saveChecklistTemplate(s.checklistTemplate);
+          else resetChecklistTemplate();
+          _cleUpdateSummary();
+        }
+        if ('fristBuffer' in s) { fristBuffer = s.fristBuffer; saveFristBuffer(fristBuffer); }
+        if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
       }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
