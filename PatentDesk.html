@@ -4905,6 +4905,14 @@ function toggleActiveCase(mark, id, nowIso) {
   return { id: id, since: nowIso };
 }
 
+// Markeringen etter angre. Handlingen som angres kan ha fjernet den (sendt
+// til Fristarkiv, avsluttet, slettet), og da kommer den tilbake. Har du
+// markert en annen sak i mellomtiden, er det det nyeste valget som gjelder.
+function activeCaseAfterUndo(snapshot, current) {
+  if (current) return current;
+  return (snapshot && snapshot.activeCase) || null;
+}
+
 // Saken markeringen peker på — eller null når den er slettet eller ikke
 // lenger kan markeres (sendt til Fristarkiv, avsluttet).
 function resolveActiveCase(mark, cases) {
@@ -5768,7 +5776,8 @@ function _dispatch(action, payload) {
       AppState.undoSnapshot = {
         cases: cases.map(function(c) { return Object.assign({}, c); }),
         stats:  JSON.parse(JSON.stringify(stats)),
-        label:  theCase.caseNumber
+        label:  theCase.caseNumber,
+        activeCase: activeCase
       };
       // Oppdater state
       var patch = { status: toStatus, outcome: normaliseOutcome(toStatus, payload.outcome) };
@@ -5850,7 +5859,8 @@ function _dispatch(action, payload) {
         stats: JSON.parse(JSON.stringify(stats)),
         label: theCase ? theCase.caseNumber : payload.id,
         sakId: payload.id,
-        sakData: rawSak
+        sakData: rawSak,
+        activeCase: activeCase
       };
       AppState.cases = cases.filter(function(c) { return c.id !== payload.id; });
       try { localStorage.removeItem(sakKey(payload.id)); } catch(e) {}
@@ -5868,6 +5878,8 @@ function _dispatch(action, payload) {
       if (undoSnapshot.sakId && undoSnapshot.sakData != null) {
         lsSetSafe(sakKey(undoSnapshot.sakId), undoSnapshot.sakData);
       }
+      activeCase = activeCaseAfterUndo(undoSnapshot, activeCase);
+      saveActiveCase(activeCase);
       AppState.undoSnapshot = null;
       saveCases(); saveStats();
       render();
@@ -5888,7 +5900,8 @@ function _dispatch(action, payload) {
       AppState.undoSnapshot = {
         cases: cases.map(function(c) { return Object.assign({}, c); }),
         stats: JSON.parse(JSON.stringify(stats)),
-        label: theCase.caseNumber
+        label: theCase.caseNumber,
+        activeCase: activeCase
       };
       AppState.cases = cases.map(function(c) {
         if (c.id !== id) return c;

@@ -3,8 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
-const { canBeActiveCase, normalizeActiveCase, toggleActiveCase, resolveActiveCase, readImportSettings } = loadFunctions(
-  ['canBeActiveCase', 'normalizeActiveCase', 'toggleActiveCase', 'resolveActiveCase',
+const { canBeActiveCase, normalizeActiveCase, toggleActiveCase, resolveActiveCase, activeCaseAfterUndo, readImportSettings } = loadFunctions(
+  ['canBeActiveCase', 'normalizeActiveCase', 'toggleActiveCase', 'resolveActiveCase', 'activeCaseAfterUndo',
    'readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter'],
   { vars: ['HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS'] }
 );
@@ -114,4 +114,23 @@ test('readImportSettings: older files without activeCase leave the mark alone', 
 test('readImportSettings: a malformed activeCase is ignored', () => {
   assert.ok(!('activeCase' in readImportSettings({ activeCase: 'a' })));
   assert.ok(!('activeCase' in readImportSettings({ activeCase: { id: 3 } })));
+});
+
+// ── activeCaseAfterUndo ─────────────────────────────
+
+// Flytting til Fristarkiv fjerner markeringen; angre skal gi den tilbake.
+test('activeCaseAfterUndo: undo brings back a mark the action cleared', () => {
+  const mark = { id: 'a', since: NOW };
+  assert.strictEqual(activeCaseAfterUndo({ activeCase: mark }, null), mark);
+});
+
+// Har du markert en annen sak siden, er det det nyeste valget ditt som gjelder.
+test('activeCaseAfterUndo: a case marked since then is kept', () => {
+  const newer = { id: 'b', since: NOW };
+  assert.strictEqual(activeCaseAfterUndo({ activeCase: { id: 'a', since: NOW } }, newer), newer);
+});
+
+test('activeCaseAfterUndo: nothing marked before or after stays unmarked', () => {
+  assert.strictEqual(activeCaseAfterUndo({ activeCase: null }, null), null);
+  assert.strictEqual(activeCaseAfterUndo({}, null), null);
 });

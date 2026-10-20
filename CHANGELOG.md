@@ -28,7 +28,8 @@ påvirker verken belegg eller frister.
   bjelken fargen for sakstypen, men får en ring og en prikk foran
   saksnummeret. Rekkefølgen i listene endres ikke.
 - **Markeringen fjernes av seg selv** når saken sendes til Fristarkiv, blir
-  avsluttet eller slettes.
+  avsluttet eller slettes. Angrer du handlingen, kommer markeringen tilbake,
+  med mindre du har markert en annen sak i mellomtiden.
 - **Markeringen følger med i eksporten.** Den er dermed også med i
   arbeidsfilen og hentes inn igjen ved «Erstatt alt». Eldre eksportfiler uten
   markeringen endrer ingenting.
