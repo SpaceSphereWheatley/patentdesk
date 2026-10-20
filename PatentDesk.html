@@ -999,6 +999,11 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   .stat-cards              { grid-template-columns: 1fr 1fr; }
   .drawer-logo-row         { padding: 1.4rem 0 var(--space-7); justify-content: center; }
   .drawer-toggle-btn       { display: none; }
+  /* .drawer-prefiks: reglene for pågående sak står lenger ned i arket */
+  .drawer .drawer-active        { margin: var(--space-4) var(--space-1) 0; border-color: transparent; background: transparent; }
+  .drawer .drawer-active-open   { justify-content: center; padding: var(--space-3) 0; }
+  .drawer .drawer-active-text,
+  .drawer .drawer-active-clear  { display: none; }
 }
 
 
@@ -1043,6 +1048,63 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   opacity: 0; pointer-events: none; transition: opacity var(--dur-fast); z-index: 200;
 }
 .drawer.collapsed .nav-tab:hover::after { opacity: 1; }
+
+/* ── Pågående sak ─────────────────────────────────── */
+/* Én sak om gangen, i aksentfargen — rødt og rav er forbeholdt frister og
+   varsler, så markeringen ikke kan forveksles med et varsel. */
+.active-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0; vertical-align: middle;
+}
+.active-dot-off { background: transparent; box-shadow: inset 0 0 0 1.5px var(--muted); }
+.active-pill {
+  flex-shrink: 0; font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label); text-transform: uppercase;
+  color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-pill);
+  padding: 1px var(--space-3); line-height: 1.4;
+}
+.case-card.is-active-case,
+.home-upcoming-row.is-active-case { box-shadow: inset 3px 0 0 var(--accent); }
+
+.drawer-active {
+  display: flex; align-items: stretch; gap: var(--space-1);
+  margin: var(--space-4) var(--space-4) 0;
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  background: var(--surface2);
+}
+.drawer-active[hidden] { display: none; }
+.drawer-active-open {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-3);
+  background: transparent; border: 0; cursor: pointer; text-align: left;
+  padding: var(--space-3) var(--space-4); color: var(--text); font: inherit;
+}
+.drawer-active-open:hover .drawer-active-cn { text-decoration: underline; }
+.drawer-active-text { display: flex; flex-direction: column; min-width: 0; }
+.drawer-active-label {
+  font-size: var(--text-2xs); letter-spacing: var(--tracking-label);
+  text-transform: uppercase; color: var(--accent); font-weight: var(--weight-semibold);
+}
+.drawer-active-cn    { font-size: var(--text-sm); color: var(--text); white-space: nowrap; }
+.drawer-active-title {
+  font-size: var(--text-xs); color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.drawer-active-clear {
+  background: transparent; border: 0; cursor: pointer; color: var(--muted);
+  padding: 0 var(--space-3); font-size: var(--text-base); line-height: 1;
+}
+.drawer-active-clear:hover { color: var(--text); }
+/* Sammenslått drawer: bare prikken, saken står i verktøytipset */
+.drawer.collapsed .drawer-active { margin: var(--space-4) var(--space-1) 0; border-color: transparent; background: transparent; }
+.drawer.collapsed .drawer-active-open { justify-content: center; padding: var(--space-3) 0; }
+.drawer.collapsed .drawer-active-text,
+.drawer.collapsed .drawer-active-clear { display: none; }
+.drawer.collapsed .drawer-active .active-dot { width: 10px; height: 10px; }
+
+/* Prikken er smalere enn ikonene i menyen; margen holder teksten på linje */
+.card-dropdown-item .active-dot { margin: 0 3px; }
+.btn-sak-active { display: inline-flex; align-items: center; gap: var(--space-2); }
+.btn-sak-active.is-on { color: var(--accent); border-color: var(--accent); }
 
 .home-card-copyable       { cursor: pointer; }
 .home-card-copyable:hover { border-color: var(--accent-dim); }
@@ -2419,6 +2481,10 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .tl-bar-fristarkiv       { background: rgba(107,114,128,0.55); }
 .tl-bar-viderebehandling { background: rgba(67,56,202,0.68); }
 .tl-bar-overdue { background: rgba(220,38,38,0.35) !important; border: 1px solid rgba(220,38,38,0.7) !important; }
+/* Pågående sak: bjelken beholder sakstypens farge og får en ring i
+   aksentfargen, så du fortsatt ser hva slags sak det er. */
+.tl-bar-active { box-shadow: 0 0 0 2px var(--surface2), 0 0 0 4px var(--accent); z-index: 2; }
+.tl-bar-active .tl-bar-label::before { content: '\25CF\00a0'; color: var(--accent); }
 /* Milepæl: en dato det skjer noe på, ikke en periode det jobbes i. Smal
    markør uten saksnummer-etikett — det er ikke plass, og saksnummeret vises
    uansett i hover-popupen. */
@@ -2602,6 +2668,19 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <span class="logo-text">PatentDesk</span>
         </a>
         <button class="drawer-toggle-btn" id="drawer-toggle-btn" title="Skjul navigasjon">&#8249;</button>
+      </div>
+
+      <!-- Pågående sak: saken du holder på med, ett klikk unna -->
+      <div class="drawer-active" id="drawer-active" hidden>
+        <button class="drawer-active-open" id="drawer-active-open" type="button">
+          <span class="active-dot" aria-hidden="true"></span>
+          <span class="drawer-active-text">
+            <span class="drawer-active-label">Pågår</span>
+            <span class="drawer-active-cn" id="drawer-active-cn"></span>
+            <span class="drawer-active-title" id="drawer-active-title"></span>
+          </span>
+        </button>
+        <button class="drawer-active-clear" id="drawer-active-clear" type="button" title="Fjern markeringen" aria-label="Fjern pågående-markering">&times;</button>
       </div>
 
       <div class="drawer-nav">
@@ -3128,6 +3207,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
                 </div>
               </div>
             </div>
+            <button class="btn-secondary btn-sm btn-sak-active" id="btn-sak-active" type="button" aria-pressed="false" style="display:none;"></button>
             <button class="btn-secondary btn-sm" id="btn-sak-history" title="Vis historikk"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Historikk</button>
             <div class="sak-more-wrap" style="position:relative;">
               <button class="btn-secondary btn-sm btn-card-more" id="btn-sak-more" title="Flere handlinger" aria-label="Flere handlinger">⋯</button>
@@ -3981,7 +4061,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.27.0';
+var APP_VERSION    = 'v4.28.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -3996,6 +4076,7 @@ var GOAL_KEY     = 'pt_goal';
 var BELEGG_KEY   = 'pt_belegg_horizon';
 var BUFFER_KEY   = 'pt_frist_buffer';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
+var ACTIVE_CASE_KEY   = 'pt_active_case';
 var AUTOSAVE_KEY = 'pt_autosave';
 var SAK_KEY_PREFIX = 'pt_sak_';
 
@@ -4753,6 +4834,7 @@ function makeExportPayload() {
     checklistTemplate: _customChecklistTemplate(),
     fristBuffer: fristBuffer,
     homeDeadlineFilter: homeDeadlineFilter,
+    activeCase: activeCase,
     medlesing:  medlesing
   };
 }
@@ -4772,10 +4854,11 @@ function _customChecklistTemplate() {
   } catch(e) { return null; }
 }
 
-// Navn, sjekkliste-mal, fristbuffer, medlesinger og fristfilteret på Oversikt
-// fra en eksportfil, validert.
+// Navn, sjekkliste-mal, fristbuffer, medlesinger, fristfilteret på Oversikt
+// og pågående sak fra en eksportfil, validert.
 // Bare felt som finnes og er gyldige tas med, så eldre filer uten feltene ikke
-// endrer noe. checklistTemplate: null betyr «bruk standardmalen».
+// endrer noe. checklistTemplate: null betyr «bruk standardmalen»;
+// activeCase: null betyr «ingen sak markert».
 function readImportSettings(d) {
   var out = {};
   if (typeof d.userName === 'string') out.userName = d.userName.trim();
@@ -4792,7 +4875,42 @@ function readImportSettings(d) {
   if (d.homeDeadlineFilter && typeof d.homeDeadlineFilter === 'object') {
     out.homeDeadlineFilter = normalizeHomeDeadlineFilter(d.homeDeadlineFilter);
   }
+  if (d.activeCase === null) out.activeCase = null;
+  else if (d.activeCase !== undefined && normalizeActiveCase(d.activeCase)) out.activeCase = normalizeActiveCase(d.activeCase);
   return out;
+}
+
+// ── Pågående sak ───────────────────────────────────
+// En markering for å huske hvilken sak du holder på med. Den er ikke en
+// status og påvirker verken belegg eller frister. Maks én sak om gangen, så
+// den lagres som én innstilling ({ id, since }) og ikke som et felt på sakene.
+// Bare egen arbeid kan markeres: Ny, Viderebehandling og aktive oppdrag. I
+// Fristarkiv er brevet sendt og fristen søkerens.
+// Rene funksjoner — se test/activeCase.test.js.
+function canBeActiveCase(c) {
+  if (!c || c.status === 'avsluttet') return false;
+  if (c.type === 'oppdrag') return true;
+  return c.status === 'ny' || c.status === 'viderebehandling';
+}
+
+function normalizeActiveCase(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (typeof raw.id !== 'string' || raw.id === '') return null;
+  return { id: raw.id, since: typeof raw.since === 'string' ? raw.since : null };
+}
+
+// Samme sak igjen fjerner markeringen; en annen sak flytter den.
+function toggleActiveCase(mark, id, nowIso) {
+  if (mark && mark.id === id) return null;
+  return { id: id, since: nowIso };
+}
+
+// Saken markeringen peker på — eller null når den er slettet eller ikke
+// lenger kan markeres (sendt til Fristarkiv, avsluttet).
+function resolveActiveCase(mark, cases) {
+  if (!mark) return null;
+  var c = cases.find(function(x) { return x.id === mark.id; });
+  return canBeActiveCase(c) ? c : null;
 }
 
 // ── Fristlista på Oversikt ─────────────────────────
@@ -5101,6 +5219,7 @@ function deleteAllData() {
   localStorage.removeItem('pt_schema_version');
   localStorage.removeItem(ONBOARDING_KEY);
   localStorage.removeItem(USER_NAME_KEY);
+  localStorage.removeItem(ACTIVE_CASE_KEY);
   localStorage.removeItem('pt_drawer_collapsed');
   localStorage.removeItem('pt_cpc_welcomed');
 
@@ -5203,6 +5322,14 @@ function loadHomeDeadlineFilter() {
 }
 function saveHomeDeadlineFilter(f) {
   lsSetSafe(HOME_DEADLINE_KEY, JSON.stringify(f));
+}
+function loadActiveCase() {
+  try { return normalizeActiveCase(JSON.parse(localStorage.getItem(ACTIVE_CASE_KEY))); }
+  catch(e) { return null; }
+}
+function saveActiveCase(mark) {
+  if (mark) lsSetSafe(ACTIVE_CASE_KEY, JSON.stringify(mark));
+  else { try { localStorage.removeItem(ACTIVE_CASE_KEY); } catch(e) {} }
 }
 // bufferAppliesTo: om fristbufferen — global eller per sak — skal gjelde for en
 // sak. Oppdrag viser alltid faktisk frist. Det samme gjør saker i Fristarkiv:
@@ -5534,6 +5661,7 @@ var productionGoal = loadGoal();
 var beleggHorizon  = loadBeleggHorizon();
 var fristBuffer    = loadFristBuffer();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
+var activeCase = loadActiveCase();
 var _tlConfig = {
   'home-timeline':  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
   'cases-timeline': { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
@@ -5658,6 +5786,15 @@ function _dispatch(action, payload) {
       render();
       if (activeSakId === id) renderSak(id);
       showUndoToast('Sak ' + AppState.undoSnapshot.label + ' flyttet');
+      break;
+    }
+
+    case 'ACTIVE_CASE_TOGGLE': {
+      var target = cases.find(function(c) { return c.id === payload.id; });
+      if (!canBeActiveCase(target)) break;
+      activeCase = toggleActiveCase(activeCase, payload.id, new Date().toISOString());
+      saveActiveCase(activeCase);
+      render();
       break;
     }
 
@@ -6200,6 +6337,7 @@ function _dispatch(action, payload) {
         if ('fristBuffer' in s) { fristBuffer = s.fristBuffer; saveFristBuffer(fristBuffer); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
+        if ('activeCase' in s) { activeCase = s.activeCase; saveActiveCase(activeCase); }
       }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
@@ -6473,8 +6611,66 @@ function _histPill(status) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// ── Pågående sak: visning ──────────────────────────
+// Markeringen fjernes av seg selv når saken er slettet, sendt til Fristarkiv
+// eller avsluttet. Det sjekkes ved hver render, så alle veier dit dekkes.
+function pruneActiveCase() {
+  if (activeCase && !resolveActiveCase(activeCase, cases)) {
+    activeCase = null;
+    saveActiveCase(null);
+  }
+}
+
+function isActiveCaseId(id) {
+  return !!activeCase && activeCase.id === id;
+}
+
+// Valget i ⋯-menyene; tomt for saker som ikke kan markeres.
+function activeCaseMenuItemHtml(c) {
+  if (!canBeActiveCase(c)) return '';
+  var on = isActiveCaseId(c.id);
+  return '<button class="card-dropdown-item btn-active-toggle" data-id="' + c.id + '">' +
+    '<span class="active-dot' + (on ? '' : ' active-dot-off') + '" aria-hidden="true"></span> ' +
+    (on ? 'Fjern pågående-markering' : 'Marker som pågående') + '</button>';
+}
+
+function activeCasePillHtml(c) {
+  return isActiveCaseId(c.id) ? '<span class="active-pill" title="Saken du holder på med">Pågår</span>' : '';
+}
+
+function renderActiveCaseChip() {
+  var chip = document.getElementById('drawer-active');
+  if (!chip) return;
+  var c = resolveActiveCase(activeCase, cases);
+  chip.hidden = !c;
+  if (!c) return;
+  var since = activeCase.since ? ' · markert ' + formatDateTime(activeCase.since) : '';
+  var open = document.getElementById('drawer-active-open');
+  open.dataset.id = c.id;
+  open.title = 'Pågår: ' + c.caseNumber + (c.title ? ' – ' + c.title : '') + since;
+  document.getElementById('drawer-active-cn').textContent = c.caseNumber;
+  document.getElementById('drawer-active-title').textContent = c.title || '';
+}
+
+// Knappen i hodet på sakssiden.
+function renderSakActiveButton(cas) {
+  var btn = document.getElementById('btn-sak-active');
+  if (!btn) return;
+  var can = canBeActiveCase(cas);
+  btn.style.display = can ? '' : 'none';
+  if (!can) return;
+  var on = isActiveCaseId(cas.id);
+  btn.classList.toggle('is-on', on);
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  btn.title = on ? 'Fjern markeringen' : 'Marker saken som den du holder på med';
+  btn.innerHTML = '<span class="active-dot' + (on ? '' : ' active-dot-off') + '" aria-hidden="true"></span> ' +
+    (on ? 'Pågår' : 'Marker som pågående');
+}
+
 function render() {
+  pruneActiveCase();
   updateNav();
+  renderActiveCaseChip();
   showView(activePage);
   if (activePage === 'hjem')          { renderHjem();          return; }
   if (activePage === 'statistikk')    { renderStats();         return; }
@@ -6615,12 +6811,13 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
           esc(daysTxt) + '</span>'
       : '<span class="days-badge days-badge-placeholder"></span>';
     var tooltip     = c.tags ? ' title="' + esc(c.tags) + '"' : '';
-    var cardCls     = isOppdrag ? ' case-card-oppdrag' : '';
+    var cardCls     = (isOppdrag ? ' case-card-oppdrag' : '') + (isActiveCaseId(c.id) ? ' is-active-case' : '');
     var cnCls       = isOppdrag ? ' case-card-cn-oppdrag' : '';
     return '<div class="case-card' + cardCls + '" data-id="' + c.id + '">' +
       daysBadge +
       '<span class="case-card-cn' + cnCls + '"' + tooltip + '>' + esc(c.caseNumber) + '</span>' +
       '<span class="case-card-title">' + esc(c.title) + '</span>' +
+      activeCasePillHtml(c) +
       trackHtml(c, false) +
       '<div class="case-card-menu">' +
         '<button class="btn-card-hist" data-id="' + c.id + '" title="Historikk" aria-label="Historikk">⏱</button>' +
@@ -8319,6 +8516,7 @@ function renderSak(id) {
 
   renderSakFrist(cas);
   renderSakForwardButtons(cas);
+  renderSakActiveButton(cas);
 
   document.getElementById('btn-sak-back')._sakId = id;
 
@@ -10261,11 +10459,12 @@ function renderHomeDeadlines() {
     }
     if (periodOverlapsVacation(c)) tips.push('Perioden overlapper ferie');
     var vacBadge = periodOverlapsVacation(c) ? '<span class="vac-badge" title="Perioden overlapper ferie">⛱</span>' : '';
-    return '<div class="home-upcoming-row" data-id="' + c.id + '" data-page="' + (isOppdrag ? 'oppdrag' : c.status) + '">' +
+    return '<div class="home-upcoming-row' + (isActiveCaseId(c.id) ? ' is-active-case' : '') + '" data-id="' + c.id + '" data-page="' + (isOppdrag ? 'oppdrag' : c.status) + '">' +
       '<span class="days-badge ' + cls + '"' + (tips.length ? ' title="' + esc(tips.join(' · ')) + '"' : '') + '>' +
         (d < 0 ? Math.abs(d)+'d forfalt' : d === 0 ? 'I dag' : d+'d') + '</span>' +
       '<span class="home-upcoming-cn' + (isOppdrag ? ' case-card-cn-oppdrag' : '') + '">' + esc(c.caseNumber) + '</span>' +
       '<span class="home-upcoming-title">' + esc(c.title) + '</span>' +
+      activeCasePillHtml(c) +
       vacBadge +
       trackHtml(c, true) +
       '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:var(--space-1);">' +
@@ -10422,7 +10621,7 @@ function buildTimelineDiv(opts) {
     var topPx = TOP_PAD + r.row * (barH + GAP);
     var bar = document.createElement('div');
     var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : 'tl-bar-' + r.status;
-    bar.className = 'tl-bar ' + typeCls + (r.isMilestone ? ' tl-bar-milestone' : '') + (opts.draggable && r.canBuffer ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '');
+    bar.className = 'tl-bar ' + typeCls + (r.isMilestone ? ' tl-bar-milestone' : '') + (opts.draggable && r.canBuffer ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '') + (opts.activeId && r.id === opts.activeId ? ' tl-bar-active' : '');
     var visStart = Math.max(-PAST, r.start);
     var visEnd   = Math.min(HORIZON, r.end);
     bar.style.left   = pct(visStart);
@@ -10791,6 +10990,8 @@ function renderTimeline(opts) {
       axisMode:    cfg.axisMode   || 'month',
       draftRows:   cfg.draftRows  || null,
       draggable:   id === 'home-timeline',
+      // Datovelgeren i sak-dialogen trenger ikke markeringen
+      activeId:    id === 'modal-timeline' ? null : (activeCase && activeCase.id),
     });
     var existing = wrap.querySelector('.tl-track');
     if (existing) wrap.replaceChild(track, existing);
@@ -11796,6 +11997,7 @@ document.getElementById('case-list').addEventListener('click', function(e) {
     var act = rowAction(c.status || 'ny', c.type === 'oppdrag');
     dropdown.innerHTML =
       (act ? '<button class="card-dropdown-item btn-row-action" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> ' + esc(act.label) + '</button>' : '') +
+      activeCaseMenuItemHtml(c) +
       (c.status === 'avsluttet' && c.type !== 'oppdrag'
         ? '<button class="card-dropdown-item btn-row-outcome" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
         : '') +
@@ -11811,6 +12013,8 @@ document.getElementById('case-list').addEventListener('click', function(e) {
       closeAllDropdowns();
       if (btn.classList.contains('btn-row-action')) {
         runRowAction(btn.dataset.id);
+      } else if (btn.classList.contains('btn-active-toggle')) {
+        dispatch('ACTIVE_CASE_TOGGLE', { id: btn.dataset.id });
       } else if (btn.classList.contains('btn-row-outcome')) {
         editOutcome(btn.dataset.id);
       } else if (btn.classList.contains('btn-copy-path')) {
@@ -11829,6 +12033,14 @@ document.getElementById('case-list').addEventListener('click', function(e) {
   if (card && !e.target.closest('button')) {
     navigateTo('sak/' + card.dataset.id);
   }
+});
+
+// ── Pågående sak i drawer ──────────────────────────
+document.getElementById('drawer-active-open').addEventListener('click', function() {
+  if (this.dataset.id) navigateTo('sak/' + this.dataset.id);
+});
+document.getElementById('drawer-active-clear').addEventListener('click', function() {
+  if (activeCase) dispatch('ACTIVE_CASE_TOGGLE', { id: activeCase.id });
 });
 
 // ── Logo → hjem ────────────────────────────────────
@@ -11857,6 +12069,10 @@ document.getElementById('btn-sak-history').addEventListener('click', function() 
   if (activeSakId) openHistoryModal(activeSakId);
 });
 
+document.getElementById('btn-sak-active').addEventListener('click', function() {
+  if (activeSakId) dispatch('ACTIVE_CASE_TOGGLE', { id: activeSakId });
+});
+
 document.getElementById('btn-sak-more').addEventListener('click', function(e) {
   e.stopPropagation();
   var id = activeSakId; if (!id) return;
@@ -11869,6 +12085,7 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
   dropdown.className = 'card-dropdown';
   dropdown.innerHTML =
     '<button class="card-dropdown-item btn-sak-edit"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>' +
+    activeCaseMenuItemHtml(c) +
     (c.status === 'avsluttet' && c.type !== 'oppdrag'
       ? '<button class="card-dropdown-item btn-sak-outcome"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
       : '') +
@@ -11882,6 +12099,8 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     closeAllDropdowns();
     if (btn.classList.contains('btn-sak-edit')) {
       openModal(c);
+    } else if (btn.classList.contains('btn-active-toggle')) {
+      dispatch('ACTIVE_CASE_TOGGLE', { id: btn.dataset.id });
     } else if (btn.classList.contains('btn-sak-outcome')) {
       editOutcome(id);
     } else if (btn.classList.contains('btn-sak-copy-path')) {
@@ -12379,6 +12598,7 @@ function handleHomeListClick(e) {
     var dropdown = document.createElement('div');
     dropdown.className = 'card-dropdown';
     dropdown.innerHTML =
+      activeCaseMenuItemHtml(c) +
       '<button class="card-dropdown-item btn-home-edit" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>' +
       '<button class="card-dropdown-item danger btn-home-del" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Slett sak</button>';
     moreBtn.closest('.home-row-more').appendChild(dropdown);
@@ -12387,7 +12607,9 @@ function handleHomeListClick(e) {
       if (!btn) return;
       ev.stopPropagation();
       closeAllDropdowns();
-      if (btn.classList.contains('btn-home-edit')) {
+      if (btn.classList.contains('btn-active-toggle')) {
+        dispatch('ACTIVE_CASE_TOGGLE', { id: btn.dataset.id });
+      } else if (btn.classList.contains('btn-home-edit')) {
         var c2 = cases.find(function(x) { return x.id === btn.dataset.id; });
         if (c2) openModal(c2);
       } else if (btn.classList.contains('btn-home-del')) {

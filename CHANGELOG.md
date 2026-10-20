@@ -7,6 +7,32 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.28.0] - 2026-10-20
+Du kan nå markere saken du holder på med som «pågående», så du husker hvor
+du var. Markeringen er bare en påminnelse. Den er ikke en status, og den
+påvirker verken belegg eller frister.
+
+### Added
+- **Marker en sak som pågående.** Bruk knappen «Marker som pågående» i hodet
+  på sakssiden, eller valget i ⋯-menyen på sakslistene og fristlista på
+  Oversikt. Bare én sak kan være pågående om gangen. Markerer du en annen,
+  flyttes markeringen dit. Saker i Ny og Viderebehandling og aktive oppdrag
+  kan markeres. Saker i Fristarkiv kan ikke, fordi brevet er sendt og fristen
+  er søkerens.
+- **Pågående sak i navigasjonen.** Øverst i sidemenyen står saksnummer og
+  tittel. Ett klikk åpner saken, og × fjerner markeringen. Er menyen skjult,
+  vises bare en prikk, og saken står i verktøytipset sammen med datoen den
+  ble markert.
+- **Markering i lister og tidslinjer.** Saken får en stripe i aksentfargen og
+  merkelappen «Pågår» i sakslistene og fristlista. På tidslinjen beholder
+  bjelken fargen for sakstypen, men får en ring og en prikk foran
+  saksnummeret. Rekkefølgen i listene endres ikke.
+- **Markeringen fjernes av seg selv** når saken sendes til Fristarkiv, blir
+  avsluttet eller slettes.
+- **Markeringen følger med i eksporten.** Den er dermed også med i
+  arbeidsfilen og hentes inn igjen ved «Erstatt alt». Eldre eksportfiler uten
+  markeringen endrer ingenting.
+
 ## [4.27.0] - 2026-10-19
 Oversikt har nå én samlet fristliste, og du velger selv hva den skal vise.
 
