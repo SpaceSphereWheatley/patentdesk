@@ -7,6 +7,41 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.29.0] - 2026-10-21
+Hvor lenge en sak regnes som arbeid kan nå stilles inn per sakstype, og
+Viderebehandling skiller seg tydelig fra nye saker i sakslistene.
+
+### Added
+- **Standard varighet i Innstillinger.** En ny seksjon lar deg endre hvor
+  mange dager en sak legger beslag på før fristen: Ny (14 dager som før),
+  Viderebehandling og oppdrag uten egen varighet. Verdiene gjelder både
+  tidslinjen, belegget og ferievarselet, og de følger med i eksport og import.
+  «Tilbakestill til standard» setter alle tilbake.
+- **Innleveringsdato kan registreres.** Feltet finnes nå i «Legg til sak» og
+  «Rediger sak». Tidligere viste sakssiden datoen, men den kunne ikke legges
+  inn noe sted.
+
+### Changed
+- **Viderebehandling er lett å skille fra nye saker i forløpssporet.** Steget
+  heter nå «Viderebehandling» i stedet for «2. brev» og er lilla, samme farge
+  som Viderebehandling ellers i appen. «1. brev» på nye saker er fortsatt blått.
+  Fra tredje runde står det «Viderebeh. · 3» osv. i oransje, som før. Det
+  samme gjelder minisporet i fristlista på Oversikt.
+- **Viderebehandling regnes som 3 dagers arbeid**, ikke 14. Å behandle
+  søkerens svar er en kortere jobb enn en førstegangsbehandling. Det gir
+  kortere bjelker på tidslinjen og lavere belegg.
+- **Oppdrag uten varighet følger innstillingen.** Lar du varighetsfeltet stå
+  tomt, gjelder standardverdien fra Innstillinger. Før ble 2 dager lagret på
+  oppdraget for godt.
+
+### Fixed
+- **Tidslinjen og ferievarselet er enige om oppdrag.** Et oppdrag på 1 dag ble
+  tegnet som 2 dager, og et oppdrag uten varighet ble tegnet som 2 dager, men
+  sjekket mot ferie som 1 dag.
+- **Belegget teller nøyaktig arbeidsvinduet.** Hver sak ble regnet én dag for
+  lenge (15 dager for et vindu på 14). Belegget blir derfor litt lavere enn
+  før.
+
 ## [4.28.0] - 2026-10-20
 Du kan nå markere saken du holder på med som «pågående», så du husker hvor
 du var. Markeringen er bare en påminnelse. Den er ikke en status, og den

@@ -4,8 +4,8 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { readImportSettings, isValidChecklistTemplate } = loadFunctions(
-  ['readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter'],
-  { vars: ['HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS'] }
+  ['readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter', 'normalizeWorkWindows'],
+  { vars: ['HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS', 'WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX'] }
 );
 
 const TPL = [
@@ -61,6 +61,13 @@ test('readImportSettings: fristBuffer must be a non-negative number, rounded dow
   assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: '3' })));
   assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: NaN })));
   assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: Infinity })));
+});
+
+test('readImportSettings: work windows are read and normalised per type', () => {
+  const r = readImportSettings({ workWindows: { ny: 10, viderebehandling: -1 } });
+  assert.deepStrictEqual(Object.assign({}, r.workWindows), { ny: 10, viderebehandling: 3, oppdrag: 2 });
+  assert.ok(!('workWindows' in readImportSettings({ workWindows: 'x' })));
+  assert.ok(!('workWindows' in readImportSettings({})));
 });
 
 test('readImportSettings: medlesing keeps only records with an id', () => {

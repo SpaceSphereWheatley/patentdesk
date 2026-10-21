@@ -167,6 +167,7 @@
   --trk-done-bg:    #e2ede7; --trk-done-text:   #22573f; --trk-done-mini: #8fbea4;
   --trk-future-bg:  #f1f2f4; --trk-future-text: #5f6672; --trk-future-mini: #dfe2e6;
   --trk-active:     var(--primary);
+  --trk-videre:     var(--s-videre-text);
   --trk-wait-a:     #eceff3; --trk-wait-b:      #e1e5ea; --trk-wait-text: #374151; --trk-wait-mini: #c3c9d1;
   --trk-caution:    #b45309;
   --trk-granted:    #15803d;
@@ -1502,7 +1503,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .tl-bar-oppdrag         { background: rgba(6,182,212,0.45) !important; border-color: var(--s-oppdrag-border) !important; }
 
 /* ── Forløpsspor ─────────────────────────────────
-   Fire chevroner per sak: Formalia → 1. brev → Svar → Avgjørelse. Pilene
+   Fire chevroner per sak: Formalia → 1. brev → Svar/Viderebehandling → Avgjørelse. Pilene
    overlapper 6px, så det blir en jevn 4px-glipe mellom dem. Siste steg er en
    rett blokk — avgjørelsen er endepunktet. */
 .trk { display: flex; width: 560px; flex-shrink: 0; }
@@ -1519,6 +1520,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .trk-done    { background: var(--trk-done-bg);   color: var(--trk-done-text); }
 .trk-future  { background: var(--trk-future-bg); color: var(--trk-future-text); }
 .trk-active  { background: var(--trk-active);    color: var(--on-primary); }
+.trk-videre  { background: var(--trk-videre);    color: var(--on-primary); }
 .trk-wait    { background: repeating-linear-gradient(135deg, var(--trk-wait-a) 0 6px, var(--trk-wait-b) 6px 12px); color: var(--trk-wait-text); }
 .trk-caution { background: var(--trk-caution);   color: var(--on-primary); }
 .trk-granted { background: var(--trk-granted);   color: var(--on-primary); }
@@ -1543,6 +1545,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .trk-mini-seg.trk-opp     { background: var(--s-oppdrag-border); border-radius: 3px; clip-path: none; }
 .trk-mini-label { font-size: var(--text-xs); font-weight: var(--weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
 .trk-mini-label.trk-active  { background: none; color: var(--primary-dim); }
+.trk-mini-label.trk-videre  { background: none; color: var(--trk-videre); }
 .trk-mini-label.trk-caution { background: none; color: var(--trk-caution); }
 .trk-mini-label.trk-wait    { background: none; color: var(--trk-wait-text); }
 .trk-mini-label.trk-opp     { color: var(--s-oppdrag-text); }
@@ -2991,6 +2994,59 @@ tr:hover .sak-tag-display.sak-tag-empty,
           </div>
         </section>
 
+        <!-- Standard varighet -->
+        <section class="settings-section">
+          <h2 class="settings-section-title">Standard varighet</h2>
+          <div class="settings-group">
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-label-title">Ny (førstegangsbehandling)</span>
+                <span class="settings-label-sub">Dager en sak legger beslag på før fristen. Brukes i tidslinjen, belegget og ferievarselet.</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                <input class="s-inp" id="input-ww-ny" data-ww-key="ny"
+                       type="number" min="1" max="365" step="1" />
+                <span class="s-unit">dager</span>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-label-title">Viderebehandling</span>
+                <span class="settings-label-sub">Behandling av søkerens svar</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                <input class="s-inp" id="input-ww-viderebehandling" data-ww-key="viderebehandling"
+                       type="number" min="1" max="365" step="1" />
+                <span class="s-unit">dager</span>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-label-title">Oppdrag uten egen varighet</span>
+                <span class="settings-label-sub">Oppdrag med varighet satt bruker sin egen</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                <input class="s-inp" id="input-ww-oppdrag" data-ww-key="oppdrag"
+                       type="number" min="1" max="365" step="1" />
+                <span class="s-unit">dager</span>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-label-title">Fristarkiv</span>
+                <span class="settings-label-sub">Milepæl på søkers frist — ikke arbeid, ikke justerbar</span>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-label-title">Tilbakestill</span>
+                <span class="settings-label-sub">Ny 14, Viderebehandling 3, Oppdrag 2 dager</span>
+              </div>
+              <button class="s-btn" id="btn-ww-reset">Tilbakestill til standard</button>
+            </div>
+          </div>
+        </section>
+
         <!-- Arbeidsflyt -->
         <section class="settings-section">
           <h2 class="settings-section-title">Arbeidsflyt</h2>
@@ -3600,6 +3656,10 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <label class="field-label" for="f-case-buffer">Buffer (dager) <span class="field-label-sub">blank = globalt</span></label>
             <input class="field-input" id="f-case-buffer" type="number" min="0" max="365" placeholder="Globalt: standard" />
           </div>
+          <div class="field-group">
+            <label class="field-label" for="f-filing-date">Innleveringsdato <span class="field-label-sub">valgfritt</span></label>
+            <input class="field-input" id="f-filing-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          </div>
         </div>
 
         <!-- Rad: saksnummer + forfallsdato + varighet (oppdrag) -->
@@ -4061,7 +4121,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.28.0';
+var APP_VERSION    = 'v4.29.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4075,6 +4135,7 @@ var STATS_KEY    = 'pt_stats';
 var GOAL_KEY     = 'pt_goal';
 var BELEGG_KEY   = 'pt_belegg_horizon';
 var BUFFER_KEY   = 'pt_frist_buffer';
+var WORK_WINDOW_KEY = 'pt_work_windows';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
 var AUTOSAVE_KEY = 'pt_autosave';
@@ -4333,8 +4394,8 @@ function examinationRound(c) {
 }
 
 // De fire stegene for en sak som [{ label, state }]. state er én av done,
-// active, future, wait (søkerens tur), caution (runde 3+), granted, refused,
-// closed. Oppdrag har ingen saksflyt og gir null.
+// active, videre (Viderebehandling, runde 2), future, wait (søkerens tur),
+// caution (runde 3+), granted, refused, closed. Oppdrag har ingen saksflyt og gir null.
 // Ren funksjon — se test/caseTrack.test.js.
 function caseTrack(c) {
   if (!c || c.type === 'oppdrag') return null;
@@ -4349,7 +4410,12 @@ function caseTrack(c) {
   } else if (status === 'fristarkiv') {
     slots.push({ label: 'Venter på svar' + (round >= 2 ? ' · ' + round : ''), state: 'wait' });
   } else if (status === 'viderebehandling') {
-    slots.push({ label: round + '. brev', state: round >= 3 ? 'caution' : 'active' });
+    // Egen tilstand (og farge) for Viderebehandling, så steget ikke forveksles
+    // med det aktive «1. brev» på en ny sak. Fra 3. runde vises rundenummeret,
+    // med forkortet tekst så nummeret ikke kuttes av i pilen.
+    slots.push(round >= 3
+      ? { label: 'Viderebeh. · ' + round, state: 'caution' }
+      : { label: 'Viderebehandling', state: 'videre' });
   } else {
     var hist = Array.isArray(c.history) ? c.history.filter(function(h) { return h && h.type === 'status'; }) : [];
     var last = hist[hist.length - 1];
@@ -4782,6 +4848,14 @@ function isValidDate(str) {
   return !isNaN(new Date(norm + 'T00:00:00').getTime());
 }
 
+// filingDateFromInput: innleveringsdato fra modalfeltet. Tomt felt fjerner
+// datoen (''), en gyldig dato gis i ISO-form, og en ugyldig gir null.
+function filingDateFromInput(raw) {
+  var t = (raw || '').trim();
+  if (!t) return '';
+  return isValidDate(t) ? parseDate(t) : null;
+}
+
 function monthsFromToday(n) {
   var d = new Date(); d.setMonth(d.getMonth() + n);
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -4833,6 +4907,7 @@ function makeExportPayload() {
     // fortsatt følger med når standardmalen endres i en ny versjon
     checklistTemplate: _customChecklistTemplate(),
     fristBuffer: fristBuffer,
+    workWindows: workWindows,
     homeDeadlineFilter: homeDeadlineFilter,
     activeCase: activeCase,
     medlesing:  medlesing
@@ -4866,6 +4941,9 @@ function readImportSettings(d) {
   else if (isValidChecklistTemplate(d.checklistTemplate)) out.checklistTemplate = d.checklistTemplate;
   if (typeof d.fristBuffer === 'number' && isFinite(d.fristBuffer) && d.fristBuffer >= 0) {
     out.fristBuffer = Math.floor(d.fristBuffer);
+  }
+  if (d.workWindows && typeof d.workWindows === 'object' && !Array.isArray(d.workWindows)) {
+    out.workWindows = normalizeWorkWindows(d.workWindows);
   }
   if (Array.isArray(d.medlesing)) {
     out.medlesing = d.medlesing.filter(function(m) {
@@ -5324,6 +5402,13 @@ function saveFristBuffer(val) {
   try { localStorage.setItem(BUFFER_KEY, String(val)); }
   catch(e) { showToast('✗ Lagring feilet', true); }
 }
+function loadWorkWindows() {
+  try { return normalizeWorkWindows(JSON.parse(localStorage.getItem(WORK_WINDOW_KEY))); }
+  catch(e) { return normalizeWorkWindows(null); }
+}
+function saveWorkWindows(w) {
+  lsSetSafe(WORK_WINDOW_KEY, JSON.stringify(w));
+}
 function loadHomeDeadlineFilter() {
   try { return normalizeHomeDeadlineFilter(JSON.parse(localStorage.getItem(HOME_DEADLINE_KEY))); }
   catch(e) { return defaultHomeDeadlineFilter(); }
@@ -5413,10 +5498,38 @@ function caseBufferLabel(c) {
   return (c && c.status === 'fristarkiv') ? base + ' · ikke aktiv i Fristarkiv' : base;
 }
 
-// Arbeidsvinduet en vanlig sak legger beslag på: antall dager fram mot fristen
-// der saken regnes som arbeid. Delt av belegg-beregningen, tidslinjen og
-// ferieoverlapp-sjekken, så de tre alltid modellerer samme arbeidsmengde.
-var WORK_WINDOW_DAYS = 14;
+// Arbeidsvinduet en sak legger beslag på: antall dager fram mot fristen der
+// saken regnes som arbeid. Standardverdier per sakstype; brukeren kan endre dem
+// under Innstillinger (workWindows). Oppdrag-verdien gjelder bare oppdrag uten
+// egen varighet.
+var WORK_WINDOW_DEFAULTS = { ny: 14, viderebehandling: 3, oppdrag: 2 };
+var WORK_WINDOW_MAX = 365;
+
+// normalizeWorkWindows: tar lagrede/importerte innstillinger og returnerer et
+// fullstendig sett. Hver sakstype valideres for seg — ugyldige verdier faller
+// tilbake til standarden uten å ta med seg de gyldige.
+function normalizeWorkWindows(raw) {
+  var out = {};
+  var src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  Object.keys(WORK_WINDOW_DEFAULTS).forEach(function(k) {
+    var v = src[k];
+    out[k] = (typeof v === 'number' && isFinite(v) && v >= 1 && v <= WORK_WINDOW_MAX)
+      ? Math.floor(v) : WORK_WINDOW_DEFAULTS[k];
+  });
+  return out;
+}
+
+// workWindowDays: arbeidsvinduet til en sak i dager. Delt av belegg-beregningen,
+// tidslinjen og ferieoverlapp-sjekken, så de tre alltid modellerer samme
+// arbeidsmengde. Oppdrag bruker sin egen varighet når den er satt.
+function workWindowDays(c) {
+  if (c && c.type === 'oppdrag') {
+    var d = parseInt(c.duration, 10);
+    return d >= 1 ? d : workWindows.oppdrag;
+  }
+  if (c && c.status === 'viderebehandling') return workWindows.viderebehandling;
+  return workWindows.ny;
+}
 
 // Bredden på en milepælsbjelke på tidslinjen — en dato det skjer noe på, ikke
 // en periode det jobbes i. .tl-bar har min-width, så den er synlig uansett.
@@ -5451,26 +5564,24 @@ function countsInBelegg(c) {
 }
 
 // timelineSpanDays: hvor mange dager bjelken til en sak dekker på tidslinjen.
-// Oppdrag bruker sin egen varighet. Vanlige saker tegnes som arbeidsvinduet
-// fram mot fristen. Saker i Fristarkiv er ikke arbeid, så de tegnes som en
-// milepæl på selve datoen — den markerer når saken kan komme tilbake, og
-// legger dermed heller ikke beslag på en hel rad i tidslinjen.
+// Saker tegnes som arbeidsvinduet fram mot fristen (workWindowDays). Saker i
+// Fristarkiv er ikke arbeid, så de tegnes som en milepæl på selve datoen — den
+// markerer når saken kan komme tilbake, og legger dermed heller ikke beslag på
+// en hel rad i tidslinjen. Oppdrag i Fristarkiv beholder varigheten sin.
 function timelineSpanDays(c) {
-  if (c && c.type === 'oppdrag') return Math.max(2, parseInt(c.duration, 10) || 2);
-  if (c && c.status === 'fristarkiv') return MILESTONE_DAYS;
-  return WORK_WINDOW_DAYS;
+  if (c && c.type !== 'oppdrag' && c.status === 'fristarkiv') return MILESTONE_DAYS;
+  return workWindowDays(c);
 }
 
 // Returns true if any day in the case's working period overlaps a vacation.
-// For søknader: WORK_WINDOW_DAYS-day window ending on effDueDate.
-// For oppdrag: duration-day window ending on dueDate.
+// The period is the workWindowDays-day window ending on effDueDate (the
+// buffered date for søknader, dueDate for oppdrag).
 // Fristarkiv-saker har ingen arbeidsperiode, så de kan aldri kollidere med ferie.
 function periodOverlapsVacation(c) {
   if (!c || !c.dueDate) return false;
   if (c.status === 'fristarkiv') return false;
-  var isOppdrag = c.type === 'oppdrag';
   var endStr  = effDueFor(c);  // buffer-justert for søknader, dueDate for oppdrag
-  var days    = isOppdrag ? (parseInt(c.duration, 10) || 1) : WORK_WINDOW_DAYS;
+  var days    = workWindowDays(c);
   var end     = new Date(endStr + 'T00:00:00');
   end.setDate(end.getDate() - (days - 1));
   var sStr = end.getFullYear() + '-' + String(end.getMonth()+1).padStart(2,'0') + '-' + String(end.getDate()).padStart(2,'0');
@@ -5668,6 +5779,7 @@ var vacations = loadVacations();
 var productionGoal = loadGoal();
 var beleggHorizon  = loadBeleggHorizon();
 var fristBuffer    = loadFristBuffer();
+var workWindows    = loadWorkWindows();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
 var activeCase = loadActiveCase();
 var _tlConfig = {
@@ -5824,6 +5936,11 @@ function _dispatch(action, payload) {
       if (p.duration) newCase.duration = p.duration;
       AppState.cases = cases.concat([newCase]);
       saveCases();
+      if (p.filingDate) {
+        var newData = defaultSakData(0);
+        newData.filingDate = p.filingDate;
+        saveSakData(newCase.id, newData);
+      }
       render();
       break;
     }
@@ -5846,6 +5963,14 @@ function _dispatch(action, payload) {
         return Object.assign({}, c, patch, histPatch);
       });
       saveCases();
+      // Innleveringsdatoen ligger i saksdetaljene (pt_sak_*), ikke i cases[]
+      if (p.type !== 'oppdrag' && typeof p.filingDate === 'string') {
+        var editData = loadSakData(p.id) || defaultSakData(0);
+        if ((editData.filingDate || '') !== p.filingDate) {
+          editData.filingDate = p.filingDate;
+          saveSakData(p.id, editData);
+        }
+      }
       render();
       break;
     }
@@ -6204,6 +6329,20 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'SETTINGS_WORK_WINDOW_CHANGE': {
+      // value null = tilbake til standard for den typen; key null = alle typer
+      var next = Object.assign({}, workWindows);
+      if (payload.key == null) next = Object.assign({}, WORK_WINDOW_DEFAULTS);
+      else if (payload.key in WORK_WINDOW_DEFAULTS) {
+        next[payload.key] = payload.value == null ? WORK_WINDOW_DEFAULTS[payload.key] : payload.value;
+      }
+      workWindows = normalizeWorkWindows(next);
+      saveWorkWindows(workWindows);
+      showToast('✓ Standard varighet lagret');
+      render();
+      break;
+    }
+
     case 'HOME_DEADLINE_FILTER_SET': {
       homeDeadlineFilter = normalizeHomeDeadlineFilter(payload.filter);
       saveHomeDeadlineFilter(homeDeadlineFilter);
@@ -6348,6 +6487,7 @@ function _dispatch(action, payload) {
           _cleUpdateSummary();
         }
         if ('fristBuffer' in s) { fristBuffer = s.fristBuffer; saveFristBuffer(fristBuffer); }
+        if ('workWindows' in s) { workWindows = s.workWindows; saveWorkWindows(workWindows); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
         if ('activeCase' in s) { activeCase = s.activeCase; saveActiveCase(activeCase); }
@@ -6739,7 +6879,7 @@ function emptyStateMessage(filter) {
 
 // ── Forløpsspor: HTML ──────────────────────────────
 var TRK_ICONS = { done: 'ti-check', granted: 'ti-check', refused: 'ti-x', closed: 'ti-minus', wait: 'ti-clock', caution: 'ti-alert-triangle' };
-var TRK_STATE_TEXT = { done: 'fullført', active: 'pågår', future: 'ikke startet', wait: 'venter på søker',
+var TRK_STATE_TEXT = { done: 'fullført', active: 'pågår', videre: 'pågår', future: 'ikke startet', wait: 'venter på søker',
                        caution: 'pågår, mange runder', granted: 'meddelt', refused: 'avslått', closed: 'henlagt' };
 
 // Steget saken står på nå: det siste som ikke er «future».
@@ -8012,7 +8152,7 @@ function computeBelegg(horizonDays) {
   //
   // Merk: dette er en sum, ikke et sett med unike datoer — to saker med
   // overlappende vinduer teller den samme datoen to ganger. Det er med vilje.
-  // Arbeidsvinduet er et estimat på arbeidsmengde (~10 arbeidsdager per sak),
+  // Arbeidsvinduet er et estimat på arbeidsmengde (se workWindowDays),
   // og belegg = estimert arbeid / tilgjengelig kapasitet. Med unike datoer
   // ville ti saker med frist samme dag gitt samme belegg som én sak — altså
   // stille i det ene tilfellet der du mest trenger et varsel. Derfor kan
@@ -8039,7 +8179,8 @@ function computeBelegg(horizonDays) {
         return;
       }
 
-      var winStart = dueOff - WORK_WINDOW_DAYS;
+      // Vinduet er workWindowDays dager og slutter på (og inkluderer) fristen.
+      var winStart = dueOff - workWindowDays(c) + 1;
       var winEnd   = dueOff;
       for (var i = Math.max(startOffset, winStart); i < Math.min(endOffset, winEnd + 1); i++) {
         var d = new Date(today.getTime() + i * 86400000);
@@ -8544,7 +8685,7 @@ function renderSak(id) {
   var durField = document.getElementById('sak-duration-field');
   if (durField) durField.style.display = isOppdrag ? '' : 'none';
   var durInp = document.getElementById('sak-duration');
-  if (durInp) durInp.textContent = cas.duration || '—';
+  if (durInp) durInp.textContent = cas.duration || (workWindowDays(cas) + ' (standard)');
 
   // Per-sak-buffer (skjules for oppdrag)
   var bufField = document.getElementById('sak-case-buffer-field');
@@ -10672,7 +10813,8 @@ function buildTimelineDiv(opts) {
     opts.draftRows.forEach(function(row) {
       if (!row.checked || !row.date || !isValidDate(row.date)) return;
       var due = new Date(row.date + 'T00:00:00');
-      var s  = Math.max(0, Math.round((new Date(due.getTime() - WORK_WINDOW_DAYS * 86400000) - today) / 86400000));
+      // Saker fra «Flere saker» opprettes alltid som Ny.
+      var s  = Math.max(0, Math.round((new Date(due.getTime() - workWindows.ny * 86400000) - today) / 86400000));
       var e2 = Math.min(HORIZON, Math.round((due - today) / 86400000));
       if (e2 < 0 || s > HORIZON) return;
       var draft = document.createElement('div');
@@ -11030,6 +11172,7 @@ function renderInnstillinger() {
   if (beleggSel) beleggSel.value = String(beleggHorizon);
   var bufferInp = document.getElementById('input-frist-buffer');
   if (bufferInp) bufferInp.value = fristBuffer > 0 ? String(fristBuffer) : '';
+  _renderWorkWindowInputs();
   _bkUpdateSettingsUI();
   renderVacationList();
 }
@@ -12299,6 +12442,7 @@ var fieldWarn  = document.getElementById('field-warn');
 var _dupWarnPending = false;
 var fDuration   = document.getElementById('f-duration');
 var fCaseBuffer = document.getElementById('f-case-buffer');
+var fFilingDate = document.getElementById('f-filing-date');
 
 // Modal-tidslinje state
 // _tlModalHorizon / _tlModalAxisMode er nå i _tlConfig['modal-timeline']
@@ -12353,13 +12497,14 @@ function openModal(c) {
     fModalTags.value = c.tags  || '';
     fDuration.value   = c.duration || '';
     fCaseBuffer.value = c.caseBuffer != null ? String(c.caseBuffer) : '';
+    fFilingDate.value = c.type === 'oppdrag' ? '' : toDisplay((loadSakData(c.id) || {}).filingDate || '');
     if (c.notes || c.tags) {
       document.getElementById('modal-adv-toggle').classList.add('open');
       document.getElementById('modal-adv-body').classList.add('open');
     }
     setSelectedStatus(isOppdrag ? 'oppdrag' : (c.status || 'ny'));
   } else {
-    editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = '';
+    editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = fFilingDate.value = '';
     document.getElementById('f-case-number-op').value = '';
     document.getElementById('f-due-date-op').value = '';
     var defStatus = defaultOppdrag ? 'oppdrag'
@@ -12554,8 +12699,11 @@ document.getElementById('btn-save').addEventListener('click', function() {
   }
   fieldWarn.textContent = '';
   _dupWarnPending = false;
+  var filingDate = isOppdrag ? undefined : filingDateFromInput(fFilingDate.value);
+  if (filingDate === null) { fieldError.textContent = 'Ugyldig innleveringsdato — bruk formatet åååå.mm.dd.'; _dupWarnPending = false; return; }
   var internalDate = parseDate(dd);
-  var duration = isOppdrag ? (parseInt(fDuration.value, 10) || 2) : undefined;
+  // Tomt felt = ingen egen varighet; standarden fra Innstillinger gjelder da
+  var duration = isOppdrag ? (parseInt(fDuration.value, 10) >= 1 ? parseInt(fDuration.value, 10) : null) : undefined;
   var cbRaw = fCaseBuffer ? fCaseBuffer.value.trim() : '';
   var caseBuffer = isOppdrag ? null : (cbRaw === '' ? null : Math.max(0, parseInt(cbRaw, 10) || 0));
   // For oppdrag: bevar eksisterende status ved redigering, sett 'ny' for nye
@@ -12563,7 +12711,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
   var oppdragStatus = (existingOppdragStatus && existingOppdragStatus !== 'oppdrag') ? existingOppdragStatus : 'ny';
   var payload = { caseNumber: cn, dueDate: internalDate, title: ti,
     notes: fNotes.value.trim(), tags: fModalTags.value,
-    type: isOppdrag ? 'oppdrag' : 'sak', status: isOppdrag ? oppdragStatus : st, duration: duration, caseBuffer: caseBuffer };
+    type: isOppdrag ? 'oppdrag' : 'sak', status: isOppdrag ? oppdragStatus : st, duration: duration, caseBuffer: caseBuffer, filingDate: filingDate };
   if (id) { payload.id = id; dispatch('CASE_EDIT', payload); }
   else    { dispatch('CASE_CREATE', payload); }
   var dest = isOppdrag ? 'oppdrag' : st;
@@ -12794,6 +12942,34 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
   });
 })();
 
+// ── Standard varighet ──────────────────────────────
+function _renderWorkWindowInputs() {
+  document.querySelectorAll('[data-ww-key]').forEach(function(inp) {
+    var k = inp.dataset.wwKey;
+    inp.value = String(workWindows[k]);
+    inp.placeholder = String(WORK_WINDOW_DEFAULTS[k]);
+  });
+  if (fDuration) fDuration.placeholder = 'Standard: ' + workWindows.oppdrag;
+}
+(function() {
+  document.querySelectorAll('[data-ww-key]').forEach(function(inp) {
+    inp.addEventListener('change', function() {
+      var raw = this.value.trim();
+      var v = parseInt(raw, 10);
+      // Tomt felt = standard; et ugyldig tall avvises og feltet tilbakestilles
+      if (raw !== '' && !(v >= 1 && v <= WORK_WINDOW_MAX)) { _renderWorkWindowInputs(); return; }
+      dispatch('SETTINGS_WORK_WINDOW_CHANGE', { key: this.dataset.wwKey, value: raw === '' ? null : v });
+      _renderWorkWindowInputs();
+    });
+  });
+  var reset = document.getElementById('btn-ww-reset');
+  if (reset) reset.addEventListener('click', function() {
+    dispatch('SETTINGS_WORK_WINDOW_CHANGE', { key: null });
+    _renderWorkWindowInputs();
+  });
+  _renderWorkWindowInputs();
+})();
+
 // ── Ferieperioder ──────────────────────────────────
 function _updateVacToggleLabel() {
   var lbl = document.getElementById('vac-toggle-label');
@@ -12991,6 +13167,7 @@ function init() {
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString('nb-NO', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   _dp.init(document.getElementById('f-due-date'));
   _dp.init(document.getElementById('f-due-date-op'));
+  _dp.init(document.getElementById('f-filing-date'));
   autoFormatDateInput(document.getElementById('f-due-date-op'));
   _dp.init(document.getElementById('f-frist'));
   initTagAutocomplete(document.getElementById('f-tags'));
@@ -13137,7 +13314,7 @@ function init() {
       dragging.bar.classList.toggle('at-limit', atLimit);
 
       // Move bar visually
-      var spanDays = WORK_WINDOW_DAYS;
+      var spanDays = timelineSpanDays(cas);
       var newStart = newEffEnd - spanDays;
       dragging.bar.style.left  = dragging.pct(newStart);
       dragging.bar.style.width = (spanDays / dragging.TOTAL * 100).toFixed(4) + '%';

@@ -8,11 +8,12 @@ const { loadFunctions } = require('./extractFunctions');
 // drift when a public holiday moves.
 function load(cases) {
   return loadFunctions(
-    ['computeBelegg', 'countsInBelegg', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo'],
+    ['computeBelegg', 'countsInBelegg', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo'],
     {
-      vars: ['WORK_WINDOW_DAYS', 'OVERDUE_PENALTY_WORKDAYS'],
+      vars: ['OVERDUE_PENALTY_WORKDAYS'],
       globals: {
         cases: cases || [],
+        workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 },
         vacations: [],
         fristBuffer: 0,
         isNonWorkday: () => false,
@@ -36,15 +37,23 @@ function makeCase(overrides) {
   }, overrides);
 }
 
-// One case due in 30 days covers offsets 16..30 = 15 of the 60 days = 25%.
-const ONE_CASE_PCT = 25;
+// One Ny case due in 30 days covers offsets 17..30 = its 14-day window, which
+// over a 70-day horizon is 20%.
+const ONE_CASE_PCT = 20;
 
 test('computeBelegg counts the work window of a single case', () => {
   const { computeBelegg } = load([makeCase({ id: 'a' })]);
-  const res = computeBelegg(60);
-  assert.strictEqual(res.avail, 60);
-  assert.strictEqual(res.busy, 15);
+  const res = computeBelegg(70);
+  assert.strictEqual(res.avail, 70);
+  assert.strictEqual(res.busy, 14);
   assert.strictEqual(res.pct1, ONE_CASE_PCT);
+});
+
+// Regression: the window used to run from dueOff - window to dueOff
+// inclusive, one day more than the window itself.
+test('computeBelegg books exactly the configured window, not one day more', () => {
+  const { computeBelegg } = load([makeCase({ id: 'a', status: 'viderebehandling' })]);
+  assert.strictEqual(computeBelegg(70).busy, 3);
 });
 
 // This pins a deliberate design decision, so don't "fix" it into a set of
@@ -58,16 +67,16 @@ test('computeBelegg sums overlapping work windows rather than merging them', () 
     makeCase({ id: 'a' }),
     makeCase({ id: 'b' }),
   ]);
-  assert.strictEqual(computeBelegg(60).pct1, ONE_CASE_PCT * 2);
+  assert.strictEqual(computeBelegg(70).pct1, ONE_CASE_PCT * 2);
 });
 
 test('computeBelegg reports over 100% when the booked work exceeds capacity', () => {
   const many = [];
-  for (let i = 0; i < 5; i++) many.push(makeCase({ id: 'c' + i }));
+  for (let i = 0; i < 6; i++) many.push(makeCase({ id: 'c' + i }));
   const { computeBelegg } = load(many);
-  const pct = computeBelegg(60).pct1;
-  assert.strictEqual(pct, ONE_CASE_PCT * 5);
-  assert.ok(pct > 100, 'five concurrent cases should read as overbooked');
+  const pct = computeBelegg(70).pct1;
+  assert.strictEqual(pct, ONE_CASE_PCT * 6);
+  assert.ok(pct > 100, 'six concurrent cases should read as overbooked');
 });
 
 test('computeBelegg ignores fristarkiv cases', () => {
@@ -75,12 +84,24 @@ test('computeBelegg ignores fristarkiv cases', () => {
     makeCase({ id: 'a', status: 'ny' }),
     makeCase({ id: 'b', status: 'fristarkiv' }),
   ]);
-  assert.strictEqual(computeBelegg(60).pct1, ONE_CASE_PCT);
+  assert.strictEqual(computeBelegg(70).pct1, ONE_CASE_PCT);
 });
 
-test('computeBelegg counts viderebehandling as real work', () => {
+test('computeBelegg counts viderebehandling as real work, over its own window', () => {
   const { computeBelegg } = load([makeCase({ id: 'a', status: 'viderebehandling' })]);
-  assert.strictEqual(computeBelegg(60).pct1, ONE_CASE_PCT);
+  assert.strictEqual(computeBelegg(70).busy, 3);
+});
+
+test('computeBelegg follows the work window settings', () => {
+  const fns = loadFunctions(
+    ['computeBelegg', 'countsInBelegg', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo'],
+    { vars: ['OVERDUE_PENALTY_WORKDAYS'], globals: {
+      cases: [makeCase({ id: 'a' }), makeCase({ id: 'b', status: 'viderebehandling' })],
+      workWindows: { ny: 10, viderebehandling: 5, oppdrag: 2 },
+      vacations: [], fristBuffer: 0, isNonWorkday: () => false,
+    } }
+  );
+  assert.strictEqual(fns.computeBelegg(70).busy, 15);
 });
 
 // An overdue case's work window lies entirely in the past, so without a
