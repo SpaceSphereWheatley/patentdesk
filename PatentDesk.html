@@ -866,6 +866,26 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .s-inp:focus, .s-sel:focus { outline: none; border-color: var(--accent); }
 .s-unit { font-size: var(--text-sm); color: var(--muted); }
 
+/* Innstillinger: standard varighet og buffer per sakstype */
+.tdf-table     { border-bottom: 1px solid var(--border); }
+.tdf-row       { display: grid; grid-template-columns: 1fr 180px 180px; align-items: center; gap: var(--space-6); padding: var(--space-4) var(--space-7); border-bottom: 1px solid var(--border); }
+.tdf-row:last-child { border-bottom: none; }
+.tdf-head      { padding-top: var(--space-3); padding-bottom: var(--space-3); font-size: var(--text-xs); color: var(--muted); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.tdf-head span:not(:first-child) { text-align: right; padding-right: 46px; }
+.tdf-type      { font-size: var(--text-base); color: var(--text); }
+.tdf-cell      { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+.tdf-cell .s-inp { width: 80px; }
+.tdf-na        { color: var(--muted); font-size: var(--text-sm); padding-right: 46px; }
+.tdf-cell-lbl  { display: none; font-size: var(--text-xs); color: var(--muted); margin-right: auto; }
+.tdf-foot      { justify-content: space-between; }
+@media (max-width: 600px) {
+  .tdf-head    { display: none; }
+  .tdf-row     { grid-template-columns: 1fr; gap: var(--space-3); }
+  .tdf-cell-lbl { display: inline; }
+  .tdf-na      { padding-right: 0; }
+  .tdf-foot    { flex-direction: column; align-items: flex-start; gap: var(--space-4); }
+}
+
 /* Ferieliste med statuser */
 .vac-toggle-btn {
   display: inline-flex; align-items: center; gap: var(--space-1);
@@ -2980,68 +3000,58 @@ tr:hover .sak-tag-display.sak-tag-empty,
                 <option value="90">90 dager</option>
               </select>
             </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Fristbuffer (global)</span>
-                <span class="settings-label-sub">Frister vises N dager tidligere overalt. Faktisk frist lagres uendret. Kan overstyres per sak.</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
-                <input class="s-inp" id="input-frist-buffer"
-                       type="number" min="0" max="90" step="1" placeholder="0" />
-                <span class="s-unit">dager</span>
-              </div>
-            </div>
           </div>
         </section>
 
-        <!-- Standard varighet -->
+        <!-- Standard per sakstype -->
         <section class="settings-section">
-          <h2 class="settings-section-title">Standard varighet</h2>
+          <h2 class="settings-section-title">Standard per sakstype</h2>
           <div class="settings-group">
             <div class="settings-row">
               <div class="settings-label">
-                <span class="settings-label-title">Ny (førstegangsbehandling)</span>
-                <span class="settings-label-sub">Dager en sak legger beslag på før fristen. Brukes i tidslinjen, belegget og ferievarselet.</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
-                <input class="s-inp" id="input-ww-ny" data-ww-key="ny"
-                       type="number" min="1" max="365" step="1" />
-                <span class="s-unit">dager</span>
+                <span class="settings-label-sub"><strong>Varighet:</strong> dager saken er arbeid før fristen — brukes i tidslinjen, belegget og ferievarselet.</span>
+                <span class="settings-label-sub"><strong>Buffer:</strong> fristen vises så mange dager tidligere. Faktisk frist lagres uendret, og hver sak kan overstyre bufferen.</span>
               </div>
             </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Viderebehandling</span>
-                <span class="settings-label-sub">Behandling av søkerens svar</span>
+            <div class="tdf-table" role="table" aria-label="Standard varighet og buffer per sakstype">
+              <div class="tdf-row tdf-head" role="row">
+                <span role="columnheader">Sakstype</span>
+                <span role="columnheader">Varighet</span>
+                <span role="columnheader">Buffer</span>
               </div>
-              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
-                <input class="s-inp" id="input-ww-viderebehandling" data-ww-key="viderebehandling"
-                       type="number" min="1" max="365" step="1" />
-                <span class="s-unit">dager</span>
+              <div class="tdf-row" role="row">
+                <span class="tdf-type" role="rowheader">Ny (førstegangsbehandling)</span>
+                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                  <input class="s-inp" id="input-ww-ny" data-ww-key="ny" type="number" min="1" max="365" step="1" aria-label="Varighet, Ny" />
+                  <span class="s-unit">dager</span></label>
+                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Buffer</span>
+                  <input class="s-inp" id="input-tb-ny" data-tb-key="ny" type="number" min="0" max="90" step="1" aria-label="Buffer, Ny" />
+                  <span class="s-unit">dager</span></label>
+              </div>
+              <div class="tdf-row" role="row">
+                <span class="tdf-type" role="rowheader">Viderebehandling</span>
+                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                  <input class="s-inp" id="input-ww-viderebehandling" data-ww-key="viderebehandling" type="number" min="1" max="365" step="1" aria-label="Varighet, Viderebehandling" />
+                  <span class="s-unit">dager</span></label>
+                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Buffer</span>
+                  <input class="s-inp" id="input-tb-viderebehandling" data-tb-key="viderebehandling" type="number" min="0" max="90" step="1" aria-label="Buffer, Viderebehandling" />
+                  <span class="s-unit">dager</span></label>
+              </div>
+              <div class="tdf-row" role="row">
+                <span class="tdf-type" role="rowheader">Oppdrag uten egen varighet</span>
+                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                  <input class="s-inp" id="input-ww-oppdrag" data-ww-key="oppdrag" type="number" min="1" max="365" step="1" aria-label="Varighet, oppdrag" />
+                  <span class="s-unit">dager</span></label>
+                <span class="tdf-cell tdf-na" role="cell" title="Oppdrag bruker alltid faktisk frist"><span class="tdf-cell-lbl">Buffer</span>—</span>
+              </div>
+              <div class="tdf-row" role="row">
+                <span class="tdf-type" role="rowheader">Fristarkiv</span>
+                <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ikke arbeid"><span class="tdf-cell-lbl">Varighet</span>Milepæl</span>
+                <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
               </div>
             </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Oppdrag uten egen varighet</span>
-                <span class="settings-label-sub">Oppdrag med varighet satt bruker sin egen</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
-                <input class="s-inp" id="input-ww-oppdrag" data-ww-key="oppdrag"
-                       type="number" min="1" max="365" step="1" />
-                <span class="s-unit">dager</span>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Fristarkiv</span>
-                <span class="settings-label-sub">Milepæl på søkers frist — ikke arbeid, ikke justerbar</span>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Tilbakestill</span>
-                <span class="settings-label-sub">Ny 14, Viderebehandling 3, Oppdrag 2 dager</span>
-              </div>
+            <div class="settings-row tdf-foot">
+              <span class="settings-label-sub">Standard: Ny 14 / 0, Viderebehandling 3 / 0, Oppdrag 2 dager</span>
               <button class="s-btn" id="btn-ww-reset">Tilbakestill til standard</button>
             </div>
           </div>
@@ -3653,8 +3663,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <input class="field-input" id="f-due-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
           </div>
           <div class="field-group">
-            <label class="field-label" for="f-case-buffer">Buffer (dager) <span class="field-label-sub">blank = globalt</span></label>
-            <input class="field-input" id="f-case-buffer" type="number" min="0" max="365" placeholder="Globalt: standard" />
+            <label class="field-label" for="f-case-buffer">Buffer (dager) <span class="field-label-sub">blank = standard</span></label>
+            <input class="field-input" id="f-case-buffer" type="number" min="0" max="365" placeholder="Standard" />
           </div>
           <div class="field-group">
             <label class="field-label" for="f-filing-date">Innleveringsdato <span class="field-label-sub">valgfritt</span></label>
@@ -4121,7 +4131,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.29.0';
+var APP_VERSION    = 'v4.30.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4134,7 +4144,8 @@ var VACATION_KEY = 'pt_vacations';
 var STATS_KEY    = 'pt_stats';
 var GOAL_KEY     = 'pt_goal';
 var BELEGG_KEY   = 'pt_belegg_horizon';
-var BUFFER_KEY   = 'pt_frist_buffer';
+var BUFFER_KEY   = 'pt_frist_buffer';   // gammel global buffer, leses bare ved oppgradering
+var TYPE_BUFFER_KEY = 'pt_type_buffers';
 var WORK_WINDOW_KEY = 'pt_work_windows';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
@@ -4906,7 +4917,7 @@ function makeExportPayload() {
     // Bare en egendefinert mal eksporteres; null = standardmalen, så den
     // fortsatt følger med når standardmalen endres i en ny versjon
     checklistTemplate: _customChecklistTemplate(),
-    fristBuffer: fristBuffer,
+    typeBuffers: typeBuffers,
     workWindows: workWindows,
     homeDeadlineFilter: homeDeadlineFilter,
     activeCase: activeCase,
@@ -4939,8 +4950,10 @@ function readImportSettings(d) {
   if (typeof d.userName === 'string') out.userName = d.userName.trim();
   if (d.checklistTemplate === null) out.checklistTemplate = null;
   else if (isValidChecklistTemplate(d.checklistTemplate)) out.checklistTemplate = d.checklistTemplate;
-  if (typeof d.fristBuffer === 'number' && isFinite(d.fristBuffer) && d.fristBuffer >= 0) {
-    out.fristBuffer = Math.floor(d.fristBuffer);
+  // Eldre eksportfiler har bare én global fristbuffer; den fyller begge typene.
+  var legacyBuf = (typeof d.fristBuffer === 'number' && isFinite(d.fristBuffer) && d.fristBuffer >= 0) ? d.fristBuffer : undefined;
+  if ((d.typeBuffers && typeof d.typeBuffers === 'object' && !Array.isArray(d.typeBuffers)) || legacyBuf !== undefined) {
+    out.typeBuffers = normalizeTypeBuffers(d.typeBuffers, legacyBuf);
   }
   if (d.workWindows && typeof d.workWindows === 'object' && !Array.isArray(d.workWindows)) {
     out.workWindows = normalizeWorkWindows(d.workWindows);
@@ -5300,6 +5313,7 @@ function deleteAllData() {
   localStorage.removeItem(GOAL_KEY);
   localStorage.removeItem(BELEGG_KEY);
   localStorage.removeItem(BUFFER_KEY);
+  localStorage.removeItem(TYPE_BUFFER_KEY);
   localStorage.removeItem(VACATION_KEY);
   localStorage.removeItem(CHECKLIST_KEY);
   localStorage.removeItem('pt_schema_version');
@@ -5394,13 +5408,19 @@ function loadBeleggHorizon() {
 function saveBeleggHorizon(val) {
   lsSetSafe(BELEGG_KEY, String(val));
 }
-function loadFristBuffer() {
-  var v = parseInt(localStorage.getItem(BUFFER_KEY), 10);
-  return isNaN(v) || v < 0 ? 0 : v;
+// Standardbuffer per type. Finnes ikke den nye nøkkelen ennå, brukes den gamle
+// globale bufferen for begge typene, så oppgraderingen ikke flytter noen frister.
+function loadTypeBuffers() {
+  var raw = null, legacy;
+  try { raw = JSON.parse(localStorage.getItem(TYPE_BUFFER_KEY)); } catch(e) {}
+  if (!raw) {
+    var v = parseInt(localStorage.getItem(BUFFER_KEY), 10);
+    if (!isNaN(v)) legacy = v;
+  }
+  return normalizeTypeBuffers(raw, legacy);
 }
-function saveFristBuffer(val) {
-  try { localStorage.setItem(BUFFER_KEY, String(val)); }
-  catch(e) { showToast('✗ Lagring feilet', true); }
+function saveTypeBuffers(b) {
+  lsSetSafe(TYPE_BUFFER_KEY, JSON.stringify(b));
 }
 function loadWorkWindows() {
   try { return normalizeWorkWindows(JSON.parse(localStorage.getItem(WORK_WINDOW_KEY))); }
@@ -5424,7 +5444,41 @@ function saveActiveCase(mark) {
   if (mark) lsSetSafe(ACTIVE_CASE_KEY, JSON.stringify(mark));
   else { try { localStorage.removeItem(ACTIVE_CASE_KEY); } catch(e) {} }
 }
-// bufferAppliesTo: om fristbufferen — global eller per sak — skal gjelde for en
+// Standard fristbuffer per sakstype (Innstillinger → Standard per sakstype).
+// Bare Ny og Viderebehandling har buffer: oppdrag bruker alltid faktisk frist,
+// og i Fristarkiv er fristen søkerens. Kan overstyres per sak (caseBuffer).
+var TYPE_BUFFER_DEFAULTS = { ny: 0, viderebehandling: 0 };
+var TYPE_BUFFER_MAX = 90;
+
+// normalizeTypeBuffers: et fullstendig sett bufferverdier fra lagrede eller
+// importerte innstillinger. Hver type valideres for seg. legacy er den gamle
+// globale fristbufferen (før v4.30.0): den fyller typene som mangler, slik at
+// en oppgradering ikke endrer noen frister.
+function normalizeTypeBuffers(raw, legacy) {
+  var src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  var valid = function(v) { return typeof v === 'number' && isFinite(v) && v >= 0 && v <= TYPE_BUFFER_MAX; };
+  var out = {};
+  Object.keys(TYPE_BUFFER_DEFAULTS).forEach(function(k) {
+    out[k] = valid(src[k]) ? Math.floor(src[k])
+           : valid(legacy)  ? Math.floor(legacy)
+           : TYPE_BUFFER_DEFAULTS[k];
+  });
+  return out;
+}
+
+// typeBufferFor: standardbufferen for sakens type (Ny når saken mangler).
+function typeBufferFor(c) {
+  return (c && c.status === 'viderebehandling') ? typeBuffers.viderebehandling : typeBuffers.ny;
+}
+
+// bufferDaysFor: bufferen som faktisk gjelder for saken — egen buffer om den
+// har en, ellers standarden for typen, og 0 der buffer ikke gjelder.
+function bufferDaysFor(c) {
+  if (!bufferAppliesTo(c)) return 0;
+  return (c && c.caseBuffer != null) ? c.caseBuffer : typeBufferFor(c);
+}
+
+// bufferAppliesTo: om fristbufferen — standard eller per sak — skal gjelde for en
 // sak. Oppdrag viser alltid faktisk frist. Det samme gjør saker i Fristarkiv:
 // der er poenget nettopp å forholde seg til den reelle fristen, så verken den
 // globale bufferen eller en per-sak-buffer trekkes fra.
@@ -5440,7 +5494,7 @@ function bufferAppliesTo(c) {
 function getEffectiveDueDate(dueDateStr, caseObj) {
   if (!dueDateStr) return dueDateStr;
   if (!bufferAppliesTo(caseObj)) return dueDateStr;
-  var buf = (caseObj && caseObj.caseBuffer != null) ? caseObj.caseBuffer : fristBuffer;
+  var buf = bufferDaysFor(caseObj);
   if (buf === 0) return dueDateStr;
   var d = new Date(dueDateStr + 'T00:00:00');
   d.setDate(d.getDate() - buf);
@@ -5452,9 +5506,6 @@ function getEffectiveDueDate(dueDateStr, caseObj) {
 function effDueFor(c) {
   return getEffectiveDueDate(c ? c.dueDate : '', c);
 }
-// caseBufferLabel: teksten i «Buffer (dager)»-feltet på sakssiden. En sak i
-// Fristarkiv beholder buffer-verdien sin — den slår inn igjen når saken går
-// videre — så verdien vises fortsatt, men merket som ikke aktiv.
 // Hvem fristen tilhører avhenger av status, og det er den viktigste
 // domeneregelen på sakssiden: i Fristarkiv er realitetsbrevet sendt, og datoen
 // er søkerens frist til å svare oss — ikke vår egen. Den skilnaden skal stå
@@ -5493,9 +5544,37 @@ function fristOwnerNote(c) {
   return '';
 }
 
+// caseBufferLabel: teksten i «Buffer (dager)»-feltet på sakssiden — bufferen som
+// gjelder, og om den er sakens egen eller standarden for typen. Egen buffer
+// fjernes ved statusbytte (statusChangePatch), så en sak i Fristarkiv har aldri
+// noen.
 function caseBufferLabel(c) {
-  var base = (c && c.caseBuffer != null) ? String(c.caseBuffer) + ' dager' : 'Globalt';
-  return (c && c.status === 'fristarkiv') ? base + ' · ikke aktiv i Fristarkiv' : base;
+  if (c && c.status === 'fristarkiv') return 'Ikke aktiv i Fristarkiv';
+  var own = c && c.caseBuffer != null;
+  var n = own ? c.caseBuffer : typeBufferFor(c);
+  return n + (n === 1 ? ' dag' : ' dager') + (own ? ' · egen' : ' · standard');
+}
+
+// statusChangePatch: feltene som endres når en sak bytter status. Egen buffer
+// gjelder fristen den ble satt for; når statusen endres er den fristen
+// behandlet, så saken går tilbake til standarden for sin nye type.
+// Ren funksjon — se test/typeBuffers.test.js.
+function statusChangePatch(toStatus, outcome, newDueDate) {
+  var patch = { status: toStatus, outcome: normaliseOutcome(toStatus, outcome), caseBuffer: null };
+  if (newDueDate) patch.dueDate = newDueDate;
+  return patch;
+}
+
+// modalCaseBuffer: egen buffer fra «Rediger sak»-feltet. Byttes statusen i
+// samme lagring, forkastes den gamle verdien som står igjen i feltet — bare en
+// ny verdi skrevet inn nå beholdes. Fristarkiv har ingen buffer.
+// Ren funksjon — se test/typeBuffers.test.js.
+function modalCaseBuffer(orig, newStatus, raw) {
+  if (newStatus === 'fristarkiv') return null;
+  var t = (raw == null ? '' : String(raw)).trim();
+  var v = t === '' ? null : Math.max(0, parseInt(t, 10) || 0);
+  if (orig && orig.status !== newStatus && v === (orig.caseBuffer != null ? orig.caseBuffer : null)) return null;
+  return v;
 }
 
 // Arbeidsvinduet en sak legger beslag på: antall dager fram mot fristen der
@@ -5778,7 +5857,7 @@ var activeMedlesingId = null;
 var vacations = loadVacations();
 var productionGoal = loadGoal();
 var beleggHorizon  = loadBeleggHorizon();
-var fristBuffer    = loadFristBuffer();
+var typeBuffers    = loadTypeBuffers();
 var workWindows    = loadWorkWindows();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
 var activeCase = loadActiveCase();
@@ -5831,7 +5910,7 @@ var AppState = {
     return {
       goal:     productionGoal,
       belegg:   beleggHorizon,
-      buffer:   fristBuffer,
+      buffer:   typeBuffers,
       docRoot:  loadDocRoot()
     };
   },
@@ -5892,8 +5971,7 @@ function _dispatch(action, payload) {
         activeCase: activeCase
       };
       // Oppdater state
-      var patch = { status: toStatus, outcome: normaliseOutcome(toStatus, payload.outcome) };
-      if (newDueDate) patch.dueDate = newDueDate;
+      var patch = statusChangePatch(toStatus, payload.outcome, newDueDate);
       AppState.cases = cases.map(function(c) {
         if (c.id !== id) return c;
         return Object.assign({}, c, patch, {
@@ -5934,6 +6012,7 @@ function _dispatch(action, payload) {
         history: [{ type: 'status', date: new Date().toISOString(), from: null, to: p.status }]
       };
       if (p.duration) newCase.duration = p.duration;
+      if (p.caseBuffer != null && p.type !== 'oppdrag') newCase.caseBuffer = p.caseBuffer;
       AppState.cases = cases.concat([newCase]);
       saveCases();
       if (p.filingDate) {
@@ -6320,25 +6399,32 @@ function _dispatch(action, payload) {
       break;
     }
 
-    case 'SETTINGS_BUFFER_CHANGE': {
-      var val = payload.value;
-      fristBuffer = isNaN(val) || val < 0 ? 0 : val;
-      saveFristBuffer(fristBuffer);
-      showToast('✓ Fristbuffer lagret');
+    case 'SETTINGS_TYPE_BUFFER_CHANGE': {
+      // value null = tilbake til standard for den typen
+      if (!(payload.key in TYPE_BUFFER_DEFAULTS)) break;
+      var nextBuf = Object.assign({}, typeBuffers);
+      nextBuf[payload.key] = payload.value == null ? TYPE_BUFFER_DEFAULTS[payload.key] : payload.value;
+      typeBuffers = normalizeTypeBuffers(nextBuf);
+      saveTypeBuffers(typeBuffers);
+      showToast('✓ Standard buffer lagret');
       render();
       break;
     }
 
     case 'SETTINGS_WORK_WINDOW_CHANGE': {
-      // value null = tilbake til standard for den typen; key null = alle typer
+      // value null = tilbake til standard for den typen; key null = alle typer,
+      // og da tilbakestilles også bufferne
       var next = Object.assign({}, workWindows);
-      if (payload.key == null) next = Object.assign({}, WORK_WINDOW_DEFAULTS);
-      else if (payload.key in WORK_WINDOW_DEFAULTS) {
+      if (payload.key == null) {
+        next = Object.assign({}, WORK_WINDOW_DEFAULTS);
+        typeBuffers = normalizeTypeBuffers(TYPE_BUFFER_DEFAULTS);
+        saveTypeBuffers(typeBuffers);
+      } else if (payload.key in WORK_WINDOW_DEFAULTS) {
         next[payload.key] = payload.value == null ? WORK_WINDOW_DEFAULTS[payload.key] : payload.value;
       }
       workWindows = normalizeWorkWindows(next);
       saveWorkWindows(workWindows);
-      showToast('✓ Standard varighet lagret');
+      showToast(payload.key == null ? '✓ Standardverdier tilbakestilt' : '✓ Standard varighet lagret');
       render();
       break;
     }
@@ -6486,7 +6572,7 @@ function _dispatch(action, payload) {
           else resetChecklistTemplate();
           _cleUpdateSummary();
         }
-        if ('fristBuffer' in s) { fristBuffer = s.fristBuffer; saveFristBuffer(fristBuffer); }
+        if ('typeBuffers' in s) { typeBuffers = s.typeBuffers; saveTypeBuffers(typeBuffers); }
         if ('workWindows' in s) { workWindows = s.workWindows; saveWorkWindows(workWindows); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
@@ -8914,7 +9000,8 @@ function renderSakFrist(cas) {
 
   var meta = document.getElementById('sak-frist-meta');
   if (cas.type !== 'oppdrag' && effDue !== cas.dueDate) {
-    meta.textContent = 'Faktisk frist ' + toDisplay(cas.dueDate) + '  ·  ' + caseBufferLabel(cas) + ' dagers buffer trukket fra';
+    var bd = bufferDaysFor(cas);
+    meta.textContent = 'Faktisk frist ' + toDisplay(cas.dueDate) + '  ·  ' + bd + (bd === 1 ? ' dags' : ' dagers') + ' buffer trukket fra';
     meta.style.display = '';
   } else {
     meta.style.display = 'none';
@@ -11170,8 +11257,6 @@ function renderTimeline(opts) {
 function renderInnstillinger() {
   var beleggSel = document.getElementById('input-belegg-horizon');
   if (beleggSel) beleggSel.value = String(beleggHorizon);
-  var bufferInp = document.getElementById('input-frist-buffer');
-  if (bufferInp) bufferInp.value = fristBuffer > 0 ? String(fristBuffer) : '';
   _renderWorkWindowInputs();
   _bkUpdateSettingsUI();
   renderVacationList();
@@ -12454,7 +12539,24 @@ var _modalBulkParsed = [];
 function _setModalOppdrag(isOppdrag) {
   document.getElementById('modal-row-sak').style.display     = isOppdrag ? 'none' : '';
   document.getElementById('modal-row-oppdrag').style.display = isOppdrag ? '' : 'none';
-  if (fCaseBuffer) fCaseBuffer.closest('.field-group').style.display = isOppdrag ? 'none' : '';
+  _syncModalBuffer();
+}
+
+// Bufferfeltet følger valgt status: skjult der buffer ikke gjelder (oppdrag,
+// Fristarkiv), og plassholderen viser standarden for typen. Byttes statusen
+// bort fra sakens nåværende, tømmes feltet — egen buffer følger ikke med til
+// en ny frist (se modalCaseBuffer). Tilbake til opprinnelig status gir den
+// tilbake.
+function _syncModalBuffer() {
+  if (!fCaseBuffer) return;
+  var st = getSelectedStatus();
+  var applies = st !== 'oppdrag' && st !== 'fristarkiv';
+  fCaseBuffer.closest('.field-group').style.display = applies ? '' : 'none';
+  fCaseBuffer.placeholder = 'Standard: ' + typeBufferFor({ status: st });
+  var orig = editIdEl.value ? cases.find(function(c) { return c.id === editIdEl.value; }) : null;
+  if (orig && orig.type !== 'oppdrag') {
+    fCaseBuffer.value = (st === orig.status && orig.caseBuffer != null) ? String(orig.caseBuffer) : '';
+  }
 }
 
 function getSelectedStatus() {
@@ -12704,8 +12806,8 @@ document.getElementById('btn-save').addEventListener('click', function() {
   var internalDate = parseDate(dd);
   // Tomt felt = ingen egen varighet; standarden fra Innstillinger gjelder da
   var duration = isOppdrag ? (parseInt(fDuration.value, 10) >= 1 ? parseInt(fDuration.value, 10) : null) : undefined;
-  var cbRaw = fCaseBuffer ? fCaseBuffer.value.trim() : '';
-  var caseBuffer = isOppdrag ? null : (cbRaw === '' ? null : Math.max(0, parseInt(cbRaw, 10) || 0));
+  var origCase = id ? cases.find(function(c) { return c.id === id; }) : null;
+  var caseBuffer = isOppdrag ? null : modalCaseBuffer(origCase, st, fCaseBuffer ? fCaseBuffer.value : '');
   // For oppdrag: bevar eksisterende status ved redigering, sett 'ny' for nye
   var existingOppdragStatus = id ? ((cases.find(function(c){return c.id===id;})||{}).status || null) : null;
   var oppdragStatus = (existingOppdragStatus && existingOppdragStatus !== 'oppdrag') ? existingOppdragStatus : 'ny';
@@ -12932,22 +13034,17 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
   });
 })();
 
-// ── Fristbuffer ────────────────────────────────────
-(function() {
-  var inp = document.getElementById('input-frist-buffer');
-  if (!inp) return;
-  if (fristBuffer > 0) inp.value = fristBuffer;
-  inp.addEventListener('change', function() {
-    dispatch('SETTINGS_BUFFER_CHANGE', { value: parseInt(this.value, 10) });
-  });
-})();
-
-// ── Standard varighet ──────────────────────────────
+// ── Standard per sakstype (varighet + buffer) ──────
 function _renderWorkWindowInputs() {
   document.querySelectorAll('[data-ww-key]').forEach(function(inp) {
     var k = inp.dataset.wwKey;
     inp.value = String(workWindows[k]);
     inp.placeholder = String(WORK_WINDOW_DEFAULTS[k]);
+  });
+  document.querySelectorAll('[data-tb-key]').forEach(function(inp) {
+    var k = inp.dataset.tbKey;
+    inp.value = String(typeBuffers[k]);
+    inp.placeholder = String(TYPE_BUFFER_DEFAULTS[k]);
   });
   if (fDuration) fDuration.placeholder = 'Standard: ' + workWindows.oppdrag;
 }
@@ -12959,6 +13056,15 @@ function _renderWorkWindowInputs() {
       // Tomt felt = standard; et ugyldig tall avvises og feltet tilbakestilles
       if (raw !== '' && !(v >= 1 && v <= WORK_WINDOW_MAX)) { _renderWorkWindowInputs(); return; }
       dispatch('SETTINGS_WORK_WINDOW_CHANGE', { key: this.dataset.wwKey, value: raw === '' ? null : v });
+      _renderWorkWindowInputs();
+    });
+  });
+  document.querySelectorAll('[data-tb-key]').forEach(function(inp) {
+    inp.addEventListener('change', function() {
+      var raw = this.value.trim();
+      var v = parseInt(raw, 10);
+      if (raw !== '' && !(v >= 0 && v <= TYPE_BUFFER_MAX)) { _renderWorkWindowInputs(); return; }
+      dispatch('SETTINGS_TYPE_BUFFER_CHANGE', { key: this.dataset.tbKey, value: raw === '' ? null : v });
       _renderWorkWindowInputs();
     });
   });
@@ -13218,7 +13324,7 @@ function init() {
     syncKeys:       ['cases-timeline'],
     legendBufferId: 'cases-legend-buffer',
   });
-  if (fristBuffer > 0) {
+  if (typeBuffers.ny > 0 || typeBuffers.viderebehandling > 0) {
     ['home-legend-buffer', 'cases-legend-buffer'].forEach(function(id) {
       var el = document.getElementById(id); if (el) el.style.display = '';
     });
@@ -13248,7 +13354,7 @@ function init() {
       var cas = cases.find(function(c) { return c.id === caseId; });
       if (!cas) return;
       var pxPerDay = getPxPerDay(track);
-      var origBuffer = cas.caseBuffer != null ? cas.caseBuffer : fristBuffer;
+      var origBuffer = cas.caseBuffer != null ? cas.caseBuffer : typeBufferFor(cas);
 
       // Ensure actual-line and actual-mark exist
       var barTop   = parseInt(bar.style.top, 10) || 4;
@@ -13348,7 +13454,9 @@ function init() {
         return;
       }
       var newBuffer = d._pendingBuffer != null ? d._pendingBuffer : d.origBuffer;
-      var finalBuffer = newBuffer === fristBuffer ? null : newBuffer;
+      // Lik standarden for typen → ingen egen buffer
+      var dragCase = cases.find(function(c) { return c.id === d.caseId; });
+      var finalBuffer = newBuffer === typeBufferFor(dragCase) ? null : newBuffer;
       dispatch('CASE_FIELD_UPDATE', { id: d.caseId, patch: { caseBuffer: finalBuffer } });
       // Re-render home timeline after drag
       renderTimeline({ target: 'home-timeline' });

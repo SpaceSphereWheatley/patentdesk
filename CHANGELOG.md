@@ -7,6 +7,38 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.30.0] - 2026-10-21
+Fristbufferen kan nå settes per sakstype, i samme tabell som varigheten. En
+sak sin egen buffer gjelder bare fristen den ble satt for.
+
+### Added
+- **Buffer per sakstype.** «Standard varighet» i Innstillinger er nå en tabell,
+  «Standard per sakstype», med én kolonne for varighet og én for buffer. Ny og
+  Viderebehandling kan få hver sin buffer. Oppdrag og Fristarkiv har ingen
+  buffer: oppdrag bruker alltid faktisk frist, og i Fristarkiv er fristen
+  søkerens. På smal skjerm vises hver sakstype som et lite kort.
+
+### Changed
+- **Den globale fristbufferen er erstattet** av bufferne i tabellen. Ved
+  oppgradering kopieres den gamle verdien til både Ny og Viderebehandling, så
+  ingen frister flytter seg. Eksportfiler fra tidligere versjoner importeres
+  på samme måte.
+- **Egen buffer fjernes når saken bytter status.** Bufferen gjaldt fristen den
+  ble satt for, og når statusen endres er den fristen behandlet. Saken får da
+  standardbufferen for den nye typen. Bytter du status i «Rediger sak», tømmes
+  bufferfeltet; skriver du inn en ny verdi i samme lagring, beholdes den. Angre
+  gir den gamle bufferen tilbake.
+- **«Rediger sak»** viser standardbufferen for valgt type i bufferfeltet, og
+  feltet er skjult for Fristarkiv, der buffer ikke gjelder.
+- **Sakssiden** viser om bufferen er sakens egen eller standarden for typen,
+  for eksempel «2 dager · standard».
+
+### Fixed
+- **Buffer satt ved opprettelse ble ikke lagret.** Fylte du inn buffer i
+  «Legg til sak», forsvant den. Nå lagres den.
+- **Teksten under fristen på sakssiden** kunne vise «Globalt dagers buffer
+  trukket fra». Nå står antall dager.
+
 ## [4.29.0] - 2026-10-21
 Hvor lenge en sak regnes som arbeid kan nå stilles inn per sakstype, og
 Viderebehandling skiller seg tydelig fra nye saker i sakslistene.

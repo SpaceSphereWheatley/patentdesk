@@ -4,8 +4,8 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { readImportSettings, isValidChecklistTemplate } = loadFunctions(
-  ['readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter', 'normalizeWorkWindows'],
-  { vars: ['HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS', 'WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX'] }
+  ['readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter', 'normalizeWorkWindows', 'normalizeTypeBuffers'],
+  { vars: ['HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS', 'WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX', 'TYPE_BUFFER_DEFAULTS', 'TYPE_BUFFER_MAX'] }
 );
 
 const TPL = [
@@ -40,7 +40,7 @@ test('readImportSettings: reads name, template, buffer and medlesing', () => {
   const r = readImportSettings({ userName: '  Kari ', checklistTemplate: TPL, fristBuffer: 3, medlesing: med });
   assert.strictEqual(r.userName, 'Kari');
   assert.deepStrictEqual(r.checklistTemplate, TPL);
-  assert.strictEqual(r.fristBuffer, 3);
+  assert.deepStrictEqual(Object.assign({}, r.typeBuffers), { ny: 3, viderebehandling: 3 });
   assert.deepStrictEqual(r.medlesing, med);
 });
 
@@ -54,13 +54,13 @@ test('readImportSettings: an invalid template is ignored, not applied', () => {
   assert.ok(!('checklistTemplate' in readImportSettings({ checklistTemplate: [{ phase: 'P' }] })));
 });
 
-test('readImportSettings: fristBuffer must be a non-negative number, rounded down', () => {
-  assert.strictEqual(readImportSettings({ fristBuffer: 0 }).fristBuffer, 0);
-  assert.strictEqual(readImportSettings({ fristBuffer: 4.7 }).fristBuffer, 4);
-  assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: -1 })));
-  assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: '3' })));
-  assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: NaN })));
-  assert.ok(!('fristBuffer' in readImportSettings({ fristBuffer: Infinity })));
+test('readImportSettings: an old fristBuffer must be a non-negative number, rounded down', () => {
+  assert.strictEqual(readImportSettings({ fristBuffer: 0 }).typeBuffers.ny, 0);
+  assert.strictEqual(readImportSettings({ fristBuffer: 4.7 }).typeBuffers.ny, 4);
+  assert.ok(!('typeBuffers' in readImportSettings({ fristBuffer: -1 })));
+  assert.ok(!('typeBuffers' in readImportSettings({ fristBuffer: '3' })));
+  assert.ok(!('typeBuffers' in readImportSettings({ fristBuffer: NaN })));
+  assert.ok(!('typeBuffers' in readImportSettings({ fristBuffer: Infinity })));
 });
 
 test('readImportSettings: work windows are read and normalised per type', () => {
@@ -68,6 +68,18 @@ test('readImportSettings: work windows are read and normalised per type', () => 
   assert.deepStrictEqual(Object.assign({}, r.workWindows), { ny: 10, viderebehandling: 3, oppdrag: 2 });
   assert.ok(!('workWindows' in readImportSettings({ workWindows: 'x' })));
   assert.ok(!('workWindows' in readImportSettings({})));
+});
+
+test('readImportSettings: type buffers are read and normalised per type', () => {
+  const r = readImportSettings({ typeBuffers: { ny: 2, viderebehandling: 'x' } });
+  assert.deepStrictEqual(Object.assign({}, r.typeBuffers), { ny: 2, viderebehandling: 0 });
+});
+
+// Export files from before v4.30.0 only have the single global buffer.
+test('readImportSettings: an old global fristBuffer seeds both type buffers', () => {
+  const r = readImportSettings({ fristBuffer: 3 });
+  assert.deepStrictEqual(Object.assign({}, r.typeBuffers), { ny: 3, viderebehandling: 3 });
+  assert.ok(!('typeBuffers' in readImportSettings({})));
 });
 
 test('readImportSettings: medlesing keeps only records with an id', () => {
