@@ -84,3 +84,21 @@ test('vacationDurationDays counts both endpoints inclusively', () => {
   assert.strictEqual(vacationDurationDays('2026-07-01', '2026-07-03'), 3);
   assert.strictEqual(vacationDurationDays('2026-12-30', '2027-01-02'), 4);
 });
+
+const { filingDateFromInput } = loadFunctions(['filingDateFromInput', 'parseDate', 'isValidDate']);
+
+test('filingDateFromInput: an empty field clears the filing date', () => {
+  assert.strictEqual(filingDateFromInput(''), '');
+  assert.strictEqual(filingDateFromInput('   '), '');
+  assert.strictEqual(filingDateFromInput(null), '');
+});
+
+test('filingDateFromInput: a valid date is stored in ISO form', () => {
+  assert.strictEqual(filingDateFromInput('2026.03.02'), '2026-03-02');
+  assert.strictEqual(filingDateFromInput(' 2026.03.02 '), '2026-03-02');
+});
+
+test('filingDateFromInput: an invalid date is rejected with null', () => {
+  assert.strictEqual(filingDateFromInput('2026.13.40'), null);
+  assert.strictEqual(filingDateFromInput('i går'), null);
+});

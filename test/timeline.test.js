@@ -53,8 +53,8 @@ test('filterCasesForTimeline returns nothing for an empty type filter', () => {
 });
 
 const { countsInBelegg, timelineSpanDays } = loadFunctions(
-  ['countsInBelegg', 'timelineSpanDays'],
-  { vars: ['WORK_WINDOW_DAYS', 'MILESTONE_DAYS'] }
+  ['countsInBelegg', 'workWindowDays', 'timelineSpanDays'],
+  { vars: ['MILESTONE_DAYS'], globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 } } }
 );
 
 test('countsInBelegg counts only the statuses that are the examiner\'s own work', () => {
@@ -73,13 +73,13 @@ test('countsInBelegg excludes oppdrag and cases without a due date', () => {
 
 test('timelineSpanDays gives fristarkiv a milestone and everything else a work window', () => {
   assert.strictEqual(timelineSpanDays(makeCase({ status: 'ny' })), 14);
-  assert.strictEqual(timelineSpanDays(makeCase({ status: 'viderebehandling' })), 14);
+  assert.strictEqual(timelineSpanDays(makeCase({ status: 'viderebehandling' })), 3);
   assert.strictEqual(timelineSpanDays(makeCase({ status: 'fristarkiv' })), 1);
 });
 
-test('timelineSpanDays uses the oppdrag duration, with a floor of 2 days', () => {
+test('timelineSpanDays uses the oppdrag duration, and the default when it has none', () => {
   assert.strictEqual(timelineSpanDays(makeCase({ type: 'oppdrag', duration: 5 })), 5);
-  assert.strictEqual(timelineSpanDays(makeCase({ type: 'oppdrag', duration: 1 })), 2);
+  assert.strictEqual(timelineSpanDays(makeCase({ type: 'oppdrag', duration: 1 })), 1);
   assert.strictEqual(timelineSpanDays(makeCase({ type: 'oppdrag', duration: null })), 2);
   // An oppdrag parked in fristarkiv still uses its duration, not the milestone.
   assert.strictEqual(timelineSpanDays(makeCase({ type: 'oppdrag', status: 'fristarkiv', duration: 4 })), 4);

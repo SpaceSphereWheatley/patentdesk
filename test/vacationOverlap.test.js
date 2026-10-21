@@ -5,10 +5,9 @@ const { loadFunctions } = require('./extractFunctions');
 
 function load(vacations, fristBuffer) {
   return loadFunctions(
-    ['bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'periodOverlapsVacation'],
+    ['bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'workWindowDays', 'periodOverlapsVacation'],
     {
-      vars: ['WORK_WINDOW_DAYS'],
-      globals: { vacations: vacations || [], fristBuffer: fristBuffer != null ? fristBuffer : 0 },
+      globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 }, vacations: vacations || [], fristBuffer: fristBuffer != null ? fristBuffer : 0 },
     }
   );
 }
@@ -90,7 +89,11 @@ test('periodOverlapsVacation still measures the buffered window for other status
   // Buffered, the 14-day window ends 2026-07-05 and starts 2026-06-22 (overlap).
   assert.strictEqual(periodOverlapsVacation({ type: 'sak', status: 'ny', dueDate: '2026-07-15' }), true);
   // Without the buffer it would end 2026-07-15 and start 2026-07-02 — no overlap.
-  assert.strictEqual(periodOverlapsVacation({ type: 'sak', status: 'viderebehandling', dueDate: '2026-07-15' }), true);
+  assert.strictEqual(periodOverlapsVacation({ type: 'sak', status: 'ny', dueDate: '2026-07-15', caseBuffer: 0 }), false);
+  // Viderebehandling: buffered 3-day window 2026-07-03..05.
+  const vb = load([{ from: '2026-07-05', to: '2026-07-06' }], 10).periodOverlapsVacation;
+  assert.strictEqual(vb({ type: 'sak', status: 'viderebehandling', dueDate: '2026-07-15' }), true);
+  assert.strictEqual(vb({ type: 'sak', status: 'viderebehandling', dueDate: '2026-07-15', caseBuffer: 0 }), false);
 });
 
 test('caseBufferLabel marks the buffer as inactive for fristarkiv cases only', () => {
