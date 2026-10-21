@@ -3,11 +3,14 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
-function load(vacations, fristBuffer) {
+// buffer: one number for both types, or { ny, viderebehandling }.
+function load(vacations, buffer) {
+  const b = buffer != null ? buffer : 0;
+  const typeBuffers = typeof b === 'number' ? { ny: b, viderebehandling: b } : b;
   return loadFunctions(
-    ['bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'workWindowDays', 'periodOverlapsVacation'],
+    ['bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor', 'workWindowDays', 'periodOverlapsVacation'],
     {
-      globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 }, vacations: vacations || [], fristBuffer: fristBuffer != null ? fristBuffer : 0 },
+      globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 }, vacations: vacations || [], typeBuffers: typeBuffers },
     }
   );
 }
@@ -56,9 +59,17 @@ test('getEffectiveDueDate still buffers a case that has left fristarkiv', () => 
   );
 });
 
-test('getEffectiveDueDate applies the global buffer when no case object is given', () => {
-  const { getEffectiveDueDate } = load([], 5);
+test('getEffectiveDueDate applies the Ny buffer when no case object is given', () => {
+  const { getEffectiveDueDate } = load([], { ny: 5, viderebehandling: 1 });
   assert.strictEqual(getEffectiveDueDate('2026-07-15'), '2026-07-10');
+});
+
+test('getEffectiveDueDate uses the standard buffer for the case\'s own type', () => {
+  const { getEffectiveDueDate } = load([], { ny: 5, viderebehandling: 2 });
+  assert.strictEqual(getEffectiveDueDate('2026-07-15', { type: 'sak', status: 'ny' }), '2026-07-10');
+  assert.strictEqual(getEffectiveDueDate('2026-07-15', { type: 'sak', status: 'viderebehandling' }), '2026-07-13');
+  // A per-case buffer still wins over the type's standard.
+  assert.strictEqual(getEffectiveDueDate('2026-07-15', { type: 'sak', status: 'viderebehandling', caseBuffer: 0 }), '2026-07-15');
 });
 
 test('effDueFor uses the raw dueDate for oppdrag and the buffered date otherwise', () => {
@@ -96,12 +107,14 @@ test('periodOverlapsVacation still measures the buffered window for other status
   assert.strictEqual(vb({ type: 'sak', status: 'viderebehandling', dueDate: '2026-07-15', caseBuffer: 0 }), false);
 });
 
-test('caseBufferLabel marks the buffer as inactive for fristarkiv cases only', () => {
-  const { caseBufferLabel } = loadFunctions(['bufferAppliesTo', 'caseBufferLabel']);
-  assert.strictEqual(caseBufferLabel({ status: 'ny', caseBuffer: 5 }), '5 dager');
-  assert.strictEqual(caseBufferLabel({ status: 'ny' }), 'Globalt');
-  assert.strictEqual(caseBufferLabel({ status: 'fristarkiv', caseBuffer: 5 }), '5 dager · ikke aktiv i Fristarkiv');
-  assert.strictEqual(caseBufferLabel({ status: 'fristarkiv' }), 'Globalt · ikke aktiv i Fristarkiv');
+test('caseBufferLabel names the buffer and whether it is the case\'s own or the type standard', () => {
+  const { caseBufferLabel } = loadFunctions(['bufferAppliesTo', 'typeBufferFor', 'caseBufferLabel'],
+    { globals: { typeBuffers: { ny: 2, viderebehandling: 1 } } });
+  assert.strictEqual(caseBufferLabel({ status: 'ny', caseBuffer: 5 }), '5 dager · egen');
+  assert.strictEqual(caseBufferLabel({ status: 'ny', caseBuffer: 1 }), '1 dag · egen');
+  assert.strictEqual(caseBufferLabel({ status: 'ny' }), '2 dager · standard');
+  assert.strictEqual(caseBufferLabel({ status: 'viderebehandling' }), '1 dag · standard');
+  assert.strictEqual(caseBufferLabel({ status: 'fristarkiv' }), 'Ikke aktiv i Fristarkiv');
 });
 
 test('periodOverlapsVacation detects overlap within the 14-day window for søknader', () => {

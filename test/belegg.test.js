@@ -8,14 +8,14 @@ const { loadFunctions } = require('./extractFunctions');
 // drift when a public holiday moves.
 function load(cases) {
   return loadFunctions(
-    ['computeBelegg', 'countsInBelegg', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo'],
+    ['computeBelegg', 'countsInBelegg', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
     {
       vars: ['OVERDUE_PENALTY_WORKDAYS'],
       globals: {
         cases: cases || [],
         workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 },
         vacations: [],
-        fristBuffer: 0,
+        typeBuffers: { ny: 0, viderebehandling: 0 },
         isNonWorkday: () => false,
       },
     }
@@ -94,11 +94,11 @@ test('computeBelegg counts viderebehandling as real work, over its own window', 
 
 test('computeBelegg follows the work window settings', () => {
   const fns = loadFunctions(
-    ['computeBelegg', 'countsInBelegg', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo'],
+    ['computeBelegg', 'countsInBelegg', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
     { vars: ['OVERDUE_PENALTY_WORKDAYS'], globals: {
       cases: [makeCase({ id: 'a' }), makeCase({ id: 'b', status: 'viderebehandling' })],
       workWindows: { ny: 10, viderebehandling: 5, oppdrag: 2 },
-      vacations: [], fristBuffer: 0, isNonWorkday: () => false,
+      vacations: [], typeBuffers: { ny: 0, viderebehandling: 0 }, isNonWorkday: () => false,
     } }
   );
   assert.strictEqual(fns.computeBelegg(70).busy, 15);
