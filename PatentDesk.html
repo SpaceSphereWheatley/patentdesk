@@ -167,6 +167,7 @@
   --trk-done-bg:    #e2ede7; --trk-done-text:   #22573f; --trk-done-mini: #8fbea4;
   --trk-future-bg:  #f1f2f4; --trk-future-text: #5f6672; --trk-future-mini: #dfe2e6;
   --trk-active:     var(--primary);
+  --trk-videre:     var(--s-videre-text);
   --trk-wait-a:     #eceff3; --trk-wait-b:      #e1e5ea; --trk-wait-text: #374151; --trk-wait-mini: #c3c9d1;
   --trk-caution:    #b45309;
   --trk-granted:    #15803d;
@@ -1502,7 +1503,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .tl-bar-oppdrag         { background: rgba(6,182,212,0.45) !important; border-color: var(--s-oppdrag-border) !important; }
 
 /* ── Forløpsspor ─────────────────────────────────
-   Fire chevroner per sak: Formalia → 1. brev → Svar → Avgjørelse. Pilene
+   Fire chevroner per sak: Formalia → 1. brev → Svar/Viderebehandling → Avgjørelse. Pilene
    overlapper 6px, så det blir en jevn 4px-glipe mellom dem. Siste steg er en
    rett blokk — avgjørelsen er endepunktet. */
 .trk { display: flex; width: 560px; flex-shrink: 0; }
@@ -1519,6 +1520,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .trk-done    { background: var(--trk-done-bg);   color: var(--trk-done-text); }
 .trk-future  { background: var(--trk-future-bg); color: var(--trk-future-text); }
 .trk-active  { background: var(--trk-active);    color: var(--on-primary); }
+.trk-videre  { background: var(--trk-videre);    color: var(--on-primary); }
 .trk-wait    { background: repeating-linear-gradient(135deg, var(--trk-wait-a) 0 6px, var(--trk-wait-b) 6px 12px); color: var(--trk-wait-text); }
 .trk-caution { background: var(--trk-caution);   color: var(--on-primary); }
 .trk-granted { background: var(--trk-granted);   color: var(--on-primary); }
@@ -1543,6 +1545,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .trk-mini-seg.trk-opp     { background: var(--s-oppdrag-border); border-radius: 3px; clip-path: none; }
 .trk-mini-label { font-size: var(--text-xs); font-weight: var(--weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
 .trk-mini-label.trk-active  { background: none; color: var(--primary-dim); }
+.trk-mini-label.trk-videre  { background: none; color: var(--trk-videre); }
 .trk-mini-label.trk-caution { background: none; color: var(--trk-caution); }
 .trk-mini-label.trk-wait    { background: none; color: var(--trk-wait-text); }
 .trk-mini-label.trk-opp     { color: var(--s-oppdrag-text); }
@@ -4118,7 +4121,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.28.0';
+var APP_VERSION    = 'v4.29.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4391,8 +4394,8 @@ function examinationRound(c) {
 }
 
 // De fire stegene for en sak som [{ label, state }]. state er én av done,
-// active, future, wait (søkerens tur), caution (runde 3+), granted, refused,
-// closed. Oppdrag har ingen saksflyt og gir null.
+// active, videre (Viderebehandling, runde 2), future, wait (søkerens tur),
+// caution (runde 3+), granted, refused, closed. Oppdrag har ingen saksflyt og gir null.
 // Ren funksjon — se test/caseTrack.test.js.
 function caseTrack(c) {
   if (!c || c.type === 'oppdrag') return null;
@@ -4407,7 +4410,12 @@ function caseTrack(c) {
   } else if (status === 'fristarkiv') {
     slots.push({ label: 'Venter på svar' + (round >= 2 ? ' · ' + round : ''), state: 'wait' });
   } else if (status === 'viderebehandling') {
-    slots.push({ label: round + '. brev', state: round >= 3 ? 'caution' : 'active' });
+    // Egen tilstand (og farge) for Viderebehandling, så steget ikke forveksles
+    // med det aktive «1. brev» på en ny sak. Fra 3. runde vises rundenummeret,
+    // med forkortet tekst så nummeret ikke kuttes av i pilen.
+    slots.push(round >= 3
+      ? { label: 'Viderebeh. · ' + round, state: 'caution' }
+      : { label: 'Viderebehandling', state: 'videre' });
   } else {
     var hist = Array.isArray(c.history) ? c.history.filter(function(h) { return h && h.type === 'status'; }) : [];
     var last = hist[hist.length - 1];
@@ -6871,7 +6879,7 @@ function emptyStateMessage(filter) {
 
 // ── Forløpsspor: HTML ──────────────────────────────
 var TRK_ICONS = { done: 'ti-check', granted: 'ti-check', refused: 'ti-x', closed: 'ti-minus', wait: 'ti-clock', caution: 'ti-alert-triangle' };
-var TRK_STATE_TEXT = { done: 'fullført', active: 'pågår', future: 'ikke startet', wait: 'venter på søker',
+var TRK_STATE_TEXT = { done: 'fullført', active: 'pågår', videre: 'pågår', future: 'ikke startet', wait: 'venter på søker',
                        caution: 'pågår, mange runder', granted: 'meddelt', refused: 'avslått', closed: 'henlagt' };
 
 // Steget saken står på nå: det siste som ikke er «future».

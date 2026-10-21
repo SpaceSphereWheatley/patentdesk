@@ -7,6 +7,10 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.29.0] - 2026-10-21
+Hvor lenge en sak regnes som arbeid kan nå stilles inn per sakstype, og
+Viderebehandling skiller seg tydelig fra nye saker i sakslistene.
+
 ### Added
 - **Standard varighet i Innstillinger.** En ny seksjon lar deg endre hvor
   mange dager en sak legger beslag på før fristen: Ny (14 dager som før),
@@ -18,6 +22,11 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   inn noe sted.
 
 ### Changed
+- **Viderebehandling er lett å skille fra nye saker i forløpssporet.** Steget
+  heter nå «Viderebehandling» i stedet for «2. brev» og er lilla, samme farge
+  som Viderebehandling ellers i appen. «1. brev» på nye saker er fortsatt blått.
+  Fra tredje runde står det «Viderebeh. · 3» osv. i oransje, som før. Det
+  samme gjelder minisporet i fristlista på Oversikt.
 - **Viderebehandling regnes som 3 dagers arbeid**, ikke 14. Å behandle
   søkerens svar er en kortere jobb enn en førstegangsbehandling. Det gir
   kortere bjelker på tidslinjen og lavere belegg.
