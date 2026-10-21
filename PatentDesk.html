@@ -1388,6 +1388,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .tl-popup-cn    { font-size: var(--text-sm); color: var(--accent); letter-spacing: var(--tracking-wide); }
 .tl-popup-sep   { font-size: var(--text-sm); color: var(--muted); }
 .tl-popup-title { font-size: var(--text-xs); color: var(--muted); }
+.tl-popup-note  { display: block; max-width: 360px; margin-top: 2px; white-space: pre-line; font-size: var(--text-xs); font-style: italic; color: var(--muted); }
 
 /* ── 21. Ferieperioder ───────────────────────────── */
 .vac-list       { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); }
@@ -1515,6 +1516,12 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .case-card .status-pill { width: 120px; flex-shrink: 0; text-align: center; }
 .case-card-cn           { color: var(--accent); font-size: var(--text-sm); letter-spacing: var(--tracking-wide); white-space: nowrap; width: 110px; flex-shrink: 0; }
 .case-card-title        { flex: 1; font-size: var(--text-sm); color: var(--text); min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.case-card-main         { flex: 1; min-width: 60px; display: flex; flex-direction: column; gap: 2px; }
+.case-card-main .case-card-title,
+.case-card-main .home-upcoming-title { flex: none; min-width: 0; }
+.case-note              { display: flex; align-items: center; gap: var(--space-1); min-width: 0; font-size: var(--text-xs); font-style: italic; color: var(--muted); }
+.case-note svg.ti       { width: 12px; height: 12px; flex-shrink: 0; font-style: normal; }
+.case-note-text         { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .case-card-notes        { font-size: var(--text-xs); color: var(--muted); width: 180px; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .case-card-vac          { font-size: var(--text-sm); flex-shrink: 0; }
 .case-card-oppdrag      { background: rgba(6,182,212,0.06); border-color: rgba(6,182,212,0.3); }
@@ -1580,16 +1587,21 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
   .case-card         { flex-wrap: wrap; row-gap: var(--space-2); }
   .case-card-notes   { display: none; }
   .case-card-title   { flex-basis: 100%; white-space: normal; }
+  .case-card-main    { flex-basis: 100%; }
 }
 /* Sporet får egen linje før det må krympe under lesbar bredde. */
 @media (max-width: 1100px) {
   .case-card { flex-wrap: wrap; row-gap: var(--space-3); }
   .case-card .case-card-title { flex: 1 1 calc(100% - 300px); }
+  .case-card .case-card-main  { flex: 1 1 calc(100% - 300px); }
   .case-card .trk, .case-card .trk-oppdrag { width: 100%; margin-left: 0; order: 10; }
 }
 /* Telefon: frist, saksnummer og meny på første linje, tittel på andre, spor på tredje. */
 @media (max-width: 700px) {
   .case-card .case-card-title { flex: 1 1 100%; order: 5; white-space: normal; }
+  /* Tittel + notat flyttes samlet; inne i blokken står tittelen først. */
+  .case-card .case-card-main  { flex: 1 1 100%; order: 5; }
+  .case-card .case-card-main .case-card-title { order: 0; flex: none; }
   .case-card .case-card-menu  { margin-left: auto; }
   .case-card .case-card-cn    { width: auto; }
 }
@@ -4838,6 +4850,23 @@ function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Notatet («Notater», synlig i oversikten) på én linje: linjeskift og ekstra
+// mellomrom slås sammen. Ren funksjon — se test/caseNote.test.js.
+function caseNotePreview(notes) {
+  return String(notes || '').replace(/\s+/g, ' ').trim();
+}
+
+// Notatlinjen under tittelen i sakslistene og fristlista. Teksten kuttes med
+// «…» i CSS; hele notatet, med linjeskift, står i verktøytipset. Saker uten
+// notat får ingen linje. Ren funksjon — se test/caseNote.test.js.
+function caseNoteHtml(c) {
+  var preview = caseNotePreview(c && c.notes);
+  if (!preview) return '';
+  return '<span class="case-note" title="' + esc(String(c.notes).trim()) + '">' +
+    '<svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg>' +
+    '<span class="case-note-text">' + esc(preview) + '</span></span>';
+}
+
 // Escaper tekst og markerer søketreffet med <mark> — trygg mot HTML i lagrede stikkord
 function highlightMatch(text, term) {
   text = String(text || ''); term = String(term || '');
@@ -7055,7 +7084,7 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
     return '<div class="case-card' + cardCls + '" data-id="' + c.id + '">' +
       daysBadge +
       '<span class="case-card-cn' + cnCls + '"' + tooltip + '>' + esc(c.caseNumber) + '</span>' +
-      '<span class="case-card-title">' + esc(c.title) + '</span>' +
+      '<span class="case-card-main"><span class="case-card-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       trackHtml(c, false) +
       '<div class="case-card-menu">' +
@@ -10704,7 +10733,7 @@ function renderHomeDeadlines() {
       '<span class="days-badge ' + cls + '"' + (tips.length ? ' title="' + esc(tips.join(' · ')) + '"' : '') + '>' +
         (d < 0 ? Math.abs(d)+'d forfalt' : d === 0 ? 'I dag' : d+'d') + '</span>' +
       '<span class="home-upcoming-cn' + (isOppdrag ? ' case-card-cn-oppdrag' : '') + '">' + esc(c.caseNumber) + '</span>' +
-      '<span class="home-upcoming-title">' + esc(c.title) + '</span>' +
+      '<span class="case-card-main"><span class="home-upcoming-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       vacBadge +
       trackHtml(c, true) +
@@ -12956,7 +12985,8 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
       var infoTxt = (dueTxt ? 'frist ' + dueTxt : '') + (dueTxt && daysTxt ? ' · ' : '') + daysTxt + wdaysTxt;
       popup.innerHTML = '<span class="tl-popup-cn">' + esc(cn) + '</span>' +
         (title ? '<span class="tl-popup-sep"> — </span><span class="tl-popup-title">' + esc(title) + '</span>' : '') +
-        (infoTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(infoTxt) + '</span>' : '');
+        (infoTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(infoTxt) + '</span>' : '') +
+        (caseObj && caseNotePreview(caseObj.notes) ? '<span class="tl-popup-note">' + esc(String(caseObj.notes).trim()) + '</span>' : '');
     }
     popup.style.display = 'block';
     popup.style.left = (e.pageX + 12) + 'px';

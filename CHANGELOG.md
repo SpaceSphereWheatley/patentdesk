@@ -9,9 +9,16 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [4.30.0] - 2026-10-21
 Fristbufferen kan nå settes per sakstype, i samme tabell som varigheten. En
-sak sin egen buffer gjelder bare fristen den ble satt for.
+sak sin egen buffer gjelder bare fristen den ble satt for. Notatene på sakene
+vises nå i oversiktene.
 
 ### Added
+- **Notater i sakslistene og fristlista.** Feltet «Notater» på sakssiden, det
+  som er merket «Synlig i oversikten», vises nå på en egen linje under
+  tittelen i Alle saker, Nye saker, Viderebehandling, Fristarkiv, Oppdrag og
+  fristlista på Oversikt. Linjen kuttes med «…», og hele notatet vises når du
+  holder musen over. Notatet står også i hover-boksen på tidslinjen. Saker
+  uten notat ser ut som før.
 - **Buffer per sakstype.** «Standard varighet» i Innstillinger er nå en tabell,
   «Standard per sakstype», med én kolonne for varighet og én for buffer. Ny og
   Viderebehandling kan få hver sin buffer. Oppdrag og Fristarkiv har ingen
