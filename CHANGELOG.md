@@ -7,6 +7,52 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.37.0] - 2026-10-26
+Tidslinjen viser nå det som haster: saker som nylig har forfalt er synlige når
+den åpnes, og forhåndsvisningen i «Legg til sak» viser igjen arbeidsplanen
+fram i tid. Fristbufferen trekker fra riktig antall dager.
+
+### Added
+- **Tidslinjen husker visningen.** Horisont (3 mnd / 6 mnd / 1 år), måned
+  eller uke og sakstypene du har valgt på Hjem er som du forlot dem neste gang
+  appen åpnes. Det samme gjelder horisont og akse i forhåndsvisningen i «Legg
+  til sak». Sakstypene i sakslisten følger fortsatt siden du står på.
+- **Forfalt-pinnen følger synsfeltet.** Den røde pinnen i venstre kant teller
+  forfalte saker som ligger utenfor bildet, står fast mens du scroller og
+  scroller tilbake til dem når du klikker på den.
+- **Tastatur.** Bjelkene i tidslinjen kan nås med Tab, viser popupen når de
+  har fokus og åpnes med Enter eller mellomrom.
+- **Berøring.** Bufferen kan nå dras også på berøringsskjerm og med penn.
+- **Popupen viser den bufrede fristen** i tillegg til den faktiske, så
+  nedtellingen ikke ser ut til å stride mot datoen foran den.
+
+### Changed
+- **Forfalte saker vises når tidslinjen åpnes.** Har en sak forfalt de siste
+  14 dagene, starter utsnittet litt før i dag så bjelken synes. Eldre forfalte
+  saker telles i forfalt-pinnen.
+- **Smale bjelker viser de siste sifrene** i saksnummeret («…1005») i stedet
+  for «20…», og ingenting når ikke engang det får plass.
+- Ferie som allerede er over vises nå også i tidslinjens fortid.
+- Nye saker i forhåndsvisningen tegnes med samme arbeidsvindu og
+  frist-tidspunkt som de lagrede, og dekker alle radene.
+- Toppen av tidslinjen brytes over flere linjer på smale skjermer.
+
+### Fixed
+- **Fristbufferen trakk fra én dag for mye** i norsk tid. Det påvirket
+  effektiv frist overalt i appen, også belegg og ferievarsel.
+- **Forhåndsvisningen i «Legg til sak» var tom** — den sto fast et halvt år
+  tilbake i tid.
+- Et klikk på en bjelke i forhåndsvisningen lukket dialogen og kastet det du
+  hadde skrevet inn.
+- Månedsnavn og ukenumre havnet inne blant bjelkene når tidslinjen hadde flere
+  rader; de står nå alltid under.
+- «i dag»-etiketten over tidslinjen ble klippet bort.
+- Bjelken hoppet en dag når du slapp den etter å ha dratt bufferen, og linjen
+  til den faktiske fristen ble tegnet dobbelt mens du dro. Bufferen kan heller
+  ikke lenger dras forbi 90 dager.
+- Skjulingen av «dagens oppsummering» fulgte UTC-datoen og kunne gjelde feil
+  dag rett etter midnatt.
+
 ## [4.36.0] - 2026-10-26
 Menyen i Innstillinger har nå tre hovedseksjoner i stedet for elleve. Når du
 velger en hovedseksjon, vises alle underseksjonene i den samtidig.

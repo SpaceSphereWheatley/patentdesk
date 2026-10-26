@@ -8,7 +8,7 @@ const { loadFunctions } = require('./extractFunctions');
 function load(workWindows) {
   return loadFunctions(
     ['normalizeWorkWindows', 'workWindowDays', 'timelineSpanDays', 'periodOverlapsVacation',
-     'bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
+     'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
     {
       vars: ['WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX', 'MILESTONE_DAYS'],
       globals: { workWindows: workWindows, vacations: [], typeBuffers: { ny: 0, viderebehandling: 0 } },
@@ -91,13 +91,13 @@ test('timeline and vacation check agree on an oppdrag\'s length', () => {
     const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     const dayBefore = new Date(first); dayBefore.setDate(dayBefore.getDate() - 1);
     const fns = loadFunctions(
-      ['normalizeWorkWindows', 'workWindowDays', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
+      ['normalizeWorkWindows', 'workWindowDays', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
       { vars: ['WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX'], globals: { workWindows: settings, typeBuffers: { ny: 0, viderebehandling: 0 },
         vacations: [{ from: '2026-07-01', to: iso(first) }] } }
     );
     assert.strictEqual(fns.periodOverlapsVacation(c), true, 'duration ' + duration + ': first day');
     const fns2 = loadFunctions(
-      ['normalizeWorkWindows', 'workWindowDays', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
+      ['normalizeWorkWindows', 'workWindowDays', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
       { vars: ['WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX'], globals: { workWindows: settings, typeBuffers: { ny: 0, viderebehandling: 0 },
         vacations: [{ from: '2026-07-01', to: iso(dayBefore) }] } }
     );
@@ -107,7 +107,7 @@ test('timeline and vacation check agree on an oppdrag\'s length', () => {
 
 test('periodOverlapsVacation uses the Viderebehandling window from the settings', () => {
   const fns = loadFunctions(
-    ['workWindowDays', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
+    ['workWindowDays', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
     { globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 }, typeBuffers: { ny: 0, viderebehandling: 0 },
       // Ends 5 days before the due date: inside a 14-day window, outside a 3-day one.
       vacations: [{ from: '2026-07-20', to: '2026-08-05' }] } }
