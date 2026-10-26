@@ -7,6 +7,20 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.35.0] - 2026-10-26
+Innstillinger har fått en meny til venstre, og siden viser én seksjon om
+gangen. Du slipper å bla gjennom en lang side for å finne det du skal endre.
+
+### Changed
+- **Meny i Innstillinger.** Seksjonene er samlet i fire grupper i en meny til
+  venstre: Arbeidsmengde, Saksbehandling, Data og Appen. Klikk på en seksjon
+  for å vise den. Menyen står stille, så siden hopper ikke når du bytter.
+  Piltastene flytter mellom seksjonene. Appen husker hvilken seksjon du sist
+  hadde åpen. På smale skjermer ligger menyen som en rad øverst.
+- **Ny inndeling.** «Arbeidsflyt» er delt i Ferieperioder, Sjekkliste-mal og
+  Saksmappe. CPC-databasen har fått sin egen seksjon. Eksport og import ligger
+  nå for seg, adskilt fra Sikkerhetskopiering.
+
 ## [4.34.0] - 2026-10-26
 Du kan nå føre inn medlesing i ettertid på alle saker, også avsluttede og
 saker i Fristarkiv.
