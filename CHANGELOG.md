@@ -21,6 +21,10 @@ gangen. Du slipper å bla gjennom en lang side for å finne det du skal endre.
   Saksmappe. CPC-databasen har fått sin egen seksjon. Eksport og import ligger
   nå for seg, adskilt fra Sikkerhetskopiering.
 
+### Removed
+- **«Vis/Skjul» i Ferieperioder.** Ferieperiodene har nå sin egen seksjon, så
+  lista vises alltid, og knappen for å skjule den er fjernet.
+
 ## [4.34.0] - 2026-10-26
 Du kan nå føre inn medlesing i ettertid på alle saker, også avsluttede og
 saker i Fristarkiv.

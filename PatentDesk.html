@@ -908,14 +908,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 }
 
 /* Ferieliste med statuser */
-.vac-toggle-btn {
-  display: inline-flex; align-items: center; gap: var(--space-1);
-  background: none; border: none; cursor: pointer; padding: 0;
-  font-size: var(--text-sm); color: var(--muted); transition: color var(--dur-base);
-}
-.vac-toggle-btn:hover { color: var(--text); }
-.vac-toggle-btn .ti { font-size: 13px; transition: transform var(--dur-base); }
-.vac-toggle-btn.open .ti { transform: rotate(90deg); }
 .vac-status-list { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); }
 .vac-status-row {
   display: flex; align-items: center; gap: var(--space-3);
@@ -3245,14 +3237,10 @@ tr:hover .sak-tag-display.sak-tag-empty,
                       <span class="settings-label-sub">Vises i tidslinjen og markerer frister som faller under ferie</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
-                      <button class="vac-toggle-btn open" id="btn-vac-toggle">
-                        <svg class="ti" aria-hidden="true"><use href="#ti-chevron-right"/></svg>
-                        <span id="vac-toggle-label">Vis</span>
-                      </button>
                       <button class="s-btn s-btn-accent" id="btn-vac-add-open">+ Legg til</button>
                     </div>
                   </div>
-                  <div id="vac-collapsible" style="width:100%;">
+                  <div style="width:100%;">
                     <div id="vacation-list" class="vac-status-list"></div>
                     <div class="vac-add-row" id="vac-add-form" style="display:none;margin-top:var(--space-3);">
                       <input class="field-input vac-input" id="vac-from"  type="text" placeholder="Fra: åååå.mm.dd" maxlength="10" />
@@ -12443,7 +12431,6 @@ function renderVacationList() {
   var today = todayStr();
   if (!vacations.length) {
     list.innerHTML = '<p class="vac-empty">Ingen ferieperioder registrert.</p>';
-    _updateVacToggleLabel();
     return;
   }
   list.innerHTML = vacations.map(function(v, i) {
@@ -12462,7 +12449,6 @@ function renderVacationList() {
       '<button class="btn-icon btn-vac-del" data-idx="' + i + '" title="Slett" aria-label="Slett ferie">✕</button>' +
     '</div>';
   }).join('');
-  _updateVacToggleLabel();
 }
 
 // ── Statistikk ─────────────────────────────────────
@@ -14372,20 +14358,10 @@ function _renderWorkWindowInputs() {
 })();
 
 // ── Ferieperioder ──────────────────────────────────
-function _updateVacToggleLabel() {
-  var lbl = document.getElementById('vac-toggle-label');
-  var btn = document.getElementById('btn-vac-toggle');
-  if (!lbl || !btn) return;
-  var n = vacations.length;
-  lbl.textContent = n === 0 ? 'Vis' : (n === 1 ? '1 periode' : n + ' perioder');
-}
-
 (function() {
   var btnAdd      = document.getElementById('btn-vac-add');
   var btnCancel   = document.getElementById('btn-vac-cancel');
   var btnAddOpen  = document.getElementById('btn-vac-add-open');
-  var btnToggle   = document.getElementById('btn-vac-toggle');
-  var collapsible = document.getElementById('vac-collapsible');
   var addForm     = document.getElementById('vac-add-form');
   var inpFrom     = document.getElementById('vac-from');
   var inpTo       = document.getElementById('vac-to');
@@ -14408,17 +14384,7 @@ function _updateVacToggleLabel() {
   }
 
   function openForm() {
-    if (collapsible) collapsible.style.display = '';
-    if (btnToggle) btnToggle.classList.add('open');
     if (addForm) addForm.style.display = 'flex';
-  }
-
-  // Kollaps-toggle
-  if (btnToggle && collapsible) {
-    btnToggle.addEventListener('click', function() {
-      var open = btnToggle.classList.toggle('open');
-      collapsible.style.display = open ? '' : 'none';
-    });
   }
 
   // Åpne legg-til-skjema
