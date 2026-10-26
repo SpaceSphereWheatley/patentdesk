@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { canBeActiveCase, normalizeActiveCase, toggleActiveCase, resolveActiveCase, activeCaseAfterUndo, readImportSettings } = loadFunctions(
-  ['canBeActiveCase', 'normalizeActiveCase', 'toggleActiveCase', 'resolveActiveCase', 'activeCaseAfterUndo',
+  ['canBeActiveCase', 'isUnassigned', 'canBeUnassigned', 'normalizeActiveCase', 'toggleActiveCase', 'resolveActiveCase', 'activeCaseAfterUndo',
    'readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter'],
   { vars: ['HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS'] }
 );

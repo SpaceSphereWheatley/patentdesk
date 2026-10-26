@@ -7,7 +7,7 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
-## [4.31.0] - 2026-10-26
+## [4.32.0] - 2026-10-26
 Motholdene har fått en lenke til Espacenet og egne datoer. Ut fra datoene
 foreslår appen P- og E-flagg, og saken har fått et felt for prioritetsdato.
 
@@ -30,6 +30,40 @@ foreslår appen P- og E-flagg, og saken har fått et felt for prioritetsdato.
     prioritetsdato, men før innleveringsdatoen.
   - E foreslås når motholdet har eldre dato enn søknaden (prioritet, ellers
     innleveringsdato) og er publisert på eller etter innleveringsdatoen.
+
+## [4.31.0] - 2026-10-26
+Du kan nå legge inn saker du har meldt deg på, men ikke fått fordelt ennå.
+De vises nedtonet overalt og teller ikke som ditt arbeid før du bekrefter at
+du har fått dem.
+
+### Added
+- **«Ikke fordelt ennå».** Kryss av i «Legg til sak» (eller «Rediger sak») når
+  du har meldt deg på en sak og venter på svar. Gjelder bare Ny søknader.
+  Under «Flere saker» kan du krysse av for alle sakene du limer inn.
+- **Nedtonet visning.** Sakene vises grå og kursiv med merkelappen «Ikke
+  fordelt» i sakslistene og fristlista på Oversikt. På tidslinjen er bjelken
+  grå og skravert, og hover-boksen sier «ikke fordelt ennå».
+- **Bekreft eller avvis.** På sakssiden står det en linje over fristen med
+  «Bekreft fordelt» og «Fikk den ikke». De samme valgene finnes i ⋯-menyene,
+  sammen med «Marker som ikke fordelt» for vanlige Ny søknader. «Fikk den
+  ikke» sletter saken, og den kan angres fra varselet.
+- **Påminnelse.** Under Innstillinger → Produksjon velger du hvor mange dager
+  en sak kan vente før den merkes (standard 14, 0 = av). Merkelappen blir da
+  rav og viser antall dager, og sakssiden spør om du har fått svar.
+- **Mulig belegg.** Belegg-linjen på Oversikt viser hvor mye de ikke-fordelte
+  sakene ville lagt til, for eksempel «+9 % hvis du får de ikke-fordelte».
+- Påminnelsen og markeringen på sakene følger med i eksporten og arbeidsfilen.
+
+### Changed
+- **Ikke-fordelte saker holdes utenfor tellingene.** De teller ikke i
+  belegget, forfalt-kortet, fristvarselet, tallet ved «Nye saker» i menyen
+  eller «1. brev» i saksflyten. Antallet vises i stedet for seg, for eksempel
+  «3 saker · 2 ikke fordelt».
+- **Ferievarselet er dempet** for saker som ikke er fordelt, fordi
+  kollisjonen bare gjelder hvis du får saken.
+- **En sak som ikke er fordelt, kan ikke markeres som pågående.**
+- **Markeringen forsvinner av seg selv** når saken bytter status, for
+  eksempel til Fristarkiv. Da er saken din.
 
 ## [4.30.0] - 2026-10-21
 Fristbufferen kan nå settes per sakstype, i samme tabell som varigheten. En

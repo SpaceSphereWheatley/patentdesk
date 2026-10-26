@@ -53,7 +53,7 @@ test('filterCasesForTimeline returns nothing for an empty type filter', () => {
 });
 
 const { countsInBelegg, timelineSpanDays } = loadFunctions(
-  ['countsInBelegg', 'workWindowDays', 'timelineSpanDays'],
+  ['countsInBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'timelineSpanDays'],
   { vars: ['MILESTONE_DAYS'], globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 } } }
 );
 
