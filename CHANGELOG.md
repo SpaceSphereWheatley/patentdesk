@@ -13,6 +13,10 @@ den åpnes, og forhåndsvisningen i «Legg til sak» viser igjen arbeidsplanen
 fram i tid. Fristbufferen trekker fra riktig antall dager.
 
 ### Added
+- **Tidslinjen husker visningen.** Horisont (3 mnd / 6 mnd / 1 år), måned
+  eller uke og sakstypene du har valgt på Hjem er som du forlot dem neste gang
+  appen åpnes. Det samme gjelder horisont og akse i forhåndsvisningen i «Legg
+  til sak». Sakstypene i sakslisten følger fortsatt siden du står på.
 - **Forfalt-pinnen følger synsfeltet.** Den røde pinnen i venstre kant teller
   forfalte saker som ligger utenfor bildet, står fast mens du scroller og
   scroller tilbake til dem når du klikker på den.

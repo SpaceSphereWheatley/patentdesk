@@ -4432,6 +4432,7 @@ var UNASSIGNED_REMINDER_KEY = 'pt_unassigned_reminder';
 var MEDLESERE_KEY     = 'pt_medlesere';
 var MEDL_LOG_KEY      = 'pt_medl_log';
 var SETTINGS_TAB_KEY  = 'pt_settings_tab';
+var TL_VIEW_KEY       = 'pt_tl_view';
 var AUTOSAVE_KEY = 'pt_autosave';
 var SAK_KEY_PREFIX = 'pt_sak_';
 
@@ -5880,6 +5881,7 @@ function deleteAllData() {
   localStorage.removeItem(MEDL_LOG_KEY);
   localStorage.removeItem('pt_drawer_collapsed');
   localStorage.removeItem(SETTINGS_TAB_KEY);
+  localStorage.removeItem(TL_VIEW_KEY);
   localStorage.removeItem('pt_cpc_welcomed');
 
   _cpcResetState();
@@ -6000,6 +6002,15 @@ function loadHomeDeadlineFilter() {
 }
 function saveHomeDeadlineFilter(f) {
   lsSetSafe(HOME_DEADLINE_KEY, JSON.stringify(f));
+}
+function loadTlView() {
+  try { return normalizeTlView(JSON.parse(localStorage.getItem(TL_VIEW_KEY))); }
+  catch(e) { return normalizeTlView(null); }
+}
+// Lagrer tidslinjevisningen etter hver endring av horisont, akse eller
+// sakstyper, så den er som du forlot den neste gang appen åpnes.
+function saveTlView() {
+  lsSetSafe(TL_VIEW_KEY, JSON.stringify(tlViewFromConfig(_tlConfig)));
 }
 function loadActiveCase() {
   try { return normalizeActiveCase(JSON.parse(localStorage.getItem(ACTIVE_CASE_KEY))); }
@@ -6271,6 +6282,46 @@ var TIMELINE_TYPES = ['ny', 'fristarkiv', 'viderebehandling', 'oppdrag'];
 // bare og venter på forfall — de krever ikke arbeid nå og er derfor ikke
 // relevante når man legger inn nye saker. De utelates.
 var MODAL_TIMELINE_TYPES = TIMELINE_TYPES.filter(function(t) { return t !== 'fristarkiv'; });
+
+// Horisontene (dager fremover) tidslinjen kan zoomes til: 3 mnd, 6 mnd, 1 år.
+var TL_HORIZONS = [90, 180, 365];
+
+// normalizeTlView: visningen tidslinjen lagrer mellom øktene — horisont,
+// måned/uke og sakstypevalget på Hjem (som saksliste-tidslinjen deler horisont
+// og akse med), og horisont og akse i forhåndsvisningen i sak-dialogen. Hvert
+// felt faller tilbake til standarden for seg, så én ugyldig verdi ikke koster
+// resten. Saksliste-tidslinjens sakstyper lagres ikke; de følger siden.
+function normalizeTlView(raw) {
+  var src = raw && typeof raw === 'object' ? raw : {};
+  function part(p, defaults, withTypes) {
+    p = p && typeof p === 'object' ? p : {};
+    var out = {
+      horizon:  TL_HORIZONS.indexOf(p.horizon) !== -1 ? p.horizon : defaults.horizon,
+      axisMode: p.axisMode === 'week' || p.axisMode === 'month' ? p.axisMode : defaults.axisMode
+    };
+    if (withTypes) {
+      // Ukjente og doble sakstyper fjernes; et tomt valg er et gyldig valg.
+      out.typeFilter = Array.isArray(p.typeFilter)
+        ? p.typeFilter.filter(function(t, i) { return TIMELINE_TYPES.indexOf(t) !== -1 && p.typeFilter.indexOf(t) === i; })
+        : defaults.typeFilter.slice();
+    }
+    return out;
+  }
+  return {
+    home:  part(src.home,  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] }, true),
+    modal: part(src.modal, { horizon: 90, axisMode: 'month' }, false)
+  };
+}
+
+// tlViewFromConfig: plukker ut det som lagres fra tidslinjenes levende
+// konfigurasjon (_tlConfig).
+function tlViewFromConfig(cfg) {
+  var h = cfg['home-timeline'], m = cfg['modal-timeline'];
+  return {
+    home:  { horizon: h.horizon, axisMode: h.axisMode, typeFilter: (h.typeFilter || []).slice() },
+    modal: { horizon: m.horizon, axisMode: m.axisMode }
+  };
+}
 
 // Hvor mange dager tilbake i tid tidslinjen strekker seg, slik at man kan
 // scrolle tilbake og se saker som er mer enn et par uker over frist i stedet
@@ -6556,10 +6607,11 @@ var activeCase = loadActiveCase();
 var unassignedReminder = loadUnassignedReminder();
 var medleserList = loadMedleserList();
 var medlLog      = loadMedlLog();
+var _tlView = loadTlView();
 var _tlConfig = {
-  'home-timeline':  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
-  'cases-timeline': { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
-  'modal-timeline': { horizon: 90, axisMode: 'month', typeFilter: MODAL_TIMELINE_TYPES.slice() },
+  'home-timeline':  { horizon: _tlView.home.horizon, axisMode: _tlView.home.axisMode, typeFilter: _tlView.home.typeFilter.slice() },
+  'cases-timeline': { horizon: _tlView.home.horizon, axisMode: _tlView.home.axisMode, typeFilter: ['ny', 'oppdrag'] },
+  'modal-timeline': { horizon: _tlView.modal.horizon, axisMode: _tlView.modal.axisMode, typeFilter: MODAL_TIMELINE_TYPES.slice() },
 };
 // Saksliste-tidslinjen forhåndskrysser av sakstypen(e) som svarer til siden du
 // står på; brukeren kan fritt overstyre valget mens den står på siden.
@@ -12323,9 +12375,9 @@ function buildTimelineWidget(hostEl, opts) {
 
   var horizonWrap = document.createElement('div');
   horizonWrap.className = 'tl-horizon-group';
-  [90, 180, 365].forEach(function(h) {
+  TL_HORIZONS.forEach(function(h) {
     var btn = document.createElement('button');
-    btn.className = 'tl-horizon-btn' + (h === 90 ? ' active' : '');
+    btn.className = 'tl-horizon-btn';
     btn.dataset.tlHorizon = String(h);
     btn.textContent = h === 90 ? '3 mnd' : h === 180 ? '6 mnd' : '1 år';
     horizonWrap.appendChild(btn);
@@ -12416,6 +12468,7 @@ function buildTimelineWidget(hostEl, opts) {
     var h = parseInt(btn.dataset.tlHorizon, 10);
     _tlConfig[cfgKey].horizon = h;
     syncKeys.forEach(function(k) { _tlConfig[k].horizon = h; });
+    saveTlView();
     _syncAllWidgets([cfgKey].concat(syncKeys));
     renderTimeline({ target: tlId });
   });
@@ -12424,6 +12477,7 @@ function buildTimelineWidget(hostEl, opts) {
     var mode = _tlConfig[cfgKey].axisMode === 'month' ? 'week' : 'month';
     _tlConfig[cfgKey].axisMode = mode;
     syncKeys.forEach(function(k) { _tlConfig[k].axisMode = mode; });
+    saveTlView();
     _syncAllWidgets([cfgKey].concat(syncKeys));
     renderTimeline({ target: tlId });
   });
@@ -12435,6 +12489,7 @@ function buildTimelineWidget(hostEl, opts) {
     var set = _tlConfig[tlId].typeFilter || [];
     var idx = set.indexOf(t);
     _tlConfig[tlId].typeFilter = idx === -1 ? set.concat([t]) : set.slice(0, idx).concat(set.slice(idx + 1));
+    if (tlId === 'home-timeline') saveTlView();
     _syncVisual();
     renderTimeline({ target: tlId });
   });
@@ -14056,20 +14111,33 @@ document.getElementById('modal-backdrop').addEventListener('click', function(e) 
 document.querySelectorAll('[data-modal-horizon]').forEach(function(btn) {
   btn.addEventListener('click', function() {
     _tlConfig['modal-timeline'].horizon = parseInt(this.dataset.modalHorizon, 10);
-    document.querySelectorAll('[data-modal-horizon]').forEach(function(b) { b.classList.remove('active'); });
-    this.classList.add('active');
+    saveTlView();
+    _syncModalTimelineControls();
     renderTimeline({ target: 'modal-timeline' });
   });
 });
+
+// Knappene i HTML-en starter på 3 mnd / mnd; vis den lagrede visningen.
+function _syncModalTimelineControls() {
+  var cfg = _tlConfig['modal-timeline'];
+  var isWeek = cfg.axisMode === 'week';
+  document.querySelectorAll('[data-modal-horizon]').forEach(function(b) {
+    b.classList.toggle('active', parseInt(b.dataset.modalHorizon, 10) === cfg.horizon);
+  });
+  var tgl = document.getElementById('modal-axis-toggle');
+  if (tgl) tgl.classList.toggle('on', isWeek);
+  var lm = document.getElementById('modal-lbl-mnd'), lu = document.getElementById('modal-lbl-uke');
+  if (lm) lm.classList.toggle('active', !isWeek);
+  if (lu) lu.classList.toggle('active', isWeek);
+}
+_syncModalTimelineControls();
 
 var modalAxisToggle = document.getElementById('modal-axis-toggle');
 if (modalAxisToggle) {
   modalAxisToggle.addEventListener('click', function() {
     _tlConfig['modal-timeline'].axisMode = _tlConfig['modal-timeline'].axisMode === 'month' ? 'week' : 'month';
-    var isWeek = _tlConfig['modal-timeline'].axisMode === 'week';
-    this.classList.toggle('on', isWeek);
-    document.getElementById('modal-lbl-mnd').classList.toggle('active', !isWeek);
-    document.getElementById('modal-lbl-uke').classList.toggle('active', isWeek);
+    saveTlView();
+    _syncModalTimelineControls();
     renderTimeline({ target: 'modal-timeline' });
   });
 }
