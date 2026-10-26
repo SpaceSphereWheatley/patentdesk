@@ -810,7 +810,28 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .hist-modal-pill { display:inline-block; font-size:var(--text-xs); padding: 1px var(--space-2); border-radius: var(--radius-pill); font-weight: var(--weight-medium); }
 
 /* ── 19. Innstillinger ────────────────────────────── */
-#view-innstillinger { width: 100%; max-width: 800px; align-self: center; }
+#view-innstillinger { width: 100%; max-width: 1000px; align-self: center; }
+
+/* Venstremeny: én seksjon vises om gangen, menyen står stille */
+.settings-layout     { display: flex; align-items: flex-start; gap: var(--space-8); }
+.settings-nav        { position: sticky; top: var(--space-6); flex: 0 0 200px; display: flex; flex-direction: column; gap: 2px; }
+.settings-nav-group  { font-family: var(--font-head); font-size: var(--text-2xs); color: var(--muted); letter-spacing: var(--tracking-label); text-transform: uppercase; padding: var(--space-5) var(--space-4) var(--space-2); }
+.settings-nav-group:first-child { padding-top: 0; }
+.settings-nav-item   { text-align: left; background: none; border: none; border-left: 2px solid transparent; border-radius: 0 var(--radius) var(--radius) 0; padding: var(--space-3) var(--space-4); font-family: var(--font-body); font-size: var(--text-sm); color: var(--muted); cursor: pointer; transition: color var(--dur-base), background var(--dur-base); }
+.settings-nav-item:hover { color: var(--text); background: var(--surface2); }
+.settings-nav-item:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+.settings-nav-item.is-active { color: var(--text); background: var(--surface2); border-left-color: var(--accent); }
+.settings-nav-danger.is-active { border-left-color: var(--danger); }
+.settings-panes      { flex: 1 1 auto; min-width: 0; }
+.settings-panes > .settings-section:not(.is-active) { display: none; }
+@media (max-width: 700px) {
+  .settings-layout     { flex-direction: column; gap: var(--space-5); }
+  .settings-nav        { position: static; flex: none; width: 100%; flex-direction: row; overflow-x: auto; gap: var(--space-2); padding-bottom: var(--space-2); }
+  .settings-nav-group  { display: none; }
+  .settings-nav-item   { white-space: nowrap; border-left: none; border-bottom: 2px solid transparent; border-radius: var(--radius) var(--radius) 0 0; }
+  .settings-nav-item.is-active   { border-bottom-color: var(--accent); }
+  .settings-nav-danger.is-active { border-bottom-color: var(--danger); }
+}
 
 .settings-section       { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-8); }
 .settings-section-title { font-family: var(--font-head); font-size: var(--text-sm); font-weight: normal; color: var(--muted); letter-spacing: var(--tracking-label); text-transform: uppercase; }
@@ -887,14 +908,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 }
 
 /* Ferieliste med statuser */
-.vac-toggle-btn {
-  display: inline-flex; align-items: center; gap: var(--space-1);
-  background: none; border: none; cursor: pointer; padding: 0;
-  font-size: var(--text-sm); color: var(--muted); transition: color var(--dur-base);
-}
-.vac-toggle-btn:hover { color: var(--text); }
-.vac-toggle-btn .ti { font-size: 13px; transition: transform var(--dur-base); }
-.vac-toggle-btn.open .ti { transform: rotate(90deg); }
 .vac-status-list { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); }
 .vac-status-row {
   display: flex; align-items: center; gap: var(--space-3);
@@ -3101,276 +3114,321 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <h1 class="page-title">Innstillinger</h1>
         </section>
 
-        <!-- Produksjon -->
-        <section class="settings-section">
-          <h2 class="settings-section-title">Produksjon</h2>
-          <div class="settings-group">
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Årlig produksjonsmål</span>
-                <span class="settings-label-sub">Stiplet linje i aktivitetsgrafen</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
-                <input class="s-inp" id="input-production-goal"
-                       type="number" min="0" step="1" placeholder="f.eks. 70" />
-              </div>
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Belegg-horisont</span>
-                <span class="settings-label-sub">Antall dager fremover belegg-kortet beregnes over</span>
-              </div>
-              <select class="s-sel" id="input-belegg-horizon">
-                <option value="30">30 dager</option>
-                <option value="60">60 dager</option>
-                <option value="90">90 dager</option>
-              </select>
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Påminnelse for saker som ikke er fordelt</span>
-                <span class="settings-label-sub">Merk saker du har meldt deg på når de har ventet så mange dager. 0 = av.</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
-                <input class="s-inp" id="input-unassigned-reminder"
-                       type="number" min="0" max="365" step="1" placeholder="14" />
-                <span class="settings-label-sub">dager</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Standard per sakstype -->
-        <section class="settings-section">
-          <h2 class="settings-section-title">Standard per sakstype</h2>
-          <div class="settings-group">
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-sub"><strong>Varighet:</strong> dager saken er arbeid før fristen — brukes i tidslinjen, belegget og ferievarselet.</span>
-                <span class="settings-label-sub"><strong>Buffer:</strong> fristen vises så mange dager tidligere. Faktisk frist lagres uendret, og hver sak kan overstyre bufferen.</span>
-              </div>
-            </div>
-            <div class="tdf-table" role="table" aria-label="Standard varighet og buffer per sakstype">
-              <div class="tdf-row tdf-head" role="row">
-                <span role="columnheader">Sakstype</span>
-                <span role="columnheader">Varighet</span>
-                <span role="columnheader">Buffer</span>
-              </div>
-              <div class="tdf-row" role="row">
-                <span class="tdf-type" role="rowheader">Ny (førstegangsbehandling)</span>
-                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
-                  <input class="s-inp" id="input-ww-ny" data-ww-key="ny" type="number" min="1" max="365" step="1" aria-label="Varighet, Ny" />
-                  <span class="s-unit">dager</span></label>
-                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Buffer</span>
-                  <input class="s-inp" id="input-tb-ny" data-tb-key="ny" type="number" min="0" max="90" step="1" aria-label="Buffer, Ny" />
-                  <span class="s-unit">dager</span></label>
-              </div>
-              <div class="tdf-row" role="row">
-                <span class="tdf-type" role="rowheader">Viderebehandling</span>
-                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
-                  <input class="s-inp" id="input-ww-viderebehandling" data-ww-key="viderebehandling" type="number" min="1" max="365" step="1" aria-label="Varighet, Viderebehandling" />
-                  <span class="s-unit">dager</span></label>
-                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Buffer</span>
-                  <input class="s-inp" id="input-tb-viderebehandling" data-tb-key="viderebehandling" type="number" min="0" max="90" step="1" aria-label="Buffer, Viderebehandling" />
-                  <span class="s-unit">dager</span></label>
-              </div>
-              <div class="tdf-row" role="row">
-                <span class="tdf-type" role="rowheader">Oppdrag uten egen varighet</span>
-                <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
-                  <input class="s-inp" id="input-ww-oppdrag" data-ww-key="oppdrag" type="number" min="1" max="365" step="1" aria-label="Varighet, oppdrag" />
-                  <span class="s-unit">dager</span></label>
-                <span class="tdf-cell tdf-na" role="cell" title="Oppdrag bruker alltid faktisk frist"><span class="tdf-cell-lbl">Buffer</span>—</span>
-              </div>
-              <div class="tdf-row" role="row">
-                <span class="tdf-type" role="rowheader">Fristarkiv</span>
-                <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ikke arbeid"><span class="tdf-cell-lbl">Varighet</span>Milepæl</span>
-                <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
-              </div>
-            </div>
-            <div class="settings-row tdf-foot">
-              <span class="settings-label-sub">Standard: Ny 14 / 0, Viderebehandling 3 / 0, Oppdrag 2 dager</span>
-              <button class="s-btn" id="btn-ww-reset">Tilbakestill til standard</button>
-            </div>
-          </div>
-        </section>
-
-        <!-- Arbeidsflyt -->
-        <section class="settings-section">
-          <h2 class="settings-section-title">Arbeidsflyt</h2>
-          <div class="settings-group">
-            <div class="settings-row settings-row-col">
-              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:var(--space-6);">
-                <div class="settings-label">
-                  <span class="settings-label-title">Ferieperioder</span>
-                  <span class="settings-label-sub">Vises i tidslinjen og markerer frister som faller under ferie</span>
+        <div class="settings-layout">
+          <nav class="settings-nav" aria-label="Innstillinger" role="tablist" aria-orientation="vertical">
+            <span class="settings-nav-group">Arbeidsmengde</span>
+            <button class="settings-nav-item" id="settings-tab-produksjon" data-settings-tab="produksjon" role="tab" aria-controls="settings-pane-produksjon">Produksjon</button>
+            <button class="settings-nav-item" id="settings-tab-sakstype" data-settings-tab="sakstype" role="tab" aria-controls="settings-pane-sakstype">Standard per sakstype</button>
+            <button class="settings-nav-item" id="settings-tab-ferie" data-settings-tab="ferie" role="tab" aria-controls="settings-pane-ferie">Ferieperioder</button>
+            <span class="settings-nav-group">Saksbehandling</span>
+            <button class="settings-nav-item" id="settings-tab-medlesere" data-settings-tab="medlesere" role="tab" aria-controls="settings-pane-medlesere">Medlesere</button>
+            <button class="settings-nav-item" id="settings-tab-sjekkliste" data-settings-tab="sjekkliste" role="tab" aria-controls="settings-pane-sjekkliste">Sjekkliste-mal</button>
+            <button class="settings-nav-item" id="settings-tab-saksmappe" data-settings-tab="saksmappe" role="tab" aria-controls="settings-pane-saksmappe">Saksmappe</button>
+            <button class="settings-nav-item" id="settings-tab-cpc" data-settings-tab="cpc" role="tab" aria-controls="settings-pane-cpc">CPC-database</button>
+            <span class="settings-nav-group">Data</span>
+            <button class="settings-nav-item" id="settings-tab-sikkerhetskopi" data-settings-tab="sikkerhetskopi" role="tab" aria-controls="settings-pane-sikkerhetskopi">Sikkerhetskopiering</button>
+            <button class="settings-nav-item" id="settings-tab-eksport" data-settings-tab="eksport" role="tab" aria-controls="settings-pane-eksport">Eksport og import</button>
+            <button class="settings-nav-item settings-nav-danger" id="settings-tab-faresone" data-settings-tab="faresone" role="tab" aria-controls="settings-pane-faresone">Faresone</button>
+            <span class="settings-nav-group">Appen</span>
+            <button class="settings-nav-item" id="settings-tab-om" data-settings-tab="om" role="tab" aria-controls="settings-pane-om">Om</button>
+          </nav>
+          <div class="settings-panes">
+            <!-- Produksjon -->
+            <section class="settings-section" id="settings-pane-produksjon" data-settings-pane="produksjon" role="tabpanel" aria-labelledby="settings-tab-produksjon">
+              <h2 class="settings-section-title">Produksjon</h2>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Årlig produksjonsmål</span>
+                    <span class="settings-label-sub">Stiplet linje i aktivitetsgrafen</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                    <input class="s-inp" id="input-production-goal"
+                           type="number" min="0" step="1" placeholder="f.eks. 70" />
+                  </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
-                  <button class="vac-toggle-btn open" id="btn-vac-toggle">
-                    <svg class="ti" aria-hidden="true"><use href="#ti-chevron-right"/></svg>
-                    <span id="vac-toggle-label">Vis</span>
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Belegg-horisont</span>
+                    <span class="settings-label-sub">Antall dager fremover belegg-kortet beregnes over</span>
+                  </div>
+                  <select class="s-sel" id="input-belegg-horizon">
+                    <option value="30">30 dager</option>
+                    <option value="60">60 dager</option>
+                    <option value="90">90 dager</option>
+                  </select>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Påminnelse for saker som ikke er fordelt</span>
+                    <span class="settings-label-sub">Merk saker du har meldt deg på når de har ventet så mange dager. 0 = av.</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                    <input class="s-inp" id="input-unassigned-reminder"
+                           type="number" min="0" max="365" step="1" placeholder="14" />
+                    <span class="settings-label-sub">dager</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Standard per sakstype -->
+            <section class="settings-section" id="settings-pane-sakstype" data-settings-pane="sakstype" role="tabpanel" aria-labelledby="settings-tab-sakstype">
+              <h2 class="settings-section-title">Standard per sakstype</h2>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-sub"><strong>Varighet:</strong> dager saken er arbeid før fristen — brukes i tidslinjen, belegget og ferievarselet.</span>
+                    <span class="settings-label-sub"><strong>Buffer:</strong> fristen vises så mange dager tidligere. Faktisk frist lagres uendret, og hver sak kan overstyre bufferen.</span>
+                  </div>
+                </div>
+                <div class="tdf-table" role="table" aria-label="Standard varighet og buffer per sakstype">
+                  <div class="tdf-row tdf-head" role="row">
+                    <span role="columnheader">Sakstype</span>
+                    <span role="columnheader">Varighet</span>
+                    <span role="columnheader">Buffer</span>
+                  </div>
+                  <div class="tdf-row" role="row">
+                    <span class="tdf-type" role="rowheader">Ny (førstegangsbehandling)</span>
+                    <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                      <input class="s-inp" id="input-ww-ny" data-ww-key="ny" type="number" min="1" max="365" step="1" aria-label="Varighet, Ny" />
+                      <span class="s-unit">dager</span></label>
+                    <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Buffer</span>
+                      <input class="s-inp" id="input-tb-ny" data-tb-key="ny" type="number" min="0" max="90" step="1" aria-label="Buffer, Ny" />
+                      <span class="s-unit">dager</span></label>
+                  </div>
+                  <div class="tdf-row" role="row">
+                    <span class="tdf-type" role="rowheader">Viderebehandling</span>
+                    <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                      <input class="s-inp" id="input-ww-viderebehandling" data-ww-key="viderebehandling" type="number" min="1" max="365" step="1" aria-label="Varighet, Viderebehandling" />
+                      <span class="s-unit">dager</span></label>
+                    <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Buffer</span>
+                      <input class="s-inp" id="input-tb-viderebehandling" data-tb-key="viderebehandling" type="number" min="0" max="90" step="1" aria-label="Buffer, Viderebehandling" />
+                      <span class="s-unit">dager</span></label>
+                  </div>
+                  <div class="tdf-row" role="row">
+                    <span class="tdf-type" role="rowheader">Oppdrag uten egen varighet</span>
+                    <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                      <input class="s-inp" id="input-ww-oppdrag" data-ww-key="oppdrag" type="number" min="1" max="365" step="1" aria-label="Varighet, oppdrag" />
+                      <span class="s-unit">dager</span></label>
+                    <span class="tdf-cell tdf-na" role="cell" title="Oppdrag bruker alltid faktisk frist"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                  </div>
+                  <div class="tdf-row" role="row">
+                    <span class="tdf-type" role="rowheader">Fristarkiv</span>
+                    <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ikke arbeid"><span class="tdf-cell-lbl">Varighet</span>Milepæl</span>
+                    <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                  </div>
+                </div>
+                <div class="settings-row tdf-foot">
+                  <span class="settings-label-sub">Standard: Ny 14 / 0, Viderebehandling 3 / 0, Oppdrag 2 dager</span>
+                  <button class="s-btn" id="btn-ww-reset">Tilbakestill til standard</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Ferieperioder -->
+            <section class="settings-section" id="settings-pane-ferie" data-settings-pane="ferie" role="tabpanel" aria-labelledby="settings-tab-ferie">
+              <h2 class="settings-section-title">Ferieperioder</h2>
+              <div class="settings-group">
+                <div class="settings-row settings-row-col">
+                  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:var(--space-6);">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Ferieperioder</span>
+                      <span class="settings-label-sub">Vises i tidslinjen og markerer frister som faller under ferie</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <button class="s-btn s-btn-accent" id="btn-vac-add-open">+ Legg til</button>
+                    </div>
+                  </div>
+                  <div style="width:100%;">
+                    <div id="vacation-list" class="vac-status-list"></div>
+                    <div class="vac-add-row" id="vac-add-form" style="display:none;margin-top:var(--space-3);">
+                      <input class="field-input vac-input" id="vac-from"  type="text" placeholder="Fra: åååå.mm.dd" maxlength="10" />
+                      <input class="field-input vac-input" id="vac-to"    type="text" placeholder="Til: åååå.mm.dd" maxlength="10" />
+                      <input class="field-input vac-input vac-input-label" id="vac-label" type="text" placeholder="Beskrivelse (valgfritt)" maxlength="40" />
+                      <button class="s-btn s-btn-accent" id="btn-vac-add">+ Legg til</button>
+                      <button class="s-btn" id="btn-vac-cancel" style="display:none;">Avbryt</button>
+                    </div>
+                    <span class="field-error" id="vac-error"></span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Medlesere -->
+            <section class="settings-section" id="settings-pane-medlesere" data-settings-pane="medlesere" role="tabpanel" aria-labelledby="settings-tab-medlesere">
+              <h2 class="settings-section-title">Medlesere</h2>
+              <div class="settings-group">
+                <div class="settings-row settings-row-col">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Kolleger som kan medlese</span>
+                    <span class="settings-label-sub">Når du sender en sak til medlesing, foreslås den aktive medleseren med færrest medlesinger siste 12 måneder. Fjerner du noen, blir statistikken stående.</span>
+                  </div>
+                  <div id="medleser-list" class="vac-list medleser-list"></div>
+                  <div class="vac-add-row medleser-add">
+                    <input class="field-input" id="medleser-new-name" type="text" placeholder="Navn" maxlength="60" />
+                    <button class="s-btn s-btn-accent" id="btn-medleser-add">+ Legg til</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Sjekkliste-mal -->
+            <section class="settings-section" id="settings-pane-sjekkliste" data-settings-pane="sjekkliste" role="tabpanel" aria-labelledby="settings-tab-sjekkliste">
+              <h2 class="settings-section-title">Sjekkliste-mal</h2>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Sjekkliste-mal</span>
+                    <span class="settings-label-sub" id="cle-settings-summary"></span>
+                  </div>
+                  <button class="s-btn" id="btn-cle-open">Rediger</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Saksmappe -->
+            <section class="settings-section" id="settings-pane-saksmappe" data-settings-pane="saksmappe" role="tabpanel" aria-labelledby="settings-tab-saksmappe">
+              <h2 class="settings-section-title">Saksmappe</h2>
+              <div class="settings-group">
+                <div class="settings-row settings-row-col">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Saksmappe-rot</span>
+                    <span class="settings-label-sub">Banen kopieres til utklippstavlen når du klikker saksnummeret</span>
+                  </div>
+                  <input class="field-input settings-path-input" id="input-doc-root"
+                         type="text"
+                         value="C:\Users\brukernavn\Dokumenter\Saksdokumenter"
+                         placeholder="C:\sti\til\Saksdokumenter" />
+                  <div class="docroot-preview" id="docroot-preview"></div>
+                  <div class="docroot-filenote">
+                    For at åpning og kopiering av dokumenter skal fungere, bør hver
+                    sak-mappe inneholde filene:
+                    <ul>
+                      <li><code>Claims.pdf</code></li>
+                      <li><code>Application.pdf</code></li>
+                      <li><code>Figures.pdf</code></li>
+                      <li><code>Description.pdf</code></li>
+                      <li><code>Abstract.pdf</code></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- CPC-database -->
+            <section class="settings-section" id="settings-pane-cpc" data-settings-pane="cpc" role="tabpanel" aria-labelledby="settings-tab-cpc">
+              <h2 class="settings-section-title">CPC-database</h2>
+              <div class="settings-group">
+                <div class="settings-row" id="settings-cpc-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">CPC-database</span>
+                    <span class="settings-label-sub" id="settings-cpc-status">Velg cpc_v2.json for å aktivere autofullfør og beskrivelser</span>
+                  </div>
+                  <button class="s-btn" id="btn-settings-cpc-load">
+                    <svg class="ti" aria-hidden="true"><use href="#ti-upload"/></svg> Velg fil
                   </button>
-                  <button class="s-btn s-btn-accent" id="btn-vac-add-open">+ Legg til</button>
                 </div>
               </div>
-              <div id="vac-collapsible" style="width:100%;">
-                <div id="vacation-list" class="vac-status-list"></div>
-                <div class="vac-add-row" id="vac-add-form" style="display:none;margin-top:var(--space-3);">
-                  <input class="field-input vac-input" id="vac-from"  type="text" placeholder="Fra: åååå.mm.dd" maxlength="10" />
-                  <input class="field-input vac-input" id="vac-to"    type="text" placeholder="Til: åååå.mm.dd" maxlength="10" />
-                  <input class="field-input vac-input vac-input-label" id="vac-label" type="text" placeholder="Beskrivelse (valgfritt)" maxlength="40" />
-                  <button class="s-btn s-btn-accent" id="btn-vac-add">+ Legg til</button>
-                  <button class="s-btn" id="btn-vac-cancel" style="display:none;">Avbryt</button>
+            </section>
+
+            <!-- Sikkerhetskopiering -->
+            <section class="settings-section" id="settings-pane-sikkerhetskopi" data-settings-pane="sikkerhetskopi" role="tabpanel" aria-labelledby="settings-tab-sikkerhetskopi">
+              <h2 class="settings-section-title">Sikkerhetskopiering</h2>
+              <div class="settings-group">
+                <div class="settings-row" id="backup-folder-row" style="display:none;">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Datamappe</span>
+                    <span class="settings-label-sub" id="backup-folder-sub">Data lagres kun i nettleseren</span>
+                    <span class="settings-label-sub" id="backup-folder-sub2">Velg en mappe for arbeidsfil og daglige kopier</span>
+                  </div>
+                  <button class="s-btn" id="btn-backup-folder">
+                    <svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> Velg mappe
+                  </button>
                 </div>
-                <span class="field-error" id="vac-error"></span>
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Automatisk sikkerhetskopi</span>
+                    <span class="settings-label-sub" id="backup-status-sub">Øyeblikksbilder etter hver endring (de 20 siste) + daglig kopi</span>
+                  </div>
+                  <input type="checkbox" class="settings-checkbox" id="backup-enabled-cb" title="Slå automatisk sikkerhetskopi på/av" />
+                </div>
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Gjenopprett fra øyeblikksbilde</span>
+                    <span class="settings-label-sub">Hent tilbake data fra en automatisk sikkerhetskopi</span>
+                  </div>
+                  <button class="s-btn" id="btn-backup-restore">Vis kopier</button>
+                </div>
               </div>
-            </div>
-            <div class="settings-row settings-row-col">
-              <div class="settings-label">
-                <span class="settings-label-title">Saksmappe-rot</span>
-                <span class="settings-label-sub">Banen kopieres til utklippstavlen når du klikker saksnummeret</span>
-              </div>
-              <input class="field-input settings-path-input" id="input-doc-root"
-                     type="text"
-                     value="C:\Users\brukernavn\Dokumenter\Saksdokumenter"
-                     placeholder="C:\sti\til\Saksdokumenter" />
-              <div class="docroot-preview" id="docroot-preview"></div>
-              <div class="docroot-filenote">
-                For at åpning og kopiering av dokumenter skal fungere, bør hver
-                sak-mappe inneholde filene:
-                <ul>
-                  <li><code>Claims.pdf</code></li>
-                  <li><code>Application.pdf</code></li>
-                  <li><code>Figures.pdf</code></li>
-                  <li><code>Description.pdf</code></li>
-                  <li><code>Abstract.pdf</code></li>
-                </ul>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Sjekkliste-mal</span>
-                <span class="settings-label-sub" id="cle-settings-summary"></span>
-              </div>
-              <button class="s-btn" id="btn-cle-open">Rediger</button>
-            </div>
-          </div>
-        </section>
+            </section>
 
-        <!-- Medlesere -->
-        <section class="settings-section">
-          <h2 class="settings-section-title">Medlesere</h2>
-          <div class="settings-group">
-            <div class="settings-row settings-row-col">
-              <div class="settings-label">
-                <span class="settings-label-title">Kolleger som kan medlese</span>
-                <span class="settings-label-sub">Når du sender en sak til medlesing, foreslås den aktive medleseren med færrest medlesinger siste 12 måneder. Fjerner du noen, blir statistikken stående.</span>
+            <!-- Eksport og import -->
+            <section class="settings-section" id="settings-pane-eksport" data-settings-pane="eksport" role="tabpanel" aria-labelledby="settings-tab-eksport">
+              <h2 class="settings-section-title">Eksport og import</h2>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Eksporter</span>
+                    <span class="settings-label-sub">Last ned alle saker som JSON eller CSV</span>
+                  </div>
+                  <div style="display:flex;gap:var(--space-3);flex-shrink:0;">
+                    <button class="s-btn s-btn-accent" id="btn-export">
+                      <svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg> JSON
+                    </button>
+                    <button class="s-btn s-btn-accent" id="btn-export-csv">
+                      <svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg> CSV
+                    </button>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Importer fra JSON</span>
+                    <span class="settings-label-sub">Gjenopprett saker fra en tidligere lagret fil</span>
+                  </div>
+                  <button class="s-btn" id="btn-import">
+                    <svg class="ti" aria-hidden="true"><use href="#ti-upload"/></svg> Velg fil
+                  </button>
+                </div>
               </div>
-              <div id="medleser-list" class="vac-list medleser-list"></div>
-              <div class="vac-add-row medleser-add">
-                <input class="field-input" id="medleser-new-name" type="text" placeholder="Navn" maxlength="60" />
-                <button class="s-btn s-btn-accent" id="btn-medleser-add">+ Legg til</button>
-              </div>
-            </div>
-          </div>
-        </section>
+            </section>
 
-        <!-- Sikkerhetskopiering -->
-        <section class="settings-section">
-          <h2 class="settings-section-title">Sikkerhetskopiering</h2>
-          <div class="settings-group">
-            <div class="settings-row" id="settings-cpc-row">
-              <div class="settings-label">
-                <span class="settings-label-title">CPC-database</span>
-                <span class="settings-label-sub" id="settings-cpc-status">Velg cpc_v2.json for å aktivere autofullfør og beskrivelser</span>
+            <!-- Faresone -->
+            <section class="settings-section" id="settings-pane-faresone" data-settings-pane="faresone" role="tabpanel" aria-labelledby="settings-tab-faresone">
+              <h2 class="settings-section-title">Faresone</h2>
+              <div class="settings-group settings-group-danger">
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Nullstill statistikk</span>
+                    <span class="settings-label-sub">Slett alle teller- og loggdata. Sakslistene påvirkes ikke.</span>
+                  </div>
+                  <button class="s-btn s-btn-danger" id="btn-reset-stats">Nullstill</button>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Slett all data</span>
+                    <span class="settings-label-sub">Fjerner alle saker, historikk, stikkord og statistikk permanent. Kan ikke angres.</span>
+                  </div>
+                  <button class="s-btn s-btn-danger" id="btn-delete-all">Slett alt</button>
+                </div>
               </div>
-              <button class="s-btn" id="btn-settings-cpc-load">
-                <svg class="ti" aria-hidden="true"><use href="#ti-upload"/></svg> Velg fil
-              </button>
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Eksporter</span>
-                <span class="settings-label-sub">Last ned alle saker som JSON eller CSV</span>
-              </div>
-              <div style="display:flex;gap:var(--space-3);flex-shrink:0;">
-                <button class="s-btn s-btn-accent" id="btn-export">
-                  <svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg> JSON
-                </button>
-                <button class="s-btn s-btn-accent" id="btn-export-csv">
-                  <svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg> CSV
-                </button>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Importer fra JSON</span>
-                <span class="settings-label-sub">Gjenopprett saker fra en tidligere lagret fil</span>
-              </div>
-              <button class="s-btn" id="btn-import">
-                <svg class="ti" aria-hidden="true"><use href="#ti-upload"/></svg> Velg fil
-              </button>
-            </div>
-            <div class="settings-row" id="backup-folder-row" style="display:none;">
-              <div class="settings-label">
-                <span class="settings-label-title">Datamappe</span>
-                <span class="settings-label-sub" id="backup-folder-sub">Data lagres kun i nettleseren</span>
-                <span class="settings-label-sub" id="backup-folder-sub2">Velg en mappe for arbeidsfil og daglige kopier</span>
-              </div>
-              <button class="s-btn" id="btn-backup-folder">
-                <svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> Velg mappe
-              </button>
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Automatisk sikkerhetskopi</span>
-                <span class="settings-label-sub" id="backup-status-sub">Øyeblikksbilder etter hver endring (de 20 siste) + daglig kopi</span>
-              </div>
-              <input type="checkbox" class="settings-checkbox" id="backup-enabled-cb" title="Slå automatisk sikkerhetskopi på/av" />
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Gjenopprett fra øyeblikksbilde</span>
-                <span class="settings-label-sub">Hent tilbake data fra en automatisk sikkerhetskopi</span>
-              </div>
-              <button class="s-btn" id="btn-backup-restore">Vis kopier</button>
-            </div>
-          </div>
-        </section>
+            </section>
 
-        <!-- Faresone -->
-        <section class="settings-section">
-          <h2 class="settings-section-title">Faresone</h2>
-          <div class="settings-group settings-group-danger">
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Nullstill statistikk</span>
-                <span class="settings-label-sub">Slett alle teller- og loggdata. Sakslistene påvirkes ikke.</span>
+            <!-- Om -->
+            <section class="settings-section" id="settings-pane-om" data-settings-pane="om" role="tabpanel" aria-labelledby="settings-tab-om">
+              <h2 class="settings-section-title">Om</h2>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div class="settings-label">
+                    <span class="settings-label-title">Om PatentDesk</span>
+                    <span class="settings-label-sub">Versjon og morsomme fakta</span>
+                  </div>
+                  <button class="s-btn" id="btn-about-open">Om appen</button>
+                </div>
               </div>
-              <button class="s-btn s-btn-danger" id="btn-reset-stats">Nullstill</button>
-            </div>
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Slett all data</span>
-                <span class="settings-label-sub">Fjerner alle saker, historikk, stikkord og statistikk permanent. Kan ikke angres.</span>
-              </div>
-              <button class="s-btn s-btn-danger" id="btn-delete-all">Slett alt</button>
-            </div>
+            </section>
           </div>
-        </section>
-
-        <!-- Om -->
-        <section class="settings-section">
-          <h2 class="settings-section-title">Om</h2>
-          <div class="settings-group">
-            <div class="settings-row">
-              <div class="settings-label">
-                <span class="settings-label-title">Om PatentDesk</span>
-                <span class="settings-label-sub">Versjon og morsomme fakta</span>
-              </div>
-              <button class="s-btn" id="btn-about-open">Om appen</button>
-            </div>
-          </div>
-        </section>
+        </div>
 
       </div>
 
@@ -4359,7 +4417,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.34.0';
+var APP_VERSION    = 'v4.35.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4380,6 +4438,7 @@ var ACTIVE_CASE_KEY   = 'pt_active_case';
 var UNASSIGNED_REMINDER_KEY = 'pt_unassigned_reminder';
 var MEDLESERE_KEY     = 'pt_medlesere';
 var MEDL_LOG_KEY      = 'pt_medl_log';
+var SETTINGS_TAB_KEY  = 'pt_settings_tab';
 var AUTOSAVE_KEY = 'pt_autosave';
 var SAK_KEY_PREFIX = 'pt_sak_';
 
@@ -5827,6 +5886,7 @@ function deleteAllData() {
   localStorage.removeItem(MEDLESERE_KEY);
   localStorage.removeItem(MEDL_LOG_KEY);
   localStorage.removeItem('pt_drawer_collapsed');
+  localStorage.removeItem(SETTINGS_TAB_KEY);
   localStorage.removeItem('pt_cpc_welcomed');
 
   _cpcResetState();
@@ -12299,7 +12359,62 @@ function renderTimeline(opts) {
 }
 
 // ── Innstillinger ──────────────────────────────────
+// ── Innstillinger: venstremeny ─────────────────────
+// Rekkefølgen følger menyen; piltastene går i denne rekkefølgen.
+var SETTINGS_TABS = ['produksjon', 'sakstype', 'ferie', 'medlesere', 'sjekkliste', 'saksmappe', 'cpc', 'sikkerhetskopi', 'eksport', 'faresone', 'om'];
+
+function normalizeSettingsTab(id) {
+  return SETTINGS_TABS.indexOf(id) !== -1 ? id : SETTINGS_TABS[0];
+}
+
+function stepSettingsTab(id, delta) {
+  var n = SETTINGS_TABS.length;
+  var i = Math.max(0, SETTINGS_TABS.indexOf(id));
+  return SETTINGS_TABS[((i + delta) % n + n) % n];
+}
+
+function loadSettingsTab() {
+  try { return normalizeSettingsTab(localStorage.getItem(SETTINGS_TAB_KEY)); } catch(e) { return SETTINGS_TABS[0]; }
+}
+
+function showSettingsTab(id, focus) {
+  id = normalizeSettingsTab(id);
+  try { localStorage.setItem(SETTINGS_TAB_KEY, id); } catch(e) {}
+  document.querySelectorAll('[data-settings-tab]').forEach(function(btn) {
+    var on = btn.dataset.settingsTab === id;
+    btn.classList.toggle('is-active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    btn.tabIndex = on ? 0 : -1;
+    if (on && focus) btn.focus();
+  });
+  document.querySelectorAll('[data-settings-pane]').forEach(function(pane) {
+    pane.classList.toggle('is-active', pane.dataset.settingsPane === id);
+  });
+}
+
+(function() {
+  var nav = document.querySelector('.settings-nav');
+  if (!nav) return;
+  nav.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-settings-tab]');
+    if (btn) showSettingsTab(btn.dataset.settingsTab);
+  });
+  nav.addEventListener('keydown', function(e) {
+    var btn = e.target.closest('[data-settings-tab]');
+    if (!btn) return;
+    var cur = btn.dataset.settingsTab, next = null;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = stepSettingsTab(cur, 1);
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = stepSettingsTab(cur, -1);
+    else if (e.key === 'Home') next = SETTINGS_TABS[0];
+    else if (e.key === 'End') next = SETTINGS_TABS[SETTINGS_TABS.length - 1];
+    if (!next) return;
+    e.preventDefault();
+    showSettingsTab(next, true);
+  });
+})();
+
 function renderInnstillinger() {
+  showSettingsTab(loadSettingsTab());
   var beleggSel = document.getElementById('input-belegg-horizon');
   if (beleggSel) beleggSel.value = String(beleggHorizon);
   var remInp = document.getElementById('input-unassigned-reminder');
@@ -12316,7 +12431,6 @@ function renderVacationList() {
   var today = todayStr();
   if (!vacations.length) {
     list.innerHTML = '<p class="vac-empty">Ingen ferieperioder registrert.</p>';
-    _updateVacToggleLabel();
     return;
   }
   list.innerHTML = vacations.map(function(v, i) {
@@ -12335,7 +12449,6 @@ function renderVacationList() {
       '<button class="btn-icon btn-vac-del" data-idx="' + i + '" title="Slett" aria-label="Slett ferie">✕</button>' +
     '</div>';
   }).join('');
-  _updateVacToggleLabel();
 }
 
 // ── Statistikk ─────────────────────────────────────
@@ -14245,20 +14358,10 @@ function _renderWorkWindowInputs() {
 })();
 
 // ── Ferieperioder ──────────────────────────────────
-function _updateVacToggleLabel() {
-  var lbl = document.getElementById('vac-toggle-label');
-  var btn = document.getElementById('btn-vac-toggle');
-  if (!lbl || !btn) return;
-  var n = vacations.length;
-  lbl.textContent = n === 0 ? 'Vis' : (n === 1 ? '1 periode' : n + ' perioder');
-}
-
 (function() {
   var btnAdd      = document.getElementById('btn-vac-add');
   var btnCancel   = document.getElementById('btn-vac-cancel');
   var btnAddOpen  = document.getElementById('btn-vac-add-open');
-  var btnToggle   = document.getElementById('btn-vac-toggle');
-  var collapsible = document.getElementById('vac-collapsible');
   var addForm     = document.getElementById('vac-add-form');
   var inpFrom     = document.getElementById('vac-from');
   var inpTo       = document.getElementById('vac-to');
@@ -14281,17 +14384,7 @@ function _updateVacToggleLabel() {
   }
 
   function openForm() {
-    if (collapsible) collapsible.style.display = '';
-    if (btnToggle) btnToggle.classList.add('open');
     if (addForm) addForm.style.display = 'flex';
-  }
-
-  // Kollaps-toggle
-  if (btnToggle && collapsible) {
-    btnToggle.addEventListener('click', function() {
-      var open = btnToggle.classList.toggle('open');
-      collapsible.style.display = open ? '' : 'none';
-    });
   }
 
   // Åpne legg-til-skjema
