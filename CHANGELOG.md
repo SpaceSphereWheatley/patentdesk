@@ -7,6 +7,21 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.36.0] - 2026-10-26
+Menyen i Innstillinger har nå tre hovedseksjoner i stedet for elleve. Når du
+velger en hovedseksjon, vises alle underseksjonene i den samtidig.
+
+### Changed
+- **Tre hovedseksjoner i menyen.** Arbeidsmengde viser Produksjon, Standard
+  per sakstype og Ferieperioder. Saksbehandling viser Medlesere, Saksmappe og
+  sjekkliste og CPC-database. Data viser Sikkerhetskopiering, Eksport og
+  import, Faresone og Om. På smale skjermer er menyen tre faner øverst.
+- **«Om» ligger nå nederst under Data.** Det egne menypunktet «Appen» er
+  fjernet.
+- **Saksmappe og Sjekkliste-mal er slått sammen** til underseksjonen
+  «Saksmappe og sjekkliste».
+- Hadde du en underseksjon åpen sist, åpnes nå hovedseksjonen den hører til.
+
 ## [4.35.0] - 2026-10-26
 Innstillinger har fått en meny til venstre, og siden viser én seksjon om
 gangen. Du slipper å bla gjennom en lang side for å finne det du skal endre.
