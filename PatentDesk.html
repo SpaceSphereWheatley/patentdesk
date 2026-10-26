@@ -2141,6 +2141,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-ref-inp:hover   { border-color: var(--border2); }
 .mh-ref-inp:focus   { outline: none; border-color: var(--accent-dim); background: var(--surface); }
 .mh-ref-inp::placeholder { color: var(--muted); opacity: 0.5; }
+.mh-ref             { display: flex; align-items: center; gap: var(--space-1); min-width: 0; }
+.mh-ext             { display: inline-flex; flex-shrink: 0; padding: 2px; border-radius: var(--radius-sm);
+                      color: var(--muted); transition: color var(--dur-base); }
+.mh-ext[href]:hover { color: var(--accent); }
+.mh-ext[aria-disabled="true"] { opacity: 0.35; cursor: default; }
 
 /* Utledet kategori per mothold — overtar kolonnen tittelfeltet hadde */
 .mh-cats            { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; min-width: 0; }
@@ -2158,6 +2163,17 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       background: var(--surface); border: 1px solid var(--border2); color: var(--muted);
                       transition: color var(--dur-base), border-color var(--dur-base), background var(--dur-base); }
 .mh-flag[aria-pressed="true"] { background: rgba(200,169,110,0.16); border-color: var(--accent); color: var(--accent-dim); }
+.mh-flag-suggest    { border-style: dashed; border-color: var(--accent); color: var(--accent-dim); }
+.mh-dates           { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6);
+                      margin-top: calc(-1 * var(--space-2)); }
+.mh-date            { display: inline-flex; align-items: center; gap: var(--space-2);
+                      font-size: var(--text-2xs); color: var(--muted); white-space: nowrap; }
+.mh-date-inp        { width: 6.5rem; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm);
+                      color: var(--text); font-family: var(--font-body); font-size: var(--text-xs);
+                      padding: 1px var(--space-2); font-variant-numeric: tabular-nums; }
+.mh-date-inp:focus  { outline: none; border-color: var(--accent-dim); background: var(--surface); }
+.mh-date-inp::placeholder { color: var(--muted); opacity: 0.5; }
+.mh-date-inp[aria-invalid="true"] { border-color: var(--danger); }
 .mh-bg-toggle       { font-size: var(--text-2xs); font-family: var(--font-body); white-space: nowrap;
                       padding: 2px var(--space-3); border-radius: var(--radius-pill); cursor: pointer;
                       background: var(--surface); border: 1px solid var(--border2); color: var(--muted);
@@ -2223,7 +2239,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 @media (max-width: 720px) {
   .mh-row           { grid-template-columns: 2.2rem 1fr; row-gap: var(--space-2); }
-  .mh-cats, .mh-flags, .mh-bg-toggle { grid-column: 2; }
+  .mh-cats, .mh-flags, .mh-bg-toggle, .mh-dates { grid-column: 2; }
 }
 
 /* Kravstabell: gul rad for patenterbar med formelle feil */
@@ -2739,6 +2755,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
   </symbol>
   <symbol id="ti-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
+  </symbol>
+  <symbol id="ti-external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>
   </symbol>
 </svg>
 
@@ -3428,6 +3447,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
                 <div class="sak-info-pair">
                   <dt>Innleveringsdato</dt><dd id="sak-filing-date"></dd>
                 </div>
+                <div class="sak-info-pair">
+                  <dt>Prioritetsdato</dt><dd id="sak-priority-date"></dd>
+                </div>
                 <div class="sak-info-pair" id="sak-case-buffer-field">
                   <dt>Buffer (dager)</dt><dd id="sak-case-buffer"></dd>
                 </div>
@@ -3752,6 +3774,10 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <div class="field-group">
             <label class="field-label" for="f-filing-date">Innleveringsdato <span class="field-label-sub">valgfritt</span></label>
             <input class="field-input" id="f-filing-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="f-priority-date">Prioritetsdato <span class="field-label-sub">valgfritt, tidligste prioritet</span></label>
+            <input class="field-input" id="f-priority-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
           </div>
         </div>
 
@@ -4230,7 +4256,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.31.0';
+var APP_VERSION    = 'v4.32.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -6231,9 +6257,10 @@ function _dispatch(action, payload) {
       if (p.unassigned) Object.assign(newCase, unassignedPatch(newCase, true, newCase.createdAt));
       AppState.cases = cases.concat([newCase]);
       saveCases();
-      if (p.filingDate) {
+      if (p.filingDate || p.priorityDate) {
         var newData = defaultSakData(0);
-        newData.filingDate = p.filingDate;
+        newData.filingDate = p.filingDate || '';
+        newData.priorityDate = p.priorityDate || '';
         saveSakData(newCase.id, newData);
       }
       render();
@@ -6259,11 +6286,14 @@ function _dispatch(action, payload) {
         return Object.assign({}, c, patch, histPatch);
       });
       saveCases();
-      // Innleveringsdatoen ligger i saksdetaljene (pt_sak_*), ikke i cases[]
+      // Innleverings- og prioritetsdatoen ligger i saksdetaljene (pt_sak_*),
+      // ikke i cases[]
       if (p.type !== 'oppdrag' && typeof p.filingDate === 'string') {
         var editData = loadSakData(p.id) || defaultSakData(0);
-        if ((editData.filingDate || '') !== p.filingDate) {
+        var priorityDate = typeof p.priorityDate === 'string' ? p.priorityDate : (editData.priorityDate || '');
+        if ((editData.filingDate || '') !== p.filingDate || (editData.priorityDate || '') !== priorityDate) {
           editData.filingDate = p.filingDate;
+          editData.priorityDate = priorityDate;
           saveSakData(p.id, editData);
         }
       }
@@ -6397,7 +6427,7 @@ function _dispatch(action, payload) {
     case 'DOC_ADD': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       ensureSakDocs(data);
-      data.docs.push({ id: nextDocId(data.docs), ref: '', p: false, e: false, background: false });
+      data.docs.push({ id: nextDocId(data.docs), ref: '', pubDate: '', effDate: '', p: false, e: false, background: false });
       saveSakData(payload.id, data);
       renderSakDocs(data);
       break;
@@ -6420,15 +6450,18 @@ function _dispatch(action, payload) {
       ensureSakDocs(data);
       var doc = data.docs[payload.idx];
       if (!doc) break;
-      doc[payload.field] = payload.field === 'ref'
-        ? sanitizeText(payload.value)
-        : !!payload.value;
+      var isDate = payload.field === 'pubDate' || payload.field === 'effDate';
+      doc[payload.field] = payload.field === 'ref' ? sanitizeText(payload.value)
+                         : isDate                  ? String(payload.value || '')
+                         : !!payload.value;
       // Bakgrunnsmothold kan ikke være X eller Y — rydd bort kravsreferansene
       if (payload.field === 'background' && doc.background) ensureSakDocs(data);
       saveSakData(payload.id, data);
       // Referansen skrives i feltet som allerede står i DOM-en; å tegne lista
       // på nytt midt i redigeringen ville flyttet markøren.
-      if (payload.field !== 'ref') {
+      if (isDate) {
+        refreshMhFlags(data);
+      } else if (payload.field !== 'ref') {
         renderSakDocs(data);
         renderSakClaimsTable(data);
       }
@@ -8748,7 +8781,7 @@ function defaultSakData(numClaims) {
   for (var i = 1; i <= n; i++) {
     var prevDep = (i > 1 && claims.length) ? claims[claims.length-1].dep : null; claims.push({ num: i, novelty: null, inventive: null, formal: null, notes: '', independent: false, dep: i === 1 ? null : prevDep, depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] });
   }
-  return { numClaims: n, filingDate: '', checklist: checklist, classes: [], docs: [], claims: claims };
+  return { numClaims: n, filingDate: '', priorityDate: '', checklist: checklist, classes: [], docs: [], claims: claims };
 }
 
 function ensureClaims(data) {
@@ -8928,6 +8961,49 @@ var MAX_INVENTIVE_DOCS = 2;
 
 function nextDocId(docs) { return 'D' + ((docs || []).length + 1); }
 
+// Publikasjonsnummeret slik Espacenet vil ha det: «WO 2020/123456 A1» blir
+// «WO2020123456A1». Mellomrom, skråstrek og tusenskilletegn fjernes.
+function normalizePubNumber(ref) {
+  return String(ref || '').replace(/[\s/.,-]+/g, '').toUpperCase();
+}
+
+// Lenke til et pn=-søk i Espacenet, eller null når feltet er tomt. Bare en
+// lenke — appen gjør selv ingen nettverkskall.
+function espacenetUrl(ref) {
+  var pn = normalizePubNumber(ref);
+  return pn ? 'https://worldwide.espacenet.com/patent/search?q=pn%3D' + encodeURIComponent(pn) : null;
+}
+
+// Forslag til P- og E-flagg ut fra datoene — bare forslag, flaggene settes
+// aldri av seg selv. app = { filingDate, priorityDate }; motholdet har
+// pubDate (publisert) og effDate (eget prioritets- eller inngivelsesdato).
+// Alle datoer er ISO-strenger, så de sammenlignes som tekst.
+//   P: publisert på/etter søknadens prioritet, men før inngivelsen. Uten
+//      prioritet finnes ikke et slikt mellomrom.
+//   E: eldre dato enn søknadens referansedato (prioritet, ellers inngivelse),
+//      og publisert på/etter inngivelsesdagen.
+function suggestDocFlags(doc, app) {
+  doc = doc || {}; app = app || {};
+  var filing = app.filingDate || '', priority = app.priorityDate || '';
+  var pub = doc.pubDate || '', eff = doc.effDate || '';
+  var refDate = priority || filing;
+  var p = !!(pub && priority && filing && pub >= priority && pub < filing);
+  var e = !!(pub && eff && filing && eff < refDate && pub >= filing);
+  return {
+    p: p, e: e,
+    pReason: p ? 'Publisert ' + toDisplay(pub) + ', mellom prioritet og inngivelse' : '',
+    eReason: e ? 'Eldre dato (' + toDisplay(eff) + '), publisert ' + toDisplay(pub) + ' — på eller etter inngivelsesdagen' : ''
+  };
+}
+
+// Prioritetsdatoen kan ikke ligge etter innleveringsdatoen. Tom streng = ok.
+function applicationDatesError(filingDate, priorityDate) {
+  if (filingDate && priorityDate && priorityDate > filingDate) {
+    return 'Prioritetsdato kan ikke være etter innleveringsdato.';
+  }
+  return '';
+}
+
 // Normaliserer data.docs[] og kravenes dokumentfelt. Id-ene er posisjonelle
 // (D1, D2, …), og referanser til ukjente eller bakgrunnsmothold ryddes bort.
 function ensureSakDocs(data) {
@@ -8935,6 +9011,7 @@ function ensureSakDocs(data) {
   data.docs = data.docs.map(function(d, i) {
     d = d || {};
     return { id: 'D' + (i + 1), ref: d.ref || '',
+             pubDate: d.pubDate || '', effDate: d.effDate || '',
              p: !!d.p, e: !!d.e, background: !!d.background };
   });
   var selectable = {};
@@ -9141,6 +9218,7 @@ function renderSak(id) {
   if (!isOppdrag) {
     document.getElementById('sak-num-claims').value        = data.numClaims || '';
     document.getElementById('sak-filing-date').textContent = toDisplay(data.filingDate) || '—';
+    document.getElementById('sak-priority-date').textContent = toDisplay(data.priorityDate) || '—';
 
     renderSakClasses(data);
     renderSakAssessment(data);
@@ -9148,6 +9226,7 @@ function renderSak(id) {
     // Nullstill søknad-spesifikke felt så stale verdi ikke forurenser oppdrag
     document.getElementById('sak-num-claims').value        = '';
     document.getElementById('sak-filing-date').textContent = '—';
+    document.getElementById('sak-priority-date').textContent = '—';
   }
 
   // Sammendraget summerer krav — uten krav har det ingenting å vise.
@@ -9952,9 +10031,11 @@ function renderSakDocs(data) {
   // Kategoriene utledes av kravsvurderingen — samme kilde som den kopierbare
   // rapporten, så raden og «Kopier rapport» aldri kan si ulike ting.
   var rows = buildSearchReport(data.claims || [], docs);
+  var app  = { filingDate: data.filingDate, priorityDate: data.priorityDate };
 
   el.innerHTML = docs.map(function(d, i) {
     var row  = rows[i];
+
     var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) {
         return '<span class="mh-cat mh-cat-' + cat.toLowerCase() + '">' +
@@ -9964,18 +10045,72 @@ function renderSakDocs(data) {
 
     return '<div class="mh-row' + (d.background ? ' mh-row-bg' : '') + '" data-idx="' + i + '">' +
       '<span class="mh-id">' + esc(d.id) + '</span>' +
-      '<input class="mh-ref-inp" type="text" data-idx="' + i + '" value="' + esc(d.ref) + '" placeholder="f.eks. WO 2020/123456 A1" aria-label="Publikasjonsnummer for ' + esc(d.id) + '" />' +
-      '<span class="mh-cats">' + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
-      '<span class="mh-flags">' +
-        '<button class="mh-flag" data-flag="p" data-idx="' + i + '" aria-pressed="' + (d.p ? 'true' : 'false') + '" title="P — mellomliggende dokument">P</button>' +
-        '<button class="mh-flag" data-flag="e" data-idx="' + i + '" aria-pressed="' + (d.e ? 'true' : 'false') + '" title="E — eldre søknad publisert på eller etter inngivelsesdagen">E</button>' +
+      '<span class="mh-ref">' +
+        '<input class="mh-ref-inp" type="text" data-idx="' + i + '" value="' + esc(d.ref) + '" placeholder="f.eks. WO 2020/123456 A1" aria-label="Publikasjonsnummer for ' + esc(d.id) + '" />' +
+        mhExtLinkHtml(d) +
       '</span>' +
+      '<span class="mh-cats">' + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
+      '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
       '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '" title="Fjern" aria-label="Fjern ' + esc(d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
+      '<span class="mh-dates">' +
+        mhDateHtml(d, i, 'pubDate', 'Publisert') +
+        mhDateHtml(d, i, 'effDate', 'Prioritet/inng.') +
+      '</span>' +
     '</div>';
   }).join('');
+  el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
 }
 
+// P/E-knappene. Et forslag vises som stiplet kant med begrunnelsen i
+// verktøytipset, men bare så lenge flagget ikke er satt — klikk godtar det.
+function mhFlagsHtml(d, i, app) {
+  var sug = suggestDocFlags(d, app);
+  return mhFlagHtml(i, 'p', d.p, sug.p, sug.pReason, 'P — mellomliggende dokument') +
+         mhFlagHtml(i, 'e', d.e, sug.e, sug.eReason, 'E — eldre søknad publisert på eller etter inngivelsesdagen');
+}
+
+// En datoendring påvirker bare forslagene. Å tegne hele lista på nytt ville
+// tatt fokus fra feltet du tabbet til.
+function refreshMhFlags(data) {
+  var app = { filingDate: data.filingDate, priorityDate: data.priorityDate };
+  (data.docs || []).forEach(function(d, i) {
+    var flags = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + i + '"] .mh-flags');
+    if (flags) flags.innerHTML = mhFlagsHtml(d, i, app);
+  });
+}
+
+function mhFlagHtml(i, flag, pressed, suggested, reason, title) {
+  var hint = suggested && !pressed;
+  return '<button class="mh-flag' + (hint ? ' mh-flag-suggest' : '') + '" data-flag="' + flag + '" data-idx="' + i + '"' +
+    ' aria-pressed="' + (pressed ? 'true' : 'false') + '"' +
+    ' title="' + esc(hint ? 'Foreslått ' + flag.toUpperCase() + ': ' + reason : title) + '">' + flag.toUpperCase() + '</button>';
+}
+
+function mhDateHtml(d, i, field, label) {
+  return '<label class="mh-date">' + esc(label) +
+    ' <input class="mh-date-inp" type="text" data-idx="' + i + '" data-field="' + field + '"' +
+    ' value="' + esc(toDisplay(d[field])) + '" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off"' +
+    ' aria-label="' + esc(label + ' for ' + d.id) + '" /></label>';
+}
+
+
+// ↗-lenken etter referansefeltet. Den står der også når feltet er tomt, men
+// er da grå og uten mål; syncMhExtLink() holder den à jour mens du skriver.
+function mhExtLinkHtml(d) {
+  var url = espacenetUrl(d.ref);
+  return '<a class="mh-ext" ' + (url ? 'href="' + esc(url) + '"' : 'aria-disabled="true"') +
+    ' target="_blank" rel="noopener noreferrer" title="Åpne i Espacenet" ' +
+    'aria-label="Åpne ' + esc(d.id) + ' i Espacenet"><svg class="ti" aria-hidden="true"><use href="#ti-external-link"/></svg></a>';
+}
+
+function syncMhExtLink(inp) {
+  var a = inp.parentNode && inp.parentNode.querySelector('.mh-ext');
+  if (!a) return;
+  var url = espacenetUrl(inp.value);
+  if (url) { a.href = url; a.removeAttribute('aria-disabled'); }
+  else     { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); }
+}
 
 // Chip ved siden av tri-state-knappen: vises bare når vurderingen er ✗, altså
 // når et mothold faktisk har tatt nyheten eller oppfinnelseshøyden.
@@ -10613,6 +10748,7 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
 document.getElementById('sak-docs-mothold').addEventListener('input', function(e) {
   var id = activeSakId; if (!id) return;
   var inp = e.target.closest('.mh-ref-inp'); if (!inp) return;
+  syncMhExtLink(inp);
   var idx = parseInt(inp.dataset.idx, 10), val = inp.value;
   debounceSakEdit(function() {
     dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: 'ref', value: val.trim() });
@@ -10620,6 +10756,16 @@ document.getElementById('sak-docs-mothold').addEventListener('input', function(e
 });
 document.getElementById('sak-docs-mothold').addEventListener('change', function(e) {
   var id = activeSakId; if (!id) return;
+  var dateInp = e.target.closest('.mh-date-inp');
+  if (dateInp) {
+    // Ugyldig dato lagres ikke; feltet markeres til den rettes
+    var iso = filingDateFromInput(dateInp.value);
+    if (iso === null) { dateInp.setAttribute('aria-invalid', 'true'); return; }
+    dateInp.removeAttribute('aria-invalid');
+    dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(dateInp.dataset.idx, 10),
+      field: dateInp.dataset.field, value: iso });
+    return;
+  }
   var inp = e.target.closest('.mh-ref-inp'); if (!inp) return;
   clearTimeout(_sakTypingTimer);
   dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(inp.dataset.idx, 10),
@@ -12865,6 +13011,7 @@ var _dupWarnPending = false;
 var fDuration   = document.getElementById('f-duration');
 var fCaseBuffer = document.getElementById('f-case-buffer');
 var fFilingDate = document.getElementById('f-filing-date');
+var fPriorityDate = document.getElementById('f-priority-date');
 
 // Modal-tidslinje state
 // _tlModalHorizon / _tlModalAxisMode er nå i _tlConfig['modal-timeline']
@@ -12944,6 +13091,7 @@ function openModal(c) {
     fDuration.value   = c.duration || '';
     fCaseBuffer.value = c.caseBuffer != null ? String(c.caseBuffer) : '';
     fFilingDate.value = c.type === 'oppdrag' ? '' : toDisplay((loadSakData(c.id) || {}).filingDate || '');
+    fPriorityDate.value = c.type === 'oppdrag' ? '' : toDisplay((loadSakData(c.id) || {}).priorityDate || '');
     if (c.notes || c.tags) {
       document.getElementById('modal-adv-toggle').classList.add('open');
       document.getElementById('modal-adv-body').classList.add('open');
@@ -12952,7 +13100,7 @@ function openModal(c) {
     setSelectedStatus(isOppdrag ? 'oppdrag' : (c.status || 'ny'));
   } else {
     document.getElementById('f-unassigned').checked = false;
-    editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = fFilingDate.value = '';
+    editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = fFilingDate.value = fPriorityDate.value = '';
     document.getElementById('f-case-number-op').value = '';
     document.getElementById('f-due-date-op').value = '';
     var defStatus = defaultOppdrag ? 'oppdrag'
@@ -13151,6 +13299,11 @@ document.getElementById('btn-save').addEventListener('click', function() {
   _dupWarnPending = false;
   var filingDate = isOppdrag ? undefined : filingDateFromInput(fFilingDate.value);
   if (filingDate === null) { fieldError.textContent = 'Ugyldig innleveringsdato — bruk formatet åååå.mm.dd.'; _dupWarnPending = false; return; }
+  // Samme regler som innleveringsdatoen: tom = ingen, ugyldig = null
+  var priorityDate = isOppdrag ? undefined : filingDateFromInput(fPriorityDate.value);
+  if (priorityDate === null) { fieldError.textContent = 'Ugyldig prioritetsdato — bruk formatet åååå.mm.dd.'; _dupWarnPending = false; return; }
+  var datesError = isOppdrag ? '' : applicationDatesError(filingDate, priorityDate);
+  if (datesError) { fieldError.textContent = datesError; _dupWarnPending = false; return; }
   var internalDate = parseDate(dd);
   // Tomt felt = ingen egen varighet; standarden fra Innstillinger gjelder da
   var duration = isOppdrag ? (parseInt(fDuration.value, 10) >= 1 ? parseInt(fDuration.value, 10) : null) : undefined;
@@ -13162,7 +13315,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
   var payload = { caseNumber: cn, dueDate: internalDate, title: ti,
     notes: fNotes.value.trim(), tags: fModalTags.value,
     type: isOppdrag ? 'oppdrag' : 'sak', status: isOppdrag ? oppdragStatus : st, duration: duration, caseBuffer: caseBuffer, filingDate: filingDate,
-    unassigned: st === 'ny' && document.getElementById('f-unassigned').checked };
+    priorityDate: priorityDate, unassigned: st === 'ny' && document.getElementById('f-unassigned').checked };
   if (id) { payload.id = id; dispatch('CASE_EDIT', payload); }
   else    { dispatch('CASE_CREATE', payload); }
   var dest = isOppdrag ? 'oppdrag' : st;
@@ -13638,6 +13791,7 @@ function init() {
   _dp.init(document.getElementById('f-due-date'));
   _dp.init(document.getElementById('f-due-date-op'));
   _dp.init(document.getElementById('f-filing-date'));
+  _dp.init(document.getElementById('f-priority-date'));
   autoFormatDateInput(document.getElementById('f-due-date-op'));
   _dp.init(document.getElementById('f-frist'));
   initTagAutocomplete(document.getElementById('f-tags'));

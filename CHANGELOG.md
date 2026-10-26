@@ -7,6 +7,30 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.32.0] - 2026-10-26
+Motholdene har fått en lenke til Espacenet og egne datoer. Ut fra datoene
+foreslår appen P- og E-flagg, og saken har fått et felt for prioritetsdato.
+
+### Added
+- **Espacenet-lenke på motholdene.** Et ↗-ikon rett etter publikasjonsnummeret
+  åpner dokumentet i Espacenet i en ny fane. Nummeret ryddes først, så
+  «WO 2020/123456 A1» søkes opp som `WO2020123456A1`. Ikonet er grått og gjør
+  ingenting når feltet er tomt. Appen gjør selv ingen nettverkskall; dette er
+  bare en vanlig lenke.
+- **Prioritetsdato på saken.** «Rediger sak» har fått et valgfritt felt for
+  tidligste prioritetsdato, og datoen vises i saksopplysningene. En
+  prioritetsdato etter innleveringsdatoen avvises.
+- **Datoer på motholdene.** Under hvert mothold kan du føre inn når det ble
+  publisert, og motholdets egen prioritets- eller inngivelsesdato. En ugyldig
+  dato lagres ikke, og feltet markeres rødt.
+- **Forslag til P og E.** Når datoene er fylt ut, får P- eller E-knappen
+  stiplet kant hvis flagget passer. Verktøytipset forklarer hvorfor, og et klikk
+  godtar forslaget. Flaggene settes aldri av seg selv.
+  - P foreslås når motholdet er publisert på eller etter søknadens
+    prioritetsdato, men før innleveringsdatoen.
+  - E foreslås når motholdet har eldre dato enn søknaden (prioritet, ellers
+    innleveringsdato) og er publisert på eller etter innleveringsdatoen.
+
 ## [4.31.0] - 2026-10-26
 Du kan nå legge inn saker du har meldt deg på, men ikke fått fordelt ennå.
 De vises nedtonet overalt og teller ikke som ditt arbeid før du bekrefter at
