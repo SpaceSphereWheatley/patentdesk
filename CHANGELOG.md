@@ -7,6 +7,31 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.33.0] - 2026-10-26
+Du kan nå markere at en av dine saker er sendt til medlesing, og hvem som
+leser den. Appen foreslår en medleser slik at du fordeler sakene, og
+statistikken viser hvor mange saker hver medleser har lest.
+
+### Added
+- **Hos medleser.** Ny sak og Viderebehandling har et nytt valg i ⋯-menyen:
+  «Send til medlesing…». Der velger du medleser og dato. Mens saken er ute,
+  står «Hos <navn>» ved saken i listene. Sakssiden og Oversikt viser en linje
+  med medleser, dato og antall dager siden saken ble sendt, med knappen
+  «Tilbake ✓». «Endre medlesing…» retter medleser eller dato. Belegget og
+  fristen er uendret, fordi saken fortsatt er ditt arbeid. Markeringen lukkes
+  av seg selv når saken går til Fristarkiv, avsluttes eller slettes. Angrer
+  du, kommer den tilbake.
+- **Medleserliste i Innstillinger.** Legg inn kollegene som kan medlese, og
+  sett dem inaktive når de ikke skal foreslås, for eksempel i en permisjon.
+- **Forslag til medleser.** Dialogen foreslår den aktive medleseren med færrest
+  medlesinger de siste 12 månedene. Står flere likt, foreslås den det er
+  lengst siden du brukte. Du kan alltid velge en annen.
+- **Medlesere i Statistikk.** En tabell viser antall medlesinger per medleser
+  de siste 12 månedene og totalt, og når hver medleser sist ble brukt.
+  Utsendingene lagres i en egen logg, så statistikken blir stående selv om
+  saken eller medleseren slettes. Medleserlista og loggen følger med i
+  eksport og import.
+
 ## [4.32.0] - 2026-10-26
 Motholdene har fått en lenke til Espacenet og egne datoer. Ut fra datoene
 foreslår appen P- og E-flagg, og saken har fått et felt for prioritetsdato.

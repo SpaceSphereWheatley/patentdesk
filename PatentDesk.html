@@ -1177,6 +1177,37 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .modal-unassigned small { display: block; color: var(--muted); font-size: var(--text-xs); }
 
 .belegg-potential { color: var(--muted); }
+/* ── Hos medleser ─────────────────────────────────── */
+/* Nøytral, ikke aksent: aksenten er pågående sak, rødt og rav er frister. */
+.medl-out-pill {
+  flex-shrink: 0; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+  color: var(--text); background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--radius-pill); padding: 1px var(--space-3); line-height: 1.4;
+}
+#home-medl-out, #sak-medl-out { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-5); }
+#home-medl-out[hidden], #sak-medl-out[hidden] { display: none; }
+.medl-out {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-5); font-size: var(--text-sm);
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.medl-out > svg.ti { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+.medl-out-text    { flex: 1; min-width: 0; }
+.medl-out-case    { color: var(--text); }
+.medl-out-actions { display: flex; gap: var(--space-2); margin-left: auto; }
+.medl-send-suggest { margin: var(--space-2) 0 0; font-size: var(--text-xs); color: var(--muted); }
+.medleser-list, .medleser-add { width: 100%; max-width: 480px; }
+.medleser-add      { flex-wrap: nowrap; }
+.medleser-add .field-input { flex: 1; min-width: 0; }
+#sak-medl-out      { margin-top: var(--space-4); }
+.medleser-row      { justify-content: flex-start; }
+.medleser-inactive .vac-label { color: var(--muted); font-weight: normal; }
+.medleser-active   { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--muted); margin-left: auto; }
+.medleser-row .btn-medleser-del { margin-left: var(--space-2); }
+.medleser-stats-note { font-size: var(--text-xs); color: var(--muted); margin: 0 0 var(--space-3); }
+.medleser-bar-col  { width: 40%; }
+.medleser-bar      { display: block; height: 8px; min-width: 2px; border-radius: 4px; background: var(--accent-dim); }
 
 .home-card-copyable       { cursor: pointer; }
 .home-card-copyable:hover { border-color: var(--accent-dim); }
@@ -2848,6 +2879,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
         <!-- Fristvarsel-banner -->
         <div class="frist-digest" id="frist-digest" style="display:none;" role="region" aria-label="Fristvarsel"></div>
 
+        <!-- Hos medleser -->
+        <div id="home-medl-out" hidden></div>
+
         <!-- Saksflyt: hvor mange saker som står på hvert steg i forløpssporet -->
         <section class="home-pipe-wrap" aria-labelledby="home-pipe-title">
           <h2 class="home-pipe-title" id="home-pipe-title">Saksflyt</h2>
@@ -3043,6 +3077,13 @@ tr:hover .sak-tag-display.sak-tag-empty,
         </section>
 
         <section class="stat-section">
+          <h2 class="stat-section-title">Medlesere</h2>
+          <p class="medleser-stats-note">Dine saker sendt til medlesing, per medleser. Gjelder siste 12 måneder og totalt, uavhengig av året over.</p>
+          <div class="table-wrap" id="medleser-stats"></div>
+          <div class="table-empty" id="medleser-stats-empty" style="display:none;">Ingen saker sendt til medlesing ennå. Bruk «Send til medlesing…» i ⋯-menyen på en sak.</div>
+        </section>
+
+        <section class="stat-section">
           <h2 class="stat-section-title">Hendelseslogg</h2>
           <div id="log-tbody" class="case-list"></div>
           <div class="table-empty" id="log-empty" style="display:none;">Ingen hendelser registrert ennå.</div>
@@ -3208,6 +3249,24 @@ tr:hover .sak-tag-display.sak-tag-empty,
                 <span class="settings-label-sub" id="cle-settings-summary"></span>
               </div>
               <button class="s-btn" id="btn-cle-open">Rediger</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Medlesere -->
+        <section class="settings-section">
+          <h2 class="settings-section-title">Medlesere</h2>
+          <div class="settings-group">
+            <div class="settings-row settings-row-col">
+              <div class="settings-label">
+                <span class="settings-label-title">Kolleger som kan medlese</span>
+                <span class="settings-label-sub">Når du sender en sak til medlesing, foreslås den aktive medleseren med færrest medlesinger siste 12 måneder. Fjerner du noen, blir statistikken stående.</span>
+              </div>
+              <div id="medleser-list" class="vac-list medleser-list"></div>
+              <div class="vac-add-row medleser-add">
+                <input class="field-input" id="medleser-new-name" type="text" placeholder="Navn" maxlength="60" />
+                <button class="s-btn s-btn-accent" id="btn-medleser-add">+ Legg til</button>
+              </div>
             </div>
           </div>
         </section>
@@ -3383,6 +3442,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <button class="btn-secondary btn-sm" id="btn-sak-unassigned-drop" type="button"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Fikk den ikke</button>
           </div>
         </div>
+        <!-- Hos medleser: saken er sendt til medlesing -->
+        <div id="sak-medl-out" hidden></div>
 
         <!-- Fristblokk: hvem fristen tilhører avhenger av status -->
         <div class="sak-frist" id="sak-frist" style="display:none;">
@@ -4026,6 +4087,32 @@ tr:hover .sak-tag-display.sak-tag-empty,
     </div>
   </div>
 
+  <!-- Send til medlesing -->
+  <div class="modal-backdrop" id="medl-send-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="medl-send-title">
+      <div class="modal-header">
+        <h2 class="modal-title"><span id="medl-send-title">Send til medlesing</span> — <span id="medl-send-case"></span></h2>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label" for="medl-send-reader">Medleser</label>
+          <select class="field-input" id="medl-send-reader"></select>
+          <p class="modal-text" id="medl-send-empty" style="display:none;">Ingen aktive medlesere. Legg dem til under Innstillinger → Medlesere.</p>
+          <p class="medl-send-suggest" id="medl-send-suggest" style="display:none;"></p>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="medl-send-date">Sendt dato</label>
+          <input class="field-input" id="medl-send-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          <span class="field-error" id="medl-send-error"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-medl-send-cancel">Avbryt</button>
+        <button class="btn-primary" id="btn-medl-send-confirm">Send</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Import -->
   <div class="modal-backdrop" id="import-backdrop" aria-hidden="true">
     <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
@@ -4256,7 +4343,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.32.0';
+var APP_VERSION    = 'v4.33.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4275,6 +4362,8 @@ var WORK_WINDOW_KEY = 'pt_work_windows';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
 var UNASSIGNED_REMINDER_KEY = 'pt_unassigned_reminder';
+var MEDLESERE_KEY     = 'pt_medlesere';
+var MEDL_LOG_KEY      = 'pt_medl_log';
 var AUTOSAVE_KEY = 'pt_autosave';
 var SAK_KEY_PREFIX = 'pt_sak_';
 
@@ -5065,7 +5154,9 @@ function makeExportPayload() {
     homeDeadlineFilter: homeDeadlineFilter,
     activeCase: activeCase,
     unassignedReminder: unassignedReminder,
-    medlesing:  medlesing
+    medlesing:  medlesing,
+    medlesere:  medleserList,
+    medlLog:    medlLog
   };
 }
 
@@ -5084,8 +5175,8 @@ function _customChecklistTemplate() {
   } catch(e) { return null; }
 }
 
-// Navn, sjekkliste-mal, fristbuffer, medlesinger, fristfilteret på Oversikt
-// og pågående sak fra en eksportfil, validert.
+// Navn, sjekkliste-mal, fristbuffer, medlesinger, fristfilteret på Oversikt,
+// pågående sak og medleserlista med utsendingsloggen fra en eksportfil, validert.
 // Bare felt som finnes og er gyldige tas med, så eldre filer uten feltene ikke
 // endrer noe. checklistTemplate: null betyr «bruk standardmalen»;
 // activeCase: null betyr «ingen sak markert». Påminnelsen for saker som ikke
@@ -5116,6 +5207,8 @@ function readImportSettings(d) {
   if (typeof d.unassignedReminder === 'number' && normalizeUnassignedReminder(d.unassignedReminder) === Math.floor(d.unassignedReminder)) {
     out.unassignedReminder = normalizeUnassignedReminder(d.unassignedReminder);
   }
+  if (Array.isArray(d.medlesere)) out.medlesere = normalizeMedleserList(d.medlesere);
+  if (Array.isArray(d.medlLog))   out.medlLog   = normalizeMedlLog(d.medlLog);
   return out;
 }
 
@@ -5218,6 +5311,156 @@ function isUnassignedStale(c, reminderDays, todayIso) {
 // Saker som ville kommet i tillegg i belegget om du får dem.
 function countsAsPotentialBelegg(c) {
   return !!c && !!c.dueDate && isUnassigned(c);
+}
+
+// ── Hos medleser ───────────────────────────────────
+// Din egen sak er sendt til en kollega for medlesing. Ikke en status: belegg
+// og frist er uendret, saken er fortsatt ditt arbeid. Hver utsending lagres i
+// en egen logg ({ id, caseId, caseNumber, reader, sent, returned }), så
+// statistikken over hvem som har lest overlever at saken slettes. Åpen
+// utsending = returned er null. (Fanen «Medlesing» er det motsatte: saker
+// du selv leser for andre.)
+// Rene funksjoner — se test/hosMedleser.test.js.
+function canSendToMedleser(c) {
+  // En sak som ikke er fordelt ennå, er ikke din å sende.
+  if (!c || c.type === 'oppdrag' || isUnassigned(c)) return false;
+  return c.status === 'ny' || c.status === 'viderebehandling';
+}
+
+function _medlKey(name) { return String(name || '').trim().toLowerCase(); }
+
+function normalizeMedleserList(raw) {
+  if (!Array.isArray(raw)) return [];
+  var seen = {};
+  return raw.reduce(function(out, m) {
+    var name = m && typeof m.name === 'string' ? m.name.trim() : '';
+    if (!name || seen[_medlKey(name)]) return out;
+    seen[_medlKey(name)] = true;
+    out.push({ name: name, active: m.active !== false });
+    return out;
+  }, []);
+}
+
+function addMedleser(list, name) {
+  var n = String(name || '').trim();
+  if (!n || list.some(function(m) { return _medlKey(m.name) === _medlKey(n); })) return list;
+  return list.concat([{ name: n, active: true }]);
+}
+
+function normalizeMedlLog(raw) {
+  if (!Array.isArray(raw)) return [];
+  var iso = /^\d{4}-\d{2}-\d{2}$/;
+  return raw.filter(function(x) {
+    return x && typeof x === 'object' && typeof x.id === 'string' && x.id !== '' &&
+      typeof x.reader === 'string' && x.reader.trim() !== '' &&
+      typeof x.sent === 'string' && iso.test(x.sent);
+  }).map(function(x) {
+    return {
+      id: x.id, caseId: typeof x.caseId === 'string' ? x.caseId : '',
+      caseNumber: typeof x.caseNumber === 'string' ? x.caseNumber : '',
+      reader: x.reader.trim(), sent: x.sent,
+      returned: typeof x.returned === 'string' && iso.test(x.returned) ? x.returned : null
+    };
+  });
+}
+
+function openMedlFor(log, caseId) {
+  return log.find(function(x) { return x.caseId === caseId && !x.returned; }) || null;
+}
+
+// Er saken allerede ute, rettes den åpne utsendingen («Endre medlesing»).
+function sendToMedleser(log, c, reader, sent, newId) {
+  var open = openMedlFor(log, c.id);
+  if (open) {
+    return log.map(function(x) { return x === open ? Object.assign({}, x, { reader: reader, sent: sent }) : x; });
+  }
+  return log.concat([{ id: newId, caseId: c.id, caseNumber: c.caseNumber, reader: reader, sent: sent, returned: null }]);
+}
+
+function returnFromMedleser(log, caseId, date) {
+  return log.map(function(x) {
+    return x.caseId === caseId && !x.returned ? Object.assign({}, x, { returned: date }) : x;
+  });
+}
+
+// Lukker utsendinger for saker som er slettet eller ikke lenger er ditt
+// arbeid (Fristarkiv, Avsluttet). Samme array tilbake når ingenting endres.
+function pruneMedlLog(log, cases, today) {
+  var changed = false;
+  var out = log.map(function(x) {
+    if (x.returned) return x;
+    var c = cases.find(function(k) { return k.id === x.caseId; });
+    if (canSendToMedleser(c)) return x;
+    changed = true;
+    return Object.assign({}, x, { returned: today });
+  });
+  return changed ? out : log;
+}
+
+// Etter angre: det handlingen lukket (saken gikk til Fristarkiv, ble avsluttet
+// eller slettet) åpnes igjen. Endringer gjort etterpå beholdes.
+function medlLogAfterUndo(snapshot, current) {
+  if (!Array.isArray(snapshot)) return current;
+  var wasOpen = {};
+  snapshot.forEach(function(x) { if (!x.returned) wasOpen[x.id] = true; });
+  return current.map(function(x) {
+    return x.returned && wasOpen[x.id] ? Object.assign({}, x, { returned: null }) : x;
+  });
+}
+
+// Samme dato ett år tilbake (29. februar blir 28.).
+function medlCutoff12m(today) {
+  var p = today.split('-').map(Number);
+  var y = p[0] - 1;
+  var last = new Date(Date.UTC(y, p[1], 0)).getUTCDate();
+  return y + '-' + String(p[1]).padStart(2, '0') + '-' + String(Math.min(p[2], last)).padStart(2, '0');
+}
+
+function daysBetweenIso(from, to) {
+  return Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86400000);
+}
+
+// Per medleser: antall siste 12 måneder, totalt og sist brukt. Medlesere på
+// lista som aldri er brukt tas med (med 0). Flest siste 12 mnd først.
+function medleserStats(log, today, list) {
+  var cutoff = medlCutoff12m(today);
+  var by = {};
+  function row(name) {
+    var k = _medlKey(name);
+    if (!by[k]) by[k] = { name: String(name).trim(), last12: 0, total: 0, lastSent: null };
+    return by[k];
+  }
+  (list || []).forEach(function(m) { row(m.name); });
+  log.forEach(function(x) {
+    var r = row(x.reader);
+    r.total++;
+    if (x.sent > cutoff) r.last12++;
+    if (!r.lastSent || x.sent > r.lastSent) r.lastSent = x.sent;
+  });
+  return Object.keys(by).map(function(k) { return by[k]; }).sort(function(a, b) {
+    return b.last12 - a.last12 || b.total - a.total || a.name.localeCompare(b.name, 'nb');
+  });
+}
+
+// Forslaget: den aktive medleseren med færrest medlesinger siste 12 mnd. Ved
+// likhet den det er lengst siden du brukte (aldri brukt først), så navn.
+function suggestMedleser(list, log, today) {
+  var stats = medleserStats(log, today);
+  var active = list.filter(function(m) { return m.active; }).map(function(m) {
+    var s = stats.find(function(r) { return _medlKey(r.name) === _medlKey(m.name); });
+    return { name: m.name, last12: s ? s.last12 : 0, lastSent: s ? s.lastSent : null };
+  });
+  if (!active.length) return null;
+  active.sort(function(a, b) {
+    if (a.last12 !== b.last12) return a.last12 - b.last12;
+    if (a.lastSent !== b.lastSent) {
+      if (!a.lastSent) return -1;
+      if (!b.lastSent) return 1;
+      return a.lastSent < b.lastSent ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name, 'nb');
+  });
+  return active[0].name;
 }
 
 // ── Fristlista på Oversikt ─────────────────────────
@@ -5529,6 +5772,8 @@ function deleteAllData() {
   localStorage.removeItem(USER_NAME_KEY);
   localStorage.removeItem(ACTIVE_CASE_KEY);
   localStorage.removeItem(UNASSIGNED_REMINDER_KEY);
+  localStorage.removeItem(MEDLESERE_KEY);
+  localStorage.removeItem(MEDL_LOG_KEY);
   localStorage.removeItem('pt_drawer_collapsed');
   localStorage.removeItem('pt_cpc_welcomed');
 
@@ -5667,6 +5912,16 @@ function saveActiveCase(mark) {
   if (mark) lsSetSafe(ACTIVE_CASE_KEY, JSON.stringify(mark));
   else { try { localStorage.removeItem(ACTIVE_CASE_KEY); } catch(e) {} }
 }
+function loadMedleserList() {
+  try { return normalizeMedleserList(JSON.parse(localStorage.getItem(MEDLESERE_KEY))); }
+  catch(e) { return []; }
+}
+function saveMedleserList(list) { lsSetSafe(MEDLESERE_KEY, JSON.stringify(list)); }
+function loadMedlLog() {
+  try { return normalizeMedlLog(JSON.parse(localStorage.getItem(MEDL_LOG_KEY))); }
+  catch(e) { return []; }
+}
+function saveMedlLog(log) { lsSetSafe(MEDL_LOG_KEY, JSON.stringify(log)); }
 // Standard fristbuffer per sakstype (Innstillinger → Standard per sakstype).
 // Bare Ny og Viderebehandling har buffer: oppdrag bruker alltid faktisk frist,
 // og i Fristarkiv er fristen søkerens. Kan overstyres per sak (caseBuffer).
@@ -6089,6 +6344,8 @@ var workWindows    = loadWorkWindows();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
 var activeCase = loadActiveCase();
 var unassignedReminder = loadUnassignedReminder();
+var medleserList = loadMedleserList();
+var medlLog      = loadMedlLog();
 var _tlConfig = {
   'home-timeline':  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
   'cases-timeline': { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
@@ -6196,7 +6453,8 @@ function _dispatch(action, payload) {
         cases: cases.map(function(c) { return Object.assign({}, c); }),
         stats:  JSON.parse(JSON.stringify(stats)),
         label:  theCase.caseNumber,
-        activeCase: activeCase
+        activeCase: activeCase,
+        medlLog: medlLog
       };
       // Oppdater state
       var patch = statusChangePatch(toStatus, payload.outcome, newDueDate);
@@ -6213,6 +6471,44 @@ function _dispatch(action, payload) {
       render();
       if (activeSakId === id) renderSak(id);
       showUndoToast('Sak ' + AppState.undoSnapshot.label + ' flyttet');
+      break;
+    }
+
+    case 'MEDL_SEND': {
+      var mc = cases.find(function(c) { return c.id === payload.id; });
+      if (!canSendToMedleser(mc) || !payload.reader) break;
+      medlLog = sendToMedleser(medlLog, mc, payload.reader, payload.sent, uid());
+      saveMedlLog(medlLog);
+      render();
+      break;
+    }
+
+    case 'MEDL_RETURN': {
+      medlLog = returnFromMedleser(medlLog, payload.id, todayStr());
+      saveMedlLog(medlLog);
+      render();
+      break;
+    }
+
+    case 'MEDLESER_ADD': {
+      medleserList = addMedleser(medleserList, sanitizeText(payload.name));
+      saveMedleserList(medleserList);
+      render();
+      break;
+    }
+
+    case 'MEDLESER_TOGGLE': {
+      medleserList = medleserList.map(function(m, i) { return i === payload.idx ? { name: m.name, active: !m.active } : m; });
+      saveMedleserList(medleserList);
+      render();
+      break;
+    }
+
+    case 'MEDLESER_DELETE': {
+      // Statistikken ligger i loggen og blir stående.
+      medleserList = medleserList.filter(function(m, i) { return i !== payload.idx; });
+      saveMedleserList(medleserList);
+      render();
       break;
     }
 
@@ -6311,7 +6607,8 @@ function _dispatch(action, payload) {
         label: theCase ? theCase.caseNumber : payload.id,
         sakId: payload.id,
         sakData: rawSak,
-        activeCase: activeCase
+        activeCase: activeCase,
+        medlLog: medlLog
       };
       AppState.cases = cases.filter(function(c) { return c.id !== payload.id; });
       try { localStorage.removeItem(sakKey(payload.id)); } catch(e) {}
@@ -6331,6 +6628,8 @@ function _dispatch(action, payload) {
       }
       activeCase = activeCaseAfterUndo(undoSnapshot, activeCase);
       saveActiveCase(activeCase);
+      medlLog = medlLogAfterUndo(undoSnapshot.medlLog, medlLog);
+      saveMedlLog(medlLog);
       AppState.undoSnapshot = null;
       saveCases(); saveStats();
       render();
@@ -6352,7 +6651,8 @@ function _dispatch(action, payload) {
         cases: cases.map(function(c) { return Object.assign({}, c); }),
         stats: JSON.parse(JSON.stringify(stats)),
         label: theCase.caseNumber,
-        activeCase: activeCase
+        activeCase: activeCase,
+        medlLog: medlLog
       };
       AppState.cases = cases.map(function(c) {
         if (c.id !== id) return c;
@@ -6837,6 +7137,8 @@ function _dispatch(action, payload) {
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
         if ('activeCase' in s) { activeCase = s.activeCase; saveActiveCase(activeCase); }
         if ('unassignedReminder' in s) { unassignedReminder = s.unassignedReminder; saveUnassignedReminder(unassignedReminder); }
+        if ('medlesere' in s) { medleserList = s.medlesere; saveMedleserList(medleserList); }
+        if ('medlLog' in s) { medlLog = s.medlLog; saveMedlLog(medlLog); }
       }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
@@ -7242,8 +7544,162 @@ function renderSakActiveButton(cas) {
     (on ? 'Pågår' : 'Marker som pågående');
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// ── Hos medleser: visning ──────────────────────────
+// Som pågående sak: utsendinger for saker som er slettet, sendt til
+// Fristarkiv eller avsluttet lukkes ved hver render.
+function pruneMedl() {
+  var next = pruneMedlLog(medlLog, cases, todayStr());
+  if (next !== medlLog) { medlLog = next; saveMedlLog(medlLog); }
+}
+
+function _medlSinceTxt(entry) {
+  var d = daysBetweenIso(entry.sent, todayStr());
+  return 'sendt ' + toDisplay(entry.sent) + (d > 0 ? ' (' + d + (d === 1 ? ' dag' : ' dager') + ')' : ' (i dag)');
+}
+
+// Valgene i ⋯-menyene; tomt for saker som ikke kan sendes.
+function medlMenuItemsHtml(c) {
+  if (!canSendToMedleser(c)) return '';
+  var icon = '<svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg> ';
+  if (openMedlFor(medlLog, c.id)) {
+    return '<button class="card-dropdown-item btn-medl-send" data-id="' + c.id + '">' + icon + 'Endre medlesing…</button>' +
+      '<button class="card-dropdown-item btn-medl-return" data-id="' + c.id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Tilbake fra medlesing</button>';
+  }
+  return '<button class="card-dropdown-item btn-medl-send" data-id="' + c.id + '">' + icon + 'Send til medlesing…</button>';
+}
+
+// Felles for alle ⋯-menyene; true når klikket var et medlesingsvalg.
+function handleMedlMenuClick(btn) {
+  if (btn.classList.contains('btn-medl-send'))   { openMedlSendModal(btn.dataset.id); return true; }
+  if (btn.classList.contains('btn-medl-return')) { dispatch('MEDL_RETURN', { id: btn.dataset.id }); return true; }
+  return false;
+}
+
+function medlPillHtml(c) {
+  var m = openMedlFor(medlLog, c.id);
+  if (!m) return '';
+  return '<span class="medl-out-pill" title="' + esc('Hos medleser: ' + m.reader + ' · ' + _medlSinceTxt(m)) + '">Hos ' + esc(m.reader) + '</span>';
+}
+
+// Linjen på sakssiden og på Oversikt. withCase: vis saksnummer og lenke.
+function medlOutHtml(entry, withCase) {
+  return '<div class="medl-out" data-id="' + entry.caseId + '">' +
+    '<svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg>' +
+    '<span class="medl-out-text">Hos medleser: ' +
+      (withCase ? '<a href="#" class="medl-out-case" data-id="' + entry.caseId + '">' + esc(entry.caseNumber) + '</a> – ' : '') +
+      '<strong>' + esc(entry.reader) + '</strong> · ' + esc(_medlSinceTxt(entry)) + '</span>' +
+    '<span class="medl-out-actions">' +
+      (withCase ? '' : '<button class="s-btn btn-medl-send" data-id="' + entry.caseId + '">Endre</button>') +
+      '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + entry.caseId + '">Tilbake ✓</button>' +
+    '</span></div>';
+}
+
+function renderSakMedl(cas) {
+  var el = document.getElementById('sak-medl-out');
+  if (!el) return;
+  var m = canSendToMedleser(cas) ? openMedlFor(medlLog, cas.id) : null;
+  el.innerHTML = m ? medlOutHtml(m, false) : '';
+  el.hidden = !m;
+}
+
+function renderHomeMedl() {
+  var el = document.getElementById('home-medl-out');
+  if (!el) return;
+  var open = medlLog.filter(function(x) { return !x.returned; });
+  el.innerHTML = open.map(function(x) { return medlOutHtml(x, true); }).join('');
+  el.hidden = !open.length;
+}
+
+// ── Send til medlesing: dialog ─────────────────────
+var pendingMedlId = null;
+
+function openMedlSendModal(id) {
+  var c = cases.find(function(x) { return x.id === id; });
+  if (!canSendToMedleser(c)) return;
+  pendingMedlId = id;
+  var open = openMedlFor(medlLog, id);
+  var today = todayStr();
+  var stats = medleserStats(medlLog, today, medleserList);
+  var suggested = suggestMedleser(medleserList, medlLog, today);
+  var active = medleserList.filter(function(m) { return m.active; });
+  // Den som allerede har saken står i lista selv om vedkommende er satt inaktiv.
+  if (open && !active.some(function(m) { return _medlKey(m.name) === _medlKey(open.reader); })) {
+    active = active.concat([{ name: open.reader, active: false }]);
+  }
+  function statFor(name) {
+    return stats.find(function(r) { return _medlKey(r.name) === _medlKey(name); }) || { last12: 0, lastSent: null };
+  }
+  document.getElementById('medl-send-title').textContent = open ? 'Endre medlesing' : 'Send til medlesing';
+  document.getElementById('medl-send-case').textContent = c.caseNumber;
+  var sel = document.getElementById('medl-send-reader');
+  sel.innerHTML = active.map(function(m) {
+    var s = statFor(m.name);
+    return '<option value="' + esc(m.name) + '">' + (m.name === suggested ? '★ ' : '') + esc(m.name) +
+      ' · ' + s.last12 + ' siste 12 mnd</option>';
+  }).join('');
+  sel.value = open ? (active.find(function(m) { return _medlKey(m.name) === _medlKey(open.reader); }) || {}).name : (suggested || '');
+  if (active.length && sel.selectedIndex < 0) sel.selectedIndex = 0;
+  sel.style.display = active.length ? '' : 'none';
+  document.getElementById('medl-send-empty').style.display = active.length ? 'none' : '';
+  var sug = document.getElementById('medl-send-suggest');
+  if (suggested && !open) {
+    var s = statFor(suggested);
+    sug.textContent = '★ Foreslått: ' + suggested + ' — ' + s.last12 + ' medlesing' + (s.last12 === 1 ? '' : 'er') +
+      ' siste 12 mnd' + (s.lastSent ? ' · sist ' + toDisplay(s.lastSent) : ' · aldri brukt');
+    sug.style.display = '';
+  } else {
+    sug.style.display = 'none';
+  }
+  document.getElementById('medl-send-date').value = toDisplay(open ? open.sent : today);
+  document.getElementById('medl-send-error').textContent = '';
+  document.getElementById('btn-medl-send-confirm').disabled = !active.length;
+  document.getElementById('btn-medl-send-confirm').textContent = open ? 'Lagre' : 'Send';
+  openBackdrop('medl-send-backdrop');
+}
+
+function closeMedlSendModal() { closeBackdrop('medl-send-backdrop'); pendingMedlId = null; }
+
+// ── Medlesere i Innstillinger og Statistikk ────────
+function renderMedleserList() {
+  var el = document.getElementById('medleser-list');
+  if (!el) return;
+  if (!medleserList.length) {
+    el.innerHTML = '<p class="vac-empty">Ingen medlesere registrert ennå.</p>';
+    return;
+  }
+  el.innerHTML = medleserList.map(function(m, i) {
+    return '<div class="vac-row medleser-row' + (m.active ? '' : ' medleser-inactive') + '">' +
+      '<span class="vac-label">' + esc(m.name) + '</span>' +
+      '<label class="medleser-active"><input type="checkbox" class="medleser-toggle" data-idx="' + i + '"' + (m.active ? ' checked' : '') + ' /> aktiv</label>' +
+      '<button class="btn-icon btn-medleser-del" data-idx="' + i + '" title="Fjern fra lista" aria-label="Fjern ' + esc(m.name) + '">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function renderMedleserStats() {
+  var el = document.getElementById('medleser-stats');
+  if (!el) return;
+  var rows = medleserStats(medlLog, todayStr(), medleserList);
+  var empty = document.getElementById('medleser-stats-empty');
+  empty.style.display = medlLog.length ? 'none' : '';
+  if (!medlLog.length) { el.innerHTML = ''; return; }
+  var max = rows.reduce(function(m, r) { return Math.max(m, r.last12); }, 0) || 1;
+  el.innerHTML = '<table class="case-table medleser-stats-table"><thead><tr>' +
+    '<th>Medleser</th><th class="medleser-bar-col" aria-hidden="true"></th>' +
+    '<th class="stat-col-num">Siste 12 mnd</th><th class="stat-col-num">Totalt</th><th>Sist brukt</th>' +
+    '</tr></thead><tbody>' +
+    rows.map(function(r) {
+      return '<tr><td>' + esc(r.name) + '</td>' +
+        '<td class="medleser-bar-col" aria-hidden="true"><span class="medleser-bar" style="width:' + Math.round(r.last12 / max * 100) + '%"></span></td>' +
+        '<td class="stat-col-num">' + r.last12 + '</td><td class="stat-col-num">' + r.total + '</td>' +
+        '<td>' + (r.lastSent ? toDisplay(r.lastSent) : '—') + '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
 function render() {
   pruneActiveCase();
+  pruneMedl();
   updateNav();
   renderActiveCaseChip();
   showView(activePage);
@@ -7395,6 +7851,7 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
       '<span class="case-card-main"><span class="case-card-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
+      medlPillHtml(c) +
       trackHtml(c, false) +
       '<div class="case-card-menu">' +
         '<button class="btn-card-hist" data-id="' + c.id + '" title="Historikk" aria-label="Historikk">⏱</button>' +
@@ -7459,7 +7916,7 @@ function closeAllBackdrops() {
    'videre-choice-backdrop','reset-backdrop','import-backdrop','tag-backdrop','frist-backdrop',
    'delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
    'history-backdrop','backup-restore-backdrop','cle-reset-backdrop','search-backdrop',
-   'shortcuts-backdrop',
+   'shortcuts-backdrop','medl-send-backdrop',
    ].forEach(function(id) {
     var el = document.getElementById(id);
     el.classList.remove('open');
@@ -7468,7 +7925,7 @@ function closeAllBackdrops() {
   _removeFocusTrap();
   pendingConfirmId = pendingConfirmCallback = pendingFristarkivId = pendingVidereId =
   pendingDeleteId = pendingTagId = pendingTagStatus = pendingTagCallback =
-  pendingFristCallback = null;
+  pendingFristCallback = pendingMedlId = null;
 }
 
 // ── Frist-modal ────────────────────────────────────
@@ -7492,6 +7949,50 @@ document.getElementById('btn-frist-confirm').addEventListener('click', function(
   var cb = pendingFristCallback;
   closeFristModal();
   if (cb) cb(date);
+});
+
+// ── Send til medlesing ─────────────────────────────
+document.getElementById('btn-medl-send-cancel').addEventListener('click', closeMedlSendModal);
+document.getElementById('medl-send-backdrop').addEventListener('click', function(e) { if (e.target === this) closeMedlSendModal(); });
+document.getElementById('btn-medl-send-confirm').addEventListener('click', function() {
+  var reader = document.getElementById('medl-send-reader').value;
+  var date = parseDate(document.getElementById('medl-send-date').value.trim());
+  if (!isValidDate(date)) {
+    document.getElementById('medl-send-error').textContent = 'Ugyldig dato — bruk åååå.mm.dd.';
+    return;
+  }
+  var id = pendingMedlId;
+  closeMedlSendModal();
+  if (id && reader) dispatch('MEDL_SEND', { id: id, reader: reader, sent: date });
+});
+
+// Knappene i «Hos medleser»-linjen på sakssiden og Oversikt.
+['sak-medl-out', 'home-medl-out'].forEach(function(elId) {
+  document.getElementById(elId).addEventListener('click', function(e) {
+    var link = e.target.closest('.medl-out-case');
+    if (link) { e.preventDefault(); navigateTo('sak/' + link.dataset.id); return; }
+    var btn = e.target.closest('button');
+    if (btn) handleMedlMenuClick(btn);
+  });
+});
+
+document.getElementById('btn-medleser-add').addEventListener('click', function() {
+  var inp = document.getElementById('medleser-new-name');
+  if (!inp.value.trim()) return;
+  dispatch('MEDLESER_ADD', { name: inp.value });
+  inp.value = '';
+  inp.focus();
+});
+document.getElementById('medleser-new-name').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-medleser-add').click(); }
+});
+document.getElementById('medleser-list').addEventListener('change', function(e) {
+  var t = e.target.closest('.medleser-toggle');
+  if (t) dispatch('MEDLESER_TOGGLE', { idx: parseInt(t.dataset.idx, 10) });
+});
+document.getElementById('medleser-list').addEventListener('click', function(e) {
+  var del = e.target.closest('.btn-medleser-del');
+  if (del) dispatch('MEDLESER_DELETE', { idx: parseInt(del.dataset.idx, 10) });
 });
 
 // ── Stikkord-modal ─────────────────────────────────
@@ -9151,6 +9652,7 @@ function renderSak(id) {
   renderSakForwardButtons(cas);
   renderSakActiveButton(cas);
   renderSakUnassigned(cas);
+  renderSakMedl(cas);
 
   document.getElementById('btn-sak-back')._sakId = id;
 
@@ -11103,6 +11605,7 @@ function renderHjem() {
     }
   });
   renderFristDigest(digestOverdue, digestSoon);
+  renderHomeMedl();
 
   var elOpp    = document.getElementById('home-count-oppdrag');
   var elForf   = document.getElementById('home-count-forfalt');
@@ -11173,6 +11676,7 @@ function renderHomeDeadlines() {
       '<span class="case-card-main"><span class="home-upcoming-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
+      medlPillHtml(c) +
       vacBadge +
       trackHtml(c, true) +
       '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:var(--space-1);">' +
@@ -11730,6 +12234,7 @@ function renderInnstillinger() {
   _renderWorkWindowInputs();
   _bkUpdateSettingsUI();
   renderVacationList();
+  renderMedleserList();
 }
 
 function renderVacationList() {
@@ -12051,6 +12556,7 @@ function renderStats() {
   renderChart(MONTHS_YEAR, byMonth);
   renderTagCloud();
   renderEventLog();
+  renderMedleserStats();
 }
 
 // ── CPC-event-håndtering ──────────────────────────
@@ -12710,6 +13216,7 @@ document.getElementById('case-list').addEventListener('click', function(e) {
       (act ? '<button class="card-dropdown-item btn-row-action" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> ' + esc(act.label) + '</button>' : '') +
       activeCaseMenuItemHtml(c) +
       unassignedMenuItemsHtml(c) +
+      medlMenuItemsHtml(c) +
       (c.status === 'avsluttet' && c.type !== 'oppdrag'
         ? '<button class="card-dropdown-item btn-row-outcome" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
         : '') +
@@ -12724,6 +13231,8 @@ document.getElementById('case-list').addEventListener('click', function(e) {
       ev.stopPropagation();
       closeAllDropdowns();
       if (handleUnassignedMenuClick(btn)) {
+        // håndtert
+      } else if (handleMedlMenuClick(btn)) {
         // håndtert
       } else if (btn.classList.contains('btn-row-action')) {
         runRowAction(btn.dataset.id);
@@ -12808,6 +13317,7 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     '<button class="card-dropdown-item btn-sak-edit"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>' +
     activeCaseMenuItemHtml(c) +
     unassignedMenuItemsHtml(c) +
+    medlMenuItemsHtml(c) +
     (c.status === 'avsluttet' && c.type !== 'oppdrag'
       ? '<button class="card-dropdown-item btn-sak-outcome"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
       : '') +
@@ -12820,6 +13330,8 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     ev.stopPropagation();
     closeAllDropdowns();
     if (handleUnassignedMenuClick(btn)) {
+      // håndtert
+    } else if (handleMedlMenuClick(btn)) {
       // håndtert
     } else if (btn.classList.contains('btn-sak-edit')) {
       openModal(c);
@@ -13365,6 +13877,7 @@ function handleHomeListClick(e) {
     dropdown.innerHTML =
       activeCaseMenuItemHtml(c) +
       unassignedMenuItemsHtml(c) +
+      medlMenuItemsHtml(c) +
       '<button class="card-dropdown-item btn-home-edit" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>' +
       '<button class="card-dropdown-item danger btn-home-del" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Slett sak</button>';
     moreBtn.closest('.home-row-more').appendChild(dropdown);
@@ -13374,6 +13887,8 @@ function handleHomeListClick(e) {
       ev.stopPropagation();
       closeAllDropdowns();
       if (handleUnassignedMenuClick(btn)) {
+        // håndtert
+      } else if (handleMedlMenuClick(btn)) {
         // håndtert
       } else if (btn.classList.contains('btn-active-toggle')) {
         dispatch('ACTIVE_CASE_TOGGLE', { id: btn.dataset.id });
