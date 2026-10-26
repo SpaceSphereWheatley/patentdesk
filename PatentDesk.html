@@ -89,8 +89,8 @@
   --chart-ny:     #63b3ed;
   --chart-videre: #b794f4;
   /* Tidslinje */
-  --tl-today:     #7F77DD;
-  --tl-vacation:  #f59e0b;
+  --tl-actual-due: #7F77DD; /* faktisk frist bak bufferen */
+  --tl-holiday:    #f59e0b; /* offentlige fridager */
   --tl-bar-label: #ffffff;
   /* Log badges */
   --log-ny-text:    #1d4ed8;
@@ -2575,7 +2575,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .tl-axis-toggle { display: flex; align-items: center; gap: var(--space-1); flex-shrink: 0; }
 .tl-axis-lbl { font-size: var(--text-xs); color: var(--muted); opacity: 0.5; cursor: pointer; user-select: none; transition: opacity var(--dur-base); }
 .tl-axis-lbl.active { opacity: 1; }
-.tl-header { display: flex; justify-content: flex-end; gap: var(--space-3); margin-bottom: var(--space-4); }
+.tl-header { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-2); }
 .tl-horizon-btn {
   font-size: var(--text-xs); background: none; border: none;
   color: var(--muted); cursor: pointer; padding: 0 0 1px 0;
@@ -2599,7 +2599,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font-size: var(--text-xs); color: var(--muted); pointer-events: none;
 }
-.tl-scroll-wrap { overflow-x: auto; overflow-y: visible; padding-bottom: 2px; width: 100%; }
+/* padding-top gir «i dag»-etiketten over sporet plass — en scrollboks klipper
+   alt utenfor padding-kanten, også loddrett. */
+.tl-scroll-wrap { overflow-x: auto; overflow-y: hidden; padding-top: 18px; padding-bottom: 2px; width: 100%; }
 .tl-scroll-wrap::-webkit-scrollbar { height: 4px; }
 .tl-scroll-wrap::-webkit-scrollbar-track { background: transparent; }
 .tl-scroll-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
@@ -2618,7 +2620,12 @@ tr:hover .sak-tag-display.sak-tag-empty,
   min-width: 4px;
 }
 .tl-bar:hover { opacity: 0.75; }
-.tl-bar.draggable { cursor: grab; }
+.tl-bar.draggable { cursor: grab; touch-action: none; }
+.tl-bar.dragging { opacity: 0.85; }
+.tl-bar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 3; }
+/* Forhåndsvisningen i sak-dialogen er bare til å se på */
+#modal-timeline .tl-bar { cursor: default; }
+#modal-timeline .tl-bar:hover { opacity: 1; }
 .tl-bar.draggable:active { cursor: grabbing; }
 .tl-bar.at-limit { box-shadow: var(--shadow-ring) var(--danger); }
 .tl-bar-ny               { background: rgba(24,95,165,0.65); }
@@ -2649,12 +2656,12 @@ tr:hover .sak-tag-display.sak-tag-empty,
   background: var(--border); pointer-events: none; opacity: 0.8;
 }
 .tl-tick-lbl {
-  position: absolute; top: 52px; font-size: var(--text-xs); font-weight: var(--weight-medium);
+  position: absolute; top: calc(100% + 4px); font-size: var(--text-xs); font-weight: var(--weight-medium);
   color: var(--muted); transform: translateX(-50%); white-space: nowrap;
   pointer-events: none;
 }
 .tl-tick-lbl-minor {
-  position: absolute; top: 52px; font-size: var(--text-xs);
+  position: absolute; top: calc(100% + 4px); font-size: var(--text-xs);
   color: var(--muted); opacity: 0.6; transform: translateX(-50%);
   white-space: nowrap; pointer-events: none;
 }
@@ -2663,31 +2670,35 @@ tr:hover .sak-tag-display.sak-tag-empty,
   background: var(--accent); opacity: 0.7; border-radius: 1px; pointer-events: none;
 }
 .tl-today-lbl {
-  position: absolute; top: -20px; font-size: var(--text-xs);
+  position: absolute; top: -17px; line-height: 1.2; font-size: var(--text-xs);
   color: var(--accent); font-weight: var(--weight-semibold); white-space: nowrap;
 }
 .tl-holiday {
   position: absolute; top: 0; width: 3px; height: 48px;
-  background: var(--tl-vacation); opacity: 0.45; border-radius: 1px; pointer-events: none;
+  background: var(--tl-holiday); opacity: 0.45; border-radius: 1px; pointer-events: none;
 }
 .tl-bar-vacation {
   position: absolute; top: 0; height: 48px;
   background: rgba(16,185,129,0.25); border-radius: 5px;
 }
 .tl-actual-line {
-  position: absolute; height: 1px; border-top: 1px dashed var(--tl-today);
+  position: absolute; height: 1px; border-top: 1px dashed var(--tl-actual-due);
   opacity: 0.7; pointer-events: none;
 }
 .tl-actual-mark {
   position: absolute; top: 4px; width: 2px; height: 40px;
-  background: var(--tl-today); opacity: 0.9; border-radius: 1px; pointer-events: none;
+  background: var(--tl-actual-due); opacity: 0.9; border-radius: 1px; pointer-events: none;
 }
+/* Ankeret står først i sporets forelder og klistrer seg til venstre kant av
+   synsfeltet, så pinnen er synlig uansett hvor man har scrollet. */
+.tl-pin-anchor { position: sticky; left: 0; width: 0; height: 0; z-index: 4; }
+.tl-pin-anchor[hidden] { display: none; }
 .tl-overdue-pin {
-  position: absolute; top: 4px; left: 1px; height: 40px; width: 24px;
+  position: absolute; top: 4px; left: 2px; height: 40px; width: 24px; padding: 0; font-family: inherit;
   border-radius: 5px; background: rgba(220,38,38,0.18); border: 1px solid rgba(220,38,38,0.6);
   display: flex; align-items: center; justify-content: center;
   color: var(--danger); font-weight: var(--weight-bold); font-size: var(--text-sm);
-  cursor: default; z-index: 3;
+  cursor: pointer; z-index: 3;
 }
 .tl-legend-swatch-overdue { background: rgba(220,38,38,0.4); border: 1px solid rgba(220,38,38,0.7); }
 .tl-bar-draft {
@@ -2719,9 +2730,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-topbar-right { display: flex; align-items: center; gap: var(--space-3); }
 .flex-gap-sm      { display: flex; gap: var(--space-2); }
 .tl-legend-swatch-vac    { background: rgba(16,185,129,0.3); }
-.tl-legend-swatch-buffer { width: 3px; height: 14px; background: var(--tl-vacation); opacity: 0.5; border-radius: 1px; }
-.tl-legend-today-line    { width: 10px; border-top: 1px dashed var(--tl-today); display: inline-block; }
-.tl-legend-today-bar     { width: 2px; height: 10px; background: var(--tl-today); opacity: 0.85; border-radius: 1px; display: inline-block; }
+.tl-legend-swatch-buffer { width: 3px; height: 14px; background: var(--tl-holiday); opacity: 0.5; border-radius: 1px; }
+.tl-legend-today-line    { width: 10px; border-top: 1px dashed var(--tl-actual-due); display: inline-block; }
+.tl-legend-today-bar     { width: 2px; height: 10px; background: var(--tl-actual-due); opacity: 0.85; border-radius: 1px; display: inline-block; }
 .tl-legend-today-wrap    { display: inline-flex; align-items: center; gap: 2px; }
 .input-w120       { max-width: 120px; }
 .input-w100       { width: 100px; }
@@ -3843,8 +3854,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
             </div>
           </div>
         </div>
-        <div class="home-timeline-wrap bulk-timeline-wrap" style="overflow:hidden;">
-          <div style="overflow:visible;position:relative;">
+        <div class="bulk-timeline-wrap">
+          <div class="tl-scroll-wrap" id="modal-tl-scroll">
             <div id="modal-timeline"></div>
           </div>
         </div>
@@ -4399,7 +4410,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.36.0';
+var APP_VERSION    = 'v4.37.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -6070,7 +6081,13 @@ function getEffectiveDueDate(dueDateStr, caseObj) {
   if (buf === 0) return dueDateStr;
   var d = new Date(dueDateStr + 'T00:00:00');
   d.setDate(d.getDate() - buf);
-  return d.toISOString().slice(0, 10);
+  return isoLocalDate(d);
+}
+// isoLocalDate: datoen som 'YYYY-MM-DD' i lokal tid. toISOString() gir
+// UTC-datoen, og i Norge er lokal midnatt fortsatt gårsdagen i UTC — datoen
+// ville glippet én dag bakover.
+function isoLocalDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 // effDueFor: returns the effective due date for a case object.
 // Oppdrag and cases in Fristarkiv always use their actual dueDate; other cases
@@ -6296,6 +6313,105 @@ function assignTimelineRows(ranges) {
   });
   var out = (ranges || []).map(function(r, i) { return Object.assign({}, r, { row: rowByIndex[i] }); });
   return { ranges: out, laneCount: rowEnds.length };
+}
+
+// tlDueOffset: dager (med brøk) fra `now` til kl. 16 på datoen — fristen gjelder
+// til kl. 16. Bjelker, utkast og drag regner alle med denne, så de havner på
+// nøyaktig samme sted.
+function tlDueOffset(dateStr, now) {
+  return (new Date(dateStr + 'T16:00:00') - now) / 86400000;
+}
+
+// timelineRange: bjelken til en sak, i dager relativt til `now`. start klemmes
+// til fortidsvinduet (past) og end til horisonten; end klemmes ikke nedover,
+// så en sak som er forfalt lenger enn fortidsvinduet fortsatt kan telles.
+function timelineRange(cas, now, horizon, past) {
+  var isOp     = cas.type === 'oppdrag';
+  var effDue   = effDueFor(cas);
+  var spanDays = timelineSpanDays(cas);
+  var effEnd   = tlDueOffset(effDue, now);
+  return {
+    start:       Math.max(-past, effEnd - spanDays),
+    end:         Math.min(horizon, effEnd),
+    actualEnd:   Math.min(horizon, tlDueOffset(cas.dueDate, now)),
+    hasBuffer:   !isOp && cas.dueDate !== effDue,
+    canBuffer:   bufferAppliesTo(cas),
+    isMilestone: spanDays === MILESTONE_DAYS && !isOp,
+    isOppdrag:   isOp,
+    status:      cas.status,
+    isOverdue:   effEnd < 0,
+    unassigned:  isUnassigned(cas),
+    id:          cas.id,
+    caseNumber:  cas.caseNumber,
+    title:       cas.title || '',
+    dueDate:     cas.dueDate
+  };
+}
+
+// Hvor mange dager før i dag tidslinjen høyst viser når den åpnes. Forfalte
+// saker ligger til venstre for i dag og ville ellers havnet utenfor synsfeltet
+// — nettopp de sakene som haster mest. Eldre forfalte saker telles i stedet i
+// forfalt-pinnen i venstre kant.
+var TL_OVERDUE_LEAD_MAX = 14;
+
+// timelineLeadDays: hvor langt bak i dag synsfeltet skal starte. Nok til å vise
+// hele bjelken til de nylig forfalte sakene, men aldri mer enn maxLead; saker
+// som er forfalt lenger enn det, påvirker ikke utsnittet.
+function timelineLeadDays(ranges, maxLead) {
+  var lead = 0;
+  (ranges || []).forEach(function(r) {
+    if (!r.isOverdue || r.end < -maxLead) return;
+    lead = Math.max(lead, Math.min(maxLead, Math.ceil(-r.start) + 1));
+  });
+  return lead;
+}
+
+// overdueLeftOf: forfalte saker som slutter til venstre for `day` (og dermed er
+// skjult når synsfeltet starter der), eldste først.
+function overdueLeftOf(ranges, day) {
+  return (ranges || [])
+    .filter(function(r) { return r.isOverdue && r.end < day; })
+    .sort(function(a, b) { return a.end - b.end; });
+}
+
+// timelineDayAtPx: hvilken dag (relativt til i dag) et pikselpunkt i sporet
+// svarer til. Sporet starter `past` dager før i dag.
+function timelineDayAtPx(px, pxPerDay, past) {
+  return px / pxPerDay - past;
+}
+
+// timelineDragBuffer: ny buffer når en bjelke dras dx piksler. Til venstre gir
+// større buffer (tidligere frist), til høyre mindre. Holdes mellom 0 og max.
+function timelineDragBuffer(origBuffer, dx, pxPerDay, max) {
+  var b = origBuffer - Math.round(dx / pxPerDay);
+  return Math.max(0, Math.min(max, b));
+}
+
+// Omtrentlig bredde per tegn i bjelke-etiketten og plassen rundt den (px).
+var TL_LABEL_CHAR_PX = 7;
+var TL_LABEL_PAD_PX  = 14;
+
+// timelineBarLabel: etiketten en bjelke har plass til. Får ikke hele
+// saksnummeret plass, vises de siste sifrene («…1005») — det er dem som skiller
+// sakene fra hverandre, ikke årstallet foran. Er det ikke plass til fire
+// sifre, vises ingenting; saksnummeret står uansett i popupen.
+function timelineBarLabel(caseNumber, widthPx) {
+  var cn = String(caseNumber || '');
+  var room = Math.floor((widthPx - TL_LABEL_PAD_PX) / TL_LABEL_CHAR_PX);
+  if (room >= cn.length) return cn;
+  if (room < 5) return '';
+  return '…' + cn.slice(-(room - 1));
+}
+
+// timelineDueInfo: frist-linjen i tidslinje-popupen. Viser den faktiske fristen,
+// og når saken har buffer også datoen nedtellingen faktisk måles mot.
+function timelineDueInfo(dueTxt, effTxt, days, wdays) {
+  var parts = [];
+  if (dueTxt) parts.push('frist ' + dueTxt);
+  if (effTxt) parts.push('buffret til ' + effTxt);
+  if (days !== null && days !== undefined) parts.push(days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'i dag' : days + 'd');
+  if (wdays !== null && wdays !== undefined) parts.push(wdays + ' arb.dager');
+  return parts.join(' · ');
 }
 
 var cases = loadCases();
@@ -11647,7 +11763,7 @@ document.getElementById('sak-notes').addEventListener('input', function() {
 
 // ── Hjem-side ──────────────────────────────────────
 // ── Fristvarsel-banner ─────────────────────────────
-function _digestTodayKey() { return new Date().toISOString().slice(0, 10); }
+function _digestTodayKey() { return isoLocalDate(new Date()); }
 
 function _digestDaysLabel(d) {
   if (d < 0)   return '<span class="frist-digest-days frist-digest-days-overdue">' + Math.abs(d) + ' d forfalt</span>';
@@ -11844,11 +11960,6 @@ function buildTimelineDiv(opts) {
   function pctDay(dayOffset) {
     return pct(dayOffset - todayOffset);
   }
-  // Convert a due date string to a Date at 16:00 — fristen gjelder til kl. 16
-  function dueDateTime(dateStr) {
-    return new Date(dateStr + 'T16:00:00');
-  }
-
   function getWeekNumber(d) {
     var date = new Date(d.getTime()); date.setHours(0,0,0,0);
     date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
@@ -11859,36 +11970,7 @@ function buildTimelineDiv(opts) {
   var typeFilter  = opts.typeFilter || [];
   var activeCases = filterCasesForTimeline(cases, typeFilter);
 
-  var allRanges = activeCases.map(function(cas) {
-    var isOp      = cas.type === 'oppdrag';
-    var effDue    = effDueFor(cas);
-    var due       = dueDateTime(effDue);
-    var actualDue = dueDateTime(cas.dueDate);
-    var spanDays  = timelineSpanDays(cas);
-    var start     = new Date(due.getTime() - spanDays * 86400000);
-    var effEnd    = Math.min(HORIZON, (due       - now) / 86400000);
-    var actEnd    = Math.min(HORIZON, (actualDue - now) / 86400000);
-    return {
-      start:      Math.max(-PAST, (start - now) / 86400000),
-      end:        effEnd,
-      actualEnd:  actEnd,
-      hasBuffer:  !isOp && cas.dueDate !== effDue,
-      canBuffer:  bufferAppliesTo(cas),
-      isMilestone: spanDays === MILESTONE_DAYS && !isOp,
-      isOppdrag:  isOp,
-      status:     cas.status,
-      isOverdue:  effEnd < 0,
-      unassigned: isUnassigned(cas),
-      id:         cas.id,
-      caseNumber: cas.caseNumber,
-      title:      cas.title || '',
-      dueDate:    cas.dueDate
-    };
-  });
-
-  // Saker som er mer enn PAST dager over frist — vises ikke som egen bar,
-  // men telles og listes i en "forfalt"-pin ved venstre kant av sporet.
-  var overdueBeyond = allRanges.filter(function(r) { return r.end < -PAST; });
+  var allRanges = activeCases.map(function(cas) { return timelineRange(cas, now, HORIZON, PAST); });
 
   var busyRanges = allRanges.filter(function(r) { return r.end >= -PAST && r.start <= HORIZON; });
 
@@ -11932,12 +12014,13 @@ function buildTimelineDiv(opts) {
     var vFrom = new Date(v.from + 'T00:00:00');
     var vTo   = new Date(v.to   + 'T00:00:00');
     var ds = Math.round((vFrom - today) / 86400000);
-    var de = Math.round((vTo   - today) / 86400000);
-    if (de < 0 || ds > HORIZON) return;
+    var de = Math.round((vTo   - today) / 86400000) + 1; // til og med siste feriedag
+    if (de < -PAST || ds > HORIZON) return;
+    var vs = Math.max(-PAST, ds), ve = Math.min(HORIZON, de);
     var el = document.createElement('div');
     el.className = 'tl-bar-vacation';
-    el.style.left   = pct(Math.max(0, ds));
-    el.style.width  = pctW(Math.min(HORIZON, de + 1) - Math.max(0, ds));
+    el.style.left   = pctDay(vs);
+    el.style.width  = pctW(ve - vs);
     el.style.height = '100%';
     el.dataset.label = v.label || 'Ferie';
     el.dataset.from  = v.from;
@@ -11960,6 +12043,12 @@ function buildTimelineDiv(opts) {
     bar.dataset.title = r.title;
     bar.dataset.id    = r.id;
     bar.dataset.due   = r.dueDate;
+    bar.dataset.spanDays = String(Math.max(0, visEnd - visStart)); // etiketten tilpasses bredden i _applyTimelineScroll
+    if (opts.interactive) {
+      bar.tabIndex = 0;
+      bar.setAttribute('role', 'button');
+      bar.setAttribute('aria-label', r.caseNumber + (r.title ? ' — ' + r.title : '') + ', frist ' + formatDate(r.dueDate) + (r.isOverdue ? ', forfalt' : ''));
+    }
     var lbl = document.createElement('span');
     lbl.className = 'tl-bar-label';
     lbl.textContent = r.caseNumber;
@@ -11970,12 +12059,14 @@ function buildTimelineDiv(opts) {
       var midPx = topPx + Math.round(barH / 2);
       var line = document.createElement('div');
       line.className = 'tl-actual-line';
+      line.dataset.id = r.id;
       line.style.left  = pct(r.end);
       line.style.width = pctW(r.actualEnd - r.end);
       line.style.top   = midPx + 'px';
       track.appendChild(line);
       var mark = document.createElement('div');
       mark.className = 'tl-actual-mark';
+      mark.dataset.id = r.id;
       mark.style.left   = 'calc(' + pct(r.actualEnd) + ' - 1px)';
       mark.style.top    = (topPx + 3) + 'px';
       mark.style.height = (barH - 6) + 'px';
@@ -11986,15 +12077,21 @@ function buildTimelineDiv(opts) {
   if (opts.draftRows) {
     opts.draftRows.forEach(function(row) {
       if (!row.checked || !row.date || !isValidDate(row.date)) return;
-      var due = new Date(row.date + 'T00:00:00');
-      // Saker fra «Flere saker» opprettes alltid som Ny.
-      var s  = Math.max(0, Math.round((new Date(due.getTime() - workWindows.ny * 86400000) - today) / 86400000));
-      var e2 = Math.min(HORIZON, Math.round((due - today) / 86400000));
-      if (e2 < 0 || s > HORIZON) return;
+      // Saker fra «Flere saker» opprettes alltid som Ny, så de får samme
+      // arbeidsvindu og samme frist-tidspunkt som de lagrede Ny-bjelkene.
+      var e2 = tlDueOffset(row.date, now);
+      var s  = e2 - workWindows.ny;
+      if (e2 < -PAST || s > HORIZON) return;
+      s  = Math.max(-PAST, s);
+      e2 = Math.min(HORIZON, e2);
       var draft = document.createElement('div');
       draft.className = 'tl-bar-draft';
       draft.style.left  = pct(s);
       draft.style.width = pctW(e2 - s);
+      // Utkastet dekker alle radene: det viser hvor det nye arbeidet havner,
+      // ikke en egen rad.
+      draft.style.top    = TOP_PAD + 'px';
+      draft.style.height = contentH + 'px';
       draft.dataset.cn    = row.cn || '?';
       draft.dataset.title = row.title || '';
       track.appendChild(draft);
@@ -12073,18 +12170,15 @@ function buildTimelineDiv(opts) {
     track.appendChild(emptyMsg);
   }
 
-  // ── Forfalt-pin: saker mer enn PAST dager over frist, festet til venstre kant ──
-  if (overdueBeyond.length) {
-    var pin = document.createElement('div');
-    pin.className = 'tl-overdue-pin';
-    pin.style.height = (trackH - 8) + 'px';
-    pin.textContent = '‹' + overdueBeyond.length;
-    var pinLines = overdueBeyond
-      .sort(function(a, b) { return a.end - b.end; })
-      .map(function(r) { return r.caseNumber + ' — ' + Math.abs(Math.floor(r.end)) + 'd forfalt'; });
-    pin.title = (overdueBeyond.length === 1 ? '1 sak over frist:\n' : overdueBeyond.length + ' saker over frist:\n') + pinLines.join('\n');
-    track.appendChild(pin);
-  }
+  // Geometrien sporet ble tegnet med — brukes av scroll-utsnittet,
+  // forfalt-pinnen og drag-håndteringen, så de regner likt med bjelkene.
+  var overdue = allRanges.filter(function(r) { return r.isOverdue; });
+  track._tl = {
+    now: now, past: PAST, horizon: HORIZON, pct: pct, pctW: pctW,
+    overdue: overdue,
+    lead: timelineLeadDays(overdue, TL_OVERDUE_LEAD_MAX),
+    pinHeight: trackH - 8
+  };
 
   return track;
 }
@@ -12104,10 +12198,77 @@ function _applyTimelineScroll(scrollEl, trackEl, horizon) {
   var totalPx  = Math.round(pxPerDay * FULL);
   trackEl.style.width    = totalPx + 'px';
   trackEl.style.minWidth = totalPx + 'px';
-  // Scroll så i dag er nær venstre kant; resten av fortiden ligger til
-  // venstre for det, tilgjengelig ved å scrolle bakover.
-  scrollEl.scrollLeft = Math.max(0, Math.round(pxPerDay * TL_PAST_DAYS) - 20);
+  // Forelderen må være like bred som sporet, ellers slutter den klebrige
+  // forfalt-pinnen å følge med når man scroller forbi første skjermbredde.
+  if (trackEl.parentElement) trackEl.parentElement.style.width = totalPx + 'px';
+  scrollEl._tlPxPerDay = pxPerDay;
+  // Scroll så i dag er nær venstre kant — eller litt bak i dag når saker
+  // nylig har forfalt, så de synes. Resten av fortiden ligger til venstre,
+  // tilgjengelig ved å scrolle bakover.
+  var lead = trackEl._tl ? trackEl._tl.lead : 0;
+  scrollEl.scrollLeft = Math.max(0, Math.round(pxPerDay * (TL_PAST_DAYS - lead)) - 20);
+  trackEl.querySelectorAll('.tl-bar').forEach(function(bar) {
+    var lbl = bar.querySelector('.tl-bar-label');
+    // Den pågående saken har en markørprikk foran saksnummeret
+    var reserved = bar.classList.contains('tl-bar-active') ? 2 * TL_LABEL_CHAR_PX : 0;
+    if (lbl) lbl.textContent = timelineBarLabel(bar.dataset.cn, parseFloat(bar.dataset.spanDays) * pxPerDay - reserved);
+  });
+  _updateOverduePin(scrollEl);
 }
+
+// Bredden pinnen dekker i venstre kant (px) — en sak bak den regnes som skjult.
+var TL_PIN_PX = 28;
+
+// Forfalt-pinnen: teller forfalte saker som ligger til venstre for
+// synsfeltet. Den klistrer seg til venstre kant (position: sticky) og
+// oppdateres når man scroller; klikk scroller tilbake til den nyeste av dem.
+function _updateOverduePin(scrollEl) {
+  var track  = scrollEl.querySelector('.tl-track');
+  var anchor = scrollEl.querySelector('.tl-pin-anchor');
+  if (!track || !track._tl || !scrollEl._tlPxPerDay) return;
+  if (!anchor) {
+    anchor = document.createElement('div');
+    anchor.className = 'tl-pin-anchor';
+    var pin = document.createElement('button');
+    pin.type = 'button';
+    pin.className = 'tl-overdue-pin';
+    anchor.appendChild(pin);
+    track.parentElement.insertBefore(anchor, track);
+  }
+  var pinEl = anchor.firstChild;
+  var leftDay = timelineDayAtPx(scrollEl.scrollLeft + TL_PIN_PX, scrollEl._tlPxPerDay, track._tl.past);
+  var hidden = overdueLeftOf(track._tl.overdue, leftDay);
+  anchor.hidden = !hidden.length;
+  if (!hidden.length) return;
+  pinEl.style.height = track._tl.pinHeight + 'px';
+  pinEl.textContent = '‹' + hidden.length;
+  var lines = hidden.map(function(r) { return r.caseNumber + ' — ' + Math.abs(Math.floor(r.end)) + 'd forfalt'; });
+  var head = hidden.length === 1 ? '1 forfalt sak utenfor bildet' : hidden.length + ' forfalte saker utenfor bildet';
+  pinEl.title = head + ':\n' + lines.join('\n');
+  pinEl.setAttribute('aria-label', head + '. Vis dem.');
+}
+
+document.addEventListener('click', function(e) {
+  var pin = e.target.closest('.tl-overdue-pin');
+  if (!pin) return;
+  var scrollEl = pin.closest('.tl-scroll-wrap');
+  var track = scrollEl && scrollEl.querySelector('.tl-track');
+  if (!track || !track._tl || !scrollEl._tlPxPerDay) return;
+  var past = track._tl.past;
+  var leftDay = timelineDayAtPx(scrollEl.scrollLeft + TL_PIN_PX, scrollEl._tlPxPerDay, past);
+  var hidden = overdueLeftOf(track._tl.overdue, leftDay);
+  if (!hidden.length) return;
+  // Den nyeste av de skjulte sakene; saker eldre enn fortidsvinduet kan ikke
+  // vises som bjelke, så da går vi helt til start.
+  var target = hidden[hidden.length - 1];
+  var day = target.end < -past ? -past : Math.max(-past, target.start - 1);
+  scrollEl.scrollTo({ left: Math.max(0, (day + past) * scrollEl._tlPxPerDay - TL_PIN_PX), behavior: 'smooth' });
+});
+
+document.addEventListener('scroll', function(e) {
+  var el = e.target;
+  if (el && el.classList && el.classList.contains('tl-scroll-wrap')) _updateOverduePin(el);
+}, true);
 
 // ── Widget-bygger: én funksjon for alle tidslinje-widgets ──────────────────
 // opts: { tlId, scrollId, configKey, syncKeys, onHorizonChange }
@@ -12319,23 +12480,16 @@ function renderTimeline(opts) {
       axisMode:    cfg.axisMode   || 'month',
       draftRows:   cfg.draftRows  || null,
       draggable:   id === 'home-timeline',
+      // Forhåndsvisningen i sak-dialogen er bare til å se på: klikk der ville
+      // lukket dialogen og kastet det som er skrevet inn.
+      interactive: id !== 'modal-timeline',
       // Datovelgeren i sak-dialogen trenger ikke markeringen
       activeId:    id === 'modal-timeline' ? null : (activeCase && activeCase.id),
     });
     var existing = wrap.querySelector('.tl-track');
     if (existing) wrap.replaceChild(track, existing);
     else          wrap.appendChild(track);
-    // Find scroll container — walk up until we find .tl-scroll-wrap or overflow-x:auto
     var scrollEl = wrap.closest('.tl-scroll-wrap');
-    if (!scrollEl) {
-      var el = wrap.parentElement;
-      while (el && el !== document.body) {
-        var ov = window.getComputedStyle(el).overflowX;
-        if (ov === 'auto' || ov === 'scroll') { scrollEl = el; break; }
-        el = el.parentElement;
-      }
-    }
-    if (!scrollEl) scrollEl = wrap.parentElement;
     if (scrollEl) _applyTimelineScroll(scrollEl, track, cfg.horizon || 365);
   });
 }
@@ -14183,11 +14337,9 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
   popup.style.pointerEvents = 'none';
   document.body.appendChild(popup);
 
-  function handleMove(e) {
-    var el = e.target.closest('.tl-bar');
-    var vl = e.target.closest('.tl-bar-vacation');
-    if (!el && !vl) { popup.style.display = 'none'; return; }
-    var target = el;
+  // Fyller popupen for en saksbjelke eller ferie og plasserer den ved (x, y)
+  // i sidekoordinater.
+  function showFor(el, vl, x, y) {
     if (vl) {
       var vFrom = vl.dataset.from, vTo = vl.dataset.to;
       var vDatesTxt = vFrom && vTo ? toDisplay(vFrom) + ' – ' + toDisplay(vTo) : '';
@@ -14197,18 +14349,18 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
         (vDatesTxt ? '<span class="tl-popup-sep"> — </span><span class="tl-popup-title">' + esc(vDatesTxt) + '</span>' : '') +
         (vDurTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(vDurTxt) + '</span>' : '');
     } else {
-      var cn    = target.dataset.cn    || '';
-      var title = target.dataset.title || '';
-      var due   = target.dataset.due   || '';
-      var caseId = target.dataset.id   || '';
+      var cn    = el.dataset.cn    || '';
+      var title = el.dataset.title || '';
+      var due   = el.dataset.due   || '';
+      var caseId = el.dataset.id   || '';
       var caseObj = caseId ? cases.find(function(c) { return c.id === caseId; }) : null;
       var effDue = caseObj ? effDueFor(caseObj) : getEffectiveDueDate(due);
       var days  = effDue ? daysUntil(effDue) : null;
       var wdays = effDue ? workDaysUntil(effDue) : null;
-      var daysTxt = days !== null ? (days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'i dag' : days + 'd') : '';
-      var wdaysTxt = wdays !== null ? ' · ' + wdays + ' arb.dager' : '';
-      var dueTxt = due ? formatDate(due) : '';
-      var infoTxt = (dueTxt ? 'frist ' + dueTxt : '') + (dueTxt && daysTxt ? ' · ' : '') + daysTxt + wdaysTxt +
+      // Nedtellingen måles mot den bufrede fristen; vis den datoen også, så
+      // tallene ikke ser ut til å stride mot fristen som står foran dem.
+      var effTxt = effDue && due && effDue !== due ? formatDate(effDue) : '';
+      var infoTxt = timelineDueInfo(due ? formatDate(due) : '', effTxt, days, wdays) +
         (isUnassigned(caseObj) ? ' · ikke fordelt ennå' : '');
       popup.innerHTML = '<span class="tl-popup-cn">' + esc(cn) + '</span>' +
         (title ? '<span class="tl-popup-sep"> — </span><span class="tl-popup-title">' + esc(title) + '</span>' : '') +
@@ -14216,18 +14368,36 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
         (caseObj && caseNotePreview(caseObj.notes) ? '<span class="tl-popup-note">' + esc(String(caseObj.notes).trim()) + '</span>' : '');
     }
     popup.style.display = 'block';
-    popup.style.left = (e.pageX + 12) + 'px';
-    popup.style.top  = (e.pageY - 28) + 'px';
+    popup.style.left = x + 'px';
+    popup.style.top  = y + 'px';
+  }
+
+  function handleMove(e) {
+    var el = e.target.closest('.tl-bar');
+    var vl = e.target.closest('.tl-bar-vacation');
+    if (!el && !vl) { popup.style.display = 'none'; return; }
+    showFor(el, vl, e.pageX + 12, e.pageY - 28);
   }
 
   function handleLeave() { popup.style.display = 'none'; }
 
-  function handleClick(e) {
-    var el = e.target.closest('.tl-bar');
-    if (!el || !el.dataset.id) return;
-    if (el.classList.contains('draggable')) return; // håndteres av drag-IIFE
+  // Forhåndsvisningen i sak-dialogen er bare til å se på — et klikk der ville
+  // lukket dialogen og kastet det som er skrevet inn.
+  function inModal(target) {
+    var m = document.getElementById('modal-timeline');
+    return !!(m && m.contains(target));
+  }
+
+  function openBar(el) {
     closeAllBackdrops();
     navigateTo('sak/' + el.dataset.id);
+  }
+
+  function handleClick(e) {
+    var el = e.target.closest('.tl-bar');
+    if (!el || !el.dataset.id || inModal(el)) return;
+    if (el.classList.contains('draggable')) return; // håndteres av drag-IIFE
+    openBar(el);
   }
 
   var TL_IDS = ['home-timeline', 'modal-timeline', 'cases-timeline'];
@@ -14249,6 +14419,26 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
   document.addEventListener('click', function(e) {
     if (!inTimeline(e.target)) return;
     handleClick(e);
+  });
+
+  // Tastatur: bjelkene kan nås med Tab; popupen vises over den som har fokus,
+  // og Enter eller mellomrom åpner saken.
+  document.addEventListener('focusin', function(e) {
+    var el = e.target.closest && e.target.closest('.tl-bar');
+    if (!el || !inTimeline(el)) return;
+    var r = el.getBoundingClientRect();
+    showFor(el, null, r.left + window.scrollX, r.top + window.scrollY - 34);
+  });
+  document.addEventListener('focusout', function(e) {
+    if (e.target.closest && e.target.closest('.tl-bar')) handleLeave();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var el = e.target.closest && e.target.closest('.tl-bar');
+    if (!el || !el.dataset.id || !inTimeline(el) || inModal(el)) return;
+    e.preventDefault();
+    handleLeave();
+    openBar(el);
   });
 
 })();
@@ -14581,135 +14771,108 @@ function init() {
   render();
 
   // ── Tidslinje-drag: per-sak-buffer via drag (kun home-timeline) ────────
+  // Pekerhendelser, så det virker med mus, penn og berøring. Utregningen
+  // (timelineDragBuffer, tlDueOffset) er den samme som tegner bjelkene, så
+  // bjelken lander der den ble sluppet.
   (function() {
-    var dragging = null; // { bar, caseId, startX, origBuffer, pxPerDay, track, actualEnd }
+    var dragging = null;
 
-    function getPxPerDay(track) {
-      var TOTAL = TL_PAST_DAYS + 365;
-      return track.offsetWidth / TOTAL;
+    // Datoen fristen havner på med en gitt buffer.
+    function effDueWithBuffer(dueDate, buffer) {
+      var d = new Date(dueDate + 'T00:00:00');
+      d.setDate(d.getDate() - buffer);
+      return isoLocalDate(d);
     }
 
-    document.addEventListener('mousedown', function(e) {
+    function ensureMarker(track, cls, caseId, bar) {
+      var el = track.querySelector('.' + cls + '[data-id="' + caseId + '"]');
+      if (el) return el;
+      var barTop = parseInt(bar.style.top, 10) || 4;
+      var barH   = parseInt(bar.style.height, 10) || 40;
+      el = document.createElement('div');
+      el.className = cls;
+      el.dataset.id = caseId;
+      if (cls === 'tl-actual-line') {
+        el.style.top = (barTop + Math.round(barH / 2)) + 'px';
+      } else {
+        el.style.top    = (barTop + 3) + 'px';
+        el.style.height = (barH - 6) + 'px';
+      }
+      el.style.display = 'none';
+      track.appendChild(el);
+      return el;
+    }
+
+    document.addEventListener('pointerdown', function(e) {
+      if (e.button !== 0) return;
       var bar = e.target.closest('.tl-bar.draggable');
       if (!bar) return;
       var track = bar.closest('.tl-track');
-      if (!track) return;
-      // Only on home timeline
-      var tlDiv = track.closest('[id="home-timeline"]');
-      if (!tlDiv) return;
-      e.preventDefault();
-      var caseId = bar.dataset.id;
-      var cas = cases.find(function(c) { return c.id === caseId; });
+      if (!track || !track._tl || !track.closest('#home-timeline')) return;
+      var cas = cases.find(function(c) { return c.id === bar.dataset.id; });
       if (!cas) return;
-      var pxPerDay = getPxPerDay(track);
-      var origBuffer = cas.caseBuffer != null ? cas.caseBuffer : typeBufferFor(cas);
-
-      // Ensure actual-line and actual-mark exist
-      var barTop   = parseInt(bar.style.top, 10) || 4;
-      var barH     = parseInt(bar.style.height, 10) || 40;
-      var actualEnd = bar._actualEnd; // will be set below
-      // Compute actualEnd from dueDate
-      var now2 = new Date(); now2.setHours(0,0,0,0);
-      var PAST2 = TL_PAST_DAYS;
-      var actualDue = new Date(cas.dueDate + 'T00:00:00');
-      actualEnd = (actualDue - now2) / 86400000; // days from today
-
-      var line = track.querySelector('.tl-actual-line[data-id="' + caseId + '"]');
-      var mark = track.querySelector('.tl-actual-mark[data-id="' + caseId + '"]');
-      var TOTAL2 = PAST2 + 365;
-      var pct = function(d) { return ((d + PAST2) / TOTAL2 * 100).toFixed(4) + '%'; };
-      if (!line) {
-        line = document.createElement('div');
-        line.className = 'tl-actual-line';
-        line.dataset.id = caseId;
-        var midPx = barTop + Math.round(barH / 2);
-        line.style.top = midPx + 'px';
-        track.appendChild(line);
-      }
-      if (!mark) {
-        mark = document.createElement('div');
-        mark.className = 'tl-actual-mark';
-        mark.dataset.id = caseId;
-        mark.style.top    = (barTop + 3) + 'px';
-        mark.style.height = (barH - 6) + 'px';
-        track.appendChild(mark);
-      }
-      // Position actual mark at actualEnd
-      mark.style.left = 'calc(' + pct(actualEnd) + ' - 1px)';
-
+      e.preventDefault();
+      var g = track._tl;
       dragging = {
-        bar: bar, caseId: caseId, startX: e.clientX,
-        origBuffer: origBuffer, pxPerDay: pxPerDay,
-        track: track, actualEnd: actualEnd,
-        line: line, mark: mark, cas: cas,
-        pct: pct, PAST: PAST2, TOTAL: TOTAL2,
+        bar: bar, cas: cas, g: g, startX: e.clientX,
+        pxPerDay: track.offsetWidth / (g.past + g.horizon),
+        origBuffer: bufferDaysFor(cas),
+        newBuffer: null,
+        actualEnd: tlDueOffset(cas.dueDate, g.now),
+        line: ensureMarker(track, 'tl-actual-line', cas.id, bar),
+        mark: ensureMarker(track, 'tl-actual-mark', cas.id, bar),
         hasMoved: false
       };
-      bar.style.opacity = '0.85';
+      dragging.mark.style.left = 'calc(' + g.pct(dragging.actualEnd) + ' - 1px)';
     });
 
-    document.addEventListener('mousemove', function(e) {
-      if (!dragging) return;
-      var dx = e.clientX - dragging.startX;
-      if (Math.abs(dx) > 3) dragging.hasMoved = true;
-      var daysDelta = Math.round(dx / dragging.pxPerDay);
-      // drag left = increase buffer (move bar left), drag right = decrease
-      var newBuffer = Math.max(0, dragging.origBuffer - daysDelta);
-      // Clamp: effDue cannot exceed dueDate (buffer >= 0)
-      // Also clamp so bar doesn't go past actual due
-      var cas = dragging.cas;
-      var effD = new Date(cas.dueDate + 'T00:00:00');
-      effD.setDate(effD.getDate() - newBuffer);
-      var effDStr = effD.toISOString().slice(0, 10);
-      var due = new Date(effDStr + 'T16:00:00');
-      var now3 = new Date();
-      var newEffEnd = (due - now3) / 86400000;
-      var atLimit = newBuffer <= 0;
-      dragging.bar.classList.toggle('at-limit', atLimit);
-
-      // Move bar visually
-      var spanDays = timelineSpanDays(cas);
-      var newStart = newEffEnd - spanDays;
-      dragging.bar.style.left  = dragging.pct(newStart);
-      dragging.bar.style.width = (spanDays / dragging.TOTAL * 100).toFixed(4) + '%';
-
-      // Update line
-      if (newBuffer > 0) {
-        dragging.line.style.left  = dragging.pct(newEffEnd);
-        dragging.line.style.width = ((dragging.actualEnd - newEffEnd) / dragging.TOTAL * 100).toFixed(4) + '%';
-        dragging.line.style.display = '';
-        dragging.mark.style.display = '';
-      } else {
-        dragging.line.style.display = 'none';
-        dragging.mark.style.display = 'none';
-      }
-      dragging._pendingBuffer = newBuffer;
-    });
-
-    document.addEventListener('mouseup', function() {
+    document.addEventListener('pointermove', function(e) {
       if (!dragging) return;
       var d = dragging;
+      var dx = e.clientX - d.startX;
+      if (!d.hasMoved && Math.abs(dx) <= 3) return;
+      if (!d.hasMoved) { d.hasMoved = true; d.bar.classList.add('dragging'); }
+      var newBuffer = timelineDragBuffer(d.origBuffer, dx, d.pxPerDay, TYPE_BUFFER_MAX);
+      d.newBuffer = newBuffer;
+      d.bar.classList.toggle('at-limit', newBuffer <= 0 || newBuffer >= TYPE_BUFFER_MAX);
+
+      var effEnd = tlDueOffset(effDueWithBuffer(d.cas.dueDate, newBuffer), d.g.now);
+      var start  = Math.max(-d.g.past, effEnd - timelineSpanDays(d.cas));
+      d.bar.style.left  = d.g.pct(start);
+      d.bar.style.width = d.g.pctW(effEnd - start);
+
+      var show = newBuffer > 0;
+      d.line.style.display = show ? '' : 'none';
+      d.mark.style.display = show ? '' : 'none';
+      if (show) {
+        d.line.style.left  = d.g.pct(effEnd);
+        d.line.style.width = d.g.pctW(d.actualEnd - effEnd);
+      }
+    });
+
+    function finish(cancelled) {
+      var d = dragging;
       dragging = null;
-      d.bar.style.opacity = '';
-      d.bar.classList.remove('at-limit');
+      d.bar.classList.remove('at-limit', 'dragging');
       if (!d.hasMoved) {
-        // Ren klikk uten drag — naviger til sakssiden direkte her,
-        // før noen re-render kan fjerne bjelken fra DOM.
-        d.line.style.display = d.origBuffer > 0 ? '' : 'none';
-        d.mark.style.display = d.origBuffer > 0 ? '' : 'none';
+        if (cancelled) return;
+        // Ren klikk uten drag — naviger til sakssiden direkte her, før noen
+        // re-render kan fjerne bjelken fra DOM.
         closeAllBackdrops();
-        navigateTo('sak/' + d.caseId);
+        navigateTo('sak/' + d.cas.id);
         return;
       }
-      var newBuffer = d._pendingBuffer != null ? d._pendingBuffer : d.origBuffer;
-      // Lik standarden for typen → ingen egen buffer
-      var dragCase = cases.find(function(c) { return c.id === d.caseId; });
-      var finalBuffer = newBuffer === typeBufferFor(dragCase) ? null : newBuffer;
-      dispatch('CASE_FIELD_UPDATE', { id: d.caseId, patch: { caseBuffer: finalBuffer } });
-      // Re-render home timeline after drag
+      if (!cancelled && d.newBuffer !== null && d.newBuffer !== d.origBuffer) {
+        // Lik standarden for typen → ingen egen buffer
+        var finalBuffer = d.newBuffer === typeBufferFor(d.cas) ? null : d.newBuffer;
+        dispatch('CASE_FIELD_UPDATE', { id: d.cas.id, patch: { caseBuffer: finalBuffer } });
+        renderBeleggCard();
+      }
       renderTimeline({ target: 'home-timeline' });
-      renderBeleggCard();
-    });
+    }
+
+    document.addEventListener('pointerup', function() { if (dragging) finish(false); });
+    document.addEventListener('pointercancel', function() { if (dragging) finish(true); });
   })();
   var _resizeTimer;
   window.addEventListener('resize', function() {
@@ -14721,14 +14884,6 @@ function init() {
         var track = tlDiv.querySelector('.tl-track');
         if (!track) return;
         var scrollEl = tlDiv.closest('.tl-scroll-wrap');
-        if (!scrollEl) {
-          var el = tlDiv.parentElement;
-          while (el && el !== document.body) {
-            var ov = window.getComputedStyle(el).overflowX;
-            if (ov === 'auto' || ov === 'scroll') { scrollEl = el; break; }
-            el = el.parentElement;
-          }
-        }
         if (!scrollEl || !scrollEl.clientWidth) return;
         var cfg = _tlConfig[id] || _tlConfig['home-timeline'];
         _applyTimelineScroll(scrollEl, track, cfg.horizon || 90);

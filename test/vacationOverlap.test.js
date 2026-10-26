@@ -8,7 +8,7 @@ function load(vacations, buffer) {
   const b = buffer != null ? buffer : 0;
   const typeBuffers = typeof b === 'number' ? { ny: b, viderebehandling: b } : b;
   return loadFunctions(
-    ['bufferAppliesTo', 'getEffectiveDueDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor', 'workWindowDays', 'periodOverlapsVacation'],
+    ['bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor', 'workWindowDays', 'periodOverlapsVacation'],
     {
       globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 }, vacations: vacations || [], typeBuffers: typeBuffers },
     }

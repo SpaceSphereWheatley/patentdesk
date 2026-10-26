@@ -8,7 +8,7 @@ const { loadFunctions } = require('./extractFunctions');
 // drift when a public holiday moves.
 function load(cases) {
   return loadFunctions(
-    ['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
+    ['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'isoLocalDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
     {
       vars: ['OVERDUE_PENALTY_WORKDAYS'],
       globals: {
@@ -94,7 +94,7 @@ test('computeBelegg counts viderebehandling as real work, over its own window', 
 
 test('computeBelegg follows the work window settings', () => {
   const fns = loadFunctions(
-    ['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
+    ['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'isoLocalDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
     { vars: ['OVERDUE_PENALTY_WORKDAYS'], globals: {
       cases: [makeCase({ id: 'a' }), makeCase({ id: 'b', status: 'viderebehandling' })],
       workWindows: { ny: 10, viderebehandling: 5, oppdrag: 2 },
