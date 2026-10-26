@@ -1197,6 +1197,9 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .medl-out-case    { color: var(--text); }
 .medl-out-actions { display: flex; gap: var(--space-2); margin-left: auto; }
 .medl-send-suggest { margin: var(--space-2) 0 0; font-size: var(--text-xs); color: var(--muted); }
+.medl-edit-row     { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.medl-edit-row .field-input { flex: 1 1 160px; min-width: 0; }
+.medl-edit-row .medl-edit-date { flex: 0 1 130px; }
 .medleser-list, .medleser-add { width: 100%; max-width: 480px; }
 .medleser-add      { flex-wrap: nowrap; }
 .medleser-add .field-input { flex: 1; min-width: 0; }
@@ -3511,6 +3514,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
                 <div class="sak-info-pair">
                   <dt>Prioritetsdato</dt><dd id="sak-priority-date"></dd>
                 </div>
+                <div class="sak-info-pair" id="sak-medl-field">
+                  <dt>Medlesing</dt><dd id="sak-medl"></dd>
+                </div>
                 <div class="sak-info-pair" id="sak-case-buffer-field">
                   <dt>Buffer (dager)</dt><dd id="sak-case-buffer"></dd>
                 </div>
@@ -3882,6 +3888,16 @@ tr:hover .sak-tag-display.sak-tag-empty,
               <small>Du har meldt deg på saken. Den vises grå og teller ikke i belegget før du bekrefter at du har fått den.</small>
             </span>
           </label>
+        </div>
+
+        <!-- Medlesing: bare når en søknad redigeres, uansett status -->
+        <div class="field-group" id="modal-row-medl" style="display:none;">
+          <label class="field-label" for="f-medl-reader">Medlesing <span class="field-label-sub">valgfritt, én per sak</span></label>
+          <div class="medl-edit-row">
+            <select class="field-input" id="f-medl-reader" aria-label="Medleser"></select>
+            <input class="field-input" id="f-medl-new" type="text" placeholder="Navn på ny medleser" maxlength="60" aria-label="Navn på ny medleser" style="display:none;" />
+            <input class="field-input medl-edit-date" id="f-medl-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" aria-label="Dato for medlesing" />
+          </div>
         </div>
 
         <div class="field-error" id="field-error"></div>
@@ -4343,7 +4359,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.33.0';
+var APP_VERSION    = 'v4.34.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5381,6 +5397,42 @@ function returnFromMedleser(log, caseId, date) {
   return log.map(function(x) {
     return x.caseId === caseId && !x.returned ? Object.assign({}, x, { returned: date }) : x;
   });
+}
+
+// Medlesingen saken vises med i «Rediger sak» og på sakssiden: den siste.
+function caseMedlFor(log, caseId) {
+  return log.reduce(function(best, x) {
+    return x.caseId === caseId && (!best || x.sent >= best.sent) ? x : best;
+  }, null);
+}
+
+// «Rediger sak»: fører inn, retter eller fjerner sakens medlesing i ettertid,
+// uansett status. Én per sak: tomt navn fjerner sakens utsendinger. Finnes en,
+// rettes den siste (en åpen forblir åpen); ellers legges en lukket til, for
+// saken er allerede lest. Samme array tilbake når ingenting endres.
+// Rene funksjoner — se test/caseMedlesing.test.js.
+function setCaseMedlesing(log, c, reader, date, newId) {
+  var r = String(reader || '').trim();
+  if (!r) {
+    var kept = log.filter(function(x) { return x.caseId !== c.id; });
+    return kept.length === log.length ? log : kept;
+  }
+  var cur = caseMedlFor(log, c.id);
+  if (!cur) return log.concat([{ id: newId, caseId: c.id, caseNumber: c.caseNumber, reader: r, sent: date, returned: date }]);
+  if (cur.reader === r && cur.sent === date) return log;
+  var returned = cur.returned && cur.returned < date ? date : cur.returned;
+  return log.map(function(x) { return x === cur ? Object.assign({}, x, { reader: r, sent: date, returned: returned }) : x; });
+}
+
+// Valgene i «Rediger sak»: aktive først, så inaktive. Den som står på saken
+// tas med selv om vedkommende er fjernet fra lista.
+function medlReaderChoices(list, current) {
+  var out = list.filter(function(m) { return m.active; }).concat(list.filter(function(m) { return !m.active; }))
+    .map(function(m) { return { name: m.name, active: m.active }; });
+  if (current && !out.some(function(m) { return _medlKey(m.name) === _medlKey(current); })) {
+    out.push({ name: current, active: false });
+  }
+  return out;
 }
 
 // Lukker utsendinger for saker som er slettet eller ikke lenger er ditt
@@ -6479,6 +6531,21 @@ function _dispatch(action, payload) {
       if (!canSendToMedleser(mc) || !payload.reader) break;
       medlLog = sendToMedleser(medlLog, mc, payload.reader, payload.sent, uid());
       saveMedlLog(medlLog);
+      render();
+      break;
+    }
+
+    case 'MEDL_SET': {
+      // Fra «Rediger sak». Et nytt navn skrevet inn der legges også på lista.
+      var sc = cases.find(function(c) { return c.id === payload.id; });
+      if (!sc || sc.type === 'oppdrag') break;
+      var reader = sanitizeText(payload.reader || '').trim();
+      if (reader && payload.addToList) {
+        medleserList = addMedleser(medleserList, reader);
+        saveMedleserList(medleserList);
+      }
+      var nextLog = setCaseMedlesing(medlLog, sc, reader, payload.date, uid());
+      if (nextLog !== medlLog) { medlLog = nextLog; saveMedlLog(medlLog); }
       render();
       break;
     }
@@ -9674,6 +9741,12 @@ function renderSak(id) {
   if (bufField) bufField.style.display = isOppdrag ? 'none' : '';
   var bufInp = document.getElementById('sak-case-buffer');
   if (bufInp) bufInp.textContent = caseBufferLabel(cas);
+
+  // Medlesing (føres inn i «Rediger sak»; skjules for oppdrag)
+  var medlField = document.getElementById('sak-medl-field');
+  if (medlField) medlField.style.display = isOppdrag ? 'none' : '';
+  var medlEntry = isOppdrag ? null : caseMedlFor(medlLog, cas.id);
+  document.getElementById('sak-medl').textContent = medlEntry ? medlEntry.reader + ' · ' + toDisplay(medlEntry.sent) : '—';
 
   // Status-knapper — forenklet for oppdrag
   var statusBtns = document.getElementById('sak-status-btns');
@@ -13537,6 +13610,57 @@ function _setModalOppdrag(isOppdrag) {
   document.getElementById('modal-row-oppdrag').style.display = isOppdrag ? '' : 'none';
   _syncModalBuffer();
   _syncModalUnassigned();
+  _syncModalMedl();
+}
+
+// ── Medlesing i «Rediger sak» ──────────────────────
+var MEDL_NEW_OPTION = '__ny__';
+var fMedlReader = document.getElementById('f-medl-reader');
+var fMedlNew    = document.getElementById('f-medl-new');
+var fMedlDate   = document.getElementById('f-medl-date');
+
+// Bare når en eksisterende søknad redigeres — ikke for oppdrag eller nye saker.
+function _syncModalMedl() {
+  var row = document.getElementById('modal-row-medl');
+  if (row) row.style.display = editIdEl.value && getSelectedStatus() !== 'oppdrag' ? '' : 'none';
+}
+
+function _fillModalMedl(c) {
+  var cur = c ? caseMedlFor(medlLog, c.id) : null;
+  var choices = medlReaderChoices(medleserList, cur ? cur.reader : '');
+  fMedlReader.innerHTML = '<option value="">— Ingen —</option>' +
+    choices.map(function(m) {
+      return '<option value="' + esc(m.name) + '">' + esc(m.name) + (m.active ? '' : ' (inaktiv)') + '</option>';
+    }).join('') +
+    '<option value="' + MEDL_NEW_OPTION + '">+ Ny medleser…</option>';
+  fMedlReader.value = cur ? (choices.find(function(m) { return _medlKey(m.name) === _medlKey(cur.reader); }) || {}).name : '';
+  fMedlNew.value = '';
+  fMedlDate.value = cur ? toDisplay(cur.sent) : '';
+  _syncModalMedlInputs();
+}
+
+function _syncModalMedlInputs() {
+  var v = fMedlReader.value;
+  fMedlNew.style.display = v === MEDL_NEW_OPTION ? '' : 'none';
+  fMedlDate.disabled = !v;
+  if (v && !fMedlDate.value) fMedlDate.value = toDisplay(todayStr());
+}
+
+fMedlReader.addEventListener('change', function() {
+  _syncModalMedlInputs();
+  if (this.value === MEDL_NEW_OPTION) fMedlNew.focus();
+});
+
+// Leser feltene; { error } ved feil, ellers { reader, date, addToList }.
+function _readModalMedl() {
+  var v = fMedlReader.value;
+  if (!v) return { reader: '', date: '', addToList: false };
+  var isNew = v === MEDL_NEW_OPTION;
+  var reader = isNew ? fMedlNew.value.trim() : v;
+  if (!reader) return { error: 'Skriv navnet på den nye medleseren.' };
+  var date = filingDateFromInput(fMedlDate.value);
+  if (!date) return { error: 'Ugyldig dato for medlesing — bruk formatet åååå.mm.dd.' };
+  return { reader: reader, date: date, addToList: isNew };
 }
 
 // «Ikke fordelt» gjelder bare Ny søknader; avkrysningen skjules ellers.
@@ -13553,7 +13677,7 @@ function _syncModalUnassigned() {
 function _syncModalBuffer() {
   if (!fCaseBuffer) return;
   var st = getSelectedStatus();
-  var applies = st !== 'oppdrag' && st !== 'fristarkiv';
+  var applies = st !== 'oppdrag' && st !== 'fristarkiv' && st !== 'avsluttet';
   fCaseBuffer.closest('.field-group').style.display = applies ? '' : 'none';
   fCaseBuffer.placeholder = 'Standard: ' + typeBufferFor({ status: st });
   var orig = editIdEl.value ? cases.find(function(c) { return c.id === editIdEl.value; }) : null;
@@ -13565,7 +13689,14 @@ function _syncModalBuffer() {
 function getSelectedStatus() {
   var radios = document.querySelectorAll('input[name="status"]');
   for (var i = 0; i < radios.length; i++) { if (radios[i].checked) return radios[i].value; }
-  return 'ny';
+  return modalFallbackStatus(editIdEl.value ? cases.find(function(c) { return c.id === editIdEl.value; }) : null);
+}
+
+// Avsluttet har ingen knapp i «Rediger sak» (settes når saken lukkes). Uten
+// avkrysset knapp beholder en avsluttet sak statusen sin i stedet for å bli Ny.
+// Ren funksjon — se test/caseMedlesing.test.js.
+function modalFallbackStatus(orig) {
+  return orig && orig.status === 'avsluttet' ? 'avsluttet' : 'ny';
 }
 function setSelectedStatus(val) {
   document.querySelectorAll('input[name="status"]').forEach(function(r) { r.checked = (r.value === val); });
@@ -13609,9 +13740,11 @@ function openModal(c) {
       document.getElementById('modal-adv-body').classList.add('open');
     }
     document.getElementById('f-unassigned').checked = isUnassigned(c);
+    _fillModalMedl(c);
     setSelectedStatus(isOppdrag ? 'oppdrag' : (c.status || 'ny'));
   } else {
     document.getElementById('f-unassigned').checked = false;
+    _fillModalMedl(null);
     editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = fFilingDate.value = fPriorityDate.value = '';
     document.getElementById('f-case-number-op').value = '';
     document.getElementById('f-due-date-op').value = '';
@@ -13816,6 +13949,8 @@ document.getElementById('btn-save').addEventListener('click', function() {
   if (priorityDate === null) { fieldError.textContent = 'Ugyldig prioritetsdato — bruk formatet åååå.mm.dd.'; _dupWarnPending = false; return; }
   var datesError = isOppdrag ? '' : applicationDatesError(filingDate, priorityDate);
   if (datesError) { fieldError.textContent = datesError; _dupWarnPending = false; return; }
+  var medl = id && !isOppdrag ? _readModalMedl() : null;
+  if (medl && medl.error) { fieldError.textContent = medl.error; _dupWarnPending = false; return; }
   var internalDate = parseDate(dd);
   // Tomt felt = ingen egen varighet; standarden fra Innstillinger gjelder da
   var duration = isOppdrag ? (parseInt(fDuration.value, 10) >= 1 ? parseInt(fDuration.value, 10) : null) : undefined;
@@ -13830,6 +13965,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
     priorityDate: priorityDate, unassigned: st === 'ny' && document.getElementById('f-unassigned').checked };
   if (id) { payload.id = id; dispatch('CASE_EDIT', payload); }
   else    { dispatch('CASE_CREATE', payload); }
+  if (medl) dispatch('MEDL_SET', { id: id, reader: medl.reader, date: medl.date, addToList: medl.addToList });
   var dest = isOppdrag ? 'oppdrag' : st;
   if (activePage === 'sak') {
     render();

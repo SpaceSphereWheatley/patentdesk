@@ -7,6 +7,30 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.34.0] - 2026-10-26
+Du kan nå føre inn medlesing i ettertid på alle saker, også avsluttede og
+saker i Fristarkiv.
+
+### Added
+- **Medlesing i «Rediger sak».** Når du redigerer en søknad, kan du velge
+  medleser og dato, uansett status. Hver sak har én medlesing. Har saken vært
+  sendt til medlesing før, vises den medlesingen, og du kan rette den. Velger
+  du «— Ingen —», fjernes den. Medlesinger du fører inn her teller med i
+  statistikken over medlesere. De gir ikke «Hos <navn>», fordi saken allerede
+  er lest, og de endrer verken belegg eller frist.
+- **Ny medleser rett fra dialogen.** Velg «+ Ny medleser…» og skriv navnet.
+  Navnet legges samtidig til medleserlista i Innstillinger. Inaktive medlesere
+  kan også velges.
+- **Medlesing på sakssiden.** Saksinformasjonen viser hvem som leste saken og
+  når.
+
+### Fixed
+- **En avsluttet sak ble gjenåpnet som Ny når du lagret «Rediger sak».**
+  Avsluttet har ingen statusknapp i dialogen, og uten valgt knapp ble saken
+  lagret som Ny, og utfallet ble borte. Saken beholder nå status og utfall.
+  Valget «Ikke fordelt ennå» og bufferfeltet vises heller ikke lenger for
+  avsluttede saker.
+
 ## [4.33.0] - 2026-10-26
 Du kan nå markere at en av dine saker er sendt til medlesing, og hvem som
 leser den. Appen foreslår en medleser slik at du fordeler sakene, og
