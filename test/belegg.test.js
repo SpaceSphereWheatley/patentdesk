@@ -8,7 +8,7 @@ const { loadFunctions } = require('./extractFunctions');
 // drift when a public holiday moves.
 function load(cases) {
   return loadFunctions(
-    ['computeBelegg', 'countsInBelegg', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
+    ['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
     {
       vars: ['OVERDUE_PENALTY_WORKDAYS'],
       globals: {
@@ -94,7 +94,7 @@ test('computeBelegg counts viderebehandling as real work, over its own window', 
 
 test('computeBelegg follows the work window settings', () => {
   const fns = loadFunctions(
-    ['computeBelegg', 'countsInBelegg', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
+    ['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
     { vars: ['OVERDUE_PENALTY_WORKDAYS'], globals: {
       cases: [makeCase({ id: 'a' }), makeCase({ id: 'b', status: 'viderebehandling' })],
       workWindows: { ny: 10, viderebehandling: 5, oppdrag: 2 },
@@ -157,4 +157,36 @@ test('computeBelegg ignores avsluttet cases and oppdrag', () => {
     makeCase({ id: 'b', type: 'oppdrag', status: 'ny', duration: 5 }),
   ]);
   assert.strictEqual(computeBelegg(60).pct1, 0);
+});
+
+// ── Ikke fordelte saker ─────────────────────────────
+// En sak du har meldt deg på, men ikke fått, er ikke arbeid ennå. Den holdes
+// utenfor belegget og vises bare som et mulig tillegg.
+test('computeBelegg keeps unassigned cases out of belegg', () => {
+  const { computeBelegg } = load([makeCase({ id: 'a', unassigned: true })]);
+  const res = computeBelegg(70);
+  assert.strictEqual(res.busy, 0);
+  assert.strictEqual(res.pct1, 0);
+});
+
+test('computeBelegg reports what unassigned cases would add, on top of belegg', () => {
+  const { computeBelegg } = load([
+    makeCase({ id: 'a' }),
+    makeCase({ id: 'b', unassigned: true }),
+  ]);
+  const res = computeBelegg(70);
+  assert.strictEqual(res.pct1, ONE_CASE_PCT);
+  assert.strictEqual(res.potentialBusy, 14);
+  assert.strictEqual(res.potentialPct, ONE_CASE_PCT);
+});
+
+test('computeBelegg reports no potential when nothing is waiting', () => {
+  const { computeBelegg } = load([makeCase({ id: 'a' })]);
+  assert.strictEqual(computeBelegg(70).potentialPct, 0);
+});
+
+// Et gjenglemt flagg på en sak som har gått videre, teller ikke — saken er din.
+test('computeBelegg counts a stale flag on a viderebehandling case as real work', () => {
+  const { computeBelegg } = load([makeCase({ id: 'a', status: 'viderebehandling', unassigned: true })]);
+  assert.strictEqual(computeBelegg(70).busy, 3);
 });

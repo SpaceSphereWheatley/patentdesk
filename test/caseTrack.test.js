@@ -18,7 +18,7 @@ const {
   'examinationRound',
   'caseTrack',
   'closedDate',
-  'pipelineCounts',
+  'pipelineCounts', 'isUnassigned', 'canBeUnassigned',
   'rowAction',
 ], { vars: ['OUTCOMES'] });
 
@@ -210,7 +210,7 @@ test('pipelineCounts tallies outcomes decided in the given calendar year only', 
 test('pipelineCounts handles an empty list', () => {
   const p = pipelineCounts([], 2026, '2026-10-06');
   assert.deepStrictEqual(plain(p), {
-    ny: 0, fristarkiv: 0, fristarkivSoon: 0, videre: 0, videreLate: 0,
+    ny: 0, nyUnassigned: 0, fristarkiv: 0, fristarkivSoon: 0, videre: 0, videreLate: 0,
     decided: { meddelt: 0, avslatt: 0, henlagt: 0, total: 0 },
   });
 });

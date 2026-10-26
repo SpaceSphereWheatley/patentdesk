@@ -1127,6 +1127,57 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .btn-sak-active { display: inline-flex; align-items: center; gap: var(--space-2); }
 .btn-sak-active.is-on { color: var(--accent); border-color: var(--accent); }
 
+/* ── Ikke fordelt ─────────────────────────────────── */
+/* Saker du har meldt deg på, men ikke fått ennå: nedtonet og kursiv, så de
+   skiller seg fra arbeid du faktisk har. Merkelappen blir rav når saken har
+   ventet lenger enn påminnelsen i Innstillinger. */
+.unassigned-pill {
+  flex-shrink: 0; font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label); text-transform: uppercase; white-space: nowrap;
+  color: var(--muted); border: 1px dashed var(--border2); border-radius: var(--radius-pill);
+  padding: 1px var(--space-3); line-height: 1.4;
+}
+.unassigned-pill.is-stale {
+  color: var(--badge-urgent-text); background: var(--badge-urgent-bg);
+  border: 1px solid var(--badge-urgent-border);
+}
+.case-card.is-unassigned,
+.home-upcoming-row.is-unassigned { background: var(--surface2); border-style: dashed; }
+.is-unassigned .case-card-cn,
+.is-unassigned .home-upcoming-cn,
+.is-unassigned .case-card-title,
+.is-unassigned .home-upcoming-title,
+.is-unassigned .days-badge { opacity: 0.55; }
+.is-unassigned .case-card-title,
+.is-unassigned .home-upcoming-title { font-style: italic; }
+.vac-badge-soft { opacity: 0.45; filter: grayscale(1); }
+
+/* Tidslinje: grå, skravert bjelke — saken er en mulighet, ikke arbeid */
+.tl-bar.tl-bar-unassigned {
+  background: repeating-linear-gradient(135deg, rgba(156,163,175,0.45) 0 6px, rgba(156,163,175,0.22) 6px 12px) !important;
+  border: 1px dashed rgba(107,114,128,0.7);
+}
+.tl-bar-unassigned .tl-bar-label { color: var(--text); opacity: 0.7; font-style: italic; }
+
+/* Sakssiden: linjen over fristblokken mens saken venter */
+.sak-unassigned {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-5); padding: var(--space-4) var(--space-6);
+  border: 1px dashed var(--border2); border-radius: var(--radius-lg); background: var(--surface2);
+}
+.sak-unassigned[hidden] { display: none; }
+.sak-unassigned.is-stale { border: 1px solid var(--badge-urgent-border); background: var(--badge-urgent-bg); }
+.sak-unassigned-text { flex: 1; min-width: 12rem; font-size: var(--text-sm); color: var(--text); }
+.sak-unassigned-text small { display: block; color: var(--muted); font-size: var(--text-xs); }
+.sak-unassigned-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+
+/* Avkrysning i «Legg til sak» */
+.modal-unassigned { display: flex; align-items: flex-start; gap: var(--space-3); cursor: pointer; font-size: var(--text-sm); }
+.modal-unassigned input { margin-top: 3px; }
+.modal-unassigned small { display: block; color: var(--muted); font-size: var(--text-xs); }
+
+.belegg-potential { color: var(--muted); }
+
 .home-card-copyable       { cursor: pointer; }
 .home-card-copyable:hover { border-color: var(--accent-dim); }
 .home-card-copied         { border-color: var(--accent) !important; }
@@ -3012,6 +3063,17 @@ tr:hover .sak-tag-display.sak-tag-empty,
                 <option value="90">90 dager</option>
               </select>
             </div>
+            <div class="settings-row">
+              <div class="settings-label">
+                <span class="settings-label-title">Påminnelse for saker som ikke er fordelt</span>
+                <span class="settings-label-sub">Merk saker du har meldt deg på når de har ventet så mange dager. 0 = av.</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                <input class="s-inp" id="input-unassigned-reminder"
+                       type="number" min="0" max="365" step="1" placeholder="14" />
+                <span class="settings-label-sub">dager</span>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -3293,6 +3355,15 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <button class="btn-sak-forward" id="btn-sak-forward" style="display:none;"></button>
           </div>
         </section>
+
+        <!-- Ikke fordelt: saken venter på fordeling -->
+        <div class="sak-unassigned" id="sak-unassigned" hidden>
+          <span class="sak-unassigned-text" id="sak-unassigned-text"></span>
+          <div class="sak-unassigned-actions">
+            <button class="btn-primary btn-sm" id="btn-sak-unassigned-confirm" type="button"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Bekreft fordelt</button>
+            <button class="btn-secondary btn-sm" id="btn-sak-unassigned-drop" type="button"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Fikk den ikke</button>
+          </div>
+        </div>
 
         <!-- Fristblokk: hvem fristen tilhører avhenger av status -->
         <div class="sak-frist" id="sak-frist" style="display:none;">
@@ -3716,6 +3787,16 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <span class="field-hint">«Avsluttet» settes når saken lukkes.</span>
         </div>
 
+        <!-- Ikke fordelt: bare for Ny søknader -->
+        <div class="field-group" id="modal-row-unassigned">
+          <label class="modal-unassigned">
+            <input type="checkbox" id="f-unassigned" />
+            <span>Ikke fordelt ennå
+              <small>Du har meldt deg på saken. Den vises grå og teller ikke i belegget før du bekrefter at du har fått den.</small>
+            </span>
+          </label>
+        </div>
+
         <div class="field-error" id="field-error"></div>
         <div class="field-warn"  id="field-warn"></div>
 
@@ -3748,6 +3829,12 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <span class="modal-bulk-hint" id="modal-bulk-hint">Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk.</span>
         </div>
         <div id="modal-bulk-preview" class="bulk-excel-preview"></div>
+        <label class="modal-unassigned">
+          <input type="checkbox" id="f-bulk-unassigned" />
+          <span>Ikke fordelt ennå
+            <small>Alle sakene legges inn som påmeldt, men ikke fordelt.</small>
+          </span>
+        </label>
         <div class="field-error" id="modal-bulk-error"></div>
       </div>
 
@@ -4143,7 +4230,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.30.0';
+var APP_VERSION    = 'v4.31.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4161,6 +4248,7 @@ var TYPE_BUFFER_KEY = 'pt_type_buffers';
 var WORK_WINDOW_KEY = 'pt_work_windows';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
+var UNASSIGNED_REMINDER_KEY = 'pt_unassigned_reminder';
 var AUTOSAVE_KEY = 'pt_autosave';
 var SAK_KEY_PREFIX = 'pt_sak_';
 
@@ -4480,13 +4568,13 @@ function closedDate(c) {
 // utenfor. fristarkivSoon er svarfrister innen 30 dager fra `todayIso`.
 // Ren funksjon — se test/caseTrack.test.js.
 function pipelineCounts(list, year, todayIso) {
-  var p = { ny: 0, fristarkiv: 0, fristarkivSoon: 0, videre: 0, videreLate: 0,
+  var p = { ny: 0, nyUnassigned: 0, fristarkiv: 0, fristarkivSoon: 0, videre: 0, videreLate: 0,
             decided: { meddelt: 0, avslatt: 0, henlagt: 0, total: 0 } };
   var today = Date.UTC(+todayIso.slice(0, 4), +todayIso.slice(5, 7) - 1, +todayIso.slice(8, 10));
   (list || []).forEach(function(c) {
     if (!c || c.type === 'oppdrag') return;
     var status = c.status || 'ny';
-    if (status === 'ny') p.ny++;
+    if (status === 'ny') { if (isUnassigned(c)) p.nyUnassigned++; else p.ny++; }
     else if (status === 'fristarkiv') {
       p.fristarkiv++;
       if (c.dueDate) {
@@ -4950,6 +5038,7 @@ function makeExportPayload() {
     workWindows: workWindows,
     homeDeadlineFilter: homeDeadlineFilter,
     activeCase: activeCase,
+    unassignedReminder: unassignedReminder,
     medlesing:  medlesing
   };
 }
@@ -4973,7 +5062,8 @@ function _customChecklistTemplate() {
 // og pågående sak fra en eksportfil, validert.
 // Bare felt som finnes og er gyldige tas med, så eldre filer uten feltene ikke
 // endrer noe. checklistTemplate: null betyr «bruk standardmalen»;
-// activeCase: null betyr «ingen sak markert».
+// activeCase: null betyr «ingen sak markert». Påminnelsen for saker som ikke
+// er fordelt, tas bare med når verdien er gyldig.
 function readImportSettings(d) {
   var out = {};
   if (typeof d.userName === 'string') out.userName = d.userName.trim();
@@ -4997,6 +5087,9 @@ function readImportSettings(d) {
   }
   if (d.activeCase === null) out.activeCase = null;
   else if (d.activeCase !== undefined && normalizeActiveCase(d.activeCase)) out.activeCase = normalizeActiveCase(d.activeCase);
+  if (typeof d.unassignedReminder === 'number' && normalizeUnassignedReminder(d.unassignedReminder) === Math.floor(d.unassignedReminder)) {
+    out.unassignedReminder = normalizeUnassignedReminder(d.unassignedReminder);
+  }
   return out;
 }
 
@@ -5005,10 +5098,12 @@ function readImportSettings(d) {
 // status og påvirker verken belegg eller frister. Maks én sak om gangen, så
 // den lagres som én innstilling ({ id, since }) og ikke som et felt på sakene.
 // Bare egen arbeid kan markeres: Ny, Viderebehandling og aktive oppdrag. I
-// Fristarkiv er brevet sendt og fristen søkerens.
+// Fristarkiv er brevet sendt og fristen søkerens, og en sak som ikke er
+// fordelt ennå er ikke din.
 // Rene funksjoner — se test/activeCase.test.js.
 function canBeActiveCase(c) {
   if (!c || c.status === 'avsluttet') return false;
+  if (isUnassigned(c)) return false;
   if (c.type === 'oppdrag') return true;
   return c.status === 'ny' || c.status === 'viderebehandling';
 }
@@ -5039,6 +5134,64 @@ function resolveActiveCase(mark, cases) {
   if (!mark) return null;
   var c = cases.find(function(x) { return x.id === mark.id; });
   return canBeActiveCase(c) ? c : null;
+}
+
+// ── Ikke fordelt ───────────────────────────────────
+// En sak du har meldt deg på, men ikke fått fordelt ennå. Den er et felt på
+// saken ({ unassigned, unassignedSince }), ikke en status: saken er en vanlig
+// Ny søknad med frist, og det eneste som er usikkert er om den blir din.
+// Til den er bekreftet teller den ikke i belegg, forfalt-tallet eller
+// sakstellingene, og den vises grå i lister og tidslinjer.
+// Bare Ny søknader kan vente på fordeling. Et flagg som står igjen etter et
+// statusbytte, ignoreres — da er saken din.
+// Rene funksjoner — se test/unassigned.test.js.
+var UNASSIGNED_REMINDER_DEFAULT = 14;
+var UNASSIGNED_REMINDER_MAX = 365;
+
+function canBeUnassigned(c) {
+  return !!c && c.type !== 'oppdrag' && (c.status || 'ny') === 'ny';
+}
+
+function isUnassigned(c) {
+  return canBeUnassigned(c) && c.unassigned === true;
+}
+
+// Feltene som settes når saken markeres eller bekreftes. Tidspunktet for
+// markeringen beholdes når en sak som allerede venter, lagres på nytt.
+function unassignedPatch(c, on, nowIso) {
+  if (!on || !canBeUnassigned(c)) return { unassigned: false, unassignedSince: null };
+  return { unassigned: true, unassignedSince: isUnassigned(c) && c.unassignedSince ? c.unassignedSince : nowIso };
+}
+
+// Påminnelsen: antall dager før en sak som venter, merkes. 0 = av.
+function normalizeUnassignedReminder(v) {
+  return (typeof v === 'number' && isFinite(v) && v >= 0 && v <= UNASSIGNED_REMINDER_MAX)
+    ? Math.floor(v) : UNASSIGNED_REMINDER_DEFAULT;
+}
+
+// Kalenderdager siden saken ble markert. Saker uten tidspunkt måles fra
+// opprettelsen; mangler begge, er ventetiden ukjent (null). Et tidspunkt
+// regnes om til lokal dato, så en sak markert like over midnatt får riktig dag.
+function unassignedWaitDays(c, todayIso) {
+  var since = (c && (c.unassignedSince || c.createdAt)) || '';
+  if (typeof since !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(since)) return null;
+  if (since.indexOf('T') > -1 && !isNaN(new Date(since))) {
+    var d = new Date(since);
+    since = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function utc(iso) { return Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)); }
+  return Math.round((utc(todayIso) - utc(since)) / 86400000);
+}
+
+function isUnassignedStale(c, reminderDays, todayIso) {
+  if (!reminderDays || !isUnassigned(c)) return false;
+  var d = unassignedWaitDays(c, todayIso);
+  return d !== null && d >= reminderDays;
+}
+
+// Saker som ville kommet i tillegg i belegget om du får dem.
+function countsAsPotentialBelegg(c) {
+  return !!c && !!c.dueDate && isUnassigned(c);
 }
 
 // ── Fristlista på Oversikt ─────────────────────────
@@ -5349,6 +5502,7 @@ function deleteAllData() {
   localStorage.removeItem(ONBOARDING_KEY);
   localStorage.removeItem(USER_NAME_KEY);
   localStorage.removeItem(ACTIVE_CASE_KEY);
+  localStorage.removeItem(UNASSIGNED_REMINDER_KEY);
   localStorage.removeItem('pt_drawer_collapsed');
   localStorage.removeItem('pt_cpc_welcomed');
 
@@ -5380,7 +5534,7 @@ function migrateCases(arr) {
     }
     // Migrer oppdrag: status='oppdrag' er nå ugyldig — normalize til 'ny'
     if (n.type === 'oppdrag' && n.status === 'oppdrag') n.status = 'ny';
-    return {
+    var out = {
       id:         n.id          || uid(),
       caseNumber: n.caseNumber  || '',
       status:     n.status      || 'ny',
@@ -5395,6 +5549,12 @@ function migrateCases(arr) {
       caseBuffer: n.caseBuffer  != null ? n.caseBuffer : null,
       outcome:    normaliseOutcome(n.status || 'ny', n.outcome)
     };
+    // «Ikke fordelt» tas bare med når det er satt, så andre saker er uendret
+    if (n.unassigned === true) {
+      out.unassigned = true;
+      out.unassignedSince = typeof n.unassignedSince === 'string' ? n.unassignedSince : null;
+    }
+    return out;
   });
 }
 
@@ -5468,6 +5628,14 @@ function saveHomeDeadlineFilter(f) {
 function loadActiveCase() {
   try { return normalizeActiveCase(JSON.parse(localStorage.getItem(ACTIVE_CASE_KEY))); }
   catch(e) { return null; }
+}
+function loadUnassignedReminder() {
+  var raw = null;
+  try { raw = localStorage.getItem(UNASSIGNED_REMINDER_KEY); } catch(e) {}
+  return normalizeUnassignedReminder(raw === null ? null : Number(raw));
+}
+function saveUnassignedReminder(days) {
+  lsSetSafe(UNASSIGNED_REMINDER_KEY, String(days));
 }
 function saveActiveCase(mark) {
   if (mark) lsSetSafe(ACTIVE_CASE_KEY, JSON.stringify(mark));
@@ -5586,10 +5754,12 @@ function caseBufferLabel(c) {
 
 // statusChangePatch: feltene som endres når en sak bytter status. Egen buffer
 // gjelder fristen den ble satt for; når statusen endres er den fristen
-// behandlet, så saken går tilbake til standarden for sin nye type.
-// Ren funksjon — se test/typeBuffers.test.js.
+// behandlet, så saken går tilbake til standarden for sin nye type. En sak som
+// går videre, er din — «ikke fordelt» fjernes.
+// Ren funksjon — se test/typeBuffers.test.js og test/unassigned.test.js.
 function statusChangePatch(toStatus, outcome, newDueDate) {
-  var patch = { status: toStatus, outcome: normaliseOutcome(toStatus, outcome), caseBuffer: null };
+  var patch = { status: toStatus, outcome: normaliseOutcome(toStatus, outcome), caseBuffer: null,
+                unassigned: false, unassignedSince: null };
   if (newDueDate) patch.dueDate = newDueDate;
   return patch;
 }
@@ -5664,10 +5834,12 @@ var OVERDUE_PENALTY_WORKDAYS = 3;
 // behandling) og Viderebehandling (behandle søkerens svar). Saker i Fristarkiv
 // teller ikke — realitetsbrevet er sendt ut, og fristen er søkerens frist til
 // å svare oss, ikke vår frist til å gjøre noe. Oppdrag holdes utenfor belegget
-// som før.
+// som før. Saker som ikke er fordelt ennå, er ikke ditt arbeid; de vises bare
+// som et mulig tillegg (se countsAsPotentialBelegg).
 function countsInBelegg(c) {
   if (!c || !c.dueDate) return false;
   if (c.type === 'oppdrag') return false;
+  if (isUnassigned(c)) return false;
   return c.status === 'ny' || c.status === 'viderebehandling';
 }
 
@@ -5890,6 +6062,7 @@ var typeBuffers    = loadTypeBuffers();
 var workWindows    = loadWorkWindows();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
 var activeCase = loadActiveCase();
+var unassignedReminder = loadUnassignedReminder();
 var _tlConfig = {
   'home-timeline':  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
   'cases-timeline': { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
@@ -6026,6 +6199,19 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'CASE_UNASSIGNED_SET': {
+      var target = cases.find(function(c) { return c.id === payload.id; });
+      if (!canBeUnassigned(target)) break;
+      var uPatch = unassignedPatch(target, !!payload.value, new Date().toISOString());
+      AppState.cases = cases.map(function(c) {
+        return c.id === payload.id ? Object.assign({}, c, uPatch) : c;
+      });
+      saveCases();
+      render();
+      showToast(payload.value ? 'Sak ' + target.caseNumber + ' markert som ikke fordelt' : '✓ Sak ' + target.caseNumber + ' er fordelt til deg');
+      break;
+    }
+
     case 'NAV_GO': {
       navigateTo(payload.page, payload.addToHistory !== false);
       break;
@@ -6042,6 +6228,7 @@ function _dispatch(action, payload) {
       };
       if (p.duration) newCase.duration = p.duration;
       if (p.caseBuffer != null && p.type !== 'oppdrag') newCase.caseBuffer = p.caseBuffer;
+      if (p.unassigned) Object.assign(newCase, unassignedPatch(newCase, true, newCase.createdAt));
       AppState.cases = cases.concat([newCase]);
       saveCases();
       if (p.filingDate) {
@@ -6063,6 +6250,7 @@ function _dispatch(action, payload) {
         if (p.type === 'oppdrag') { patch.status = p.status || 'ny'; patch.duration = p.duration; patch.caseBuffer = null; }
         else                      { patch.status = p.status;  delete patch.duration; }
         patch.outcome = normaliseOutcome(patch.status, c.outcome);
+        Object.assign(patch, unassignedPatch(Object.assign({}, c, patch), !!p.unassigned, new Date().toISOString()));
         // Record frist change in history if dueDate changed
         var histPatch = {};
         if (p.dueDate !== c.dueDate) {
@@ -6417,6 +6605,15 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'SETTINGS_UNASSIGNED_REMINDER_CHANGE': {
+      unassignedReminder = normalizeUnassignedReminder(payload.value);
+      saveUnassignedReminder(unassignedReminder);
+      var remInp = document.getElementById('input-unassigned-reminder');
+      if (remInp) remInp.value = String(unassignedReminder);
+      showToast(unassignedReminder ? '✓ Påminnelse etter ' + unassignedReminder + ' dager' : '✓ Påminnelse slått av');
+      break;
+    }
+
     case 'SETTINGS_BELEGG_CHANGE': {
       var val = payload.value;
       if ([30, 60, 90].indexOf(val) !== -1) {
@@ -6606,6 +6803,7 @@ function _dispatch(action, payload) {
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
         if ('activeCase' in s) { activeCase = s.activeCase; saveActiveCase(activeCase); }
+        if ('unassignedReminder' in s) { unassignedReminder = s.unassignedReminder; saveUnassignedReminder(unassignedReminder); }
       }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
@@ -6652,6 +6850,7 @@ function _dispatch(action, payload) {
       deleteAllData();
       cases = []; stats = { nyTotal: 0, videreTotal: 0, avsluttetTotal: 0, log: [] };
       vacations = []; productionGoal = 0; beleggHorizon = 60;
+      unassignedReminder = UNASSIGNED_REMINDER_DEFAULT;
       closeBackdrop('delete-all-backdrop-2');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
       navigateTo('hjem');
@@ -6719,7 +6918,10 @@ function updateNav() {
       return;
     }
     var list = byPage[page] || casesForPage(page);
-    badge.textContent = list.length;
+    // Saker som ikke er fordelt, er ikke dine ennå og telles ikke i merket
+    var waiting = page === 'ny' ? list.filter(isUnassigned).length : 0;
+    badge.textContent = list.length - waiting;
+    if (page === 'ny') badge.title = waiting ? '+ ' + waiting + ' ikke fordelt' : '';
     // Oppdrag: farg badge etter alvorlighetsgrad
     if (page === 'oppdrag') {
       badge.classList.remove('nav-count-urgent', 'nav-count-soon');
@@ -6751,9 +6953,18 @@ function showView(page) {
 function updateCaseStats() {
   var list = casesForPage(activePage);
   var isOversikt = !!(PAGES[activePage] && PAGES[activePage].showAll);
-  document.getElementById('case-count').textContent = isOversikt
-    ? list.length + ' saker totalt'
-    : list.length + ' sak' + (list.length !== 1 ? 'er' : '');
+  document.getElementById('case-count').textContent = caseCountText(list, isOversikt);
+}
+
+// Tellingen i sidehodet. Saker som ikke er fordelt, er ikke dine ennå og
+// telles for seg; i Alle saker er de med i totalen.
+// Ren funksjon — se test/unassigned.test.js.
+function caseCountText(list, isOversikt) {
+  var waiting = list.filter(isUnassigned).length;
+  var suffix  = waiting ? ' · ' + waiting + ' ikke fordelt' : '';
+  if (isOversikt) return list.length + ' saker totalt' + suffix;
+  var n = list.length - waiting;
+  return n + ' sak' + (n !== 1 ? 'er' : '') + suffix;
 }
 
 // ── Hendelseslogg ──────────────────────────────────
@@ -6904,6 +7115,69 @@ function activeCaseMenuItemHtml(c) {
 
 function activeCasePillHtml(c) {
   return isActiveCaseId(c.id) ? '<span class="active-pill" title="Saken du holder på med">Pågår</span>' : '';
+}
+
+// ── Ikke fordelt: visning ──────────────────────────
+function unassignedPillHtml(c) {
+  if (!isUnassigned(c)) return '';
+  var today = todayStr();
+  var wait  = unassignedWaitDays(c, today);
+  var stale = isUnassignedStale(c, unassignedReminder, today);
+  var tip = 'Meldt på' + (wait !== null ? ' for ' + wait + (wait === 1 ? ' dag' : ' dager') + ' siden' : '') +
+    ', ikke fordelt ennå. Teller ikke i belegget.' + (stale ? ' Har du fått svar?' : '');
+  return '<span class="unassigned-pill' + (stale ? ' is-stale' : '') + '" title="' + esc(tip) + '">' +
+    'Ikke fordelt' + (stale ? ' · ' + wait + 'd' : '') + '</span>';
+}
+
+// Ferie-merket for en sak. For en sak som ikke er fordelt er kollisjonen
+// bare mulig, så merket er dempet og teksten sier det.
+function vacationTipText(c) {
+  return isUnassigned(c) ? 'Perioden overlapper ferie, hvis du får saken' : 'Perioden overlapper ferie';
+}
+
+// Valgene i ⋯-menyene; tomt for saker som ikke kan vente på fordeling.
+function unassignedMenuItemsHtml(c) {
+  if (!canBeUnassigned(c)) return '';
+  if (!isUnassigned(c)) {
+    return '<button class="card-dropdown-item btn-unassigned-on" data-id="' + c.id + '"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Marker som ikke fordelt</button>';
+  }
+  return '<button class="card-dropdown-item btn-unassigned-off" data-id="' + c.id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Bekreft fordelt</button>' +
+    '<button class="card-dropdown-item danger btn-unassigned-drop" data-id="' + c.id + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Fikk den ikke (slett)</button>';
+}
+
+// Klikk på et av valgene over. Returnerer true når klikket er håndtert.
+function handleUnassignedMenuClick(btn) {
+  var id = btn.dataset.id;
+  if (btn.classList.contains('btn-unassigned-on'))  { dispatch('CASE_UNASSIGNED_SET', { id: id, value: true });  return true; }
+  if (btn.classList.contains('btn-unassigned-off')) { dispatch('CASE_UNASSIGNED_SET', { id: id, value: false }); return true; }
+  if (btn.classList.contains('btn-unassigned-drop')) { dropUnassignedCase(id); return true; }
+  return false;
+}
+
+// «Fikk den ikke»: saken slettes, med angre i varselet.
+function dropUnassignedCase(id) {
+  var leaveSak = activePage === 'sak' && activeSakId === id;
+  dispatch('CASE_DELETE', { id: id });
+  if (leaveSak) navigateTo('ny');
+}
+
+// Linjen over fristblokken på sakssiden.
+function renderSakUnassigned(cas) {
+  var box = document.getElementById('sak-unassigned');
+  if (!box) return;
+  var on = isUnassigned(cas);
+  box.hidden = !on;
+  if (!on) return;
+  var today = todayStr();
+  var wait  = unassignedWaitDays(cas, today);
+  var stale = isUnassignedStale(cas, unassignedReminder, today);
+  box.classList.toggle('is-stale', stale);
+  var since = cas.unassignedSince || cas.createdAt;
+  document.getElementById('sak-unassigned-text').innerHTML =
+    '<strong>Ikke fordelt ennå</strong>' +
+    (wait !== null ? ' · meldt på ' + esc(formatDateTime(since)) + ' (' + wait + (wait === 1 ? ' dag' : ' dager') + ' siden)' : '') +
+    '<small>' + (stale ? 'Saken har ventet lenge. Har du fått svar? ' : '') +
+    'Saken teller ikke i belegget før du bekrefter at du har fått den.</small>';
 }
 
 function renderActiveCaseChip() {
@@ -7073,19 +7347,21 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
     var daysTxt     = days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'I dag' : days + 'd';
     var tips        = [];
     if (cls === 'theirs') tips.push('Søkerens svarfrist — ikke din arbeidsfrist');
-    if (periodOverlapsVacation(c)) tips.push('Perioden overlapper ferie');
+    if (isUnassigned(c)) tips.push('Ikke fordelt ennå — teller ikke i belegget');
+    if (periodOverlapsVacation(c)) tips.push(vacationTipText(c));
     var daysBadge   = !isAvsluttet
       ? '<span class="days-badge ' + cls + '"' + (tips.length ? ' title="' + esc(tips.join(' · ')) + '"' : '') + '>' +
           esc(daysTxt) + '</span>'
       : '<span class="days-badge days-badge-placeholder"></span>';
     var tooltip     = c.tags ? ' title="' + esc(c.tags) + '"' : '';
-    var cardCls     = (isOppdrag ? ' case-card-oppdrag' : '') + (isActiveCaseId(c.id) ? ' is-active-case' : '');
+    var cardCls     = (isOppdrag ? ' case-card-oppdrag' : '') + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '');
     var cnCls       = isOppdrag ? ' case-card-cn-oppdrag' : '';
     return '<div class="case-card' + cardCls + '" data-id="' + c.id + '">' +
       daysBadge +
       '<span class="case-card-cn' + cnCls + '"' + tooltip + '>' + esc(c.caseNumber) + '</span>' +
       '<span class="case-card-main"><span class="case-card-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
+      unassignedPillHtml(c) +
       trackHtml(c, false) +
       '<div class="case-card-menu">' +
         '<button class="btn-card-hist" data-id="' + c.id + '" title="Historikk" aria-label="Historikk">⏱</button>' +
@@ -8272,9 +8548,9 @@ function computeBelegg(horizonDays) {
   // ville ti saker med frist samme dag gitt samme belegg som én sak — altså
   // stille i det ene tilfellet der du mest trenger et varsel. Derfor kan
   // prosenten passere 100, og skal gjøre det: det betyr overbooket.
-  function busyWorkdays(startOffset, endOffset) {
+  function busyWorkdays(startOffset, endOffset, counts) {
     var busyCount = 0;
-    cases.filter(countsInBelegg).forEach(function(c) {
+    cases.filter(counts || countsInBelegg).forEach(function(c) {
       var due      = new Date(effDueFor(c) + 'T00:00:00');
       var dueOff   = Math.round((due - today) / 86400000);
 
@@ -8311,6 +8587,11 @@ function computeBelegg(horizonDays) {
   var pct1 = period1Work > 0 ? Math.round((busy1 / period1Work) * 100) : 0;
   var pct2 = period2Work > 0 ? Math.round((busy2 / period2Work) * 100) : 0;
 
+  // Det saker du har meldt deg på, men ikke fått ennå, ville lagt til i
+  // periode 1. Holdes utenfor pct1 og vises som et eget tillegg.
+  var potentialBusy = busyWorkdays(0, horizonDays, countsAsPotentialBelegg);
+  var potentialPct  = period1Work > 0 ? Math.round((potentialBusy / period1Work) * 100) : 0;
+
   // Feriedager i periode 1
   var vacDays = 0;
   for (var i = 0; i < horizonDays; i++) {
@@ -8319,7 +8600,8 @@ function computeBelegg(horizonDays) {
     if (vacations.some(function(v) { return ds >= v.from && ds <= v.to; })) vacDays++;
   }
 
-  return { pct1: pct1, pct2: pct2, busy: busy1, avail: period1Work, vac: vacDays };
+  return { pct1: pct1, pct2: pct2, busy: busy1, avail: period1Work, vac: vacDays,
+           potentialBusy: potentialBusy, potentialPct: potentialPct };
 }
 
 function renderBeleggCard() {
@@ -8339,7 +8621,10 @@ function renderBeleggCard() {
   var diff = pct2 - pct;
   var arrow = diff > 2 ? '↑' : diff < -2 ? '↓' : '→';
   var cls2  = diff > 2 ? 'belegg-sub-up' : diff < -2 ? 'belegg-sub-down' : 'belegg-sub-same';
-  subEl.innerHTML = '&nbsp;·&nbsp;<span class="' + cls2 + '">' + arrow + ' ' + pct2 + '%</span> neste periode';
+  subEl.innerHTML = '&nbsp;·&nbsp;<span class="' + cls2 + '">' + arrow + ' ' + pct2 + '%</span> neste periode' +
+    (res.potentialPct > 0
+      ? '&nbsp;·&nbsp;<span class="belegg-potential" title="Saker du har meldt deg på, men ikke fått fordelt ennå">+' + res.potentialPct + '% hvis du får de ikke-fordelte</span>'
+      : '');
 }
 
 // ── Hjem: saksflyt ─────────────────────────────────
@@ -8353,7 +8638,9 @@ function renderPipeline(countForfaltNy) {
   function setHtml(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
 
   set('home-count-ny', p.ny);
-  set('home-pipe-ny-sub', countForfaltNy > 0 ? 'Nye saker · ' + countForfaltNy + ' forfalt' : 'Nye saker');
+  set('home-pipe-ny-sub', 'Nye saker' +
+    (countForfaltNy > 0 ? ' · ' + countForfaltNy + ' forfalt' : '') +
+    (p.nyUnassigned > 0 ? ' · ' + p.nyUnassigned + ' ikke fordelt' : ''));
 
   set('home-count-fristarkiv', p.fristarkiv);
   set('home-pipe-frist-sub', p.fristarkivSoon > 0
@@ -8786,6 +9073,7 @@ function renderSak(id) {
   renderSakFrist(cas);
   renderSakForwardButtons(cas);
   renderSakActiveButton(cas);
+  renderSakUnassigned(cas);
 
   document.getElementById('btn-sak-back')._sakId = id;
 
@@ -10654,6 +10942,7 @@ function renderHjem() {
     var active = c.status !== 'avsluttet';
     if (isOppdrag && active) countOppdrag++;
     var d = active ? daysUntil(effDueFor(c)) : null;
+    if (isUnassigned(c)) return;  // ikke din frist ennå
     if (c.status === 'ny' && !isOppdrag) {
       if (d < 0) countForfaltNy++;
     } else if (c.status === 'viderebehandling' && d < 0) {
@@ -10727,14 +11016,17 @@ function renderHomeDeadlines() {
       cls = 'theirs' + (d < 0 ? ' theirs-overdue' : '');
       tips.push(d < 0 ? 'Søkerens svarfrist er passert' : 'Søkerens svarfrist — ikke din arbeidsfrist');
     }
-    if (periodOverlapsVacation(c)) tips.push('Perioden overlapper ferie');
-    var vacBadge = periodOverlapsVacation(c) ? '<span class="vac-badge" title="Perioden overlapper ferie">⛱</span>' : '';
-    return '<div class="home-upcoming-row' + (isActiveCaseId(c.id) ? ' is-active-case' : '') + '" data-id="' + c.id + '" data-page="' + (isOppdrag ? 'oppdrag' : c.status) + '">' +
+    if (isUnassigned(c)) tips.push('Ikke fordelt ennå — teller ikke i belegget');
+    if (periodOverlapsVacation(c)) tips.push(vacationTipText(c));
+    var vacBadge = periodOverlapsVacation(c)
+      ? '<span class="vac-badge' + (isUnassigned(c) ? ' vac-badge-soft' : '') + '" title="' + esc(vacationTipText(c)) + '">⛱</span>' : '';
+    return '<div class="home-upcoming-row' + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '') + '" data-id="' + c.id + '" data-page="' + (isOppdrag ? 'oppdrag' : c.status) + '">' +
       '<span class="days-badge ' + cls + '"' + (tips.length ? ' title="' + esc(tips.join(' · ')) + '"' : '') + '>' +
         (d < 0 ? Math.abs(d)+'d forfalt' : d === 0 ? 'I dag' : d+'d') + '</span>' +
       '<span class="home-upcoming-cn' + (isOppdrag ? ' case-card-cn-oppdrag' : '') + '">' + esc(c.caseNumber) + '</span>' +
       '<span class="case-card-main"><span class="home-upcoming-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
+      unassignedPillHtml(c) +
       vacBadge +
       trackHtml(c, true) +
       '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:var(--space-1);">' +
@@ -10821,6 +11113,7 @@ function buildTimelineDiv(opts) {
       isOppdrag:  isOp,
       status:     cas.status,
       isOverdue:  effEnd < 0,
+      unassigned: isUnassigned(cas),
       id:         cas.id,
       caseNumber: cas.caseNumber,
       title:      cas.title || '',
@@ -10891,7 +11184,7 @@ function buildTimelineDiv(opts) {
     var topPx = TOP_PAD + r.row * (barH + GAP);
     var bar = document.createElement('div');
     var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : 'tl-bar-' + r.status;
-    bar.className = 'tl-bar ' + typeCls + (r.isMilestone ? ' tl-bar-milestone' : '') + (opts.draggable && r.canBuffer ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '') + (opts.activeId && r.id === opts.activeId ? ' tl-bar-active' : '');
+    bar.className = 'tl-bar ' + typeCls + (r.isMilestone ? ' tl-bar-milestone' : '') + (opts.draggable && r.canBuffer ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '') + (opts.activeId && r.id === opts.activeId ? ' tl-bar-active' : '') + (r.unassigned ? ' tl-bar-unassigned' : '');
     var visStart = Math.max(-PAST, r.start);
     var visEnd   = Math.min(HORIZON, r.end);
     bar.style.left   = pct(visStart);
@@ -11286,6 +11579,8 @@ function renderTimeline(opts) {
 function renderInnstillinger() {
   var beleggSel = document.getElementById('input-belegg-horizon');
   if (beleggSel) beleggSel.value = String(beleggHorizon);
+  var remInp = document.getElementById('input-unassigned-reminder');
+  if (remInp) remInp.value = String(unassignedReminder);
   _renderWorkWindowInputs();
   _bkUpdateSettingsUI();
   renderVacationList();
@@ -12268,6 +12563,7 @@ document.getElementById('case-list').addEventListener('click', function(e) {
     dropdown.innerHTML =
       (act ? '<button class="card-dropdown-item btn-row-action" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> ' + esc(act.label) + '</button>' : '') +
       activeCaseMenuItemHtml(c) +
+      unassignedMenuItemsHtml(c) +
       (c.status === 'avsluttet' && c.type !== 'oppdrag'
         ? '<button class="card-dropdown-item btn-row-outcome" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
         : '') +
@@ -12281,7 +12577,9 @@ document.getElementById('case-list').addEventListener('click', function(e) {
       if (!btn) return;
       ev.stopPropagation();
       closeAllDropdowns();
-      if (btn.classList.contains('btn-row-action')) {
+      if (handleUnassignedMenuClick(btn)) {
+        // håndtert
+      } else if (btn.classList.contains('btn-row-action')) {
         runRowAction(btn.dataset.id);
       } else if (btn.classList.contains('btn-active-toggle')) {
         dispatch('ACTIVE_CASE_TOGGLE', { id: btn.dataset.id });
@@ -12343,6 +12641,13 @@ document.getElementById('btn-sak-active').addEventListener('click', function() {
   if (activeSakId) dispatch('ACTIVE_CASE_TOGGLE', { id: activeSakId });
 });
 
+document.getElementById('btn-sak-unassigned-confirm').addEventListener('click', function() {
+  if (activeSakId) dispatch('CASE_UNASSIGNED_SET', { id: activeSakId, value: false });
+});
+document.getElementById('btn-sak-unassigned-drop').addEventListener('click', function() {
+  if (activeSakId) dropUnassignedCase(activeSakId);
+});
+
 document.getElementById('btn-sak-more').addEventListener('click', function(e) {
   e.stopPropagation();
   var id = activeSakId; if (!id) return;
@@ -12356,6 +12661,7 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
   dropdown.innerHTML =
     '<button class="card-dropdown-item btn-sak-edit"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>' +
     activeCaseMenuItemHtml(c) +
+    unassignedMenuItemsHtml(c) +
     (c.status === 'avsluttet' && c.type !== 'oppdrag'
       ? '<button class="card-dropdown-item btn-sak-outcome"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
       : '') +
@@ -12367,7 +12673,9 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     if (!btn) return;
     ev.stopPropagation();
     closeAllDropdowns();
-    if (btn.classList.contains('btn-sak-edit')) {
+    if (handleUnassignedMenuClick(btn)) {
+      // håndtert
+    } else if (btn.classList.contains('btn-sak-edit')) {
       openModal(c);
     } else if (btn.classList.contains('btn-active-toggle')) {
       dispatch('ACTIVE_CASE_TOGGLE', { id: btn.dataset.id });
@@ -12569,6 +12877,13 @@ function _setModalOppdrag(isOppdrag) {
   document.getElementById('modal-row-sak').style.display     = isOppdrag ? 'none' : '';
   document.getElementById('modal-row-oppdrag').style.display = isOppdrag ? '' : 'none';
   _syncModalBuffer();
+  _syncModalUnassigned();
+}
+
+// «Ikke fordelt» gjelder bare Ny søknader; avkrysningen skjules ellers.
+function _syncModalUnassigned() {
+  var row = document.getElementById('modal-row-unassigned');
+  if (row) row.style.display = getSelectedStatus() === 'ny' ? '' : 'none';
 }
 
 // Bufferfeltet følger valgt status: skjult der buffer ikke gjelder (oppdrag,
@@ -12633,8 +12948,10 @@ function openModal(c) {
       document.getElementById('modal-adv-toggle').classList.add('open');
       document.getElementById('modal-adv-body').classList.add('open');
     }
+    document.getElementById('f-unassigned').checked = isUnassigned(c);
     setSelectedStatus(isOppdrag ? 'oppdrag' : (c.status || 'ny'));
   } else {
+    document.getElementById('f-unassigned').checked = false;
     editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = fFilingDate.value = '';
     document.getElementById('f-case-number-op').value = '';
     document.getElementById('f-due-date-op').value = '';
@@ -12662,6 +12979,7 @@ function _modalSwitchTab(tab) {
     _modalBulkParsed = [];
     document.getElementById('modal-bulk-paste').value = '';
     document.getElementById('modal-bulk-preview').innerHTML = '';
+    document.getElementById('f-bulk-unassigned').checked = false;
     _updateModalBulkCount();
   }
 }
@@ -12801,13 +13119,14 @@ document.getElementById('btn-save').addEventListener('click', function() {
   if (isBulk) {
     var toAdd = _modalBulkParsed.filter(function(r) { return r.checked && r.cn.trim() && r.date && isValidDate(r.date); });
     if (!toAdd.length) { document.getElementById('modal-bulk-error').textContent = 'Ingen gyldige saker valgt. Sjekk at saksnummer og dato er fylt ut.'; return; }
+    var bulkUnassigned = document.getElementById('f-bulk-unassigned').checked;
     var skipped = _modalBulkParsed.filter(function(r) { return r.checked && (!r.cn.trim() || !r.date || !isValidDate(r.date)); }).length;
     toAdd.forEach(function(row) {
-      dispatch('CASE_CREATE', { caseNumber: row.cn.trim(), dueDate: row.date, status: 'ny', title: row.title.trim(), notes: '', tags: '', type: 'sak' });
+      dispatch('CASE_CREATE', { caseNumber: row.cn.trim(), dueDate: row.date, status: 'ny', title: row.title.trim(), notes: '', tags: '', type: 'sak', unassigned: bulkUnassigned });
     });
     closeModal();
     navigateTo('ny');
-    showToast('\u2713 ' + toAdd.length + ' saker lagt til' + (skipped ? ' (' + skipped + ' hoppet over)' : ''));
+    showToast('\u2713 ' + toAdd.length + ' saker lagt til' + (bulkUnassigned ? ' som ikke fordelt' : '') + (skipped ? ' (' + skipped + ' hoppet over)' : ''));
     return;
   }
 
@@ -12842,7 +13161,8 @@ document.getElementById('btn-save').addEventListener('click', function() {
   var oppdragStatus = (existingOppdragStatus && existingOppdragStatus !== 'oppdrag') ? existingOppdragStatus : 'ny';
   var payload = { caseNumber: cn, dueDate: internalDate, title: ti,
     notes: fNotes.value.trim(), tags: fModalTags.value,
-    type: isOppdrag ? 'oppdrag' : 'sak', status: isOppdrag ? oppdragStatus : st, duration: duration, caseBuffer: caseBuffer, filingDate: filingDate };
+    type: isOppdrag ? 'oppdrag' : 'sak', status: isOppdrag ? oppdragStatus : st, duration: duration, caseBuffer: caseBuffer, filingDate: filingDate,
+    unassigned: st === 'ny' && document.getElementById('f-unassigned').checked };
   if (id) { payload.id = id; dispatch('CASE_EDIT', payload); }
   else    { dispatch('CASE_CREATE', payload); }
   var dest = isOppdrag ? 'oppdrag' : st;
@@ -12891,6 +13211,7 @@ function handleHomeListClick(e) {
     dropdown.className = 'card-dropdown';
     dropdown.innerHTML =
       activeCaseMenuItemHtml(c) +
+      unassignedMenuItemsHtml(c) +
       '<button class="card-dropdown-item btn-home-edit" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>' +
       '<button class="card-dropdown-item danger btn-home-del" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Slett sak</button>';
     moreBtn.closest('.home-row-more').appendChild(dropdown);
@@ -12899,7 +13220,9 @@ function handleHomeListClick(e) {
       if (!btn) return;
       ev.stopPropagation();
       closeAllDropdowns();
-      if (btn.classList.contains('btn-active-toggle')) {
+      if (handleUnassignedMenuClick(btn)) {
+        // håndtert
+      } else if (btn.classList.contains('btn-active-toggle')) {
         dispatch('ACTIVE_CASE_TOGGLE', { id: btn.dataset.id });
       } else if (btn.classList.contains('btn-home-edit')) {
         var c2 = cases.find(function(x) { return x.id === btn.dataset.id; });
@@ -12982,7 +13305,8 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
       var daysTxt = days !== null ? (days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'i dag' : days + 'd') : '';
       var wdaysTxt = wdays !== null ? ' · ' + wdays + ' arb.dager' : '';
       var dueTxt = due ? formatDate(due) : '';
-      var infoTxt = (dueTxt ? 'frist ' + dueTxt : '') + (dueTxt && daysTxt ? ' · ' : '') + daysTxt + wdaysTxt;
+      var infoTxt = (dueTxt ? 'frist ' + dueTxt : '') + (dueTxt && daysTxt ? ' · ' : '') + daysTxt + wdaysTxt +
+        (isUnassigned(caseObj) ? ' · ikke fordelt ennå' : '');
       popup.innerHTML = '<span class="tl-popup-cn">' + esc(cn) + '</span>' +
         (title ? '<span class="tl-popup-sep"> — </span><span class="tl-popup-title">' + esc(title) + '</span>' : '') +
         (infoTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(infoTxt) + '</span>' : '') +
@@ -13051,6 +13375,16 @@ document.getElementById('home-upcoming-list').addEventListener('click', handleHo
   if (productionGoal > 0) inp.value = productionGoal;
   inp.addEventListener('change', function() {
     dispatch('SETTINGS_GOAL_CHANGE', { value: parseInt(this.value, 10) });
+  });
+})();
+
+// ── Påminnelse for saker som ikke er fordelt ───────
+(function() {
+  var inp = document.getElementById('input-unassigned-reminder');
+  if (!inp) return;
+  inp.value = String(unassignedReminder);
+  inp.addEventListener('change', function() {
+    dispatch('SETTINGS_UNASSIGNED_REMINDER_CHANGE', { value: this.value === '' ? NaN : Number(this.value) });
   });
 })();
 
