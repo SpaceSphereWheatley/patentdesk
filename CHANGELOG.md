@@ -7,6 +7,13 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Added
+- **Espacenet-lenke på motholdene.** Et ↗-ikon rett etter publikasjonsnummeret
+  åpner dokumentet i Espacenet i en ny fane. Nummeret ryddes først, så
+  «WO 2020/123456 A1» søkes opp som `WO2020123456A1`. Ikonet er grått og gjør
+  ingenting når feltet er tomt. Appen gjør selv ingen nettverkskall; dette er
+  bare en vanlig lenke.
+
 ## [4.30.0] - 2026-10-21
 Fristbufferen kan nå settes per sakstype, i samme tabell som varigheten. En
 sak sin egen buffer gjelder bare fristen den ble satt for. Notatene på sakene

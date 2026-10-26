@@ -2090,6 +2090,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-ref-inp:hover   { border-color: var(--border2); }
 .mh-ref-inp:focus   { outline: none; border-color: var(--accent-dim); background: var(--surface); }
 .mh-ref-inp::placeholder { color: var(--muted); opacity: 0.5; }
+.mh-ref             { display: flex; align-items: center; gap: var(--space-1); min-width: 0; }
+.mh-ext             { display: inline-flex; flex-shrink: 0; padding: 2px; border-radius: var(--radius-sm);
+                      color: var(--muted); transition: color var(--dur-base); }
+.mh-ext[href]:hover { color: var(--accent); }
+.mh-ext[aria-disabled="true"] { opacity: 0.35; cursor: default; }
 
 /* Utledet kategori per mothold — overtar kolonnen tittelfeltet hadde */
 .mh-cats            { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; min-width: 0; }
@@ -2688,6 +2693,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
   </symbol>
   <symbol id="ti-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
+  </symbol>
+  <symbol id="ti-external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>
   </symbol>
 </svg>
 
@@ -8641,6 +8649,19 @@ var MAX_INVENTIVE_DOCS = 2;
 
 function nextDocId(docs) { return 'D' + ((docs || []).length + 1); }
 
+// Publikasjonsnummeret slik Espacenet vil ha det: «WO 2020/123456 A1» blir
+// «WO2020123456A1». Mellomrom, skråstrek og tusenskilletegn fjernes.
+function normalizePubNumber(ref) {
+  return String(ref || '').replace(/[\s/.,-]+/g, '').toUpperCase();
+}
+
+// Lenke til et pn=-søk i Espacenet, eller null når feltet er tomt. Bare en
+// lenke — appen gjør selv ingen nettverkskall.
+function espacenetUrl(ref) {
+  var pn = normalizePubNumber(ref);
+  return pn ? 'https://worldwide.espacenet.com/patent/search?q=pn%3D' + encodeURIComponent(pn) : null;
+}
+
 // Normaliserer data.docs[] og kravenes dokumentfelt. Id-ene er posisjonelle
 // (D1, D2, …), og referanser til ukjente eller bakgrunnsmothold ryddes bort.
 function ensureSakDocs(data) {
@@ -9676,7 +9697,10 @@ function renderSakDocs(data) {
 
     return '<div class="mh-row' + (d.background ? ' mh-row-bg' : '') + '" data-idx="' + i + '">' +
       '<span class="mh-id">' + esc(d.id) + '</span>' +
-      '<input class="mh-ref-inp" type="text" data-idx="' + i + '" value="' + esc(d.ref) + '" placeholder="f.eks. WO 2020/123456 A1" aria-label="Publikasjonsnummer for ' + esc(d.id) + '" />' +
+      '<span class="mh-ref">' +
+        '<input class="mh-ref-inp" type="text" data-idx="' + i + '" value="' + esc(d.ref) + '" placeholder="f.eks. WO 2020/123456 A1" aria-label="Publikasjonsnummer for ' + esc(d.id) + '" />' +
+        mhExtLinkHtml(d) +
+      '</span>' +
       '<span class="mh-cats">' + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' +
         '<button class="mh-flag" data-flag="p" data-idx="' + i + '" aria-pressed="' + (d.p ? 'true' : 'false') + '" title="P — mellomliggende dokument">P</button>' +
@@ -9688,6 +9712,23 @@ function renderSakDocs(data) {
   }).join('');
 }
 
+
+// ↗-lenken etter referansefeltet. Den står der også når feltet er tomt, men
+// er da grå og uten mål; syncMhExtLink() holder den à jour mens du skriver.
+function mhExtLinkHtml(d) {
+  var url = espacenetUrl(d.ref);
+  return '<a class="mh-ext" ' + (url ? 'href="' + esc(url) + '"' : 'aria-disabled="true"') +
+    ' target="_blank" rel="noopener noreferrer" title="Åpne i Espacenet" ' +
+    'aria-label="Åpne ' + esc(d.id) + ' i Espacenet"><svg class="ti" aria-hidden="true"><use href="#ti-external-link"/></svg></a>';
+}
+
+function syncMhExtLink(inp) {
+  var a = inp.parentNode && inp.parentNode.querySelector('.mh-ext');
+  if (!a) return;
+  var url = espacenetUrl(inp.value);
+  if (url) { a.href = url; a.removeAttribute('aria-disabled'); }
+  else     { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); }
+}
 
 // Chip ved siden av tri-state-knappen: vises bare når vurderingen er ✗, altså
 // når et mothold faktisk har tatt nyheten eller oppfinnelseshøyden.
@@ -10325,6 +10366,7 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
 document.getElementById('sak-docs-mothold').addEventListener('input', function(e) {
   var id = activeSakId; if (!id) return;
   var inp = e.target.closest('.mh-ref-inp'); if (!inp) return;
+  syncMhExtLink(inp);
   var idx = parseInt(inp.dataset.idx, 10), val = inp.value;
   debounceSakEdit(function() {
     dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: 'ref', value: val.trim() });
