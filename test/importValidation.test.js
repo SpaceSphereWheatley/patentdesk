@@ -115,3 +115,22 @@ test('prepareImportData keeps the outcome of a closed case (work file and import
   assert.strictEqual(r.data.cases[0].status, 'avsluttet');
   assert.strictEqual(r.data.cases[0].outcome, 'avslatt');
 });
+
+// «Ikke fordelt» må overleve lagring, eksport og import — migrateCases bygger
+// saken felt for felt, så et felt som ikke står der, forsvinner.
+test('migrateCases keeps the unassigned flag and when it was set', () => {
+  const [m] = migrateCases([validCase({ unassigned: true, unassignedSince: '2026-10-01T09:00:00.000Z' })]);
+  assert.strictEqual(m.unassigned, true);
+  assert.strictEqual(m.unassignedSince, '2026-10-01T09:00:00.000Z');
+});
+
+test('migrateCases leaves cases without the flag unchanged', () => {
+  const [m] = migrateCases([validCase()]);
+  assert.ok(!('unassigned' in m));
+  assert.ok(!('unassignedSince' in m));
+});
+
+test('migrateCases drops a flag that is not literally true', () => {
+  const [m] = migrateCases([validCase({ unassigned: 'yes', unassignedSince: 42 })]);
+  assert.ok(!('unassigned' in m));
+});
