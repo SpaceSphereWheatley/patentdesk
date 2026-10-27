@@ -7,6 +7,13 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Added
+- **Eget ikon for Windows-snarveien.** `PatentDesk.ico` har samme sekskant-
+  ikon som appen. `Lag-PatentDesk-snarvei.ps1` lager en snarvei på
+  skrivebordet og i Start-menyen som åpner PatentDesk i eget Edge-vindu uten
+  adresselinje og faner, med dette ikonet i stedet for Edge-ikonet. Dataene er
+  de samme som når du åpner filen direkte.
+
 ## [4.38.0] - 2026-10-27
 Sakslisten og tidslinjen henger nå sammen: pek på en sak i listen, så ser du
 hvor den ligger i arbeidsplanen.
