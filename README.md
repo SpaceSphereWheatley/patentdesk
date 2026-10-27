@@ -14,6 +14,18 @@ Valgfritt: last inn `cpc_v2.json` (CPC-klassifikasjonsdatabase med 253 000+
 symboler) via banneret i appen eller via Innstillinger for å aktivere
 autofullføring av klassifikasjon. Den lagres i nettleserens IndexedDB.
 
+### Snarvei med eget ikon (Windows)
+
+Legg `PatentDesk.ico` og `Lag-PatentDesk-snarvei.ps1` i samme mappe som
+`PatentDesk.html`, åpne PowerShell i mappen og kjør:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Lag-PatentDesk-snarvei.ps1
+```
+
+Du får en snarvei på skrivebordet og i Start-menyen som åpner PatentDesk i
+eget Edge-vindu med PatentDesk-ikonet. Ingen administratorrettigheter trengs.
+
 ## Hvordan data lagres
 
 All data lever i nettleseren, begrenset til filens opprinnelse:
@@ -71,6 +83,18 @@ HTML/CSS/JS — no build step, no dependencies, no server.
 Optional: load `cpc_v2.json` (CPC classification database, 253 000+
 symbols) via the in-app banner or Settings to enable classification
 autocomplete. It is stored in the browser's IndexedDB.
+
+### Shortcut with its own icon (Windows)
+
+Put `PatentDesk.ico` and `Lag-PatentDesk-snarvei.ps1` in the same folder as
+`PatentDesk.html`, open PowerShell in that folder and run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Lag-PatentDesk-snarvei.ps1
+```
+
+This creates a Desktop and Start-menu shortcut that opens PatentDesk in its
+own Edge window with the PatentDesk icon. No admin rights required.
 
 ## How data is stored
 
