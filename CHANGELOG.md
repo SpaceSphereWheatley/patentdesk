@@ -7,6 +7,19 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.38.0] - 2026-10-27
+Sakslisten og tidslinjen henger nå sammen: pek på en sak i listen, så ser du
+hvor den ligger i arbeidsplanen.
+
+### Added
+- **Markering mellom listen og tidslinjen.** Når du holder pekeren over en sak
+  i Frister-listen på Hjem eller i kortlisten på sakssidene, får sakens bjelke
+  i tidslinjen en ring og de andre bjelkene dempes. Det virker også motsatt
+  vei: pek på en bjelke, så markeres raden. Tastaturfokus gjør det samme.
+- **Pil i kanten for saker utenfor utsnittet.** Ligger bjelken utenfor det du
+  ser av tidslinjen, vises saksnummeret med en pil i kanten den ligger mot.
+  Tidslinjen flytter seg ikke.
+
 ## [4.37.0] - 2026-10-26
 Tidslinjen viser nå det som haster: saker som nylig har forfalt er synlige når
 den åpnes, og forhåndsvisningen i «Legg til sak» viser igjen arbeidsplanen
