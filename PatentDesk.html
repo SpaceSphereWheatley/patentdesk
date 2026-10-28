@@ -2912,6 +2912,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
         <div id="cpc-home-notice" class="cpc-home-notice" style="display:none;"></div>
         <section class="top-bar">
           <h1 class="page-title">Oversikt</h1>
+          <button class="btn-add" id="btn-home-add">+ Legg til saker</button>
         </section>
 
         <!-- Fristvarsel-banner -->
@@ -3029,7 +3030,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <span class="case-count" id="case-count"></span>
           </div>
           <div class="btn-add-split" id="btn-add-split-wrap">
-            <button class="btn-add" id="btn-open-modal">+ Legg til sak</button>
+            <button class="btn-add" id="btn-open-modal">+ Legg til saker</button>
           </div>
         </section>
 
@@ -3059,7 +3060,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
               <tbody id="case-tbody"></tbody>
             </table>
             <div class="table-empty" id="table-empty">
-              Ingen saker her. Bruk «+ Legg til sak» for å opprette en ny.
+              Ingen saker her. Bruk «+ Legg til saker» for å opprette en ny.
             </div>
           </div>
         </section>
@@ -3068,7 +3069,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 
         <div id="case-list" class="case-list" style="display:none;"></div>
         <div class="table-empty" id="card-list-empty" style="display:none;">
-          Ingen saker her. Bruk «+ Legg til sak» for å opprette en ny.
+          Ingen saker her. Bruk «+ Legg til saker» for å opprette en ny.
         </div>
       </div>
 
@@ -3883,8 +3884,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
 
       <!-- Faner -->
       <div class="modal-tabs" style="flex-shrink:0;">
-        <button class="modal-tab modal-tab-sak-on" id="modal-tab-sak" type="button">Én sak</button>
         <button class="modal-tab" id="modal-tab-bulk" type="button">Flere saker</button>
+        <button class="modal-tab modal-tab-sak-on" id="modal-tab-sak" type="button">Én sak</button>
       </div>
 
       <!-- Fane: Én sak -->
@@ -3995,8 +3996,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <span class="modal-mode-pill" id="modal-pill-fast">Fast rekkefølge</span>
         </div>
         <div class="field-group">
-          <textarea class="field-input field-textarea" id="modal-bulk-paste" rows="5" placeholder="Lim inn rader fra Excel her…&#10;&#10;Format: saksnummer [tab] tittel [tab] dato"></textarea>
-          <span class="modal-bulk-hint" id="modal-bulk-hint">Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk.</span>
+          <textarea class="field-input field-textarea" id="modal-bulk-paste" rows="5" placeholder="Lim inn rader fra Excel eller saksoversikten her…"></textarea>
+          <span class="modal-bulk-hint" id="modal-bulk-hint">Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk. Saksoversikten med én verdi per linje kan også limes inn direkte.</span>
         </div>
         <div id="modal-bulk-preview" class="bulk-excel-preview"></div>
         <label class="modal-unassigned">
@@ -4426,7 +4427,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.38.0';
+var APP_VERSION    = 'v4.39.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5351,6 +5352,9 @@ function resolveActiveCase(mark, cases) {
 // Rene funksjoner — se test/unassigned.test.js.
 var UNASSIGNED_REMINDER_DEFAULT = 14;
 var UNASSIGNED_REMINDER_MAX = 365;
+// Nye saker legges inn som ikke fordelt med mindre du fjerner haken —
+// gjelder både én sak og «Flere saker». Redigering beholder sakens verdi.
+var UNASSIGNED_NEW_DEFAULT = true;
 
 function canBeUnassigned(c) {
   return !!c && c.type !== 'oppdrag' && (c.status || 'ny') === 'ny';
@@ -8024,6 +8028,7 @@ function render() {
   var cfg    = PAGES[activePage];
   var sorted = sortedForPage(activePage);
   document.getElementById('page-title').textContent = cfg.title;
+  document.getElementById('btn-open-modal').textContent = addButtonLabel(activePage);
   updateCaseStats();
 
   var isOversikt = !!cfg.showAll;
@@ -8061,10 +8066,10 @@ function render() {
 // Tomtilstand: skiller mellom "ingen saker i det hele tatt" og "filteret ga
 // null treff", så brukeren vet om løsningen er å opprette en sak eller å
 // tømme søket.
-function emptyStateMessage(filter) {
+function emptyStateMessage(filter, page) {
   var trimmed = (filter || '').trim();
   if (trimmed) return { text: 'Ingen saker matcher «' + trimmed + '».', clearable: true };
-  return { text: 'Ingen saker her. Bruk «+ Legg til sak» for å opprette en ny.', clearable: false };
+  return { text: 'Ingen saker her. Bruk «' + addButtonLabel(page) + '» for å opprette en ny.', clearable: false };
 }
 
 // ── Forløpsspor: HTML ──────────────────────────────
@@ -8129,7 +8134,7 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
   if (!rows.length) {
     listEl.innerHTML = '';
     if (emptyEl) {
-      var empty = emptyStateMessage(filter);
+      var empty = emptyStateMessage(filter, activePage);
       emptyEl.innerHTML = esc(empty.text) +
         (empty.clearable ? ' <button type="button" class="table-empty-clear" id="btn-empty-clear-filter">Tøm filter</button>' : '');
       emptyEl.style.display = 'block';
@@ -14047,6 +14052,16 @@ function setSelectedStatus(val) {
   document.querySelectorAll('input[name="status"]').forEach(function(r) { r.checked = (r.value === val); });
   _setModalOppdrag(val === 'oppdrag');
 }
+// Fanen «Legg til» åpner på når en ny sak legges til. «Flere saker» er
+// standard, men den legger alltid inn Ny søknader, og oppdrag legges inn ett
+// og ett — derfor åpner Fristarkiv, Viderebehandling og Oppdrag på «Én sak».
+// Rene funksjoner — se test/addModalTab.test.js.
+function defaultAddTab(page) {
+  return ['fristarkiv', 'viderebehandling', 'oppdrag'].indexOf(page) >= 0 ? 'sak' : 'bulk';
+}
+function addButtonLabel(page) {
+  return defaultAddTab(page) === 'bulk' ? '+ Legg til saker' : '+ Legg til sak';
+}
 function openModal(c) {
   fieldError.textContent = '';
   fieldWarn.textContent  = '';
@@ -14064,7 +14079,9 @@ function openModal(c) {
   document.getElementById('modal-adv-toggle').classList.remove('open');
   document.getElementById('modal-adv-body').classList.remove('open');
 
-  // Switch to sak pane
+  // Switch to sak pane. Saks-id settes først: fanebyttet bruker den til å
+  // avgjøre om tittelen er «Legg til» eller «Rediger».
+  editIdEl.value = c ? c.id : '';
   _modalSwitchTab('sak');
 
   if (c) {
@@ -14088,7 +14105,7 @@ function openModal(c) {
     _fillModalMedl(c);
     setSelectedStatus(isOppdrag ? 'oppdrag' : (c.status || 'ny'));
   } else {
-    document.getElementById('f-unassigned').checked = false;
+    document.getElementById('f-unassigned').checked = UNASSIGNED_NEW_DEFAULT;
     _fillModalMedl(null);
     editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = fFilingDate.value = fPriorityDate.value = '';
     document.getElementById('f-case-number-op').value = '';
@@ -14098,9 +14115,15 @@ function openModal(c) {
     setSelectedStatus(defStatus);
   }
 
+  var openBulk = !c && defaultAddTab(activePage) === 'bulk';
+  if (openBulk) _modalSwitchTab('bulk');
+
   renderTimeline({ target: 'modal-timeline' });
   openBackdrop('modal-backdrop');
-  setTimeout(function() { (isOppdrag ? document.getElementById('f-case-number-op') : fCaseNum).focus(); }, 50);
+  setTimeout(function() {
+    (openBulk ? document.getElementById('modal-bulk-paste')
+      : isOppdrag ? document.getElementById('f-case-number-op') : fCaseNum).focus();
+  }, 50);
 }
 function closeModal() { closeBackdrop('modal-backdrop'); }
 
@@ -14113,11 +14136,12 @@ function _modalSwitchTab(tab) {
   document.getElementById('modal-tab-bulk').className = 'modal-tab' + (isBulk  ? ' modal-tab-bulk-on' : '');
   document.getElementById('modal-bulk-count').style.display  = isBulk ? '' : 'none';
   document.getElementById('btn-save').textContent = isBulk ? 'Legg til saker' : 'Lagre sak';
+  if (!editIdEl.value) document.getElementById('modal-title').textContent = isBulk ? 'Legg til saker' : 'Legg til sak';
   if (isBulk) {
     _modalBulkParsed = [];
     document.getElementById('modal-bulk-paste').value = '';
     document.getElementById('modal-bulk-preview').innerHTML = '';
-    document.getElementById('f-bulk-unassigned').checked = false;
+    document.getElementById('f-bulk-unassigned').checked = UNASSIGNED_NEW_DEFAULT;
     _updateModalBulkCount();
   }
 }
@@ -14140,6 +14164,7 @@ document.querySelectorAll('input[name="status"]').forEach(function(r) {
 
 // ── Knapp: Legg til sak ───────────────────────────
 document.getElementById('btn-open-modal').addEventListener('click', function() { openModal(null); });
+document.getElementById('btn-home-add').addEventListener('click', function() { openModal(null); });
 document.getElementById('btn-close-modal').addEventListener('click', closeModal);
 document.getElementById('btn-cancel').addEventListener('click', closeModal);
 document.getElementById('modal-backdrop').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
@@ -14229,7 +14254,46 @@ function _parseModalBulkRow(cols) {
   return { id: _bulkRowId(), cn: cn, title: rest.join(' '), date: date, checked: true };
 }
 
+// Saksoversikt kopiert med én verdi per linje (ingen tab). Hver sak starter
+// med saksnummeret, deretter: sakstype, tittel, fagområde, null eller flere
+// interessenter, frist for tilbakemelding, frist for saken og CPC-klasse.
+// Fagområdet blir stikkord; frist for saken blir forfallsdato. Mangler en av
+// de to fristene, blir datoen tom så raden vises som ugyldig — den første
+// datoen alene er tilbakemeldingsfristen og må ikke tolkes som saksfristen.
+function parseBulkBlocks(text) {
+  var reNr   = /^\d{8}P?$/i;
+  var reDate = /^\d{2}\.\d{2}\.\d{4}$|^\d{4}[.\-]\d{2}[.\-]\d{2}$/;
+  var lines = String(text || '').split(/\r\n|\r|\n/)
+    .map(function(l) { return l.trim(); })
+    .filter(function(l) { return l; });
+  var blocks = [];
+  lines.forEach(function(l) {
+    if (reNr.test(l)) blocks.push({ cn: l, lines: [] });
+    else if (blocks.length) blocks[blocks.length - 1].lines.push(l);
+  });
+  return blocks.map(function(b) {
+    var firstDate = -1;
+    b.lines.some(function(l, i) { if (reDate.test(l)) { firstDate = i; return true; } return false; });
+    var head  = firstDate === -1 ? b.lines : b.lines.slice(0, firstDate);
+    var dates = firstDate === -1 ? [] : b.lines.slice(firstDate).filter(function(l) { return reDate.test(l); });
+    return {
+      cn:    b.cn,
+      title: head[1] || '',
+      date:  dates.length >= 2 ? _normDate(dates[1]) : '',
+      tags:  head[2] || ''
+    };
+  });
+}
+
 document.getElementById('modal-bulk-paste').addEventListener('input', function() {
+  if (this.value.indexOf('\t') === -1) {
+    // Ingen tab = ikke Excel, men saksoversikten med én verdi per linje
+    _modalBulkParsed = parseBulkBlocks(this.value).map(function(r) {
+      return { id: _bulkRowId(), cn: r.cn, title: r.title, date: r.date, tags: r.tags, checked: true };
+    });
+    _renderModalBulkPreview();
+    return;
+  }
   var lines = this.value.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(function(l){return l.trim();});
   _modalBulkParsed = lines.map(function(l) { return _parseModalBulkRow(l.split('\t')); });
   _renderModalBulkPreview();
@@ -14251,7 +14315,7 @@ document.getElementById('modal-pill-auto').addEventListener('click', function() 
   _modalBulkMode = 'auto';
   this.classList.add('on');
   document.getElementById('modal-pill-fast').classList.remove('on');
-  document.getElementById('modal-bulk-hint').textContent = 'Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk.';
+  document.getElementById('modal-bulk-hint').textContent = 'Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk. Saksoversikten med én verdi per linje kan også limes inn direkte.';
   var inp = document.getElementById('modal-bulk-paste');
   if (inp.value) inp.dispatchEvent(new Event('input'));
 });
@@ -14273,7 +14337,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
     var bulkUnassigned = document.getElementById('f-bulk-unassigned').checked;
     var skipped = _modalBulkParsed.filter(function(r) { return r.checked && (!r.cn.trim() || !r.date || !isValidDate(r.date)); }).length;
     toAdd.forEach(function(row) {
-      dispatch('CASE_CREATE', { caseNumber: row.cn.trim(), dueDate: row.date, status: 'ny', title: row.title.trim(), notes: '', tags: '', type: 'sak', unassigned: bulkUnassigned });
+      dispatch('CASE_CREATE', { caseNumber: row.cn.trim(), dueDate: row.date, status: 'ny', title: row.title.trim(), notes: '', tags: row.tags || '', type: 'sak', unassigned: bulkUnassigned });
     });
     closeModal();
     navigateTo('ny');

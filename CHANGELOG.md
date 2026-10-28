@@ -7,12 +7,39 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.39.0] - 2026-10-28
+Nye saker kan limes rett inn fra saksoversikten, ikke bare fra Excel.
+
 ### Added
+- **Innliming av saksoversikten med én verdi per linje.** I «Flere saker» kan
+  du nå lime inn saker der hver verdi står på sin egen linje: saksnummer,
+  sakstype, tittel, fagområde, eventuelle interessenter, frist for
+  tilbakemelding, frist for saken og CPC-klasse. Flere saker kan limes inn
+  etter hverandre. Frist for saken blir forfallsdato, og fagområdet
+  («Maskin», «Skip» …) legges inn som stikkord. Sakstype, interessenter,
+  tilbakemeldingsfrist og CPC-klasse hoppes over. Mangler en av de to fristene,
+  vises datoen som ugyldig i stedet for at feil frist brukes. Innliming fra
+  Excel virker som før.
 - **Eget ikon for Windows-snarveien.** `PatentDesk.ico` har samme sekskant-
   ikon som appen. `Lag-PatentDesk-snarvei.ps1` lager en snarvei på
   skrivebordet og i Start-menyen som åpner PatentDesk i eget Edge-vindu uten
   adresselinje og faner, med dette ikonet i stedet for Edge-ikonet. Dataene er
   de samme som når du åpner filen direkte.
+
+- **«+ Legg til saker» på Oversikt.** Hovedsiden har fått en egen knapp som
+  åpner «Flere saker», så du slipper å gå via en saksliste.
+
+### Changed
+- **«Flere saker» er standard i «Legg til».** Fanen ligger nå først og er
+  valgt når dialogen åpnes, med markøren i innlimingsfeltet. Knappen på
+  sakslistene heter «+ Legg til saker». Fra Fristarkiv, Viderebehandling og
+  Oppdrag åpnes fortsatt «Én sak», siden «Flere saker» alltid legger inn Ny
+  søknader og oppdrag legges inn ett og ett. Knappen der heter fortsatt
+  «+ Legg til sak». Redigering åpner som før.
+- **Nye saker er «Ikke fordelt ennå» som standard.** Haken er satt når du
+  legger til en ny sak, både én og én og under «Flere saker». Fjern haken hvis
+  saken allerede er fordelt til deg. Når du redigerer en sak, beholder den sin
+  egen verdi.
 
 ## [4.38.0] - 2026-10-27
 Sakslisten og tidslinjen henger nå sammen: pek på en sak i listen, så ser du

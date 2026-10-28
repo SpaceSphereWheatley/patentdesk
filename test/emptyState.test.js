@@ -3,12 +3,17 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
-const { emptyStateMessage } = loadFunctions(['emptyStateMessage']);
+const { emptyStateMessage } = loadFunctions(['emptyStateMessage', 'addButtonLabel', 'defaultAddTab']);
 
 test('emptyStateMessage: no filter → create-a-case copy, not clearable', () => {
-  const msg = emptyStateMessage('');
-  assert.strictEqual(msg.text, 'Ingen saker her. Bruk «+ Legg til sak» for å opprette en ny.');
+  const msg = emptyStateMessage('', 'ny');
+  assert.strictEqual(msg.text, 'Ingen saker her. Bruk «+ Legg til saker» for å opprette en ny.');
   assert.strictEqual(msg.clearable, false);
+});
+
+test('emptyStateMessage: names the button as it reads on that page', () => {
+  assert.strictEqual(emptyStateMessage('', 'fristarkiv').text,
+    'Ingen saker her. Bruk «+ Legg til sak» for å opprette en ny.');
 });
 
 test('emptyStateMessage: null/undefined filter behaves like no filter', () => {
