@@ -163,3 +163,18 @@ test('caseCountText: the overview counts every case and notes the unassigned one
   assert.strictEqual(caseCountText([c(), u()], true), '2 saker totalt · 1 ikke fordelt');
   assert.strictEqual(caseCountText([c()], true), '1 saker totalt');
 });
+
+// ── Standard for nye saker ──────────────────────────
+test('new cases default to «ikke fordelt», both single and bulk', () => {
+  const { extractFunctionSource } = require('./extractFunctions');
+  const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'PatentDesk.html'), 'utf8');
+  const { UNASSIGNED_NEW_DEFAULT } = loadFunctions([], { vars: ['UNASSIGNED_NEW_DEFAULT'] });
+  assert.strictEqual(UNASSIGNED_NEW_DEFAULT, true);
+  assert.match(extractFunctionSource(html, 'openModal'),
+    /getElementById\('f-unassigned'\)\.checked = UNASSIGNED_NEW_DEFAULT/);
+  assert.match(extractFunctionSource(html, '_modalSwitchTab'),
+    /getElementById\('f-bulk-unassigned'\)\.checked = UNASSIGNED_NEW_DEFAULT/);
+  // Redigering beholder sakens egen verdi
+  assert.match(extractFunctionSource(html, 'openModal'),
+    /getElementById\('f-unassigned'\)\.checked = isUnassigned\(c\)/);
+});

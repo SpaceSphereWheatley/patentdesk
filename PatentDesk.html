@@ -5351,6 +5351,9 @@ function resolveActiveCase(mark, cases) {
 // Rene funksjoner — se test/unassigned.test.js.
 var UNASSIGNED_REMINDER_DEFAULT = 14;
 var UNASSIGNED_REMINDER_MAX = 365;
+// Nye saker legges inn som ikke fordelt med mindre du fjerner haken —
+// gjelder både én sak og «Flere saker». Redigering beholder sakens verdi.
+var UNASSIGNED_NEW_DEFAULT = true;
 
 function canBeUnassigned(c) {
   return !!c && c.type !== 'oppdrag' && (c.status || 'ny') === 'ny';
@@ -14088,7 +14091,7 @@ function openModal(c) {
     _fillModalMedl(c);
     setSelectedStatus(isOppdrag ? 'oppdrag' : (c.status || 'ny'));
   } else {
-    document.getElementById('f-unassigned').checked = false;
+    document.getElementById('f-unassigned').checked = UNASSIGNED_NEW_DEFAULT;
     _fillModalMedl(null);
     editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = fFilingDate.value = fPriorityDate.value = '';
     document.getElementById('f-case-number-op').value = '';
@@ -14117,7 +14120,7 @@ function _modalSwitchTab(tab) {
     _modalBulkParsed = [];
     document.getElementById('modal-bulk-paste').value = '';
     document.getElementById('modal-bulk-preview').innerHTML = '';
-    document.getElementById('f-bulk-unassigned').checked = false;
+    document.getElementById('f-bulk-unassigned').checked = UNASSIGNED_NEW_DEFAULT;
     _updateModalBulkCount();
   }
 }

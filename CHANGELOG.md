@@ -26,6 +26,12 @@ Nye saker kan limes rett inn fra saksoversikten, ikke bare fra Excel.
   adresselinje og faner, med dette ikonet i stedet for Edge-ikonet. Dataene er
   de samme som når du åpner filen direkte.
 
+### Changed
+- **Nye saker er «Ikke fordelt ennå» som standard.** Haken er satt når du
+  legger til en ny sak, både én og én og under «Flere saker». Fjern haken hvis
+  saken allerede er fordelt til deg. Når du redigerer en sak, beholder den sin
+  egen verdi.
+
 ## [4.38.0] - 2026-10-27
 Sakslisten og tidslinjen henger nå sammen: pek på en sak i listen, så ser du
 hvor den ligger i arbeidsplanen.
