@@ -3996,7 +3996,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
         </div>
         <div class="field-group">
           <textarea class="field-input field-textarea" id="modal-bulk-paste" rows="5" placeholder="Lim inn rader fra Excel her…&#10;&#10;Format: saksnummer [tab] tittel [tab] dato"></textarea>
-          <span class="modal-bulk-hint" id="modal-bulk-hint">Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk.</span>
+          <span class="modal-bulk-hint" id="modal-bulk-hint">Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk. Saksoversikten med én verdi per linje kan også limes inn direkte.</span>
         </div>
         <div id="modal-bulk-preview" class="bulk-excel-preview"></div>
         <label class="modal-unassigned">
@@ -4426,7 +4426,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.38.0';
+var APP_VERSION    = 'v4.39.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -14229,7 +14229,46 @@ function _parseModalBulkRow(cols) {
   return { id: _bulkRowId(), cn: cn, title: rest.join(' '), date: date, checked: true };
 }
 
+// Saksoversikt kopiert med én verdi per linje (ingen tab). Hver sak starter
+// med saksnummeret, deretter: sakstype, tittel, fagområde, null eller flere
+// interessenter, frist for tilbakemelding, frist for saken og CPC-klasse.
+// Fagområdet blir stikkord; frist for saken blir forfallsdato. Mangler en av
+// de to fristene, blir datoen tom så raden vises som ugyldig — den første
+// datoen alene er tilbakemeldingsfristen og må ikke tolkes som saksfristen.
+function parseBulkBlocks(text) {
+  var reNr   = /^\d{8}P?$/i;
+  var reDate = /^\d{2}\.\d{2}\.\d{4}$|^\d{4}[.\-]\d{2}[.\-]\d{2}$/;
+  var lines = String(text || '').split(/\r\n|\r|\n/)
+    .map(function(l) { return l.trim(); })
+    .filter(function(l) { return l; });
+  var blocks = [];
+  lines.forEach(function(l) {
+    if (reNr.test(l)) blocks.push({ cn: l, lines: [] });
+    else if (blocks.length) blocks[blocks.length - 1].lines.push(l);
+  });
+  return blocks.map(function(b) {
+    var firstDate = -1;
+    b.lines.some(function(l, i) { if (reDate.test(l)) { firstDate = i; return true; } return false; });
+    var head  = firstDate === -1 ? b.lines : b.lines.slice(0, firstDate);
+    var dates = firstDate === -1 ? [] : b.lines.slice(firstDate).filter(function(l) { return reDate.test(l); });
+    return {
+      cn:    b.cn,
+      title: head[1] || '',
+      date:  dates.length >= 2 ? _normDate(dates[1]) : '',
+      tags:  head[2] || ''
+    };
+  });
+}
+
 document.getElementById('modal-bulk-paste').addEventListener('input', function() {
+  if (this.value.indexOf('\t') === -1) {
+    // Ingen tab = ikke Excel, men saksoversikten med én verdi per linje
+    _modalBulkParsed = parseBulkBlocks(this.value).map(function(r) {
+      return { id: _bulkRowId(), cn: r.cn, title: r.title, date: r.date, tags: r.tags, checked: true };
+    });
+    _renderModalBulkPreview();
+    return;
+  }
   var lines = this.value.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(function(l){return l.trim();});
   _modalBulkParsed = lines.map(function(l) { return _parseModalBulkRow(l.split('\t')); });
   _renderModalBulkPreview();
@@ -14251,7 +14290,7 @@ document.getElementById('modal-pill-auto').addEventListener('click', function() 
   _modalBulkMode = 'auto';
   this.classList.add('on');
   document.getElementById('modal-pill-fast').classList.remove('on');
-  document.getElementById('modal-bulk-hint').textContent = 'Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk.';
+  document.getElementById('modal-bulk-hint').textContent = 'Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk. Saksoversikten med én verdi per linje kan også limes inn direkte.';
   var inp = document.getElementById('modal-bulk-paste');
   if (inp.value) inp.dispatchEvent(new Event('input'));
 });
@@ -14273,7 +14312,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
     var bulkUnassigned = document.getElementById('f-bulk-unassigned').checked;
     var skipped = _modalBulkParsed.filter(function(r) { return r.checked && (!r.cn.trim() || !r.date || !isValidDate(r.date)); }).length;
     toAdd.forEach(function(row) {
-      dispatch('CASE_CREATE', { caseNumber: row.cn.trim(), dueDate: row.date, status: 'ny', title: row.title.trim(), notes: '', tags: '', type: 'sak', unassigned: bulkUnassigned });
+      dispatch('CASE_CREATE', { caseNumber: row.cn.trim(), dueDate: row.date, status: 'ny', title: row.title.trim(), notes: '', tags: row.tags || '', type: 'sak', unassigned: bulkUnassigned });
     });
     closeModal();
     navigateTo('ny');

@@ -7,7 +7,19 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.39.0] - 2026-10-28
+Nye saker kan limes rett inn fra saksoversikten, ikke bare fra Excel.
+
 ### Added
+- **Innliming av saksoversikten med én verdi per linje.** I «Flere saker» kan
+  du nå lime inn saker der hver verdi står på sin egen linje: saksnummer,
+  sakstype, tittel, fagområde, eventuelle interessenter, frist for
+  tilbakemelding, frist for saken og CPC-klasse. Flere saker kan limes inn
+  etter hverandre. Frist for saken blir forfallsdato, og fagområdet
+  («Maskin», «Skip» …) legges inn som stikkord. Sakstype, interessenter,
+  tilbakemeldingsfrist og CPC-klasse hoppes over. Mangler en av de to fristene,
+  vises datoen som ugyldig i stedet for at feil frist brukes. Innliming fra
+  Excel virker som før.
 - **Eget ikon for Windows-snarveien.** `PatentDesk.ico` har samme sekskant-
   ikon som appen. `Lag-PatentDesk-snarvei.ps1` lager en snarvei på
   skrivebordet og i Start-menyen som åpner PatentDesk i eget Edge-vindu uten
