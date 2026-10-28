@@ -53,6 +53,16 @@ test('isValidDate rejects malformed or impossible dates', () => {
   assert.strictEqual(isValidDate(''), false);
 });
 
+// Regression: new Date('2026-02-31') rolls over to 3 March instead of failing,
+// so 31 February used to be accepted and stored.
+test('isValidDate rejects days that do not exist in the month', () => {
+  assert.strictEqual(isValidDate('2026.02.31'), false);
+  assert.strictEqual(isValidDate('2026-04-31'), false);
+  assert.strictEqual(isValidDate('2026-02-29'), false);
+  assert.strictEqual(isValidDate('2028-02-29'), true);
+  assert.strictEqual(isValidDate('2026-12-31'), true);
+});
+
 test('formatDate renders ISO date as dotted', () => {
   assert.strictEqual(formatDate('2026-06-22'), '2026.06.22');
 });
