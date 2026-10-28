@@ -75,3 +75,19 @@ test('replaceDatePart sets the local date and keeps the time of day', () => {
   assert.deepStrictEqual([out.getFullYear(), out.getMonth(), out.getDate(), out.getHours(), out.getMinutes()],
     [2026, 4, 2, 14, 30]);
 });
+
+// ── Opprydding av foreldreløse saksdetaljer ───────────────────
+const { orphanSakKeys, PHASE_COLLAPSE_KEY, SAK_KEY_PREFIX } = loadFunctions(['orphanSakKeys'],
+  { vars: ['SAK_KEY_PREFIX', 'PHASE_COLLAPSE_KEY'] });
+
+test('orphanSakKeys finds case details whose case no longer exists', () => {
+  const keys = ['pt_sak_a', 'pt_sak_gone', 'pt_cases', 'pt_phases_collapsed'];
+  assert.deepStrictEqual([...orphanSakKeys(keys, { a: true }, SAK_KEY_PREFIX)], ['pt_sak_gone']);
+});
+
+// Regression: the collapsed-phases setting was stored as pt_sak_phases_collapsed,
+// so the cleanup took it for an orphaned case and deleted it on every startup.
+test('the collapsed-phases setting is not stored under the case-details prefix', () => {
+  assert.strictEqual(PHASE_COLLAPSE_KEY.indexOf(SAK_KEY_PREFIX), -1);
+  assert.deepStrictEqual([...orphanSakKeys([PHASE_COLLAPSE_KEY], {}, SAK_KEY_PREFIX)], []);
+});

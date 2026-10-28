@@ -8,7 +8,8 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 ## [Unreleased]
 
 ## [4.40.1] - 2026-10-29
-Seks feil som kunne gi feil data i saksflyten, statistikken og belegget er rettet.
+Seks feil som kunne gi feil data i saksflyten, statistikken og belegget er rettet,
+og sakssiden husker igjen hvilke faser du har lukket.
 
 ### Fixed
 - **Statusbytte i «Rediger sak» går gjennom saksflyten.** Byttet du status i
@@ -34,6 +35,8 @@ Seks feil som kunne gi feil data i saksflyten, statistikken og belegget er rette
   samme feil.
 - **Datoer som ikke finnes, avvises.** 31. februar og 31. april ble godtatt og
   lagret, og regnet som en dag i måneden etter.
+- **Lukkede faser på sakssiden huskes etter omstart.** Valget ble lagret, men
+  slettet igjen ved neste oppstart av oppryddingen av gamle saksdata.
 
 ## [4.40.0] - 2026-10-29
 Tidslinjen viser eget arbeid øverst når saker overlapper.

@@ -6530,6 +6530,15 @@ function timelineDueInfo(dueTxt, effTxt, days, wdays) {
 
 var cases = loadCases();
 
+// Saksdetaljer (pt_sak_<id>) for saker som ikke finnes lenger. Alt med
+// prefikset regnes som saksdata, så innstillinger må aldri lagres under det.
+// Ren funksjon — se test/dataIntegrity.test.js.
+function orphanSakKeys(keys, ids, prefix) {
+  return keys.filter(function(k) {
+    return typeof k === 'string' && k.indexOf(prefix) === 0 && !ids[k.slice(prefix.length)];
+  });
+}
+
 // Rydd opp foreldreløse pt_sak_*-nøkler (saker slettet før opprydding ble innført)
 (function() {
   var raw = null;
@@ -6538,12 +6547,9 @@ var cases = loadCases();
   var ids = {};
   try { (JSON.parse(raw) || []).forEach(function(c) { if (c && c.id) ids[c.id] = true; }); }
   catch(e) { return; } // korrupt sakliste — ikke rydd
-  var orphans = [];
-  for (var i = 0; i < localStorage.length; i++) {
-    var key = localStorage.key(i);
-    if (key && key.indexOf(SAK_KEY_PREFIX) === 0 && !ids[key.slice(SAK_KEY_PREFIX.length)]) orphans.push(key);
-  }
-  orphans.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
+  var keys = [];
+  for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+  orphanSakKeys(keys, ids, SAK_KEY_PREFIX).forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
 })();
 
 // ── CPC-database ───────────────────────────────────
@@ -10151,7 +10157,9 @@ function renderSak(id) {
 // ── Faser: kollaps ────────────────────────────────
 // Valget huskes globalt, ikke per sak: kollapser du «Saken» én gang fordi du
 // sjelden trenger den, skal den være lukket på neste sak også.
-var PHASE_COLLAPSE_KEY = 'pt_sak_phases_collapsed';
+// Ikke pt_sak_-prefikset: det het tidligere pt_sak_phases_collapsed, og
+// oppryddingen av foreldreløse saksdetaljer slettet det ved hver oppstart.
+var PHASE_COLLAPSE_KEY = 'pt_phases_collapsed';
 
 function loadPhaseCollapse() {
   try { return JSON.parse(localStorage.getItem(PHASE_COLLAPSE_KEY)) || {}; }
