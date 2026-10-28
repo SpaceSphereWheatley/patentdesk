@@ -26,7 +26,16 @@ Nye saker kan limes rett inn fra saksoversikten, ikke bare fra Excel.
   adresselinje og faner, med dette ikonet i stedet for Edge-ikonet. Dataene er
   de samme som når du åpner filen direkte.
 
+- **«+ Legg til saker» på Oversikt.** Hovedsiden har fått en egen knapp som
+  åpner «Flere saker», så du slipper å gå via en saksliste.
+
 ### Changed
+- **«Flere saker» er standard i «Legg til».** Fanen ligger nå først og er
+  valgt når dialogen åpnes, med markøren i innlimingsfeltet. Knappen på
+  sakslistene heter «+ Legg til saker». Fra Fristarkiv, Viderebehandling og
+  Oppdrag åpnes fortsatt «Én sak», siden «Flere saker» alltid legger inn Ny
+  søknader og oppdrag legges inn ett og ett. Knappen der heter fortsatt
+  «+ Legg til sak». Redigering åpner som før.
 - **Nye saker er «Ikke fordelt ennå» som standard.** Haken er satt når du
   legger til en ny sak, både én og én og under «Flere saker». Fjern haken hvis
   saken allerede er fordelt til deg. Når du redigerer en sak, beholder den sin
