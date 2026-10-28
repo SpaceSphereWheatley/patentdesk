@@ -7,6 +7,34 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.40.1] - 2026-10-29
+Seks feil som kunne gi feil data i saksflyten, statistikken og belegget er rettet.
+
+### Fixed
+- **Statusbytte i «Rediger sak» går gjennom saksflyten.** Byttet du status i
+  dialogen, ble den bare overskrevet: overgangen kom ikke i historikken eller
+  statistikken, og en sak som ble flyttet til Fristarkiv, beholdt din egen
+  frist som om den var søkerens. Nå lagres de andre feltene først, og så
+  spørres det om stikkord, utfall og ny frist akkurat som fra statusknappene
+  på sakssiden. Avbryter du, står saken i sin gamle status.
+- **Endret dato i historikken flytter riktig hendelse i statistikken.** Å endre
+  datoen da saken ble sendt til Fristarkiv flyttet ikke nybehandlingen, mens å
+  endre datoen da saken ble opprettet gjorde det. Det samme gjaldt
+  viderebehandlinger og utførte oppdrag.
+- **«Slett all data» sletter alt.** Medlesinger, varighet per sakstype og
+  filteret for fristlista ble liggende igjen, og medlesingene ble skrevet
+  tilbake til arbeidsfilen. En åpen «Angre» kan heller ikke lenger hente
+  sakene tilbake.
+- **Saksnotater, endret dato i hendelsesloggen og tilbakestilt sjekkliste
+  sikkerhetskopieres.** De ble lagret i nettleseren, men kom ikke med i
+  arbeidsfilen og øyeblikksbildene før neste andre endring.
+- **Belegget teller riktige dager over overgangen fra sommertid.** Etter
+  siste søndag i oktober ble hver dag regnet som dagen før, så helger,
+  helligdager og ferie havnet én dag feil. Ukenumrene i tidslinjen hadde
+  samme feil.
+- **Datoer som ikke finnes, avvises.** 31. februar og 31. april ble godtatt og
+  lagret, og regnet som en dag i måneden etter.
+
 ## [4.40.0] - 2026-10-29
 Tidslinjen viser eget arbeid øverst når saker overlapper.
 

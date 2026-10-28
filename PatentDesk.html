@@ -4427,7 +4427,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.40.0';
+var APP_VERSION    = 'v4.40.1';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5171,10 +5171,14 @@ function toDisplay(dateStr)  { return dateStr ? dateStr.replace(/-/g, '.') : '';
 function normaliseTags(str)  { return (str || '').split(',').map(function(t){ return t.trim(); }).filter(Boolean).join(', '); }
 function sanitizeText(str)   { return (str || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); }
 
+// Datoen må finnes: new Date('2026-02-31') ruller over til 3. mars i stedet
+// for å feile, så dag og måned sjekkes mot det Date faktisk ga.
 function isValidDate(str) {
   var norm = parseDate(str);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(norm)) return false;
-  return !isNaN(new Date(norm + 'T00:00:00').getTime());
+  var d = new Date(norm + 'T00:00:00');
+  if (isNaN(d.getTime())) return false;
+  return d.getFullYear() === +norm.slice(0, 4) && d.getMonth() + 1 === +norm.slice(5, 7) && d.getDate() === +norm.slice(8, 10);
 }
 
 // filingDateFromInput: innleveringsdato fra modalfeltet. Tomt felt fjerner
@@ -5878,32 +5882,25 @@ function loadUserName()  { return localStorage.getItem(USER_NAME_KEY) || ''; }
 function saveUserName(v) { lsSetSafe(USER_NAME_KEY, v); }
 
 // ── Slett all data ─────────────────────────────────
+// Alle appens nøkler begynner på pt_, så alt med det prefikset slettes — også
+// nøkler som legges til senere, uten at noen må huske å føre dem opp her.
+// Unntaket er bokføringen for sikkerhetskopi og datamappe: den beskriver
+// mappen og kopiene, ikke dataene, og uten den ville neste oppstart tolket
+// en tom nettleser som ny og hentet alt tilbake fra arbeidsfilen.
+var DELETE_ALL_KEEP_KEYS = ['pt_backup_enabled', 'pt_backup_last', 'pt_backup_last_file_date',
+  'pt_saved_at', 'pt_workfile_last', 'pt_workfile_synced'];
+
+// Ren funksjon — se test/dataIntegrity.test.js.
+function keysForDeleteAll(keys) {
+  return keys.filter(function(k) {
+    return typeof k === 'string' && k.indexOf('pt_') === 0 && DELETE_ALL_KEEP_KEYS.indexOf(k) === -1;
+  });
+}
+
 function deleteAllData() {
-  cases.forEach(function(c) { localStorage.removeItem(sakKey(c.id)); });
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(STATS_KEY);
-  localStorage.removeItem(AUTOSAVE_KEY);
-
-  localStorage.removeItem('pt_compact');
-  localStorage.removeItem(DOC_ROOT_KEY);
-  localStorage.removeItem(GOAL_KEY);
-  localStorage.removeItem(BELEGG_KEY);
-  localStorage.removeItem(BUFFER_KEY);
-  localStorage.removeItem(TYPE_BUFFER_KEY);
-  localStorage.removeItem(VACATION_KEY);
-  localStorage.removeItem(CHECKLIST_KEY);
-  localStorage.removeItem('pt_schema_version');
-  localStorage.removeItem(ONBOARDING_KEY);
-  localStorage.removeItem(USER_NAME_KEY);
-  localStorage.removeItem(ACTIVE_CASE_KEY);
-  localStorage.removeItem(UNASSIGNED_REMINDER_KEY);
-  localStorage.removeItem(MEDLESERE_KEY);
-  localStorage.removeItem(MEDL_LOG_KEY);
-  localStorage.removeItem('pt_drawer_collapsed');
-  localStorage.removeItem(SETTINGS_TAB_KEY);
-  localStorage.removeItem(TL_VIEW_KEY);
-  localStorage.removeItem('pt_cpc_welcomed');
-
+  var keys = [];
+  try { for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch(e) {}
+  keysForDeleteAll(keys).forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
   _cpcResetState();
 }
 
@@ -6117,6 +6114,14 @@ function getEffectiveDueDate(dueDateStr, caseObj) {
 // isoLocalDate: datoen som 'YYYY-MM-DD' i lokal tid. toISOString() gir
 // UTC-datoen, og i Norge er lokal midnatt fortsatt gårsdagen i UTC — datoen
 // ville glippet én dag bakover.
+// addDaysLocal: n kalenderdager etter d, ved lokal midnatt. Å legge til
+// n * 86400000 ms bommer med én dag etter overgangen fra sommertid, når et
+// døgn har 25 timer. Ren funksjon — se test/dst.test.js.
+function addDaysLocal(d, n) {
+  var r = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  r.setDate(r.getDate() + n);
+  return r;
+}
 function isoLocalDate(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
@@ -7255,6 +7260,30 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'SAK_NOTES_CHANGE': {
+      var nData = loadSakData(payload.id) || defaultSakData(0);
+      nData.sakNotes = sanitizeText(payload.notes || '');
+      saveSakData(payload.id, nData);
+      break;
+    }
+
+    case 'STATS_LOG_DATE_EDIT': {
+      var logEntry = stats.log[payload.idx];
+      if (!logEntry) break;
+      stats.log[payload.idx] = Object.assign({}, logEntry, { date: replaceDatePart(logEntry.date, payload.date) });
+      saveStats();
+      renderStats();
+      break;
+    }
+
+    case 'CHECKLIST_TEMPLATE_RESET': {
+      resetChecklistTemplate();
+      renderCle();
+      _cleUpdateSummary();
+      showToast('✓ Sjekkliste tilbakestilt til standard');
+      break;
+    }
+
     case 'STATS_RESET': {
       stats = { nyTotal: 0, videreTotal: 0, avsluttetTotal: 0, log: [] };
       saveStats();
@@ -7496,9 +7525,8 @@ function _dispatch(action, payload) {
       });
       saveCases();
       // Oppdater stats.log via originalDate + caseNumber + type
-      if (h && h.type === 'status' && theCase) {
-        var logTypeMap = { ny: 'ny', viderebehandling: 'videre', avsluttet: 'avsluttet', oppdrag: 'oppdrag' };
-        var targetLogType = logTypeMap[h.to] || null;
+      if (h && theCase) {
+        var targetLogType = historyLogType(h, theCase.type === 'oppdrag');
         if (targetLogType) {
           var cn = theCase.caseNumber;
           var best = null, bestDiff = Infinity;
@@ -7518,9 +7546,18 @@ function _dispatch(action, payload) {
 
     case 'DATA_DELETE_ALL': {
       deleteAllData();
+      // Minnet nullstilles også — ellers ble det skrevet rett tilbake til
+      // arbeidsfilen og sikkerhetskopien ved neste lagring.
       cases = []; stats = { nyTotal: 0, videreTotal: 0, avsluttetTotal: 0, log: [] };
       vacations = []; productionGoal = 0; beleggHorizon = 60;
       unassignedReminder = UNASSIGNED_REMINDER_DEFAULT;
+      medlesing = []; activeMedlesingId = null;
+      medlLog = []; medleserList = [];
+      activeCase = null;
+      typeBuffers = normalizeTypeBuffers(null);
+      workWindows = normalizeWorkWindows(null);
+      homeDeadlineFilter = defaultHomeDeadlineFilter();
+      undoSnapshot = null; // en åpen «Angre» skal ikke kunne hente sakene tilbake
       closeBackdrop('delete-all-backdrop-2');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
       navigateTo('hjem');
@@ -7649,6 +7686,22 @@ function logEvent(type, caseNumber, title) {
 function lookupTitle(logEntry) {
   var match = cases.find(function(c) { return c.caseNumber === logEntry.caseNumber; });
   return (match && match.title) || logEntry.title || '';
+}
+
+// Hvilken hendelse i statistikken en statusovergang i historikken skrev, så
+// en endret dato flyttes på riktig hendelse. Statistikken føres på selve
+// overgangen (se statusTransition): realitetsbrev ut fra Ny er en
+// nybehandling, fra Viderebehandling en viderebehandling, og en avslutning
+// er «avsluttet» — eller «oppdrag» for oppdrag. Andre overganger, og eldre
+// historikk uten from, førte ingenting. Ren funksjon — se test/dataIntegrity.test.js.
+function historyLogType(h, isOppdrag) {
+  if (!h || (h.type && h.type !== 'status')) return null;
+  if (h.to === 'avsluttet') return isOppdrag ? 'oppdrag' : 'avsluttet';
+  if (h.to === 'fristarkiv' && !isOppdrag) {
+    if (h.from === 'ny') return 'ny';
+    if (h.from === 'viderebehandling') return 'videre';
+  }
+  return null;
 }
 
 // ── Historikk-hjelper ──────────────────────────────
@@ -8656,10 +8709,7 @@ document.getElementById('btn-cle-reset-cancel').addEventListener('click', functi
 document.getElementById('cle-reset-backdrop').addEventListener('click', function(e) { if (e.target === this) closeBackdrop('cle-reset-backdrop'); });
 document.getElementById('btn-cle-reset-confirm').addEventListener('click', function() {
   closeBackdrop('cle-reset-backdrop');
-  resetChecklistTemplate();
-  renderCle();
-  _cleUpdateSummary();
-  showToast('✓ Sjekkliste tilbakestilt til standard');
+  dispatch('CHECKLIST_TEMPLATE_RESET');
 });
 
 // ── Slett alt ──────────────────────────────────────
@@ -9365,6 +9415,14 @@ document.getElementById('btn-import-confirm').addEventListener('click', function
   pendingImportData = null;
 });
 
+// Hendelsens tidspunkt med ny dato (YYYY-MM-DD) og samme klokkeslett, i lokal
+// tid. Ren funksjon — se test/dataIntegrity.test.js.
+function replaceDatePart(iso, ymd) {
+  var d = new Date(iso), p = ymd.split('-');
+  d.setFullYear(+p[0], +p[1] - 1, +p[2]);
+  return d.toISOString();
+}
+
 // ── Hendelseslogg: klikk ──────────────────────────
 document.getElementById('log-tbody').addEventListener('click', function(e) {
   var btn = e.target.closest('.btn-log-edit');
@@ -9379,10 +9437,7 @@ document.getElementById('log-tbody').addEventListener('click', function(e) {
       entry.caseNumber, formatDateTime(entry.date),
       'Endre datoen for denne hendelsen (' + (entry.type || '') + ').',
       function(newDate) {
-        var orig = new Date(entry.date), parts = newDate.split('-');
-        orig.setFullYear(+parts[0], +parts[1] - 1, +parts[2]);
-        stats.log[idx] = Object.assign({}, entry, { date: orig.toISOString() });
-        saveStats(); renderStats();
+        dispatch('STATS_LOG_DATE_EDIT', { idx: idx, date: newDate });
       }
     );
     return;
@@ -9399,8 +9454,7 @@ function computeBelegg(horizonDays) {
   function workdaysInRange(startOffset, endOffset) {
     var count = 0;
     for (var i = startOffset; i < endOffset; i++) {
-      var d = new Date(today.getTime() + i * 86400000);
-      if (!isNonWorkday(d)) count++;
+      if (!isNonWorkday(addDaysLocal(today, i))) count++;
     }
     return count;
   }
@@ -9433,7 +9487,7 @@ function computeBelegg(horizonDays) {
         // Øvre grense på letingen slik at løkken alltid terminerer, uansett
         // hvor mange fridager som ligger på rad.
         for (var j = 0; j < 60 && booked < OVERDUE_PENALTY_WORKDAYS; j++) {
-          if (isNonWorkday(new Date(today.getTime() + j * 86400000))) continue;
+          if (isNonWorkday(addDaysLocal(today, j))) continue;
           booked++;
           if (j >= startOffset && j < endOffset) busyCount++;
         }
@@ -9444,8 +9498,7 @@ function computeBelegg(horizonDays) {
       var winStart = dueOff - workWindowDays(c) + 1;
       var winEnd   = dueOff;
       for (var i = Math.max(startOffset, winStart); i < Math.min(endOffset, winEnd + 1); i++) {
-        var d = new Date(today.getTime() + i * 86400000);
-        if (!isNonWorkday(d)) busyCount++;
+        if (!isNonWorkday(addDaysLocal(today, i))) busyCount++;
       }
     });
     return busyCount;
@@ -9465,7 +9518,7 @@ function computeBelegg(horizonDays) {
   // Feriedager i periode 1
   var vacDays = 0;
   for (var i = 0; i < horizonDays; i++) {
-    var d = new Date(today.getTime() + i * 86400000);
+    var d = addDaysLocal(today, i);
     var ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     if (vacations.some(function(v) { return ds >= v.from && ds <= v.to; })) vacDays++;
   }
@@ -11867,9 +11920,7 @@ document.getElementById('sak-claims-tbody').addEventListener('change', function(
 // Saksnotater: auto-lagre ved input
 document.getElementById('sak-notes').addEventListener('input', function() {
   var id = activeSakId; if (!id) return;
-  var data = loadSakData(id) || defaultSakData(0);
-  data.sakNotes = sanitizeText(this.value);
-  saveSakData(id, data);
+  dispatch('SAK_NOTES_CHANGE', { id: id, notes: this.value });
 });
 
 // ── Hjem-side ──────────────────────────────────────
@@ -12231,7 +12282,7 @@ function buildTimelineDiv(opts) {
       track.appendChild(lbl);
     } else if (axisMode === 'week') {
       // If this major tick (month boundary) also falls on a Monday, show week number
-      var majorDate = new Date(today.getTime() + day * 86400000);
+      var majorDate = addDaysLocal(today, day);
       if (majorDate.getDay() === 1) { // 1 = Monday
         var wlbl = document.createElement('div');
         wlbl.className = 'tl-tick-lbl-minor';
@@ -12259,7 +12310,7 @@ function buildTimelineDiv(opts) {
       var lbl = document.createElement('div');
       lbl.className = 'tl-tick-lbl-minor';
       lbl.style.left = pctDay(w);
-      lbl.textContent = String(getWeekNumber(new Date(today.getTime() + w * 86400000)));
+      lbl.textContent = String(getWeekNumber(addDaysLocal(today, w)));
       track.appendChild(lbl);
     }
   }
@@ -14396,19 +14447,25 @@ document.getElementById('btn-save').addEventListener('click', function() {
   // Tomt felt = ingen egen varighet; standarden fra Innstillinger gjelder da
   var duration = isOppdrag ? (parseInt(fDuration.value, 10) >= 1 ? parseInt(fDuration.value, 10) : null) : undefined;
   var origCase = id ? cases.find(function(c) { return c.id === id; }) : null;
-  var caseBuffer = isOppdrag ? null : modalCaseBuffer(origCase, st, fCaseBuffer ? fCaseBuffer.value : '');
+  // Et statusbytte lagres ikke her, men kjøres gjennom saksflyten etterpå
+  var plan = editStatusPlan(origCase, st);
+  // Venter et statusbytte, beholdes sakens egen buffer til overgangen fjerner
+  // den — avbrytes overgangen, er saken som før.
+  var caseBuffer = isOppdrag ? null
+    : plan.transitionTo ? (origCase.caseBuffer != null ? origCase.caseBuffer : null)
+    : modalCaseBuffer(origCase, st, fCaseBuffer ? fCaseBuffer.value : '');
   // For oppdrag: bevar eksisterende status ved redigering, sett 'ny' for nye
   var existingOppdragStatus = id ? ((cases.find(function(c){return c.id===id;})||{}).status || null) : null;
   var oppdragStatus = (existingOppdragStatus && existingOppdragStatus !== 'oppdrag') ? existingOppdragStatus : 'ny';
   var payload = { caseNumber: cn, dueDate: internalDate, title: ti,
     notes: fNotes.value.trim(), tags: fModalTags.value,
-    type: isOppdrag ? 'oppdrag' : 'sak', status: isOppdrag ? oppdragStatus : st, duration: duration, caseBuffer: caseBuffer, filingDate: filingDate,
-    priorityDate: priorityDate, unassigned: st === 'ny' && document.getElementById('f-unassigned').checked };
+    type: isOppdrag ? 'oppdrag' : 'sak', status: isOppdrag ? oppdragStatus : plan.status, duration: duration, caseBuffer: caseBuffer, filingDate: filingDate,
+    priorityDate: priorityDate, unassigned: plan.status === 'ny' && document.getElementById('f-unassigned').checked };
   if (id) { payload.id = id; dispatch('CASE_EDIT', payload); }
   else    { dispatch('CASE_CREATE', payload); }
   if (medl) dispatch('MEDL_SET', { id: id, reader: medl.reader, date: medl.date, addToList: medl.addToList });
   var dest = isOppdrag ? 'oppdrag' : st;
-  if (activePage === 'sak') {
+  if (activePage === 'sak' || plan.transitionTo) {
     render();
   } else if (activePage !== 'statistikk' && activePage !== 'innstillinger' && activePage !== 'hjem') {
     navigateTo(dest);
@@ -14416,7 +14473,24 @@ document.getElementById('btn-save').addEventListener('click', function() {
     render();
   }
   closeModal();
+  // Samme vei som statusknappene på sakssiden: stikkord, utfall og ny frist
+  // spørres det om, og overgangen føres i historikken og statistikken. Lagre
+  // er selve bekreftelsen.
+  if (plan.transitionTo) runStatusTransition(id, plan.transitionTo, { skipConfirm: true });
 });
+
+// Hva «Lagre» i «Rediger sak» gjør med statusen. Et statusbytte på en
+// eksisterende søknad lagres ikke direkte — da ville saken havnet i
+// Fristarkiv uten søkerens frist, og overgangen manglet i historikken og
+// statistikken. De andre feltene lagres med uendret status, og byttet kjøres
+// etterpå gjennom runStatusTransition. Nye saker og oppdrag har ingen
+// saksflyt og lagres som før. Ren funksjon — se test/dataIntegrity.test.js.
+function editStatusPlan(orig, selected) {
+  if (!orig || orig.type === 'oppdrag' || selected === 'oppdrag' || selected === orig.status) {
+    return { status: selected, transitionTo: null };
+  }
+  return { status: orig.status, transitionTo: selected };
+}
 
 // ── Stikkord-filter ────────────────────────────────
 document.getElementById('tag-filter-input').addEventListener('input', function() {
