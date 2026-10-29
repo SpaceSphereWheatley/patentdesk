@@ -7,6 +7,15 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Fixed
+- **Siden følger med når datoen skifter.** Står PatentDesk åpen over natten,
+  tegnes siden nå på nytt når en ny dag starter, så «i dag»-linjen i
+  tidslinjen, forfalt-markeringen, nedtellingene, belegget og datoen i
+  menyen viser riktig dag. Før lå alt én dag etter til noe annet tegnet siden
+  på nytt. Det sjekkes hvert minutt og når fanen blir synlig igjen. Står en
+  dialog åpen eller du skriver i et felt, venter oppdateringen til du er
+  ferdig, så ingenting du holder på med går tapt.
+
 ## [4.41.0] - 2026-10-29
 «Flere saker» legger ikke inn samme sak to ganger, færre krav krever
 bekreftelse, og Statistikk viser viderebehandlinger og avgjørelser.

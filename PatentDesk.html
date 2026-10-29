@@ -5275,6 +5275,17 @@ function todayStr() {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+// dayRolloverDue: om siden skal tegnes på nytt fordi datoen har skiftet siden
+// den sist ble tegnet. Appen står gjerne åpen over natten, og da ville «i
+// dag»-linjen, forfalt-markeringen og belegget ellers ligget en dag etter.
+// Venter mens brukeren holder på med noe (busy), så ingenting som skrives inn
+// går tapt — det sjekkes igjen litt senere.
+// Ren funksjon — se test/dayRollover.test.js.
+function dayRolloverDue(renderedDay, today, busy) {
+  if (!renderedDay || renderedDay === today) return false;
+  return !busy;
+}
+
 function encodeCase(c) {
   var cfg = STATUS_CONFIG[c.status];
   return Object.assign({}, c, { status: cfg !== undefined ? cfg.int : c.status });
@@ -15415,7 +15426,26 @@ function init() {
   document.querySelectorAll('.logo-version, .settings-version, .drawer-version, .about-version').forEach(function(el) { el.textContent = APP_VERSION; });
   // Dato-visning i drawer
   var dateEl = document.getElementById('current-date');
-  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('nb-NO', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  function _showCurrentDate() {
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('nb-NO', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  }
+  _showCurrentDate();
+  // Datoskifte: tegn siden på nytt når en ny dag har startet. Sjekkes hvert
+  // minutt og når fanen blir synlig igjen (maskinen kan ha sovet over natten).
+  // Venter mens en dialog er åpen eller et felt har fokus.
+  var _renderedDay = todayStr();
+  function _checkDayRollover() {
+    var busy = _anyBackdropOpen() || _isTypingTarget(document.activeElement);
+    var today = todayStr();
+    if (!dayRolloverDue(_renderedDay, today, busy)) return;
+    _renderedDay = today;
+    _showCurrentDate();
+    render();
+  }
+  setInterval(_checkDayRollover, 60000);
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') _checkDayRollover();
+  });
   _dp.init(document.getElementById('f-due-date'));
   _dp.init(document.getElementById('f-due-date-op'));
   _dp.init(document.getElementById('f-filing-date'));
