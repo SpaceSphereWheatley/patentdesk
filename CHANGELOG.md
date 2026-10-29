@@ -7,6 +7,18 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.43.0] - 2026-10-29
+En lenke til siden der nye saker fordeles, rett ved «Legg til saker».
+
+### Added
+- **Lenke til nye saker.** Under Innstillinger → Saksbehandling kan du legge inn
+  adressen til siden der du finner nye saker, f.eks. oppgavefordelingen på
+  SharePoint, og en valgfri etikett. Da vises en lenkeknapp ved siden av
+  «Legg til saker» på Oversikt og i sakslistene, og den åpner siden i en ny fane.
+  Sporingsparametere fra Teams-lenker (blant annet e-postadressen i `ovuser`)
+  fjernes automatisk, og bare `https://`-adresser godtas. Lenken følger med i
+  eksport og import. Uten adresse vises ingen knapp.
+
 ## [4.42.1] - 2026-10-29
 Søket finner saker på mothold og klasser, CSV-eksporten har flere kolonner,
 og noen småfeil er rettet.
