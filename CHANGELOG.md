@@ -7,6 +7,16 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.40.0] - 2026-10-29
+Tidslinjen viser eget arbeid øverst når saker overlapper.
+
+### Changed
+- **Ny-saker prioriteres i tidslinjen.** Når bjelker overlapper, ligger Ny-saker
+  og oppdrag nå alltid øverst, fulgt av Viderebehandling, med Fristarkiv
+  nederst. Innenfor samme status kommer den som starter først, øverst. Saker
+  som ikke overlapper noe, kan fortsatt bruke den øverste raden, så tidslinjen
+  blir ikke høyere enn nødvendig.
+
 ## [4.39.0] - 2026-10-28
 Nye saker kan limes rett inn fra saksoversikten, ikke bare fra Excel.
 
