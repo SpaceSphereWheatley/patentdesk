@@ -4427,7 +4427,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.39.0';
+var APP_VERSION    = 'v4.40.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -6363,27 +6363,46 @@ function filterCasesForTimeline(allCases, typeFilter) {
   });
 }
 
+// timelineRowPriority: hvor høyt en bjelke skal ligge når den overlapper andre.
+// Eget arbeid først: Ny og oppdrag (0), så Viderebehandling (1), og
+// Fristarkiv (2) nederst — der venter saken på søkeren.
+function timelineRowPriority(r) {
+  if (r.isOppdrag) return 0;
+  if (r.status === 'viderebehandling') return 1;
+  if (r.status === 'fristarkiv') return 2;
+  return 0;
+}
+
 // assignTimelineRows: greedy intervall-fargelegging for overlappende
 // tidslinje-bjelker. Tar en liste ranges ({start, end, ...}) og returnerer en
 // ny liste (samme rekkefølge som input) der hvert element har fått en .row
 // (0-indeksert rad), pluss laneCount — antall rader som faktisk trengs.
-// Sorterer internt på start, så rekkefølgen på input påvirker ikke resultatet.
-// Antall rader er ubegrenset (i motsetning til den gamle Math.min(row,1)),
-// så tre eller flere samtidig overlappende saker stables korrekt i stedet for
-// å tegnes oppå hverandre.
+// Bjelkene plasseres etter prioritet (timelineRowPriority) og deretter start,
+// så rekkefølgen på input påvirker ikke resultatet. En bjelke legges alltid
+// under alle overlappende bjelker med høyere prioritet, men tar ellers den
+// øverste ledige raden. Antall rader er ubegrenset, så tre eller flere
+// samtidig overlappende saker stables i stedet for å tegnes oppå hverandre.
 function assignTimelineRows(ranges) {
-  var indexed = (ranges || []).map(function(r, i) { return { start: r.start, end: r.end, i: i }; });
-  var sorted = indexed.slice().sort(function(a, b) { return a.start - b.start; });
-  var rowEnds = [];
+  var indexed = (ranges || []).map(function(r, i) {
+    return { start: r.start, end: r.end, prio: timelineRowPriority(r), i: i };
+  });
+  var sorted = indexed.slice().sort(function(a, b) {
+    return (a.prio - b.prio) || (a.start - b.start) || (a.end - b.end);
+  });
+  var rows = [];       // rows[n] = bjelkene som allerede ligger i rad n
   var rowByIndex = [];
+  function overlaps(a, b) { return a.start < b.end && b.start < a.end; }
   sorted.forEach(function(item) {
     var row = 0;
-    while (row < rowEnds.length && rowEnds[row] > item.start) row++;
-    rowEnds[row] = item.end;
+    rows.forEach(function(placed, n) {
+      if (placed.some(function(p) { return p.prio < item.prio && overlaps(p, item); })) row = Math.max(row, n + 1);
+    });
+    while (row < rows.length && rows[row].some(function(p) { return overlaps(p, item); })) row++;
+    (rows[row] = rows[row] || []).push(item);
     rowByIndex[item.i] = row;
   });
   var out = (ranges || []).map(function(r, i) { return Object.assign({}, r, { row: rowByIndex[i] }); });
-  return { ranges: out, laneCount: rowEnds.length };
+  return { ranges: out, laneCount: rows.length };
 }
 
 // tlDueOffset: dager (med brøk) fra `now` til kl. 16 på datoen — fristen gjelder
@@ -12090,8 +12109,8 @@ function buildTimelineDiv(opts) {
 
   var TOP_PAD = 4, BOTTOM_PAD = 4, GAP = 3, FULL_BAR = 40, LANE_H = 18;
 
-  // Rad-tildeling: ubegrenset antall rader (assignTimelineRows), sortert
-  // kronologisk internt slik at rekkefølgen i cases[] ikke påvirker resultatet.
+  // Rad-tildeling: ubegrenset antall rader (assignTimelineRows). Ny og oppdrag
+  // øverst, så Viderebehandling, Fristarkiv nederst; kronologisk innenfor hver.
   var rowResult = assignTimelineRows(busyRanges);
   busyRanges = rowResult.ranges;
   var laneCount = Math.max(1, rowResult.laneCount);

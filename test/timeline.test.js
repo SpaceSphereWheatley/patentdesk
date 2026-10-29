@@ -3,8 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
-const { filterCasesForTimeline, assignTimelineRows, holidayYearOffsets } = loadFunctions([
-  'filterCasesForTimeline', 'assignTimelineRows', 'holidayYearOffsets',
+const { filterCasesForTimeline, assignTimelineRows, timelineRowPriority, holidayYearOffsets } = loadFunctions([
+  'filterCasesForTimeline', 'assignTimelineRows', 'timelineRowPriority', 'holidayYearOffsets',
 ]);
 
 function makeCase(overrides) {
@@ -174,6 +174,56 @@ test('assignTimelineRows handles overdue (negative) ranges without corrupting ro
   // could force a later, non-overlapping overdue range into an unnecessary
   // new row. These two ranges don't overlap each other and must share row 0.
   const ranges = [{ start: -10, end: -8 }, { start: -6, end: -2 }];
+  const result = assignTimelineRows(ranges);
+  assert.strictEqual(result.laneCount, 1);
+  assert.deepStrictEqual(result.ranges.map((r) => r.row), [0, 0]);
+});
+
+test('timelineRowPriority ranks Ny and oppdrag first, then Viderebehandling, then Fristarkiv', () => {
+  assert.strictEqual(timelineRowPriority({ status: 'ny' }), 0);
+  assert.strictEqual(timelineRowPriority({ status: 'fristarkiv', isOppdrag: true }), 0);
+  assert.strictEqual(timelineRowPriority({ status: 'viderebehandling' }), 1);
+  assert.strictEqual(timelineRowPriority({ status: 'fristarkiv' }), 2);
+});
+
+test('assignTimelineRows puts overlapping Ny above Viderebehandling above Fristarkiv', () => {
+  // Fristarkiv starts first, so plain chronological stacking would put it on top.
+  const ranges = [
+    { start: 0, end: 10, status: 'fristarkiv' },
+    { start: 2, end: 12, status: 'viderebehandling' },
+    { start: 4, end: 14, status: 'ny' },
+  ];
+  const result = assignTimelineRows(ranges);
+  assert.strictEqual(result.laneCount, 3);
+  assert.deepStrictEqual(result.ranges.map((r) => r.row), [2, 1, 0]);
+});
+
+test('assignTimelineRows puts oppdrag on the Ny level, above an overlapping Fristarkiv', () => {
+  const ranges = [
+    { start: 0, end: 10, status: 'fristarkiv' },
+    { start: 5, end: 8, status: 'fristarkiv', isOppdrag: true },
+  ];
+  assert.deepStrictEqual(assignTimelineRows(ranges).ranges.map((r) => r.row), [1, 0]);
+});
+
+test('assignTimelineRows never lifts a lower-priority bar above an overlapping higher-priority one', () => {
+  // A and B are both Ny and overlap, so B sits on row 1. C (Fristarkiv)
+  // overlaps B but not A; row 0 is free at C's time, but taking it would put
+  // Fristarkiv above an overlapping Ny case.
+  const ranges = [
+    { start: 0, end: 10, status: 'ny' },          // A
+    { start: 5, end: 15, status: 'ny' },          // B
+    { start: 11, end: 20, status: 'fristarkiv' }, // C
+  ];
+  const rows = assignTimelineRows(ranges).ranges.map((r) => r.row);
+  assert.deepStrictEqual(rows, [0, 1, 2]);
+});
+
+test('assignTimelineRows lets a lower-priority bar use the top row where nothing overlaps it', () => {
+  const ranges = [
+    { start: 0, end: 5, status: 'ny' },
+    { start: 10, end: 15, status: 'fristarkiv' },
+  ];
   const result = assignTimelineRows(ranges);
   assert.strictEqual(result.laneCount, 1);
   assert.deepStrictEqual(result.ranges.map((r) => r.row), [0, 0]);
