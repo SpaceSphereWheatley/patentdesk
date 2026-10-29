@@ -2703,12 +2703,6 @@ tr:hover .sak-tag-display.sak-tag-empty,
   background: repeating-linear-gradient(135deg, rgba(255,255,255,0.55) 0 3px, rgba(255,255,255,0.25) 3px 7px);
 }
 .tl-bar.dragging .tl-bar-gap { display: none; } /* fridagene flytter seg med draget */
-/* Helger i sporet, bare når zoomen er tett nok (tl-show-weekends) */
-.tl-weekend {
-  position: absolute; top: 0; bottom: 0; display: none; pointer-events: none;
-  background: repeating-linear-gradient(135deg, rgba(17,24,39,0.045) 0 3px, transparent 3px 7px);
-}
-.tl-show-weekends .tl-weekend { display: block; }
 /* Forfalt-bånd: de arbeidsdagene belegget bokfører en forfalt sak på */
 .tl-overdue-band { position: absolute; height: 5px; border-radius: 3px; background: rgba(220,38,38,0.75); z-index: 1; }
 /* Brikken over en bjelke som dras: hva draget gjør med bufferen */
@@ -12579,18 +12573,6 @@ function buildTimelineDiv(opts) {
   // på, så tidslinjen og belegget forteller det samme.
   var bands = timelineOverdueBands(busyRanges, overduePenaltyOffsets(today, OVERDUE_PENALTY_WORKDAYS));
 
-  // Helger, svakt skravert. Vises bare når zoomen er tett nok
-  // (tl-show-weekends, se _applyTimelineScroll).
-  var wk = addDaysLocal(today, -PAST);
-  for (var wi = -PAST; wi <= HORIZON; wi++, wk = addDaysLocal(today, wi)) {
-    if (wk.getDay() !== 6) continue;
-    var we = document.createElement('div');
-    we.className = 'tl-weekend';
-    we.style.left  = pctDay(wi);
-    we.style.width = pctW(Math.min(2, HORIZON - wi));
-    track.appendChild(we);
-  }
-
   vacations.forEach(function(v) {
     var vFrom = new Date(v.from + 'T00:00:00');
     var vTo   = new Date(v.to   + 'T00:00:00');
@@ -12859,15 +12841,9 @@ function _applyTimelineScroll(scrollEl, trackEl, horizon) {
     var reserved = bar.classList.contains('tl-bar-active') ? 2 * TL_LABEL_CHAR_PX : 0;
     if (lbl) lbl.textContent = timelineBarLabel(bar.dataset.cn, parseFloat(bar.dataset.spanDays) * pxPerDay - reserved);
   });
-  // Helgeskravering bare når en dag er bred nok til at den leses som helg,
-  // ikke som et mønster (3 mnd på en vanlig skjerm)
-  trackEl.classList.toggle('tl-show-weekends', pxPerDay >= TL_WEEKEND_MIN_PX_PER_DAY);
   _layoutTimelineLanes(scrollEl);
   _updateOverduePin(scrollEl);
 }
-
-// Minste dagbredde (px) før helgene skraveres i sporet.
-var TL_WEEKEND_MIN_PX_PER_DAY = 6;
 
 // Bredden pinnen dekker i venstre kant (px) — en sak bak den regnes som skjult.
 var TL_PIN_PX = 28;

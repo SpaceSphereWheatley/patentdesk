@@ -30,8 +30,7 @@ arbeidet havner.
 
 ### Added
 - **Fridager skraveres inne i bjelkene**, så du ser at arbeidsvinduet går
-  forbi helg og ferie. Når zoomen er tett nok (3 mnd), skraveres helgene svakt
-  i hele sporet.
+  forbi helg og ferie.
 - **Forfalt-bånd.** En forfalt sak koster de neste 3 arbeidsdagene i
   belegget. Et tynt rødt bånd langs bunnen av tidslinjen viser nå de dagene,
   ett bånd per forfalt sak, så tidslinjen og belegget forteller det samme.
