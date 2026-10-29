@@ -4487,6 +4487,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <tr><td><kbd>3</kbd></td><td>Viderebehandling</td></tr>
           <tr><td><kbd>4</kbd></td><td>Fristarkiv</td></tr>
           <tr><td><kbd>5</kbd></td><td>Oppdrag</td></tr>
+          <tr><td><kbd>6</kbd></td><td>Alle saker</td></tr>
+          <tr><td><kbd>7</kbd></td><td>Medlesing</td></tr>
           <tr><td><kbd>?</kbd></td><td>Denne oversikten</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>Lukk dialog</td></tr>
         </table>
@@ -4526,7 +4528,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.42.0';
+var APP_VERSION    = 'v4.42.1';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5343,7 +5345,7 @@ function makeExportPayload() {
   });
   return {
     version: 2, exported: new Date().toISOString(),
-    statusMap: { '0':'ny','1':'viderebehandling','2':'fristarkiv','3':'avsluttet','4':'oppdrag' },
+    statusMap: { '0':'ny','1':'viderebehandling','2':'fristarkiv','3':'avsluttet' },
     cases:      cases.map(encodeCase),
     stats:      stats,
     sakDetails: sakDetails,
@@ -8654,20 +8656,26 @@ function closeBackdrop(id) {
   _removeFocusTrap();
 }
 
-function closeAllBackdrops() {
-  // Esc på «Fjerne krav?» betyr behold: antall krav settes tilbake i feltet
-  if (_claimsReduce) closeClaimsReduce(false);
-  ['cle-backdrop','modal-backdrop','confirm-backdrop','complete-backdrop','fristarkiv-choice-backdrop',
+// Dialogene Esc lukker: alle unntatt konfliktdialogen for arbeidsfilen, som
+// krever et valg før noe skrives til datamappen. Se test/exportSearch.test.js.
+var CLOSABLE_BACKDROPS = ['cle-backdrop','modal-backdrop','confirm-backdrop','complete-backdrop','fristarkiv-choice-backdrop',
    'videre-choice-backdrop','reset-backdrop','import-backdrop','tag-backdrop','frist-backdrop',
    'delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
    'history-backdrop','backup-restore-backdrop','cle-reset-backdrop','search-backdrop',
-   'shortcuts-backdrop','medl-send-backdrop','claims-reduce-backdrop',
-   ].forEach(function(id) {
+   'shortcuts-backdrop','medl-send-backdrop','claims-reduce-backdrop'];
+
+function closeAllBackdrops() {
+  // Esc på «Fjerne krav?» betyr behold: antall krav settes tilbake i feltet
+  if (_claimsReduce) closeClaimsReduce(false);
+  CLOSABLE_BACKDROPS.forEach(function(id) {
     var el = document.getElementById(id);
     el.classList.remove('open');
     el.setAttribute('aria-hidden', 'true');
   });
   _removeFocusTrap();
+  // Står konfliktdialogen fortsatt åpen, skal tastaturet bli i den
+  var wf = document.getElementById('workfile-conflict-backdrop');
+  if (wf && wf.classList.contains('open')) _installFocusTrap(wf);
   pendingConfirmId = pendingConfirmCallback = pendingFristarkivId = pendingVidereId =
   pendingDeleteId = pendingTagId = pendingTagStatus = pendingTagCallback =
   pendingFristCallback = pendingMedlId = null;
@@ -9690,17 +9698,29 @@ document.getElementById('btn-export').addEventListener('click', function() {
 
 document.getElementById('btn-export-csv').addEventListener('click', function() {
   function csvCell(val) { return '"' + String(val || '').replace(/"/g, '""') + '"'; }
-  var rows = [['Saksnummer','Status','Forfallsdato','Tittel','Notater','Stikkord'].map(csvCell).join(';')];
-  cases.forEach(function(c) {
-    var cfg = STATUS_CONFIG[c.status] || {};
-    rows.push([c.caseNumber, cfg.label || c.status, toDisplay(c.dueDate), c.title, c.notes, c.tags].map(csvCell).join(';'));
-  });
+  var rows = caseCsvRows(cases, loadSakData).map(function(r) { return r.map(csvCell).join(';'); });
   var blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = 'patentdesk-' + todayStr() + '.csv'; a.click();
   URL.revokeObjectURL(a.href);
   showToast('✓ Eksportert til ' + a.download);
 });
+
+// Radene i CSV-eksporten, med overskrift først. detailsFn(id) gir
+// saksdetaljene, der innleveringsdatoen ligger. Oppdrag er «Aktiv» eller
+// «Utført» — de har ingen saksflyt. Ren funksjon — se test/exportSearch.test.js.
+function caseCsvRows(list, detailsFn) {
+  var rows = [['Saksnummer', 'Type', 'Status', 'Utfall', 'Forfallsdato', 'Tittel', 'Notater', 'Stikkord', 'Innleveringsdato', 'Ikke fordelt']];
+  (list || []).forEach(function(c) {
+    var isOp = c.type === 'oppdrag';
+    var status = isOp ? (c.status === 'avsluttet' ? 'Utført' : 'Aktiv') : ((STATUS_CONFIG[c.status] || {}).label || c.status || '');
+    var outcome = !isOp && Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome) ? OUTCOMES[c.outcome].label : '';
+    var d = isOp ? null : detailsFn(c.id);
+    rows.push([c.caseNumber || '', isOp ? 'Oppdrag' : 'Søknad', status, outcome, toDisplay(c.dueDate || ''),
+      c.title || '', c.notes || '', c.tags || '', toDisplay((d && d.filingDate) || ''), isUnassigned(c) ? 'Ja' : '']);
+  });
+  return rows;
+}
 
 // ── Import ─────────────────────────────────────────
 var pendingImportData = null;
@@ -13971,6 +13991,8 @@ document.addEventListener('keydown', function(e) {
     case '3': e.preventDefault(); navigateTo('viderebehandling'); break;
     case '4': e.preventDefault(); navigateTo('fristarkiv'); break;
     case '5': e.preventDefault(); navigateTo('oppdrag'); break;
+    case '6': e.preventDefault(); navigateTo('avsluttet'); break;
+    case '7': e.preventDefault(); navigateTo('medlesing'); break;
   }
 });
 document.getElementById('btn-shortcuts-close').addEventListener('click', function() { closeBackdrop('shortcuts-backdrop'); });
@@ -13983,12 +14005,19 @@ document.getElementById('shortcuts-backdrop').addEventListener('click', function
 // (én gang) i stedet for å auto-laste på nytt, for ikke å forkaste pågående
 // redigering i denne fanen.
 var _multiTabWarned = false;
+
+// Nøklene som holder egentlig data — saker, statistikk, ferier, saksdetaljer
+// og medlesinger — ikke backup-status, schema-flagg e.l.
+// Ren funksjon — se test/exportSearch.test.js.
+function isDataStorageKey(key) {
+  if (typeof key !== 'string' || !key) return false;
+  return key === STORAGE_KEY || key === STATS_KEY || key === VACATION_KEY ||
+         key === MEDLESING_KEY || key === MEDL_LOG_KEY || key === MEDLESERE_KEY ||
+         key.indexOf(SAK_KEY_PREFIX) === 0;
+}
 window.addEventListener('storage', function(e) {
   if (_multiTabWarned || !e.key) return;
-  // Bare egentlig saksdata teller — ikke backup-status, schema-flagg e.l.
-  var isDataKey = e.key === STORAGE_KEY || e.key === STATS_KEY ||
-                  e.key === VACATION_KEY || e.key.indexOf(SAK_KEY_PREFIX) === 0;
-  if (!isDataKey) return;
+  if (!isDataStorageKey(e.key)) return;
   _multiTabWarned = true;
   showToast('⚠ Dataene ble endret i en annen fane. Last inn siden på nytt for å unngå å overskrive.', true);
 });
@@ -14006,11 +14035,32 @@ function openGlobalSearch() {
 }
 
 // Rangering: saksnummer-prefiks > saksnummer > tittel > stikkord > notater
-function searchCases(q) {
+// > saksdetaljene (motholdsnumre, CPC-klasser, saksnotater).
+function searchCases(q) { return searchCaseList(q, cases, loadSakData); }
+
+// Treff i en saks detaljer. Publikasjonsnumre og klasser sammenlignes uten
+// mellomrom og skilletegn, så «WO 2020/1234» finner WO2020123456A1.
+function _detailsMatch(q, d) {
+  if (!d) return false;
+  var qn = normalizePubNumber(q);
+  var docs = Array.isArray(d.docs) ? d.docs : [];
+  if (docs.some(function(x) {
+    var ref = String((x && x.ref) || '');
+    return ref.toLowerCase().indexOf(q) > -1 || (qn.length >= 3 && normalizePubNumber(ref).indexOf(qn) > -1);
+  })) return true;
+  var classes = Array.isArray(d.classes) ? d.classes : [];
+  if (qn.length >= 3 && classes.some(function(x) { return normalizePubNumber((x && x.code) || '').indexOf(qn) > -1; })) return true;
+  return String(d.sakNotes || '').toLowerCase().indexOf(q) > -1;
+}
+
+// detailsFn(id) gir saksdetaljene (pt_sak_*). De leses bare når søket har
+// minst tre tegn og saken ikke allerede traff på feltene i sakslista.
+// Ren funksjon — se test/exportSearch.test.js.
+function searchCaseList(q, list, detailsFn) {
   q = (q || '').trim().toLowerCase();
   if (!q) return [];
   var hits = [];
-  cases.forEach(function(c) {
+  (list || []).forEach(function(c) {
     var cn = (c.caseNumber || '').toLowerCase();
     var score = -1;
     if      (cn.indexOf(q) === 0)                                  score = 0;
@@ -14018,6 +14068,7 @@ function searchCases(q) {
     else if ((c.title || '').toLowerCase().indexOf(q) > -1)        score = 2;
     else if ((c.tags  || '').toLowerCase().indexOf(q) > -1)        score = 3;
     else if ((c.notes || '').toLowerCase().indexOf(q) > -1)        score = 4;
+    else if (q.length >= 3 && _detailsMatch(q, detailsFn(c.id)))   score = 5;
     if (score >= 0) hits.push({ c: c, score: score });
   });
   hits.sort(function(a, b) {

@@ -7,6 +7,26 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.42.1] - 2026-10-29
+Søket finner saker på mothold og klasser, CSV-eksporten har flere kolonner,
+og noen småfeil er rettet.
+
+### Added
+- **Søket (Ctrl+K) leter også i saksdetaljene.** Det finner saker på
+  publikasjonsnummer for mothold, CPC-klasse og saksnotater. Numre og klasser
+  kan skrives med eller uten mellomrom og skråstrek, så «WO 2020/1234» finner
+  WO2020123456A1. Treff i saksnummer, tittel, stikkord og notater står fortsatt
+  øverst.
+- **Flere kolonner i CSV-eksporten:** type (søknad eller oppdrag), utfall,
+  innleveringsdato og «ikke fordelt». Oppdrag står som «Aktiv» eller «Utført».
+- **Tastene 6 og 7** går til Alle saker og Medlesing.
+
+### Fixed
+- **Esc slipper ikke tastaturet ut av konfliktdialogen for arbeidsfilen.**
+  Dialogen ble stående åpen, men Tab kunne gå til siden bak den.
+- **Varselet om endringer i en annen fane gjelder også medlesinger.**
+- **Eksportfilen oppgir ikke lenger en status som ikke finnes** (4 = oppdrag).
+
 ## [4.42.0] - 2026-10-29
 Arbeidsvinduet regnes i arbeidsdager, og tidslinjen viser tydeligere hvor
 arbeidet havner.
