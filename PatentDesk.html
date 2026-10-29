@@ -2695,8 +2695,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
 @media (prefers-reduced-motion: reduce) {
   .tl-track, .tl-bar, .tl-actual-line, .tl-actual-mark, .tl-bar-draft { transition: none; }
 }
-/* Arbeidsvinduet er arbeidsdager: helger, røde dager og ferie inni bjelken
-   skraveres lysere, så du ser at saken strekker seg forbi dem. */
+/* Arbeidsvinduet er arbeidsdager: ferie og røde dager inni bjelken skraveres
+   lysere, så du ser at saken strekker seg forbi dem. Vanlige helger ikke. */
 .tl-bar { overflow: hidden; }
 .tl-bar-gap {
   position: absolute; top: 0; bottom: 0; pointer-events: none;
@@ -2748,9 +2748,11 @@ tr:hover .sak-tag-display.sak-tag-empty,
   position: absolute; top: -17px; line-height: 1.2; font-size: var(--text-xs);
   color: var(--accent); font-weight: var(--weight-semibold); white-space: nowrap;
 }
+/* Røde dager: ett felt per sammenhengende fri (holidayRuns), minst 3 px så
+   en enkelt dag synes også på 1-årsvisningen */
 .tl-holiday {
-  position: absolute; top: 0; width: 3px; height: 48px;
-  background: var(--tl-holiday); opacity: 0.45; border-radius: 1px; pointer-events: none;
+  position: absolute; top: 0; min-width: 3px; height: 48px;
+  background: var(--tl-holiday); opacity: 0.3; border-radius: 1px; pointer-events: none;
 }
 .tl-bar-vacation {
   position: absolute; top: 0; height: 48px;
@@ -2805,7 +2807,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-topbar-right { display: flex; align-items: center; gap: var(--space-3); }
 .flex-gap-sm      { display: flex; gap: var(--space-2); }
 .tl-legend-swatch-vac    { background: rgba(16,185,129,0.3); }
-.tl-legend-swatch-buffer { width: 3px; height: 14px; background: var(--tl-holiday); opacity: 0.5; border-radius: 1px; }
+.tl-legend-swatch-buffer { background: var(--tl-holiday); opacity: 0.4; }
 .tl-legend-today-line    { width: 10px; border-top: 1px dashed var(--tl-actual-due); display: inline-block; }
 .tl-legend-today-bar     { width: 2px; height: 10px; background: var(--tl-actual-due); opacity: 0.85; border-radius: 1px; display: inline-block; }
 .tl-legend-today-wrap    { display: inline-flex; align-items: center; gap: 2px; }
@@ -6408,6 +6410,16 @@ function workWindowStart(dueStr, days, nonWorkday) {
   return isoLocalDate(d);
 }
 
+// isPlainWeekendRun: om en rekke fridager ([første, siste]) bare er en vanlig
+// helg. Et arbeidsvindu går nesten alltid over helger, så de skraveres ikke i
+// bjelkene — bare ferie og røde dager på hverdager, der vinduet strekker seg
+// lenger enn vanlig. En rekke på mer enn to dager har alltid en hverdag i seg.
+function isPlainWeekendRun(run) {
+  var a = new Date(run[0] + 'T00:00:00'), b = new Date(run[1] + 'T00:00:00');
+  if (Math.round((b - a) / 86400000) > 1) return false;
+  return [a, b].every(function(d) { return d.getDay() === 0 || d.getDay() === 6; });
+}
+
 // nonWorkdayRuns: sammenhengende fridager fra og med fromStr til og med toStr,
 // som [første, siste]-par. Tidslinjen skraverer dem inne i bjelkene.
 function nonWorkdayRuns(fromStr, toStr, nonWorkday) {
@@ -6604,6 +6616,19 @@ function timelineRowPriority(r) {
   if (r.status === 'viderebehandling') return 1;
   if (r.status === 'fristarkiv') return 2;
   return 0;
+}
+
+// holidayRuns: røde dager (dager etter i dag) slått sammen til sammenhengende
+// felt [fra, til), så julaften–2. juledag blir ett felt og ikke tre streker.
+function holidayRuns(days) {
+  var sorted = (days || []).slice().sort(function(a, b) { return a - b; });
+  var runs = [];
+  sorted.forEach(function(d) {
+    var last = runs[runs.length - 1];
+    if (last && d <= last[1]) last[1] = Math.max(last[1], d + 1);
+    else runs.push([d, d + 1]);
+  });
+  return runs;
 }
 
 // assignTimelineRows: greedy intervall-fargelegging for overlappende
@@ -12573,6 +12598,17 @@ function buildTimelineDiv(opts) {
   // på, så tidslinjen og belegget forteller det samme.
   var bands = timelineOverdueBands(busyRanges, overduePenaltyOffsets(today, OVERDUE_PENALTY_WORKDAYS));
 
+  // Røde dager som henger sammen (jul, påske) tegnes som ett felt, under
+  // bjelkene
+  holidayRuns(holidays).forEach(function(run) {
+    var el = document.createElement('div');
+    el.className = 'tl-holiday';
+    el.style.left   = pctDay(run[0]);
+    el.style.width  = pctW(Math.min(HORIZON, run[1]) - run[0]);
+    el.style.height = '100%';
+    track.appendChild(el);
+  });
+
   vacations.forEach(function(v) {
     var vFrom = new Date(v.from + 'T00:00:00');
     var vTo   = new Date(v.to   + 'T00:00:00');
@@ -12610,10 +12646,12 @@ function buildTimelineDiv(opts) {
       bar.setAttribute('role', 'button');
       bar.setAttribute('aria-label', r.caseNumber + (r.title ? ' — ' + r.title : '') + ', frist ' + formatDate(r.dueDate) + (r.isOverdue ? ', forfalt' : ''));
     }
-    // Fridager inne i arbeidsvinduet skraveres: vinduet er arbeidsdager, og
-    // bjelken strekker seg forbi helger og ferie.
+    // Ferie og røde dager inne i arbeidsvinduet skraveres: vinduet er
+    // arbeidsdager, og bjelken strekker seg forbi dem. Vanlige helger
+    // skraveres ikke — de er i hver bjelke og ville bare blitt støy.
     if (r.windowStart && visEnd > visStart) {
       nonWorkdayRuns(r.windowStart, r.effDue).forEach(function(run) {
+        if (isPlainWeekendRun(run)) return;
         var gs = Math.max(visStart, tlDueOffset(run[0], now) - 16 / 24);
         var ge = Math.min(visEnd,   tlDueOffset(run[1], now) + 8 / 24);
         if (ge <= gs) return;
@@ -12684,14 +12722,6 @@ function buildTimelineDiv(opts) {
       track.appendChild(draft);
     });
   }
-
-  holidays.forEach(function(day) {
-    var el = document.createElement('div');
-    el.className = 'tl-holiday';
-    el.style.left   = pctDay(day);
-    el.style.height = '100%';
-    track.appendChild(el);
-  });
 
   majorDays.forEach(function(day, i) {
     var line = document.createElement('div');

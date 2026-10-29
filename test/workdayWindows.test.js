@@ -120,3 +120,22 @@ test('overduePenaltyOffsets lands on the right weekday across the end of summer 
 test('overduePenaltyOffsets gives up after 60 days off in a row', () => {
   assert.deepStrictEqual([...overduePenaltyOffsets(new Date('2026-10-29T00:00:00'), 3, () => true)], []);
 });
+
+// ── isPlainWeekendRun ───────────────────────────────────────────────────────
+
+const { isPlainWeekendRun } = loadFunctions(['isPlainWeekendRun']);
+
+test('isPlainWeekendRun is true for an ordinary Saturday–Sunday', () => {
+  assert.strictEqual(isPlainWeekendRun(['2026-11-07', '2026-11-08']), true);
+  // Bare søndagen (bjelken starter midt i helgen)
+  assert.strictEqual(isPlainWeekendRun(['2026-11-08', '2026-11-08']), true);
+});
+
+test('isPlainWeekendRun is false when the run reaches into a weekday', () => {
+  // Juleferie 7.–18.12 med helgene rundt
+  assert.strictEqual(isPlainWeekendRun(['2026-12-05', '2026-12-20']), false);
+  // Langfredag og påskeaften–2. påskedag 2027
+  assert.strictEqual(isPlainWeekendRun(['2027-03-26', '2027-03-29']), false);
+  // En rød dag alene på en onsdag
+  assert.strictEqual(isPlainWeekendRun(['2026-12-30', '2026-12-30']), false);
+});

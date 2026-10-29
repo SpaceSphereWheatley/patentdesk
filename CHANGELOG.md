@@ -27,10 +27,14 @@ arbeidet havner.
   bjelkene i utsnittet bruker, og høyden følger med når du scroller. Saker som
   overlapper langt fram i tid, gjør ikke lenger bjelkene du ser, tynne.
 - **Bjelker kan dras også i tidslinjen på sakslistene**, ikke bare på Hjem.
+- **Røde dager som henger sammen, vises som ett felt.** Julaften til 2. juledag
+  og nyttårsaften til nyttårsdag er nå ett gult felt hver i tidslinjen, ikke
+  flere streker. En enkelt rød dag er like bred som dagen.
 
 ### Added
-- **Fridager skraveres inne i bjelkene**, så du ser at arbeidsvinduet går
-  forbi helg og ferie.
+- **Ferie og røde dager skraveres inne i bjelkene**, så du ser hvilke saker
+  som strekker seg forbi en ferie og må gjøres før den. Vanlige helger
+  skraveres ikke; de er i nesten hver bjelke og ville bare blitt støy.
 - **Forfalt-bånd.** En forfalt sak koster de neste 3 arbeidsdagene i
   belegget. Et tynt rødt bånd langs bunnen av tidslinjen viser nå de dagene,
   ett bånd per forfalt sak, så tidslinjen og belegget forteller det samme.

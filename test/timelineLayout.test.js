@@ -109,3 +109,21 @@ test('timelineKeyBuffer stays within 0 and max, and ignores other keys', () => {
   assert.strictEqual(timelineKeyBuffer(90, 'ArrowLeft', 90), 90);
   assert.strictEqual(timelineKeyBuffer(5, 'ArrowUp', 90), null);
 });
+
+// ── Røde dager som henger sammen, tegnes som ett felt ──────────────────────
+
+const { holidayRuns } = loadFunctions(['holidayRuns']);
+
+test('holidayRuns merges consecutive days off into one block', () => {
+  // Julaften–2. juledag og nyttårsaften–nyttårsdag
+  assert.deepStrictEqual(plain(holidayRuns([56, 57, 58, 63, 64])), [[56, 59], [63, 65]]);
+});
+
+test('holidayRuns keeps a single holiday as a one-day block, in any input order', () => {
+  assert.deepStrictEqual(plain(holidayRuns([10, -3, 9])), [[-3, -2], [9, 11]]);
+});
+
+test('holidayRuns ignores duplicates and gives nothing for no holidays', () => {
+  assert.deepStrictEqual(plain(holidayRuns([4, 4, 5])), [[4, 6]]);
+  assert.deepStrictEqual(plain(holidayRuns([])), []);
+});
