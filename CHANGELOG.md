@@ -7,6 +7,18 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.42.2] - 2026-10-29
+Popupene i tidslinjen dekker ikke lenger bjelkene.
+
+### Changed
+- **Popupen i tidslinjen står over tidslinjen.** Holder du over en bjelke,
+  ferie, rød dag eller et forfalt-bånd, vises teksten over tidslinjen med en
+  pil ned mot det du peker på, ikke oppå bjelkene. Det samme gjelder brikken
+  som viser bufferen når du drar en bjelke.
+- **Popupen venter et halvt sekund.** Den vises ikke lenger med en gang du
+  fører musen over tidslinjen. Står en popup allerede, bytter den med en gang
+  når du går videre til neste bjelke. Med tastaturet vises den med en gang.
+
 ## [4.42.1] - 2026-10-29
 Søket finner saker på mothold og klasser, CSV-eksporten har flere kolonner,
 og noen småfeil er rettet.
