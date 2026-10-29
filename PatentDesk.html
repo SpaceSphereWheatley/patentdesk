@@ -2752,7 +2752,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
    en enkelt dag synes også på 1-årsvisningen */
 .tl-holiday {
   position: absolute; top: 0; min-width: 3px; height: 48px;
-  background: var(--tl-holiday); opacity: 0.3; border-radius: 1px; pointer-events: none;
+  background: var(--tl-holiday); opacity: 0.3; border-radius: 1px;
 }
 .tl-bar-vacation {
   position: absolute; top: 0; height: 48px;
@@ -6629,6 +6629,15 @@ function holidayRuns(days) {
     else runs.push([d, d + 1]);
   });
   return runs;
+}
+
+// holidayLabel: navnene på de røde dagene i et felt, til popupen —
+// «Julaften, 1. juledag og 2. juledag».
+function holidayLabel(names) {
+  var n = (names || []).filter(Boolean);
+  if (!n.length) return 'Rød dag';
+  if (n.length === 1) return n[0];
+  return n.slice(0, -1).join(', ') + ' og ' + n[n.length - 1];
 }
 
 // assignTimelineRows: greedy intervall-fargelegging for overlappende
@@ -12566,10 +12575,11 @@ function buildTimelineDiv(opts) {
   var busyRanges = allRanges.filter(function(r) { return r.end >= -PAST && r.start <= HORIZON; });
 
   var holidays = [];
+  var holidayByDay = {}; // dag → helligdagen, for popupen
   holidayYearOffsets(PAST, HORIZON).forEach(function(yi) {
     getNorwegianHolidays(today.getFullYear() + yi).forEach(function(h) {
       var day = Math.round((new Date(h.date + 'T00:00:00') - today) / 86400000);
-      if (day >= -PAST && day <= HORIZON) holidays.push(day);
+      if (day >= -PAST && day <= HORIZON) { holidays.push(day); holidayByDay[day] = h; }
     });
   });
 
@@ -12606,6 +12616,11 @@ function buildTimelineDiv(opts) {
     el.style.left   = pctDay(run[0]);
     el.style.width  = pctW(Math.min(HORIZON, run[1]) - run[0]);
     el.style.height = '100%';
+    var names = [];
+    for (var hd = run[0]; hd < run[1]; hd++) if (holidayByDay[hd]) names.push(holidayByDay[hd].name);
+    el.dataset.label = holidayLabel(names);
+    el.dataset.from  = holidayByDay[run[0]].date;
+    el.dataset.to    = holidayByDay[run[1] - 1].date;
     track.appendChild(el);
   });
 
@@ -15324,13 +15339,15 @@ function applyTimelineLink(id, force) {
 
   // Fyller popupen for en saksbjelke eller ferie og plasserer den ved (x, y)
   // i sidekoordinater.
+  // vl er et ferie- eller rød dag-felt; begge har label, from og to.
   function showFor(el, vl, x, y) {
     if (vl) {
       var vFrom = vl.dataset.from, vTo = vl.dataset.to;
-      var vDatesTxt = vFrom && vTo ? toDisplay(vFrom) + ' – ' + toDisplay(vTo) : '';
+      var isHoliday = vl.classList.contains('tl-holiday');
+      var vDatesTxt = vFrom && vTo ? (vFrom === vTo ? toDisplay(vFrom) : toDisplay(vFrom) + ' – ' + toDisplay(vTo)) : '';
       var vDur = vFrom && vTo ? vacationDurationDays(vFrom, vTo) : null;
       var vDurTxt = vDur !== null ? vDur + (vDur === 1 ? ' dag' : ' dager') : '';
-      popup.innerHTML = '<span class="tl-popup-cn">⛱ ' + esc(vl.dataset.label || 'Ferie') + '</span>' +
+      popup.innerHTML = '<span class="tl-popup-cn">' + (isHoliday ? '' : '⛱ ') + esc(vl.dataset.label || (isHoliday ? 'Rød dag' : 'Ferie')) + '</span>' +
         (vDatesTxt ? '<span class="tl-popup-sep"> — </span><span class="tl-popup-title">' + esc(vDatesTxt) + '</span>' : '') +
         (vDurTxt ? '<span class="tl-popup-sep"> · </span><span class="tl-popup-title">' + esc(vDurTxt) + '</span>' : '');
     } else {
@@ -15356,13 +15373,15 @@ function applyTimelineLink(id, force) {
         (el.classList.contains('draggable') ? '<span class="tl-popup-hint">Dra for å endre bufferen · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd></span>' : '');
     }
     popup.style.display = 'block';
-    popup.style.left = x + 'px';
+    // Hold popupen innenfor vinduet nær høyre kant
+    var maxX = window.scrollX + document.documentElement.clientWidth - popup.offsetWidth - 8;
+    popup.style.left = Math.max(window.scrollX + 8, Math.min(x, maxX)) + 'px';
     popup.style.top  = y + 'px';
   }
 
   function handleMove(e) {
     var el = e.target.closest('.tl-bar, .tl-overdue-band');
-    var vl = e.target.closest('.tl-bar-vacation');
+    var vl = e.target.closest('.tl-bar-vacation, .tl-holiday');
     // Under drag viser brikken over bjelken det som skjer
     if ((!el && !vl) || (el && el.classList.contains('dragging'))) { popup.style.display = 'none'; return; }
     showFor(el, vl, e.pageX + 12, e.pageY - 28);
