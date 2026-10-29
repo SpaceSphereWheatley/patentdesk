@@ -315,6 +315,18 @@ a:focus-visible,
 }
 .btn-add:hover { opacity: 0.88; transform: translateY(-1px); }
 
+/* Lenke til siden med nye saker, ved siden av «Legg til saker» */
+.top-bar-actions { display: inline-flex; align-items: center; gap: var(--space-3); }
+.btn-add-link {
+  display: inline-flex; align-items: center; justify-content: center;
+  align-self: stretch; padding: 0 var(--space-4);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  color: var(--muted); background: transparent;
+  transition: color var(--dur-instant), border-color var(--dur-instant);
+}
+.btn-add-link[hidden] { display: none; }
+.btn-add-link:hover { color: var(--accent); border-color: var(--accent-dim); }
+
 /* Split-knapp */
 .btn-add-split { display: inline-flex; position: relative; }
 .btn-add-main  { border-radius: var(--radius) 0 0 var(--radius) !important; }
@@ -2973,7 +2985,10 @@ tr:hover .sak-tag-display.sak-tag-empty,
         <div id="cpc-home-notice" class="cpc-home-notice" style="display:none;"></div>
         <section class="top-bar">
           <h1 class="page-title">Oversikt</h1>
-          <button class="btn-add" id="btn-home-add">+ Legg til saker</button>
+          <div class="top-bar-actions">
+            <a class="btn-add-link" id="case-source-link-home" target="_blank" rel="noopener noreferrer" hidden><svg class="ti" aria-hidden="true"><use href="#ti-external-link"/></svg></a>
+            <button class="btn-add" id="btn-home-add">+ Legg til saker</button>
+          </div>
         </section>
 
         <!-- Fristvarsel-banner -->
@@ -3090,8 +3105,11 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <h1 class="page-title" id="page-title">Nye saker</h1>
             <span class="case-count" id="case-count"></span>
           </div>
-          <div class="btn-add-split" id="btn-add-split-wrap">
-            <button class="btn-add" id="btn-open-modal">+ Legg til saker</button>
+          <div class="top-bar-actions">
+            <a class="btn-add-link" id="case-source-link-cases" target="_blank" rel="noopener noreferrer" hidden><svg class="ti" aria-hidden="true"><use href="#ti-external-link"/></svg></a>
+            <div class="btn-add-split" id="btn-add-split-wrap">
+              <button class="btn-add" id="btn-open-modal">+ Legg til saker</button>
+            </div>
           </div>
         </section>
 
@@ -3394,6 +3412,17 @@ tr:hover .sak-tag-display.sak-tag-empty,
                         <li><code>Abstract.pdf</code></li>
                       </ul>
                     </div>
+                  </div>
+                  <div class="settings-row settings-row-col">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Lenke til nye saker</span>
+                      <span class="settings-label-sub">Vises som en knapp ved «Legg til saker» og åpnes i ny fane. Tomt felt = ingen knapp.</span>
+                    </div>
+                    <input class="field-input settings-path-input" id="input-case-source-url"
+                           type="url" placeholder="https://…sharepoint.com/sites/…/Oppgavefordeling.aspx" />
+                    <input class="field-input settings-path-input" id="input-case-source-label"
+                           type="text" maxlength="40" placeholder="Etikett (valgfritt), f.eks. Oppgavefordeling" />
+                    <div class="docroot-preview" id="case-source-error" role="alert"></div>
                   </div>
                   <div class="settings-row">
                     <div class="settings-label">
@@ -4528,7 +4557,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.42.1';
+var APP_VERSION    = 'v4.43.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4551,6 +4580,7 @@ var MEDLESERE_KEY     = 'pt_medlesere';
 var MEDL_LOG_KEY      = 'pt_medl_log';
 var SETTINGS_TAB_KEY  = 'pt_settings_tab';
 var TL_VIEW_KEY       = 'pt_tl_view';
+var CASE_SOURCE_KEY   = 'pt_case_source';
 var AUTOSAVE_KEY = 'pt_autosave';
 var SAK_KEY_PREFIX = 'pt_sak_';
 
@@ -5354,6 +5384,7 @@ function makeExportPayload() {
     beleggHorizon: beleggHorizon,
     docRoot:    loadDocRoot() || null,
     userName:   loadUserName() || null,
+    caseSource: loadCaseSource().url ? loadCaseSource() : null,
     // Bare en egendefinert mal eksporteres; null = standardmalen, så den
     // fortsatt følger med når standardmalen endres i en ny versjon
     checklistTemplate: _customChecklistTemplate(),
@@ -5422,6 +5453,8 @@ function readImportSettings(d) {
   if (typeof d.goal === 'number' && isFinite(d.goal) && d.goal >= 0 && Math.floor(d.goal) === d.goal) out.goal = d.goal;
   if (Array.isArray(d.medlesere)) out.medlesere = normalizeMedleserList(d.medlesere);
   if (Array.isArray(d.medlLog))   out.medlLog   = normalizeMedlLog(d.medlLog);
+  // null = ingen lenke satt
+  if (d.caseSource === null || (d.caseSource && typeof d.caseSource === 'object')) out.caseSource = normalizeCaseSource(d.caseSource);
   return out;
 }
 
@@ -5998,6 +6031,47 @@ function saveDrawerCollapsed(v)   { try { localStorage.setItem('pt_drawer_collap
 // ── Saksdokumenter ─────────────────────────────────
 function loadDocRoot() { return localStorage.getItem(DOC_ROOT_KEY) || DEFAULT_DOC_ROOT; }
 function saveDocRoot(v) { lsSetSafe(DOC_ROOT_KEY, v); }
+
+// ── Lenke til nye saker ────────────────────────────
+// Siden der nye saker fordeles (f.eks. en SharePoint-side). Lenker som kopieres
+// fra Teams har med seg sporingsparametere (og e-postadressen i ovuser) som
+// utløper; de fjernes, mens andre parametere beholdes i tilfelle siden trenger dem.
+var CASE_SOURCE_TRACKING_PARAMS = ['teamscid', 'or', 'ct', 'xsdata', 'sdata', 'ovuser', 'clickparams'];
+var CASE_SOURCE_LABEL_MAX = 40;
+
+// '' = ingen lenke, null = ugyldig (bare https:// godtas)
+function normalizeCaseSourceUrl(v) {
+  var s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  if (!/^https:\/\/[^\s\/?#]+/i.test(s)) return null;
+  var hash = '', query = '';
+  var hi = s.indexOf('#');
+  if (hi !== -1) { hash = s.slice(hi); s = s.slice(0, hi); }
+  var qi = s.indexOf('?');
+  if (qi !== -1) { query = s.slice(qi + 1); s = s.slice(0, qi); }
+  var kept = query.split('&').filter(function(p) {
+    if (!p) return false;
+    var k = p.split('=')[0];
+    try { k = decodeURIComponent(k); } catch(e) {}
+    return CASE_SOURCE_TRACKING_PARAMS.indexOf(k.toLowerCase()) === -1;
+  });
+  return (s + (kept.length ? '?' + kept.join('&') : '') + hash).replace(/ /g, '%20');
+}
+function normalizeCaseSource(o) {
+  o = (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
+  return {
+    url:   normalizeCaseSourceUrl(o.url) || '',
+    label: (typeof o.label === 'string' ? o.label.trim() : '').slice(0, CASE_SOURCE_LABEL_MAX)
+  };
+}
+function caseSourceTitle(src) {
+  return 'Åpne ' + (src.label || 'siden med nye saker');
+}
+function loadCaseSource() {
+  try { return normalizeCaseSource(JSON.parse(localStorage.getItem(CASE_SOURCE_KEY))); }
+  catch(e) { return normalizeCaseSource(null); }
+}
+function saveCaseSource(v) { lsSetSafe(CASE_SOURCE_KEY, JSON.stringify(v)); }
 
 // Trim, drop trailing slashes, normalize "/" to "\" — root is always joined Windows-style
 function _docRootNormalize(v) {
@@ -7714,6 +7788,13 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'SETTINGS_CASE_SOURCE_CHANGE': {
+      saveCaseSource(payload.value);
+      renderCaseSourceLinks();
+      showToast(payload.value.url ? '✓ Lenke til nye saker lagret' : '✓ Lenke til nye saker fjernet');
+      break;
+    }
+
     case 'SETTINGS_DOC_ROOT_CHANGE': {
       saveDocRoot(payload.value);
       showToast('✓ Saksmappe-rot lagret');
@@ -7858,6 +7939,7 @@ function _dispatch(action, payload) {
         if ('unassignedReminder' in s) { unassignedReminder = s.unassignedReminder; saveUnassignedReminder(unassignedReminder); }
         if ('medlesere' in s) { medleserList = s.medlesere; saveMedleserList(medleserList); }
         if ('medlLog' in s) { medlLog = s.medlLog; saveMedlLog(medlLog); }
+        if ('caseSource' in s) { saveCaseSource(s.caseSource); renderCaseSourceLinks(); _caseSourceFillInputs(); }
       }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
@@ -15518,6 +15600,54 @@ function applyTimelineLink(id, force) {
     updatePreview();
     dispatch('SETTINGS_DOC_ROOT_CHANGE', { value: normalized });
   });
+})();
+
+// ── Lenke til nye saker ────────────────────────────
+function renderCaseSourceLinks() {
+  var src = loadCaseSource();
+  ['case-source-link-home', 'case-source-link-cases'].forEach(function(id) {
+    var a = document.getElementById(id);
+    if (!a) return;
+    a.hidden = !src.url;
+    if (src.url) {
+      a.href = src.url;
+      a.title = caseSourceTitle(src);
+      a.setAttribute('aria-label', caseSourceTitle(src));
+    } else {
+      a.removeAttribute('href');
+    }
+  });
+}
+function _caseSourceFillInputs() {
+  var src = loadCaseSource();
+  var u = document.getElementById('input-case-source-url');
+  var l = document.getElementById('input-case-source-label');
+  if (u) u.value = src.url;
+  if (l) l.value = src.label;
+}
+(function() {
+  var u = document.getElementById('input-case-source-url');
+  var l = document.getElementById('input-case-source-label');
+  var err = document.getElementById('case-source-error');
+  if (!u || !l) return;
+  _caseSourceFillInputs();
+  renderCaseSourceLinks();
+  function commit() {
+    var url = normalizeCaseSourceUrl(u.value);
+    if (url === null) {
+      if (err) err.textContent = 'Lenken må begynne med https://';
+      return;
+    }
+    if (err) err.textContent = '';
+    var src = normalizeCaseSource({ url: url, label: l.value });
+    u.value = src.url;
+    l.value = src.label;
+    var cur = loadCaseSource();
+    if (cur.url === src.url && cur.label === src.label) return;
+    dispatch('SETTINGS_CASE_SOURCE_CHANGE', { value: src });
+  }
+  u.addEventListener('change', commit);
+  l.addEventListener('change', commit);
 })();
 
 // ── Produksjonsmål ─────────────────────────────────
