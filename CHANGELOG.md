@@ -29,7 +29,8 @@ arbeidet havner.
 - **Bjelker kan dras også i tidslinjen på sakslistene**, ikke bare på Hjem.
 - **Røde dager som henger sammen, vises som ett felt.** Julaften til 2. juledag
   og nyttårsaften til nyttårsdag er nå ett gult felt hver i tidslinjen, ikke
-  flere streker. En enkelt rød dag er like bred som dagen.
+  flere streker. En enkelt rød dag er like bred som dagen. Holder du over
+  feltet, ser du hvilke dager det er, datoene og hvor mange dager.
 
 ### Added
 - **Ferie og røde dager skraveres inne i bjelkene**, så du ser hvilke saker
@@ -45,6 +46,8 @@ arbeidet havner.
   Alt + ← den én dag tidligere og Alt + → én dag senere.
 
 ### Fixed
+- **Popupen i tidslinjen holder seg innenfor vinduet.** Holdt du over en
+  bjelke, ferie eller rød dag nær høyre kant, gikk popupen utenfor skjermen.
 - **Siden følger med når datoen skifter.** Står PatentDesk åpen over natten,
   tegnes siden nå på nytt når en ny dag starter, så «i dag»-linjen i
   tidslinjen, forfalt-markeringen, nedtellingene, belegget og datoen i

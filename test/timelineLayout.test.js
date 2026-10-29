@@ -127,3 +127,21 @@ test('holidayRuns ignores duplicates and gives nothing for no holidays', () => {
   assert.deepStrictEqual(plain(holidayRuns([4, 4, 5])), [[4, 6]]);
   assert.deepStrictEqual(plain(holidayRuns([])), []);
 });
+
+// ── Popup for røde dager ────────────────────────────────────────────────────
+
+const { holidayLabel } = loadFunctions(['holidayLabel']);
+
+test('holidayLabel names a single holiday', () => {
+  assert.strictEqual(holidayLabel(['Grunnlovsdagen']), 'Grunnlovsdagen');
+});
+
+test('holidayLabel lists several holidays with «og» before the last', () => {
+  assert.strictEqual(holidayLabel(['Nyttårsaften', 'Nyttårsdag']), 'Nyttårsaften og Nyttårsdag');
+  assert.strictEqual(holidayLabel(['Julaften', '1. juledag', '2. juledag']), 'Julaften, 1. juledag og 2. juledag');
+});
+
+test('holidayLabel falls back to «Rød dag» without names', () => {
+  assert.strictEqual(holidayLabel([]), 'Rød dag');
+  assert.strictEqual(holidayLabel(null), 'Rød dag');
+});
