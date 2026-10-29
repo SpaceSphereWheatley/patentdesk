@@ -96,7 +96,6 @@
   --log-ny-text:    #1d4ed8;
   --log-videre-text:#4c1d95;
   --log-avsl-text:  #374151;
-  --log-med-text:   #4dd9ac;
   --log-opp-text:   #0891b2;
   /* Belegg */
   --belegg-low:  #22c55e;
@@ -688,7 +687,7 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
                       font-family: var(--font-body); }
 .tag-pill-input::placeholder { color: var(--muted); }
 
-.tag-chip, .tag-cloud-item {
+.tag-chip {
   background: rgba(100,116,139,0.1); border: 1px solid var(--tag-color);
   border-radius: var(--radius-pill); color: var(--muted);
 }
@@ -698,19 +697,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   font-size: var(--text-xs); letter-spacing: var(--tracking-normal);
   margin: 0.1rem var(--space-1) 0.1rem 0; white-space: nowrap;
 }
-
-.tag-cloud {
-  display: flex; flex-wrap: wrap; gap: var(--space-3);
-  padding: var(--space-7); background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius-lg); min-height: 3rem;
-}
-.tag-cloud-item {
-  display: inline-flex; align-items: center; gap: var(--space-2);
-  padding: var(--space-1) var(--space-5);
-  font-size: var(--text-xs); cursor: pointer;
-}
-.tag-cloud-count { background: rgba(100,116,139,0.2); border-radius: var(--radius-pill); font-size: var(--text-2xs); padding: 0 0.4em; color: var(--muted); line-height: var(--line-normal); }
-.tag-cloud-empty { color: var(--muted); font-size: var(--text-sm); padding: var(--space-1); }
 
 .tag-input-wrap { position: relative; }
 .tag-suggestions {
@@ -749,7 +735,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .log-badge.log-ny         { background:rgba(59,130,246,0.1);   color:var(--log-ny-text); border:1px solid rgba(59,130,246,0.3); }
 .log-badge.log-videre     { background:rgba(139,92,246,0.1);   color:var(--log-videre-text); border:1px solid rgba(139,92,246,0.3); }
 .log-badge.log-avsluttet  { background:rgba(107,114,128,0.12); color:var(--log-avsl-text); border:1px solid rgba(107,114,128,0.3); }
-.log-badge.log-meddelelse { background:rgba(99,220,180,0.12);  color:var(--log-med-text); border:1px solid rgba(99,220,180,0.3); }
 .log-badge.log-oppdrag    { background:rgba(6,182,212,0.12); color:var(--color-info); border:1px solid rgba(6,182,212,0.35); }
 
 .btn-log-edit {
@@ -3127,8 +3112,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <div id="log-tbody" class="case-list"></div>
           <div class="table-empty" id="log-empty" style="display:none;">Ingen hendelser registrert ennå.</div>
         </section>
-      
-        <div id="tag-cloud" style="display:none;"></div>
+
       </div>
 
       <!-- Innstillinger -->
@@ -4427,7 +4411,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.40.1';
+var APP_VERSION    = 'v4.40.2';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4991,8 +4975,8 @@ var STATUS_CONFIG = {
 };
 var INT_TO_STATUS = { 0:'ny', 1:'viderebehandling', 2:'fristarkiv', 3:'avsluttet' };
 
-var LOG_LABELS = { ny:'Nybehandling', videre:'Viderebehandling', avsluttet:'Avsluttet', meddelelse:'Sendt til meddelelse', oppdrag:'Oppdrag utført' };
-var LOG_CLS    = { ny:'log-ny', videre:'log-videre', avsluttet:'log-avsluttet', meddelelse:'log-meddelelse', oppdrag:'log-oppdrag' };
+var LOG_LABELS = { ny:'Nybehandling', videre:'Viderebehandling', avsluttet:'Avsluttet', oppdrag:'Oppdrag utført' };
+var LOG_CLS    = { ny:'log-ny', videre:'log-videre', avsluttet:'log-avsluttet', oppdrag:'log-oppdrag' };
 
 // ── Måneder ────────────────────────────────────────
 var MONTHS = [
@@ -5189,9 +5173,15 @@ function filingDateFromInput(raw) {
   return isValidDate(t) ? parseDate(t) : null;
 }
 
-function monthsFromToday(n) {
-  var d = new Date(); d.setMonth(d.getMonth() + n);
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+function monthsFromToday(n) { return addMonthsClamped(new Date(), n); }
+
+// Samme dag n måneder senere, som YYYY-MM-DD. Finnes ikke dagen i den
+// måneden, blir det månedens siste dag: 31. august + 6 mnd = 28. februar, ikke
+// 3. mars. Ren funksjon — se test/logicFixes.test.js.
+function addMonthsClamped(date, n) {
+  var y = date.getFullYear(), m = date.getMonth() + n;
+  var last = new Date(y, m + 1, 0).getDate();
+  return isoLocalDate(new Date(y, m, Math.min(date.getDate(), last)));
 }
 
 function todayStr() {
@@ -5297,6 +5287,9 @@ function readImportSettings(d) {
   if (typeof d.unassignedReminder === 'number' && normalizeUnassignedReminder(d.unassignedReminder) === Math.floor(d.unassignedReminder)) {
     out.unassignedReminder = normalizeUnassignedReminder(d.unassignedReminder);
   }
+  // Belegg-horisonten har bare tre gyldige valg; målet er et helt tall ≥ 0.
+  if ([30, 60, 90].indexOf(d.beleggHorizon) !== -1) out.beleggHorizon = d.beleggHorizon;
+  if (typeof d.goal === 'number' && isFinite(d.goal) && d.goal >= 0 && Math.floor(d.goal) === d.goal) out.goal = d.goal;
   if (Array.isArray(d.medlesere)) out.medlesere = normalizeMedleserList(d.medlesere);
   if (Array.isArray(d.medlLog))   out.medlLog   = normalizeMedlLog(d.medlLog);
   return out;
@@ -5335,6 +5328,45 @@ function toggleActiveCase(mark, id, nowIso) {
 function activeCaseAfterUndo(snapshot, current) {
   if (current) return current;
   return (snapshot && snapshot.activeCase) || null;
+}
+
+// «Angre» for en endring på én sak: verdiene feltene i patch hadde før.
+// extra er resten av øyeblikksbildet (pågående sak, medlesingsloggen).
+function undoPatchSnapshot(c, patch, extra) {
+  var before = {};
+  Object.keys(patch).forEach(function(k) { before[k] = Object.prototype.hasOwnProperty.call(c, k) ? c[k] : undefined; });
+  return Object.assign({ mode: 'patch', caseId: c.id, before: before, logIds: [], label: c.caseNumber }, extra);
+}
+
+// Sakslista etter «Angre». Bare saken handlingen gjaldt røres: en endring
+// får tilbake feltene den overskrev, en slettet sak settes inn igjen der den
+// sto. Andre saker, og andre felt på samme sak, endret mens varselet sto
+// framme, blir stående. Samme array tilbake når det ikke er noe å angre.
+// Ren funksjon — se test/logicFixes.test.js.
+function casesAfterUndo(current, snap) {
+  var idx = current.findIndex(function(c) { return c.id === snap.caseId; });
+  if (snap.mode === 'reinsert') {
+    if (idx !== -1) return current;
+    var out = current.slice();
+    out.splice(Math.min(snap.index, out.length), 0, snap.before);
+    return out;
+  }
+  if (idx === -1) return current;
+  return current.map(function(c) {
+    if (c.id !== snap.caseId) return c;
+    var next = Object.assign({}, c);
+    Object.keys(snap.before).forEach(function(k) {
+      if (snap.before[k] === undefined) delete next[k]; else next[k] = snap.before[k];
+    });
+    return next;
+  });
+}
+
+// Hendelsesloggen etter «Angre»: bare hendelsene handlingen skrev fjernes.
+// Ren funksjon — se test/logicFixes.test.js.
+function statsLogAfterUndo(log, logIds) {
+  var ids = logIds || [];
+  return (log || []).filter(function(e) { return ids.indexOf(e.id) === -1; });
 }
 
 // Saken markeringen peker på — eller null når den er slettet eller ikke
@@ -5963,8 +5995,8 @@ function saveCases() {
 }
 
 function loadStats() {
-  try { return JSON.parse(localStorage.getItem(STATS_KEY)) || { nyTotal:0, videreTotal:0, avsluttetTotal:0, log:[] }; }
-  catch(e) { return { nyTotal:0, videreTotal:0, avsluttetTotal:0, log:[] }; }
+  try { return JSON.parse(localStorage.getItem(STATS_KEY)) || { log:[] }; }
+  catch(e) { return { log:[] }; }
 }
 
 function saveStats() {
@@ -6779,25 +6811,18 @@ function _dispatch(action, payload) {
       var theCase   = cases.find(function(c) { return c.id === id; });
       if (!theCase) break;
       var fromStatus = theCase.status;
-      // Lagre undo-snapshot
-      AppState.undoSnapshot = {
-        cases: cases.map(function(c) { return Object.assign({}, c); }),
-        stats:  JSON.parse(JSON.stringify(stats)),
-        label:  theCase.caseNumber,
-        activeCase: activeCase,
-        medlLog: medlLog
-      };
-      // Oppdater state
+      // Oppdater state. Stikkord fra avslutningsdialogen følger med i samme
+      // endring, så «Angre» tar dem også.
       var patch = statusChangePatch(toStatus, payload.outcome, newDueDate);
+      if (typeof payload.tags === 'string') patch.tags = payload.tags;
+      patch.history = appendHistory(theCase, fromStatus, toStatus);
+      AppState.undoSnapshot = undoPatchSnapshot(theCase, patch, { activeCase: activeCase, medlLog: medlLog });
       AppState.cases = cases.map(function(c) {
-        if (c.id !== id) return c;
-        return Object.assign({}, c, patch, {
-          history: appendHistory(c, fromStatus, toStatus)
-        });
+        return c.id === id ? Object.assign({}, c, patch) : c;
       });
       // Persister
       saveCases();
-      if (logType && theCase) logEvent(logType, theCase.caseNumber, theCase.title);
+      if (logType) AppState.undoSnapshot.logIds.push(logEvent(logType, theCase.caseNumber, theCase.title));
       // Render
       render();
       if (activeSakId === id) renderSak(id);
@@ -6947,10 +6972,11 @@ function _dispatch(action, payload) {
       var theCase = cases.find(function(c) { return c.id === payload.id; });
       var rawSak = null;
       try { rawSak = localStorage.getItem(sakKey(payload.id)); } catch(e) {}
+      if (!theCase) break;
       AppState.undoSnapshot = {
-        cases: cases.map(function(c) { return Object.assign({}, c); }),
-        stats: JSON.parse(JSON.stringify(stats)),
-        label: theCase ? theCase.caseNumber : payload.id,
+        mode: 'reinsert', caseId: payload.id, index: cases.indexOf(theCase),
+        before: Object.assign({}, theCase), logIds: [],
+        label: theCase.caseNumber,
         sakId: payload.id,
         sakData: rawSak,
         activeCase: activeCase,
@@ -6966,8 +6992,10 @@ function _dispatch(action, payload) {
 
     case 'CASE_UNDO': {
       if (!undoSnapshot) break;
-      cases  = undoSnapshot.cases;
-      stats  = undoSnapshot.stats;
+      // Bare det handlingen endret tas tilbake — endringer på andre saker
+      // mens «Angre» sto framme, blir stående.
+      cases  = casesAfterUndo(cases, undoSnapshot);
+      stats  = Object.assign({}, stats, { log: statsLogAfterUndo(stats.log, undoSnapshot.logIds) });
       // Gjenopprett saksdetaljer som ble fjernet ved sletting
       if (undoSnapshot.sakId && undoSnapshot.sakData != null) {
         lsSetSafe(sakKey(undoSnapshot.sakId), undoSnapshot.sakData);
@@ -6993,19 +7021,13 @@ function _dispatch(action, payload) {
       var id = payload.id;
       var theCase = cases.find(function(c) { return c.id === id; });
       if (!theCase) break;
-      AppState.undoSnapshot = {
-        cases: cases.map(function(c) { return Object.assign({}, c); }),
-        stats: JSON.parse(JSON.stringify(stats)),
-        label: theCase.caseNumber,
-        activeCase: activeCase,
-        medlLog: medlLog
-      };
+      var opPatch = { status: 'avsluttet', history: appendHistory(theCase, theCase.status, 'avsluttet') };
+      AppState.undoSnapshot = undoPatchSnapshot(theCase, opPatch, { activeCase: activeCase, medlLog: medlLog });
       AppState.cases = cases.map(function(c) {
-        if (c.id !== id) return c;
-        return Object.assign({}, c, { status: 'avsluttet', history: appendHistory(c, c.status, 'avsluttet') });
+        return c.id === id ? Object.assign({}, c, opPatch) : c;
       });
       saveCases();
-      logEvent('oppdrag', theCase.caseNumber, theCase.title);
+      AppState.undoSnapshot.logIds.push(logEvent('oppdrag', theCase.caseNumber, theCase.title));
       render();
       showUndoToast('Oppdrag ' + theCase.caseNumber + ' avsluttet');
       break;
@@ -7291,7 +7313,7 @@ function _dispatch(action, payload) {
     }
 
     case 'STATS_RESET': {
-      stats = { nyTotal: 0, videreTotal: 0, avsluttetTotal: 0, log: [] };
+      stats = { log: [] };
       saveStats();
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
       closeBackdrop('reset-backdrop');
@@ -7478,14 +7500,14 @@ function _dispatch(action, payload) {
           Object.keys(d.sakDetails).forEach(function(id) { saveSakData(id, d.sakDetails[id]); });
         }
         if (Array.isArray(d.vacations)) { vacations = d.vacations; saveVacations(); }
-        if (typeof d.goal === 'number') { productionGoal = d.goal; saveGoal(productionGoal); }
-        if (d.beleggHorizon) { beleggHorizon = d.beleggHorizon; saveBeleggHorizon(beleggHorizon); }
         if (d.docRoot) {
           saveDocRoot(d.docRoot);
           var inp = document.getElementById('input-doc-root');
           if (inp) inp.value = d.docRoot;
         }
         var s = readImportSettings(d);
+        if ('goal' in s) { productionGoal = s.goal; saveGoal(productionGoal); }
+        if ('beleggHorizon' in s) { beleggHorizon = s.beleggHorizon; saveBeleggHorizon(beleggHorizon); }
         if ('userName' in s) {
           saveUserName(s.userName);
           // Med navnet tilbake er det ingen grunn til å vise velkomstdialogen igjen
@@ -7554,7 +7576,7 @@ function _dispatch(action, payload) {
       deleteAllData();
       // Minnet nullstilles også — ellers ble det skrevet rett tilbake til
       // arbeidsfilen og sikkerhetskopien ved neste lagring.
-      cases = []; stats = { nyTotal: 0, videreTotal: 0, avsluttetTotal: 0, log: [] };
+      cases = []; stats = { log: [] };
       vacations = []; productionGoal = 0; beleggHorizon = 60;
       unassignedReminder = UNASSIGNED_REMINDER_DEFAULT;
       medlesing = []; activeMedlesingId = null;
@@ -7681,12 +7703,13 @@ function caseCountText(list, isOversikt) {
 }
 
 // ── Hendelseslogg ──────────────────────────────────
+// Fører en hendelse i statistikken og gir id-en tilbake, så «Angre» kan
+// fjerne akkurat den.
 function logEvent(type, caseNumber, title) {
-  if (type === 'ny')        stats.nyTotal++;
-  if (type === 'videre')    stats.videreTotal++;
-  if (type === 'avsluttet') stats.avsluttetTotal++;
-  stats.log.push({ id: uid(), type: type, caseNumber: caseNumber, title: title || '', date: new Date().toISOString() });
+  var id = uid();
+  stats.log.push({ id: id, type: type, caseNumber: caseNumber, title: title || '', date: new Date().toISOString() });
   saveStats();
+  return id;
 }
 
 function lookupTitle(logEntry) {
@@ -8513,9 +8536,9 @@ function runStatusTransition(id, toStatus, opts) {
   var tags = null, outcome = null;
 
   function commit(dueDate) {
-    if (tags !== null) dispatch('CASE_FIELD_UPDATE', { id: id, patch: { tags: tags } });
     dispatch('CASE_STATUS_CHANGE', {
-      id: id, toStatus: toStatus, logType: t.logType, newDueDate: dueDate || null, outcome: outcome
+      id: id, toStatus: toStatus, logType: t.logType, newDueDate: dueDate || null, outcome: outcome,
+      tags: tags
     });
   }
 
@@ -10713,11 +10736,15 @@ function claimRowClass(c) {
   return '';
 }
 
+// Prikken i kravtreet. Et krav uten nyhet er avgjort (oppfinnelseshøyden er
+// låst til nei); ellers er kravet uvurdert til begge er satt — en tom
+// oppfinnelseshøyde er ikke et nei. Ren funksjon — se test/logicFixes.test.js.
 function claimDotClass(c, claims) {
   var effN = claims ? effectiveClaimValue(claims, c, 'novelty') : c.novelty;
   var effI = claims ? effectiveClaimValue(claims, c, 'inventive') : c.inventive;
-  if (effN === null) return 'kt-dot-null';
-  if (!effN || !effI) return 'kt-dot-no';
+  if (effN === false) return 'kt-dot-no';
+  if (effN === null || effI === null || effI === undefined) return 'kt-dot-null';
+  if (effI === false) return 'kt-dot-no';
   if (c.formal) return 'kt-dot-formal';
   return 'kt-dot-ok';
 }
@@ -12667,6 +12694,19 @@ function renderTimeline(opts) {
   });
   // Sporet er tegnet på nytt; behold markeringen fra sakslisten
   if (_tlLinkedId) applyTimelineLink(_tlLinkedId, true);
+  var legendOn = showBufferLegend(cases);
+  ['home-legend-buffer', 'cases-legend-buffer'].forEach(function(lid) {
+    var el = document.getElementById(lid); if (el) el.style.display = legendOn ? '' : 'none';
+  });
+}
+
+// Forklaringen «Faktisk frist» vises når minst én aktiv sak har en buffer,
+// altså når streken den forklarer faktisk kan stå i tidslinjen. Ble før
+// avgjort én gang ved oppstart. Ren funksjon — se test/logicFixes.test.js.
+function showBufferLegend(list) {
+  return (list || []).some(function(c) {
+    return !!c && !!c.dueDate && c.status !== 'avsluttet' && bufferDaysFor(c) > 0;
+  });
 }
 
 // ── Innstillinger ──────────────────────────────────
@@ -12829,20 +12869,8 @@ function renderChart(MONTHS_YEAR, byMonth) {
   var projected = (projCutoff >= 1 && totalSoFar && projDays)
     ? Math.round((totalSoFar / projDays) * daysInYear) : 0;
 
-  // Tidslinjeprognose: tell aktive saker med effDue i statYear etter i dag
-  var today0 = new Date(); today0.setHours(0,0,0,0);
-  var forecastByMonth = {};
-  cases.forEach(function(c) {
-    if (c.status === 'avsluttet') return;
-    if (c.type === 'oppdrag') return;
-    var eff = c.dueDate;
-    if (!eff) return;
-    var d = new Date(eff + 'T00:00:00');
-    if (d.getFullYear() !== statYear) return;
-    if (d < today0) return;
-    var m = d.getMonth();
-    forecastByMonth[m] = (forecastByMonth[m] || 0) + 1;
-  });
+  // Tidslinjeprognose: nybehandlinger som gjenstår i statYear
+  var forecast = forecastByMonth(cases, statYear, new Date(), effDueFor);
 
   var forecastVals = [];
   var cumForecast = cumNy;
@@ -12850,7 +12878,7 @@ function renderChart(MONTHS_YEAR, byMonth) {
     if (fi < cutoff) {
       forecastVals.push(null);
     } else {
-      cumForecast += (forecastByMonth[fi] || 0);
+      cumForecast += (forecast[fi] || 0);
       forecastVals.push(cumForecast);
     }
   }
@@ -13003,19 +13031,25 @@ function renderChart(MONTHS_YEAR, byMonth) {
     anslagWrap.innerHTML = '';
   }
 }
-function renderTagCloud() {
-  var freq = {};
-  cases.forEach(function(c) {
-    if (!c.tags) return;
-    c.tags.split(',').forEach(function(t) { var tag = t.trim().toLowerCase(); if (tag) freq[tag] = (freq[tag] || 0) + 1; });
+// Prognosen i Statistikk: nybehandlinger som gjenstår, per måned (0–11) i
+// `year`. Bare Ny søknader som er dine blir en nybehandling — Fristarkiv er
+// søkerens frist, Viderebehandling teller som viderebehandling, og saker som
+// ikke er fordelt er ikke dine ennå. Forfalte saker skal fortsatt gjøres og
+// legges i inneværende måned. dueFn gir fristen som gjelder (med buffer).
+// Ren funksjon — se test/logicFixes.test.js.
+function forecastByMonth(list, year, now, dueFn) {
+  var out = {};
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  (list || []).forEach(function(c) {
+    if (!c || c.type === 'oppdrag' || c.status !== 'ny' || isUnassigned(c)) return;
+    var due = dueFn(c);
+    if (!due) return;
+    var d = new Date(due + 'T00:00:00');
+    if (d < today) d = today;
+    if (d.getFullYear() !== year) return;
+    out[d.getMonth()] = (out[d.getMonth()] || 0) + 1;
   });
-  var allTags = Object.keys(freq).sort(function(a, b) { return freq[b] - freq[a] || a.localeCompare(b, 'nb'); });
-  document.getElementById('tag-cloud').innerHTML = allTags.length
-    ? allTags.map(function(tag) {
-        return '<span class="tag-cloud-item" data-tag="' + esc(tag) + '" title="Filtrer Alle saker på dette stikkord">' +
-          esc(tag) + '<span class="tag-cloud-count">' + freq[tag] + '</span></span>';
-      }).join('')
-    : '<span class="tag-cloud-empty">Ingen stikkord ennå.</span>';
+  return out;
 }
 
 function renderEventLog() {
@@ -13055,7 +13089,6 @@ function renderStats() {
   var byMonth = buildByMonth();
   renderMonthTable(MONTHS_YEAR, byMonth);
   renderChart(MONTHS_YEAR, byMonth);
-  renderTagCloud();
   renderEventLog();
   renderMedleserStats();
 }
@@ -13660,6 +13693,20 @@ function pageFromHash() {
   }
   if (hash === 'alle-saker') return 'avsluttet';
   return VALID_PAGES.indexOf(hash) !== -1 ? hash : 'hjem';
+}
+
+// Historikkoppføringen siden åpnes med. Adressen beholdes for en saksside og
+// en åpen medlesing — ellers ble den «#sak», og en omlasting mistet saken.
+// En ukjent sak åpner Hjem. Ren funksjon — se test/logicFixes.test.js.
+function initialHistoryEntry(page, sakId, medlesingId, hash) {
+  if (page === 'sak') {
+    if (!sakId) return { page: 'hjem', state: { page: 'hjem' }, url: '#hjem' };
+    return { page: 'sak', state: { page: 'sak', sakId: sakId }, url: '#' + hash };
+  }
+  if (page === 'medlesing' && medlesingId) {
+    return { page: 'medlesing', state: { page: 'medlesing', medlesingId: medlesingId }, url: '#' + hash };
+  }
+  return { page: page, state: { page: page }, url: '#' + (page === 'avsluttet' ? 'alle-saker' : page) };
 }
 
 window.addEventListener('popstate', function(e) {
@@ -14511,15 +14558,6 @@ document.getElementById('card-list-empty').addEventListener('click', function(e)
   if (e.target.closest('#btn-empty-clear-filter')) dispatch('TAG_FILTER_SET', { tag: '' });
 });
 
-// ── Stikkord klikk → Alle saker ───────────────────
-document.getElementById('tag-cloud').addEventListener('click', function(e) {
-  var item = e.target.closest('.tag-cloud-item');
-  if (!item || !item.dataset.tag) return;
-  // Naviger først — sidebytte nullstiller filteret — og sett deretter stikkordet.
-  navigateTo('avsluttet');
-  dispatch('TAG_FILTER_SET', { tag: item.dataset.tag });
-});
-
 // ── Hjem: klikk på kommende forfall ───────────────
 function handleHomeListClick(e) {
   var moreBtn = e.target.closest('.home-row-more-btn');
@@ -15095,8 +15133,9 @@ function init() {
   _bkInit();
 
   // Start på riktig side basert på URL-hash
-  activePage = pageFromHash();
-  history.replaceState({ page: activePage }, '', '#' + activePage);
+  var entry = initialHistoryEntry(pageFromHash(), activeSakId, activeMedlesingId, location.hash.replace('#', '').trim());
+  activePage = entry.page;
+  history.replaceState(entry.state, '', entry.url);
   // Bygg tidslinje-widgets (må skje før render() så #home-timeline finnes i DOM)
   buildTimelineWidget(document.getElementById('home-tl-host'), {
     tlId:           'home-timeline',
@@ -15112,12 +15151,6 @@ function init() {
     syncKeys:       ['cases-timeline'],
     legendBufferId: 'cases-legend-buffer',
   });
-  if (typeBuffers.ny > 0 || typeBuffers.viderebehandling > 0) {
-    ['home-legend-buffer', 'cases-legend-buffer'].forEach(function(id) {
-      var el = document.getElementById(id); if (el) el.style.display = '';
-    });
-  }
-
   render();
 
   // ── Tidslinje-drag: per-sak-buffer via drag (kun home-timeline) ────────

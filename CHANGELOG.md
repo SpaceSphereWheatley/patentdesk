@@ -7,6 +7,38 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.40.2] - 2026-10-29
+Flere rettelser i kravtreet, prognosen, angre og fristforslaget, og litt
+opprydding i kode som ikke ble brukt.
+
+### Fixed
+- **Kravtreet viser uvurdert oppfinnelseshøyde som uvurdert.** Et krav med
+  nyhet ✓ og oppfinnelseshøyde ikke satt fikk rød prikk, som om det var
+  avslått.
+- **Prognosen i Statistikk teller bare nybehandlinger som gjenstår.** Saker i
+  Fristarkiv (søkerens frist), Viderebehandling og saker som ikke er fordelt
+  ble regnet med. Prognosen bruker nå fristen med buffer, og forfalte Ny-saker
+  regnes med i inneværende måned i stedet for å falle ut.
+- **Omlasting på en saksside blir stående på saken.** Adressen ble skrevet om
+  til «#sak», så en omlasting sendte deg til Hjem. Det samme gjaldt en åpen
+  medlesing.
+- **«Angre» tar bare tilbake det handlingen gjorde.** Hele sakslisten ble
+  satt tilbake, så det du endret på andre saker mens varselet sto framme,
+  forsvant. Stikkord fra avslutningsdialogen angres nå også.
+- **Foreslått frist havner ikke i feil måned.** 31. august + 6 måneder ble
+  3. mars; nå blir det 28. februar (siste dag i måneden).
+- **Import godtar bare gyldig belegg-horisont og produksjonsmål.** Andre
+  verdier enn 30, 60 og 90 dager, eller et negativt mål, ble lagret som de var.
+- **Forklaringen «Faktisk frist» i tidslinjen følger bufferne.** Den ble
+  avgjort én gang ved oppstart; nå vises den når en aktiv sak har buffer.
+
+### Removed
+- Den skjulte stikkordskyen i Statistikk, som ble tegnet men aldri vist.
+- Tellerne for nybehandlinger, viderebehandlinger og avsluttede saker i
+  statistikken. De ble aldri vist, og alt de inneholdt står i hendelsesloggen.
+  Eldre eksportfiler med tellerne kan fortsatt importeres.
+- Hendelsestypen «Sendt til meddelelse», som ingenting lenger fører.
+
 ## [4.40.1] - 2026-10-29
 Seks feil som kunne gi feil data i saksflyten, statistikken og belegget er rettet,
 og sakssiden husker igjen hvilke faser du har lukket.
