@@ -85,6 +85,12 @@
   --color-error:   #f87171;
   --color-info:    #0891b2;
   --color-urgent:  #fb923c;
+  /* Varsel og dempet tekst som skal leses (4.5:1 mot hvitt) */
+  --notice-warn-bg:     #fffbeb;
+  --notice-warn-text:   #78350f;
+  --dup-tag-bg:         #fef3c7;
+  --dup-tag-text:       #92400e;
+  --text-subtle:        #6b7280;
   /* Chart/graf */
   --chart-ny:     #63b3ed;
   --chart-videre: #b794f4;
@@ -358,6 +364,24 @@ a:focus-visible,
 .bulk-preview-cell { font-size: var(--text-sm); color: var(--text);
                      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bulk-preview-cell.err { color: var(--danger); font-size: var(--text-xs); }
+.bulk-preview-row.is-dup { background: var(--surface2); }
+.bulk-preview-row.is-dup .bulk-preview-cell { color: var(--text-subtle); }
+.bulk-dup-title { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.bulk-dup-title > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bulk-dup-tag {
+  flex-shrink: 0; font-size: var(--text-2xs); font-weight: 600; color: var(--dup-tag-text);
+  background: var(--dup-tag-bg); border-radius: var(--radius-pill); padding: 2px 8px; text-decoration: none;
+}
+.bulk-dup-tag:hover { text-decoration: underline; }
+.bulk-dup-notice {
+  display: flex; gap: var(--space-3); align-items: flex-start; margin-top: var(--space-5);
+  padding: var(--space-3) var(--space-5); background: var(--notice-warn-bg);
+  border: 1px solid var(--color-warn); border-radius: var(--radius);
+  font-size: var(--text-sm); line-height: var(--line-normal); color: var(--notice-warn-text);
+}
+.bulk-dup-notice .ti { flex-shrink: 0; margin-top: 2px; }
+.claims-reduce-list { margin: var(--space-3) 0; padding-left: 1.25rem; font-size: var(--text-sm); line-height: 1.7; color: var(--text); }
+.claims-reduce-note { margin: 0; font-size: var(--text-xs); color: var(--text-subtle); }
 
 .bulk-row {
   display: grid; grid-template-columns: 140px 1fr 130px 26px;
@@ -623,9 +647,32 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 
 /* ── 13. Statistikk-side ──────────────────────────── */
 .stat-section       { display: flex; flex-direction: column; gap: var(--space-5); }
-.stat-table-chart-row { display: flex; gap: var(--space-8); align-items: stretch; }
-.stat-table-col     { flex: 0 0 calc(40% - 0.75rem); display: flex; flex-direction: column; gap: var(--space-5); }
-.stat-chart-col     { flex: 0 0 calc(60% - 0.75rem); display: flex; flex-direction: column; }
+.stat-table-chart-row { display: flex; flex-wrap: wrap; gap: var(--space-8); align-items: stretch; }
+.stat-table-col     { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: var(--space-5); }
+.stat-chart-col     { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; }
+.stat-table-col .table-wrap { overflow-x: auto; }
+/* Fem kolonner i en halv bredde: overskriftene får bryte, tallene står tett */
+.stat-table-col .case-table th { white-space: normal; letter-spacing: var(--tracking-wide); padding-inline: 10px; vertical-align: bottom; }
+.stat-table-col .case-table td { padding-inline: 10px; }
+.stat-col-new { background: var(--surface2); }
+.stat-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-7); }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-7); display: flex; flex-direction: column; gap: var(--space-4);
+}
+.stat-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-5); }
+.stat-card-title { margin: 0; font-size: var(--text-sm); font-weight: 600; color: var(--text); }
+.stat-card-big { font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.stat-card-bar { display: flex; height: 10px; border-radius: var(--radius-pill); overflow: hidden; gap: 2px; background: var(--border); }
+.stat-card-bar:empty { display: none; }
+.stat-card-bar > span { display: block; }
+.stat-card-legend { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-7); font-size: var(--text-sm); color: var(--text); }
+.stat-card-legend > span { display: inline-flex; align-items: center; gap: var(--space-2); }
+.stat-card-swatch { width: 10px; height: 10px; border-radius: 2px; }
+.stat-card-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--space-5); }
+.stat-card-totals > div { display: flex; flex-direction: column; gap: 2px; }
+.stat-card-num { font-size: 1.3rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.stat-card-lbl, .stat-card-foot { font-size: var(--text-xs); color: var(--text-subtle); }
 .stat-chart-col .chart-wrap { flex: 1; display: flex; flex-direction: column; }
 .stat-chart-col #chart-canvas-wrap { flex: 1; position: relative; min-height: 0; }
 .stat-section-title { font-family: var(--font-head); font-size: var(--text-md); font-weight: normal; color: var(--muted); letter-spacing: var(--tracking-wide); }
@@ -3071,6 +3118,26 @@ tr:hover .sak-tag-display.sak-tag-empty,
           </div>
         </section>
 
+        <section class="stat-section stat-summary" aria-label="Sammendrag">
+          <div class="stat-card">
+            <div class="stat-card-head">
+              <h2 class="stat-card-title" id="stat-decided-title">Avgjort</h2>
+              <span class="stat-card-big" id="stat-decided-total">0</span>
+            </div>
+            <div class="stat-card-bar" id="stat-decided-bar" aria-hidden="true"></div>
+            <div class="stat-card-legend" id="stat-decided-legend"></div>
+          </div>
+          <div class="stat-card">
+            <h2 class="stat-card-title">Alle år</h2>
+            <div class="stat-card-totals">
+              <div><span class="stat-card-num" id="stat-all-ny">0</span><span class="stat-card-lbl">nybehandlinger</span></div>
+              <div><span class="stat-card-num" id="stat-all-videre">0</span><span class="stat-card-lbl">viderebehandlinger</span></div>
+              <div><span class="stat-card-num" id="stat-all-decided">0</span><span class="stat-card-lbl">avgjørelser</span></div>
+            </div>
+            <span class="stat-card-foot">Behandlinger fra hendelsesloggen, avgjørelser fra sakene med utfall</span>
+          </div>
+        </section>
+
         <section class="stat-section">
           <div class="stat-table-chart-row">
             <div class="stat-table-col">
@@ -3080,6 +3147,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
                     <tr>
                       <th>Måned</th>
                       <th class="stat-col-num">Nybehandlinger</th>
+                      <th class="stat-col-num stat-col-new">Viderebehandlinger</th>
+                      <th class="stat-col-num stat-col-new">Avgjort</th>
                       <th class="stat-col-num stat-col-oppdrag">Oppdrag</th>
                     </tr>
                   </thead>
@@ -3983,6 +4052,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <textarea class="field-input field-textarea" id="modal-bulk-paste" rows="5" placeholder="Lim inn rader fra Excel eller saksoversikten her…"></textarea>
           <span class="modal-bulk-hint" id="modal-bulk-hint">Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk. Saksoversikten med én verdi per linje kan også limes inn direkte.</span>
         </div>
+        <div id="modal-bulk-dups" class="bulk-dup-notice" role="status" hidden></div>
         <div id="modal-bulk-preview" class="bulk-excel-preview"></div>
         <label class="modal-unassigned">
           <input type="checkbox" id="f-bulk-unassigned" />
@@ -4024,6 +4094,22 @@ tr:hover .sak-tag-display.sak-tag-empty,
       <div class="modal-footer">
         <button class="btn-secondary" id="btn-confirm-cancel">Avbryt</button>
         <button class="btn-danger" id="btn-confirm-delete">Slett</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bekreft færre krav -->
+  <div class="modal-backdrop" id="claims-reduce-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="claims-reduce-title">
+      <div class="modal-header"><h2 class="modal-title" id="claims-reduce-title">Fjerne krav?</h2></div>
+      <div class="modal-body">
+        <p class="modal-text" id="claims-reduce-intro"></p>
+        <ul class="claims-reduce-list" id="claims-reduce-list"></ul>
+        <p class="claims-reduce-note">Etter at du har fjernet dem, kan du angre i noen sekunder.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-claims-reduce-keep">Behold krav</button>
+        <button class="btn-danger" id="btn-claims-reduce-confirm">Fjern krav</button>
       </div>
     </div>
   </div>
@@ -4411,7 +4497,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.40.2';
+var APP_VERSION    = 'v4.41.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -5344,6 +5430,7 @@ function undoPatchSnapshot(c, patch, extra) {
 // framme, blir stående. Samme array tilbake når det ikke er noe å angre.
 // Ren funksjon — se test/logicFixes.test.js.
 function casesAfterUndo(current, snap) {
+  if (snap.mode !== 'patch' && snap.mode !== 'reinsert') return current; // f.eks. krav: ikke i sakslista
   var idx = current.findIndex(function(c) { return c.id === snap.caseId; });
   if (snap.mode === 'reinsert') {
     if (idx !== -1) return current;
@@ -7000,6 +7087,15 @@ function _dispatch(action, payload) {
       if (undoSnapshot.sakId && undoSnapshot.sakData != null) {
         lsSetSafe(sakKey(undoSnapshot.sakId), undoSnapshot.sakData);
       }
+      // Fjernede krav settes tilbake; resten av saksdetaljene blir som de er
+      if (undoSnapshot.mode === 'claims') {
+        var ccData = loadSakData(undoSnapshot.caseId);
+        if (ccData) {
+          ccData.numClaims = undoSnapshot.before.numClaims;
+          ccData.claims = undoSnapshot.before.claims;
+          saveSakData(undoSnapshot.caseId, ccData);
+        }
+      }
       activeCase = activeCaseAfterUndo(undoSnapshot, activeCase);
       saveActiveCase(activeCase);
       medlLog = medlLogAfterUndo(undoSnapshot.medlLog, medlLog);
@@ -7060,10 +7156,20 @@ function _dispatch(action, payload) {
     case 'SAK_CLAIM_COUNT_CHANGE': {
       var id = payload.id;
       var data = loadSakData(id) || defaultSakData(0);
+      // Fjernes krav med innhold, kan det angres: kravene som var, tas vare på.
+      if (payload.undoable) {
+        var ccCase = cases.find(function(c) { return c.id === id; });
+        AppState.undoSnapshot = {
+          mode: 'claims', caseId: id, logIds: [], label: ccCase ? ccCase.caseNumber : '',
+          before: { numClaims: data.numClaims, claims: JSON.parse(JSON.stringify(data.claims || [])) },
+          activeCase: activeCase, medlLog: medlLog
+        };
+      }
       data.numClaims = payload.count;
       ensureClaims(data);
       saveSakData(id, data);
       renderSakAssessment(data);
+      if (payload.undoable) showUndoToast(payload.toast || 'Krav fjernet');
       break;
     }
 
@@ -8330,11 +8436,13 @@ function closeBackdrop(id) {
 }
 
 function closeAllBackdrops() {
+  // Esc på «Fjerne krav?» betyr behold: antall krav settes tilbake i feltet
+  if (_claimsReduce) closeClaimsReduce(false);
   ['cle-backdrop','modal-backdrop','confirm-backdrop','complete-backdrop','fristarkiv-choice-backdrop',
    'videre-choice-backdrop','reset-backdrop','import-backdrop','tag-backdrop','frist-backdrop',
    'delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
    'history-backdrop','backup-restore-backdrop','cle-reset-backdrop','search-backdrop',
-   'shortcuts-backdrop','medl-send-backdrop',
+   'shortcuts-backdrop','medl-send-backdrop','claims-reduce-backdrop',
    ].forEach(function(id) {
     var el = document.getElementById(id);
     el.classList.remove('open');
@@ -11512,8 +11620,87 @@ document.getElementById('sak-num-claims').addEventListener('change', function() 
   var id = activeSakId; if (!id) return;
   var cas = cases.find(function(c) { return c.id === id; });
   if (!cas || cas.type === 'oppdrag') return;
-  dispatch('SAK_CLAIM_COUNT_CHANGE', { id: id, count: Math.max(0, parseInt(this.value, 10) || 0) });
+  var count = Math.max(0, parseInt(this.value, 10) || 0);
+  var data = loadSakData(id) || defaultSakData(0);
+  var sum = claimsRemovalSummary(data.claims || [], count);
+  // Krav uten innhold fjernes uten å spørre; ellers bekreftes det først.
+  if (!sum.hasData) { dispatch('SAK_CLAIM_COUNT_CHANGE', { id: id, count: count }); return; }
+  openClaimsReduceConfirm(id, data.numClaims || 0, count, sum);
 });
+
+// ── Færre krav: bekreftelse ───────────────────────
+// Hva som går tapt når kravene over newCount fjernes. assessed = krav med
+// nyhet, oppfinnelseshøyde eller formelle feil satt; docClaims/docIds = krav
+// med motholdsvalg og hvilke mothold. hasData er false når ingenting går tapt.
+// Ren funksjon — se test/newFeatures.test.js.
+function claimsRemovalSummary(claims, newCount) {
+  var list = claims || [];
+  var removed = list.filter(function(c) { return c && c.num > newCount; });
+  var to = list.reduce(function(m, c) { return Math.max(m, c ? c.num : 0); }, 0);
+  var nums = function(f) { return removed.filter(f).map(function(c) { return c.num; }); };
+  var docIds = [];
+  removed.forEach(function(c) {
+    [c.noveltyDoc].concat(c.inventiveDocs || []).forEach(function(d) {
+      if (d && docIds.indexOf(d) === -1) docIds.push(d);
+    });
+  });
+  docIds.sort(function(a, b) { return parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10); });
+  var out = {
+    from: newCount + 1, to: to,
+    assessed:  nums(function(c) { return c.novelty !== null || c.inventive !== null || c.formal !== null; }),
+    notes:     nums(function(c) { return !!String(c.notes || '').trim(); }),
+    labels:    nums(function(c) { return !!String(c.label || '').trim(); }),
+    docClaims: nums(function(c) { return !!c.noveltyDoc || (c.inventiveDocs || []).length > 0; }),
+    docIds:    docIds
+  };
+  out.hasData = !!(out.assessed.length || out.notes.length || out.labels.length || out.docClaims.length);
+  return out;
+}
+
+// Linjene i bekreftelsen, én per slags innhold. Ren funksjon — se
+// test/newFeatures.test.js.
+function claimsRemovalLines(sum) {
+  var lines = [];
+  if (sum.assessed.length)  lines.push('Vurdering på krav ' + formatClaimRanges(sum.assessed));
+  if (sum.docClaims.length) lines.push('Motholdsvalg (' + sum.docIds.join(', ') + ') på krav ' + formatClaimRanges(sum.docClaims));
+  if (sum.notes.length)     lines.push('Notater på krav ' + formatClaimRanges(sum.notes));
+  if (sum.labels.length)    lines.push('Etikett' + (sum.labels.length > 1 ? 'er' : '') + ' på krav ' + formatClaimRanges(sum.labels));
+  return lines;
+}
+
+var _claimsReduce = null; // { id, from, to, count } mens bekreftelsen er åpen
+
+function _claimsRangeText(from, to) { return from === to ? String(from) : from + '–' + to; }
+
+function openClaimsReduceConfirm(id, oldCount, newCount, sum) {
+  _claimsReduce = { id: id, oldCount: oldCount, count: newCount, range: _claimsRangeText(sum.from, sum.to) };
+  document.getElementById('claims-reduce-title').textContent = 'Fjerne krav ' + _claimsReduce.range + '?';
+  document.getElementById('claims-reduce-intro').textContent =
+    'Du endrer antall krav fra ' + oldCount + ' til ' + newCount + '. Dette forsvinner fra kravene som fjernes:';
+  document.getElementById('claims-reduce-list').innerHTML = claimsRemovalLines(sum).map(function(l) {
+    return '<li>' + esc(l) + '</li>';
+  }).join('');
+  document.getElementById('btn-claims-reduce-keep').textContent = 'Behold ' + oldCount + ' krav';
+  document.getElementById('btn-claims-reduce-confirm').textContent = 'Fjern krav ' + _claimsReduce.range;
+  openBackdrop('claims-reduce-backdrop');
+}
+
+function closeClaimsReduce(confirmed) {
+  var p = _claimsReduce;
+  _claimsReduce = null;
+  closeBackdrop('claims-reduce-backdrop');
+  if (!p) return;
+  if (!confirmed) {
+    var inp = document.getElementById('sak-num-claims');
+    if (inp && activeSakId === p.id) inp.value = p.oldCount || '';
+    return;
+  }
+  dispatch('SAK_CLAIM_COUNT_CHANGE', { id: p.id, count: p.count, undoable: true, toast: 'Krav ' + p.range + ' fjernet' });
+}
+
+document.getElementById('btn-claims-reduce-keep').addEventListener('click', function() { closeClaimsReduce(false); });
+document.getElementById('btn-claims-reduce-confirm').addEventListener('click', function() { closeClaimsReduce(true); });
+document.getElementById('claims-reduce-backdrop').addEventListener('click', function(e) { if (e.target === this) closeClaimsReduce(false); });
 
 document.getElementById('view-sak').addEventListener('change', function(e) {
   var cb = e.target.closest('.sak-checkbox'); if (!cb) return;
@@ -12822,24 +13009,83 @@ function buildByMonth() {
   return byMonth;
 }
 
-function renderMonthTable(MONTHS_YEAR, byMonth) {
-  var totNy = 0, totOppdrag = 0;
+function renderMonthTable(MONTHS_YEAR, byMonth, decisions) {
+  var totNy = 0, totVidere = 0, totOppdrag = 0;
+  function cell(n, extra) {
+    return '<td class="stat-col-num' + (n ? '' : ' month-zero') + (extra || '') + '">' + (n || '—') + '</td>';
+  }
   document.getElementById('year-tbody').innerHTML = MONTHS_YEAR.map(function(key, i) {
     var d = byMonth[key] || { ny: 0, videre: 0, oppdrag: 0 };
     totNy      += d.ny;
+    totVidere  += (d.videre || 0);
     totOppdrag += (d.oppdrag || 0);
-    var z  = d.ny === 0 ? ' month-zero' : '';
-    var zo = (d.oppdrag || 0) === 0 ? ' month-zero' : '';
     return '<tr><td>' + MONTHS[i].name + '</td>' +
-      '<td class="stat-col-num' + z + '">' + (d.ny || '—') + '</td>' +
-      '<td class="stat-col-num' + zo + ' stat-col-oppdrag">' + ((d.oppdrag || 0) || '—') + '</td>' +
+      cell(d.ny) + cell(d.videre || 0, ' stat-col-new') + cell(decisions.months[i], ' stat-col-new') +
+      cell(d.oppdrag || 0, ' stat-col-oppdrag') +
       '</tr>';
   }).join('');
   document.getElementById('year-tfoot').innerHTML =
     '<tr><td>Totalt ' + statYear + '</td>' +
     '<td class="stat-col-num">' + totNy + '</td>' +
+    '<td class="stat-col-num stat-col-new">' + totVidere + '</td>' +
+    '<td class="stat-col-num stat-col-new">' + decisions.total + '</td>' +
     '<td class="stat-col-num stat-col-oppdrag">' + totOppdrag + '</td>' +
     '</tr>';
+}
+
+// Avgjørelser i kalenderåret `year`: per måned (0–11) og per utfall. Samme
+// kilde som saksflyten på Hjem — avsluttede saker med registrert utfall, på
+// datoen de sist ble avsluttet. Oppdrag har ikke utfall og telles ikke.
+// Ren funksjon — se test/newFeatures.test.js.
+function decisionsByMonth(list, year) {
+  var out = { months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], meddelt: 0, avslatt: 0, henlagt: 0, total: 0 };
+  (list || []).forEach(function(c) {
+    if (!c || c.type === 'oppdrag' || c.status !== 'avsluttet') return;
+    if (!Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome)) return;
+    var when = closedDate(c);
+    if (!when) return;
+    var d = new Date(when);
+    if (d.getFullYear() !== year) return;
+    out.months[d.getMonth()]++;
+    out[c.outcome]++;
+    out.total++;
+  });
+  return out;
+}
+
+// Totaler for alle år: behandlinger fra hendelsesloggen, avgjørelser fra
+// sakene med utfall. Ren funksjon — se test/newFeatures.test.js.
+function allTimeTotals(log, list) {
+  var t = { ny: 0, videre: 0, decided: 0 };
+  (log || []).forEach(function(e) {
+    if (e && e.type === 'ny') t.ny++;
+    else if (e && e.type === 'videre') t.videre++;
+  });
+  (list || []).forEach(function(c) {
+    if (c && c.type !== 'oppdrag' && c.status === 'avsluttet' &&
+        Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome) && closedDate(c)) t.decided++;
+  });
+  return t;
+}
+
+function renderStatSummary(decisions) {
+  document.getElementById('stat-decided-title').textContent = 'Avgjort i ' + statYear;
+  document.getElementById('stat-decided-total').textContent = decisions.total;
+  document.getElementById('stat-decided-bar').innerHTML = decisions.total
+    ? ['meddelt', 'avslatt', 'henlagt'].map(function(k) {
+        return decisions[k] ? '<span style="flex:' + decisions[k] + ' 1 0;background:var(--trk-' + OUTCOMES[k].state + ')"></span>' : '';
+      }).join('')
+    : '';
+  document.getElementById('stat-decided-legend').innerHTML = decisions.total
+    ? ['meddelt', 'avslatt', 'henlagt'].map(function(k) {
+        return '<span><span class="stat-card-swatch" style="background:var(--trk-' + OUTCOMES[k].state + ')" aria-hidden="true"></span>' +
+          decisions[k] + ' ' + OUTCOMES[k].label.toLowerCase() + '</span>';
+      }).join('')
+    : '<span>Ingen avgjørelser med utfall registrert i ' + statYear + '</span>';
+  var all = allTimeTotals(stats.log, cases);
+  document.getElementById('stat-all-ny').textContent = all.ny;
+  document.getElementById('stat-all-videre').textContent = all.videre;
+  document.getElementById('stat-all-decided').textContent = all.decided;
 }
 
 function renderChart(MONTHS_YEAR, byMonth) {
@@ -13087,7 +13333,9 @@ function renderStats() {
   if (btnNext) btnNext.disabled = statYear >= new Date().getFullYear();
 
   var byMonth = buildByMonth();
-  renderMonthTable(MONTHS_YEAR, byMonth);
+  var decisions = decisionsByMonth(cases, statYear);
+  renderStatSummary(decisions);
+  renderMonthTable(MONTHS_YEAR, byMonth, decisions);
   renderChart(MONTHS_YEAR, byMonth);
   renderEventLog();
   renderMedleserStats();
@@ -14264,6 +14512,8 @@ function _modalSwitchTab(tab) {
   if (!editIdEl.value) document.getElementById('modal-title').textContent = isBulk ? 'Legg til saker' : 'Legg til sak';
   if (isBulk) {
     _modalBulkParsed = [];
+    _modalBulkDupInfo = null;
+    _renderModalBulkDupNotice(null);
     document.getElementById('modal-bulk-paste').value = '';
     document.getElementById('modal-bulk-preview').innerHTML = '';
     document.getElementById('f-bulk-unassigned').checked = UNASSIGNED_NEW_DEFAULT;
@@ -14341,19 +14591,84 @@ function _updateModalBulkCount() {
   }
 }
 
+// Rader fra «Flere saker» som allerede finnes. Saksnummeret sammenlignes uten
+// mellomrom rundt og uten forskjell på store og små bokstaver. En rad som
+// finnes fra før, får dup ({ id, status, type } for saken som ligger inne) og
+// krysses av; samme saksnummer limt inn flere ganger tas med bare første gang.
+// Rader uten saksnummer røres ikke. Ren funksjon — se test/newFeatures.test.js.
+function markBulkDuplicates(rows, existing) {
+  var byCn = {};
+  (existing || []).forEach(function(c) {
+    var k = String(c.caseNumber || '').trim().toLowerCase();
+    if (k && !byCn[k]) byCn[k] = c;
+  });
+  var seen = {}, out = [], dupCount = 0, droppedInPaste = 0;
+  (rows || []).forEach(function(r) {
+    var k = String(r.cn || '').trim().toLowerCase();
+    if (k && seen[k]) { droppedInPaste++; return; }
+    if (k) seen[k] = true;
+    var c = k ? byCn[k] : null;
+    if (c) dupCount++;
+    out.push(Object.assign({}, r, {
+      dup: c ? { id: c.id, status: c.status, type: c.type } : null,
+      checked: c ? false : r.checked
+    }));
+  });
+  return { rows: out, dupCount: dupCount, droppedInPaste: droppedInPaste };
+}
+
+function _bulkDupLabel(dup) {
+  if (dup.type === 'oppdrag') return 'Oppdrag';
+  return (STATUS_CONFIG[dup.status] || {}).label || dup.status;
+}
+
+// Varselet over forhåndsvisningen. Teksten følger antallet som finnes fra før
+// og som ble limt inn flere ganger.
+function _renderModalBulkDupNotice(info) {
+  var el = document.getElementById('modal-bulk-dups');
+  if (!el) return;
+  var parts = [];
+  if (info && info.dupCount) {
+    parts.push('<strong>' + info.dupCount + ' av ' + _modalBulkParsed.length + ' saker finnes allerede</strong> og er tatt bort. Kryss av hvis du vil legge dem inn likevel.');
+  }
+  if (info && info.droppedInPaste) {
+    parts.push(info.droppedInPaste + (info.droppedInPaste === 1 ? ' saksnummer var' : ' saksnumre var') + ' limt inn flere ganger og er tatt med bare én gang.');
+  }
+  el.hidden = !parts.length;
+  el.innerHTML = parts.length
+    ? '<svg class="ti" aria-hidden="true"><use href="#ti-alert-triangle"/></svg><span>' + parts.join(' ') + '</span>'
+    : '';
+}
+
+var _modalBulkDupInfo = null;
+
+// Leser inn nye rader: merker dem som finnes, og tegner forhåndsvisningen.
+function _setModalBulkRows(rows) {
+  var res = markBulkDuplicates(rows, cases);
+  _modalBulkParsed = res.rows;
+  _modalBulkDupInfo = res;
+  _renderModalBulkPreview();
+}
+
 function _renderModalBulkPreview() {
   var container = document.getElementById('modal-bulk-preview');
   if (!container) return;
+  _renderModalBulkDupNotice(_modalBulkParsed.length ? _modalBulkDupInfo : null);
   if (!_modalBulkParsed.length) { container.innerHTML = ''; return; }
   var hdr = '<div class="bulk-preview-hdr"><div></div><div>Saksnummer</div><div>Tittel</div><div>Forfallsdato</div><div></div></div>';
   var rows = _modalBulkParsed.map(function(row) {
     var dateOk   = row.date && isValidDate(row.date);
     var cnOk     = !!row.cn;
     var dateDisp = dateOk ? toDisplay(row.date) : (row.date || '—');
-    return '<div class="bulk-preview-row" data-rid="' + row.id + '">' +
-      '<div class="bulk-check-cell"><input type="checkbox" class="bulk-check" data-rid="' + row.id + '"' + (row.checked ? ' checked' : '') + '/></div>' +
+    var titleHtml = row.dup
+      ? '<div class="bulk-preview-cell bulk-dup-title"><span>' + esc(row.title || '') + '</span>' +
+          '<a href="#" class="bulk-dup-tag" data-id="' + esc(row.dup.id) + '" title="Åpne saken som allerede ligger inne">Finnes · ' + esc(_bulkDupLabel(row.dup)) + '</a></div>'
+      : '<div class="bulk-preview-cell">' + esc(row.title || '') + '</div>';
+    var checkLabel = row.dup ? 'Legg inn ' + (row.cn || '') + ' likevel' : 'Velg ' + (row.cn || 'rad');
+    return '<div class="bulk-preview-row' + (row.dup ? ' is-dup' : '') + '" data-rid="' + row.id + '">' +
+      '<div class="bulk-check-cell"><input type="checkbox" class="bulk-check" data-rid="' + row.id + '"' + (row.checked ? ' checked' : '') + ' aria-label="' + esc(checkLabel) + '"/></div>' +
       '<div class="bulk-preview-cell' + (cnOk ? '' : ' err') + '">' + esc(row.cn || '—') + '</div>' +
-      '<div class="bulk-preview-cell">' + esc(row.title || '') + '</div>' +
+      titleHtml +
       '<div class="bulk-preview-cell' + (dateOk ? '' : ' err') + '">' + esc(dateDisp) + '</div>' +
       '<button class="bulk-del" data-rid="' + row.id + '" title="Fjern rad">×</button>' +
     '</div>';
@@ -14413,15 +14728,13 @@ function parseBulkBlocks(text) {
 document.getElementById('modal-bulk-paste').addEventListener('input', function() {
   if (this.value.indexOf('\t') === -1) {
     // Ingen tab = ikke Excel, men saksoversikten med én verdi per linje
-    _modalBulkParsed = parseBulkBlocks(this.value).map(function(r) {
+    _setModalBulkRows(parseBulkBlocks(this.value).map(function(r) {
       return { id: _bulkRowId(), cn: r.cn, title: r.title, date: r.date, tags: r.tags, checked: true };
-    });
-    _renderModalBulkPreview();
+    }));
     return;
   }
   var lines = this.value.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(function(l){return l.trim();});
-  _modalBulkParsed = lines.map(function(l) { return _parseModalBulkRow(l.split('\t')); });
-  _renderModalBulkPreview();
+  _setModalBulkRows(lines.map(function(l) { return _parseModalBulkRow(l.split('\t')); }));
 });
 
 document.getElementById('modal-bulk-preview').addEventListener('change', function(e) {
@@ -14430,6 +14743,13 @@ document.getElementById('modal-bulk-preview').addEventListener('change', functio
   if (row) { row.checked = e.target.checked; _updateModalBulkCount(); renderTimeline({ target: 'modal-timeline', draftRows: _modalBulkParsed.filter(function(r){return r.checked;}) }); }
 });
 document.getElementById('modal-bulk-preview').addEventListener('click', function(e) {
+  var tag = e.target.closest('.bulk-dup-tag');
+  if (tag) {
+    e.preventDefault();
+    closeModal();
+    navigateTo('sak/' + tag.dataset.id);
+    return;
+  }
   var del = e.target.closest('.bulk-del');
   if (!del) return;
   _modalBulkParsed = _modalBulkParsed.filter(function(r) { return r.id !== del.dataset.rid; });

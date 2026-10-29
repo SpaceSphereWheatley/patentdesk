@@ -7,6 +7,31 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.41.0] - 2026-10-29
+«Flere saker» legger ikke inn samme sak to ganger, færre krav krever
+bekreftelse, og Statistikk viser viderebehandlinger og avgjørelser.
+
+### Added
+- **Saker som finnes fra før, tas bort i «Flere saker».** Har et saksnummer
+  du limer inn allerede en sak, vises raden grå med «Finnes · Ny» (eller
+  statusen saken har) og er ikke krysset av. Merket lenker til saken. Kryss
+  av hvis du vil legge den inn likevel. Samme saksnummer limt inn flere ganger
+  tas med bare én gang. Et varsel over lista sier hvor mange det gjelder.
+- **Bekreftelse før krav fjernes.** Setter du ned «Antall krav» slik at krav
+  med vurdering, mothold, notat eller etikett forsvinner, spør PatentDesk
+  først og viser hva som går tapt. «Behold» setter tallet tilbake. Fjerner du
+  kravene, kan det angres i noen sekunder. Tomme krav fjernes uten å spørre.
+- **Viderebehandlinger og avgjørelser i Statistikk.** Måned-tabellen har
+  fått kolonnene Viderebehandlinger og Avgjort. Over tabellen viser
+  «Avgjort i [år]» fordelingen på meddelt, avslått og henlagt, og «Alle år»
+  viser totalt antall nybehandlinger, viderebehandlinger og avgjørelser.
+  Avgjørelser telles på samme måte som saksflyten på Hjem: avsluttede saker
+  med utfall.
+
+### Changed
+- Tabellen og grafen i Statistikk deler bredden likt, og legger seg under
+  hverandre på smale skjermer.
+
 ## [4.40.2] - 2026-10-29
 Flere rettelser i kravtreet, prognosen, angre og fristforslaget, og litt
 opprydding i kode som ikke ble brukt.
