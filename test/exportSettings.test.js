@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { readImportSettings, isValidChecklistTemplate } = loadFunctions(
-  ['readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter', 'normalizeWorkWindows', 'normalizeTypeBuffers'],
+  ['readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter', 'normalizeWorkWindows', 'migrateWorkWindowsToWorkdays', 'normalizeTypeBuffers'],
   { vars: ['HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS', 'WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX', 'TYPE_BUFFER_DEFAULTS', 'TYPE_BUFFER_MAX'] }
 );
 
@@ -101,4 +101,14 @@ test('readImportSettings: the Oversikt deadline filter is read and normalised', 
   assert.strictEqual(r.homeDeadlineFilter.horizon, 30);
   assert.ok(!('homeDeadlineFilter' in readImportSettings({ homeDeadlineFilter: 'x' })));
   assert.ok(!('homeDeadlineFilter' in readImportSettings({})));
+});
+
+test('readImportSettings: an export from before workdays gets the new Ny default', () => {
+  const s = readImportSettings({ workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 } });
+  assert.strictEqual(s.workWindows.ny, 10);
+});
+
+test('readImportSettings: an export already in workdays keeps its Ny window', () => {
+  const s = readImportSettings({ workWindowUnit: 'workdays', workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 } });
+  assert.strictEqual(s.workWindows.ny, 14);
 });

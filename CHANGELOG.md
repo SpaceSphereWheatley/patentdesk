@@ -7,6 +7,40 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.42.0] - 2026-10-29
+Arbeidsvinduet regnes i arbeidsdager, og tidslinjen viser tydeligere hvor
+arbeidet havner.
+
+### Changed
+- **Varighet i arbeidsdager.** Hvor lenge en sak er arbeid før fristen,
+  regnes nå i arbeidsdager. Helger, røde dager og ferie telles ikke, så
+  vinduet strekker seg bakover forbi dem. En sak med frist rett etter to ukers
+  ferie ser dermed ikke lenger billig ut i belegget: arbeidet legges før
+  ferien, der det faktisk må gjøres. Gjelder belegget, tidslinjen,
+  ferievarselet og forhåndsvisningen i «Flere saker».
+- **Ny standard for Ny: 10 arbeidsdager** (før 14 kalenderdager, omtrent det
+  samme i en vanlig uke). Viderebehandling (3) og oppdrag (2) beholder tallet,
+  som nå betyr arbeidsdager, og det samme gjør varigheten på hvert oppdrag.
+  Hadde du 14 lagret for Ny, blir det 10 én gang; andre tall du har valgt,
+  beholdes. Eksportfiler fra før denne versjonen leses på samme måte.
+- **Radhøyden i tidslinjen følger det du ser.** Sporet får så mange rader som
+  bjelkene i utsnittet bruker, og høyden følger med når du scroller. Saker som
+  overlapper langt fram i tid, gjør ikke lenger bjelkene du ser, tynne.
+- **Bjelker kan dras også i tidslinjen på sakslistene**, ikke bare på Hjem.
+
+### Added
+- **Fridager skraveres inne i bjelkene**, så du ser at arbeidsvinduet går
+  forbi helg og ferie. Når zoomen er tett nok (3 mnd), skraveres helgene svakt
+  i hele sporet.
+- **Forfalt-bånd.** En forfalt sak koster de neste 3 arbeidsdagene i
+  belegget. Et tynt rødt bånd langs bunnen av tidslinjen viser nå de dagene,
+  ett bånd per forfalt sak, så tidslinjen og belegget forteller det samme.
+- **Du ser hva et drag gjør.** Når du drar en bjelke, viser en brikke over den
+  bufferen før og nå («Buffer 0 → 5 dager») og datoene det gir. Popupen sier
+  at bjelken kan dras.
+- **Bufferen kan endres fra tastaturet:** med en bjelke i fokus flytter
+  Alt + ← den én dag tidligere og Alt + → én dag senere.
+
 ### Fixed
 - **Siden følger med når datoen skifter.** Står PatentDesk åpen over natten,
   tegnes siden nå på nytt når en ny dag starter, så «i dag»-linjen i

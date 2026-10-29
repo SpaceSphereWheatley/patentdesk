@@ -62,21 +62,24 @@ These two stores have distinct responsibilities. Do not conflate them.
 - **Whose deadline is it.** The meaning of `dueDate` depends on the status, and
   this drives most workload logic:
   - `Ny` — the examiner's own deadline to examine the application. Real work,
-    modelled as a 14-day working window (`WORK_WINDOW_DAYS`) ending on the due
-    date. The window represents time remaining, so it shrinks as the deadline
+    modelled as a working window of 10 **workdays** (`WORK_WINDOW_DEFAULTS`,
+    user-adjustable) ending on the due date. Weekends, public holidays and
+    vacation do not count, so the window stretches back past them
+    (`workWindowStart`) — work due right after a vacation lands before it.
+    The window represents time remaining, so it shrinks as the deadline
     approaches; once a case is overdue it costs a flat
     `OVERDUE_PENALTY_WORKDAYS` in belegg instead, so missing a deadline can
     never make the occupancy figure look better.
   - `Fristarkiv` — the office action has **already been sent out**. The due date
     is the **applicant's** deadline to answer, not the examiner's. It costs the
-    examiner no work: no 14-day window, no occupancy (belegg), no vacation
+    examiner no work: no work window, no occupancy (belegg), no vacation
     conflict, and no due-date buffer. Treat a Fristarkiv date as a milestone
     marking when the case may come back, not as a block of work.
   - `Viderebehandling` — the applicant has answered and the examiner must
     process the response. Real work again.
   - `Avsluttet` — done; excluded from all workload logic.
-- Oppdrag are separate from this: they carry an explicit `duration` and always
-  use their actual `dueDate` (never buffered).
+- Oppdrag are separate from this: they carry an explicit `duration` (in
+  workdays) and always use their actual `dueDate` (never buffered).
 - Claims (krav): independent (selvstendige) and dependent (uselvstendige)
 - Novelty (nyhet) and inventive step (oppfinnelseshøyde) are per-claim
   properties. A claim without novelty is automatically locked to no inventive
