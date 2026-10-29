@@ -10,10 +10,11 @@ const { loadFunctions } = require('./extractFunctions');
 
 const DUE_DEPS = ['isoLocalDate', 'getEffectiveDueDate', 'effDueFor', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'];
 
-function load(names, buffers) {
-  return loadFunctions(names.concat(DUE_DEPS, ['timelineSpanDays', 'workWindowDays', 'isUnassigned', 'canBeUnassigned']), {
+function load(names, buffers, nonWorkday) {
+  return loadFunctions(names.concat(DUE_DEPS, ['timelineSpanDays', 'timelineBarStart', 'workWindowDays', 'workWindowStart', 'isUnassigned', 'canBeUnassigned']), {
     vars: ['MILESTONE_DAYS'],
     globals: {
+      isNonWorkday: nonWorkday || (() => false),
       typeBuffers: buffers || { ny: 0, viderebehandling: 0 },
       workWindows: { ny: 14, viderebehandling: 5, oppdrag: 3 },
     },
@@ -55,6 +56,17 @@ test('timelineRange draws a work window ending at the buffered deadline', () => 
   assert.strictEqual(r.hasBuffer, true);
   assert.strictEqual(r.isOverdue, false);
   assert.strictEqual(r.isMilestone, false);
+});
+
+test('timelineRange stretches the work window back past weekends', () => {
+  const weekend = (d) => d.getDay() === 0 || d.getDay() === 6;
+  const { timelineRange } = load(['timelineRange', 'tlDueOffset'], { ny: 0, viderebehandling: 0 }, weekend);
+  // Søn. 1.11.2026 kl. 16; frist fre. 20.11; 14 arbeidsdager = tir. 3.11–fre. 20.11
+  const now = new Date('2026-11-01T16:00:00');
+  const r = timelineRange({ id: 'a', caseNumber: 'A', status: 'ny', dueDate: '2026-11-20' }, now, 365, 180);
+  assert.strictEqual(r.end, 19);
+  assert.strictEqual(r.windowStart, '2026-11-03');
+  assert.strictEqual(r.start, 1);         // arbeidsslutt dagen før 3.11
 });
 
 test('timelineRange marks overdue cases and keeps their real end beyond the past window', () => {

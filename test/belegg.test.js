@@ -8,7 +8,7 @@ const { loadFunctions } = require('./extractFunctions');
 // drift when a public holiday moves.
 function load(cases) {
   return loadFunctions(
-    ['computeBelegg', 'addDaysLocal', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'isoLocalDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
+    ['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'workWindowStart', 'addDaysLocal', 'overduePenaltyOffsets', 'effDueFor', 'getEffectiveDueDate', 'isoLocalDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
     {
       vars: ['OVERDUE_PENALTY_WORKDAYS'],
       globals: {
@@ -94,7 +94,7 @@ test('computeBelegg counts viderebehandling as real work, over its own window', 
 
 test('computeBelegg follows the work window settings', () => {
   const fns = loadFunctions(
-    ['computeBelegg', 'addDaysLocal', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'effDueFor', 'getEffectiveDueDate', 'isoLocalDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
+    ['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'workWindowStart', 'addDaysLocal', 'overduePenaltyOffsets', 'effDueFor', 'getEffectiveDueDate', 'isoLocalDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
     { vars: ['OVERDUE_PENALTY_WORKDAYS'], globals: {
       cases: [makeCase({ id: 'a' }), makeCase({ id: 'b', status: 'viderebehandling' })],
       workWindows: { ny: 10, viderebehandling: 5, oppdrag: 2 },
@@ -189,4 +189,23 @@ test('computeBelegg reports no potential when nothing is waiting', () => {
 test('computeBelegg counts a stale flag on a viderebehandling case as real work', () => {
   const { computeBelegg } = load([makeCase({ id: 'a', status: 'viderebehandling', unassigned: true })]);
   assert.strictEqual(computeBelegg(70).busy, 3);
+});
+
+test('computeBelegg counts the full workday window even when it stretches past days off', () => {
+  // Annenhver dag er fri: vinduet på 14 arbeidsdager strekker seg over 27
+  // kalenderdager, men saken koster fortsatt 14 arbeidsdager.
+  const { computeBelegg } = loadFunctions(
+    ['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned', 'workWindowDays', 'workWindowStart', 'addDaysLocal', 'overduePenaltyOffsets', 'effDueFor', 'getEffectiveDueDate', 'isoLocalDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'],
+    {
+      vars: ['OVERDUE_PENALTY_WORKDAYS'],
+      globals: {
+        cases: [makeCase({ id: 'a', dueDate: inDays(40) })],
+        workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 },
+        vacations: [],
+        typeBuffers: { ny: 0, viderebehandling: 0 },
+        isNonWorkday: (d) => Math.round(d.getTime() / 86400000) % 2 === 0,
+      },
+    }
+  );
+  assert.strictEqual(computeBelegg(70).busy, 14);
 });

@@ -7,11 +7,11 @@ const { loadFunctions } = require('./extractFunctions');
 // pick its own values.
 function load(workWindows) {
   return loadFunctions(
-    ['normalizeWorkWindows', 'workWindowDays', 'timelineSpanDays', 'periodOverlapsVacation',
+    ['normalizeWorkWindows', 'workWindowDays', 'workWindowStart', 'timelineSpanDays', 'periodOverlapsVacation',
      'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
     {
       vars: ['WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX', 'MILESTONE_DAYS'],
-      globals: { workWindows: workWindows, vacations: [], typeBuffers: { ny: 0, viderebehandling: 0 } },
+      globals: { workWindows: workWindows, vacations: [], typeBuffers: { ny: 0, viderebehandling: 0 }, isNonWorkday: () => false },
     }
   );
 }
@@ -23,9 +23,9 @@ function makeCase(overrides) {
   }, overrides);
 }
 
-const DEFAULTS = { ny: 14, viderebehandling: 3, oppdrag: 2 };
+const DEFAULTS = { ny: 10, viderebehandling: 3, oppdrag: 2 };
 
-test('WORK_WINDOW_DEFAULTS: 14 days for Ny, 3 for Viderebehandling, 2 for oppdrag', () => {
+test('WORK_WINDOW_DEFAULTS: 10 workdays for Ny, 3 for Viderebehandling, 2 for oppdrag', () => {
   const { WORK_WINDOW_DEFAULTS } = load(DEFAULTS);
   assert.deepStrictEqual(Object.assign({}, WORK_WINDOW_DEFAULTS), DEFAULTS);
 });
@@ -40,17 +40,17 @@ test('normalizeWorkWindows falls back to the defaults for missing or invalid inp
 
 test('normalizeWorkWindows keeps valid values per type and rejects the rest individually', () => {
   const { normalizeWorkWindows } = load(DEFAULTS);
-  const r = normalizeWorkWindows({ ny: 10, viderebehandling: 0, oppdrag: '5', extra: 9 });
-  assert.deepStrictEqual(Object.assign({}, r), { ny: 10, viderebehandling: 3, oppdrag: 2 });
+  const r = normalizeWorkWindows({ ny: 12, viderebehandling: 0, oppdrag: '5', extra: 9 });
+  assert.deepStrictEqual(Object.assign({}, r), { ny: 12, viderebehandling: 3, oppdrag: 2 });
 });
 
 test('normalizeWorkWindows rounds down and caps at 365 days', () => {
   const { normalizeWorkWindows } = load(DEFAULTS);
-  assert.strictEqual(normalizeWorkWindows({ ny: 10.8 }).ny, 10);
+  assert.strictEqual(normalizeWorkWindows({ ny: 12.8 }).ny, 12);
   assert.strictEqual(normalizeWorkWindows({ ny: 365 }).ny, 365);
-  assert.strictEqual(normalizeWorkWindows({ ny: 366 }).ny, 14);
-  assert.strictEqual(normalizeWorkWindows({ ny: NaN }).ny, 14);
-  assert.strictEqual(normalizeWorkWindows({ ny: Infinity }).ny, 14);
+  assert.strictEqual(normalizeWorkWindows({ ny: 366 }).ny, 10);
+  assert.strictEqual(normalizeWorkWindows({ ny: NaN }).ny, 10);
+  assert.strictEqual(normalizeWorkWindows({ ny: Infinity }).ny, 10);
 });
 
 test('workWindowDays uses the setting for the case\'s status', () => {
@@ -91,14 +91,14 @@ test('timeline and vacation check agree on an oppdrag\'s length', () => {
     const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     const dayBefore = new Date(first); dayBefore.setDate(dayBefore.getDate() - 1);
     const fns = loadFunctions(
-      ['normalizeWorkWindows', 'workWindowDays', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
-      { vars: ['WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX'], globals: { workWindows: settings, typeBuffers: { ny: 0, viderebehandling: 0 },
+      ['normalizeWorkWindows', 'workWindowDays', 'workWindowStart', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
+      { vars: ['WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX'], globals: { workWindows: settings, typeBuffers: { ny: 0, viderebehandling: 0 }, isNonWorkday: () => false,
         vacations: [{ from: '2026-07-01', to: iso(first) }] } }
     );
     assert.strictEqual(fns.periodOverlapsVacation(c), true, 'duration ' + duration + ': first day');
     const fns2 = loadFunctions(
-      ['normalizeWorkWindows', 'workWindowDays', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
-      { vars: ['WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX'], globals: { workWindows: settings, typeBuffers: { ny: 0, viderebehandling: 0 },
+      ['normalizeWorkWindows', 'workWindowDays', 'workWindowStart', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
+      { vars: ['WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX'], globals: { workWindows: settings, typeBuffers: { ny: 0, viderebehandling: 0 }, isNonWorkday: () => false,
         vacations: [{ from: '2026-07-01', to: iso(dayBefore) }] } }
     );
     assert.strictEqual(fns2.periodOverlapsVacation(c), false, 'duration ' + duration + ': day before');
@@ -107,8 +107,8 @@ test('timeline and vacation check agree on an oppdrag\'s length', () => {
 
 test('periodOverlapsVacation uses the Viderebehandling window from the settings', () => {
   const fns = loadFunctions(
-    ['workWindowDays', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
-    { globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 }, typeBuffers: { ny: 0, viderebehandling: 0 },
+    ['workWindowDays', 'workWindowStart', 'periodOverlapsVacation', 'bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor'],
+    { globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 }, typeBuffers: { ny: 0, viderebehandling: 0 }, isNonWorkday: () => false,
       // Ends 5 days before the due date: inside a 14-day window, outside a 3-day one.
       vacations: [{ from: '2026-07-20', to: '2026-08-05' }] } }
   );

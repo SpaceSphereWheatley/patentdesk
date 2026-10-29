@@ -8,9 +8,11 @@ function load(vacations, buffer) {
   const b = buffer != null ? buffer : 0;
   const typeBuffers = typeof b === 'number' ? { ny: b, viderebehandling: b } : b;
   return loadFunctions(
-    ['bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor', 'workWindowDays', 'periodOverlapsVacation'],
+    ['bufferAppliesTo', 'getEffectiveDueDate', 'isoLocalDate', 'effDueFor', 'typeBufferFor', 'bufferDaysFor', 'workWindowDays', 'workWindowStart', 'periodOverlapsVacation'],
     {
-      globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 }, vacations: vacations || [], typeBuffers: typeBuffers },
+      // Hver dag er en arbeidsdag, så vinduet er like mange kalenderdager og
+      // testene måler bare selve overlappsjekken.
+      globals: { workWindows: { ny: 14, viderebehandling: 3, oppdrag: 2 }, vacations: vacations || [], typeBuffers: typeBuffers, isNonWorkday: () => false },
     }
   );
 }
