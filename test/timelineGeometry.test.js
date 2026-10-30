@@ -8,7 +8,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
-const DUE_DEPS = ['isoLocalDate', 'getEffectiveDueDate', 'effDueFor', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'];
+const DUE_DEPS = ['isoLocalDate', 'getEffectiveDueDate', 'effDueFor', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor', 'canPostpone', 'postponedDaysFor'];
 
 function load(names, buffers, nonWorkday) {
   return loadFunctions(names.concat(DUE_DEPS, ['timelineSpanDays', 'timelineBarStart', 'workWindowDays', 'workWindowStart', 'isUnassigned', 'canBeUnassigned']), {

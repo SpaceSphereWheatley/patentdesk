@@ -7,7 +7,7 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
-## [4.44.2] - 2026-10-30
+## [4.45.1] - 2026-10-30
 
 ### Changed
 - «Finnes»-merket i forhåndsvisningen under Legg til saker er bare et merke og
@@ -21,6 +21,31 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   varselet hvilke perioder den overlapper. Perioden lagres likevel.
 - Klikk på «Finnes» i Legg til saker lukker ikke lenger dialogen. Før gikk
   hele den innlimte lista tapt.
+
+## [4.45.0] - 2026-10-30
+Viderebehandlinger kan flyttes etter fristen, så tidslinjen blir en
+arbeidsplan.
+
+### Added
+- **Utsatt viderebehandling.** En viderebehandling kan dras forbi fristen i
+  tidslinjen, eller flyttes med Alt + →. Du kan også skrive et negativt tall i
+  bufferfeltet i «Rediger sak». Ny-saker og oppdrag stopper fortsatt ved
+  fristen, og dra-brikken sier hvorfor. Det er ingen grense for hvor langt en
+  sak kan utsettes, men brikken blir gul når saken legges mer enn 14 dager
+  etter fristen.
+- **Utsatte saker er merket.** I tidslinjen er delen av bjelken etter fristen
+  skravert. Ved enden står «+N d» når det er plass til det, så merket aldri
+  dekker andre saker, og en stiplet strek går fra den faktiske fristen til
+  bjelken. I sakslistene og fristlista på Hjem står «Utsatt til
+  …». På sakssiden står datoen saken er planlagt til, med knappen «Fjern
+  utsettelse». Forklaringen under tidslinjen har fått «Utsatt etter fristen».
+
+### Changed
+- **Fristen flytter seg ikke når saken utsettes.** En utsatt sak er forfalt
+  fra den faktiske fristen: bjelken blir rød, saken telles i Forfalt-kortet,
+  og nedtellingen måler mot fristen. Belegget følger planen, som for en vanlig
+  sak. En utsettelse koster altså ingenting ekstra, og straffen for forfalt
+  kommer først når den planlagte datoen har passert.
 
 ## [4.44.1] - 2026-10-30
 

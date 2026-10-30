@@ -1189,6 +1189,12 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   color: var(--muted); border: 1px dashed var(--border2); border-radius: var(--radius-pill);
   padding: 1px var(--space-3); line-height: 1.4;
 }
+.postpone-pill {
+  flex-shrink: 0; font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+  white-space: nowrap; line-height: 1.4; padding: 1px var(--space-3);
+  color: var(--s-videre-text); background: var(--s-videre-bg);
+  border: 1px dashed var(--s-videre-border); border-radius: var(--radius-pill);
+}
 .unassigned-pill.is-stale {
   color: var(--badge-urgent-text); background: var(--badge-urgent-bg);
   border: 1px solid var(--badge-urgent-border);
@@ -1880,6 +1886,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-frist-left.urgent  { color: var(--color-urgent); font-weight: var(--weight-semibold); }
 .sak-frist-left.overdue { color: var(--danger); font-weight: var(--weight-semibold); }
 .sak-frist-meta     { font-size: var(--text-xs); color: var(--muted); margin-top: var(--space-2); }
+.sak-frist-postponed { color: var(--s-videre-text); font-weight: var(--weight-semibold); }
+.sak-frist-unpostpone {
+  margin-left: var(--space-2); padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; color: var(--s-videre-text); text-decoration: underline;
+}
 .sak-frist-note     { font-size: var(--text-sm); color: var(--muted); line-height: var(--line-snug);
                       margin-top: var(--space-3); padding-top: var(--space-3);
                       border-top: 1px dashed var(--border); }
@@ -2725,6 +2736,34 @@ tr:hover .sak-tag-display.sak-tag-empty,
   background: repeating-linear-gradient(135deg, rgba(255,255,255,0.55) 0 3px, rgba(255,255,255,0.25) 3px 7px);
 }
 .tl-bar.dragging .tl-bar-gap { display: none; } /* fridagene flytter seg med draget */
+/* Utsatt viderebehandling: delen etter fristen skraveres, og «+N d» står ved
+   enden. Fristen markeres med streken som ellers viser den faktiske fristen. */
+.tl-bar-postponed {
+  position: absolute; top: 0; bottom: 0; pointer-events: none;
+  background: repeating-linear-gradient(135deg, rgba(255,255,255,0.5) 0 3px, rgba(255,255,255,0.12) 3px 7px);
+  border-left: 1px dashed rgba(255,255,255,0.9);
+}
+.tl-bar-postponed.is-whole { border-left: 0; }
+.tl-postpone-tag {
+  position: absolute; z-index: 2; display: flex; align-items: center;
+  margin-left: 4px; pointer-events: none;
+}
+.tl-postpone-tag span {
+  padding: 0 5px; border-radius: 4px; white-space: nowrap; line-height: 1.35;
+  font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+  background: var(--s-videre-bg); border: 1px solid var(--s-videre-border); color: var(--s-videre-text);
+}
+.tl-postpone-tag.is-overdue span {
+  background: var(--badge-overdue-bg); border-color: var(--badge-overdue-border); color: var(--badge-overdue-text);
+}
+.tl-actual-line.is-overdue { border-top-color: rgba(220,38,38,0.7); }
+.tl-drag-chip.is-warn {
+  background: var(--badge-urgent-bg); color: var(--badge-urgent-text);
+  border: 1px solid var(--badge-urgent-border);
+}
+.tl-drag-chip.is-warn small { opacity: 1; }
+.tl-bar.dragging .tl-bar-postponed { display: none; }
+.tl-bar.dragging .tl-bar-postponed.is-live { display: block; }
 /* Forfalt-bånd: de arbeidsdagene belegget bokfører en forfalt sak på */
 .tl-overdue-band { position: absolute; height: 5px; border-radius: 3px; background: rgba(220,38,38,0.75); z-index: 1; }
 /* Brikken over en bjelke som dras: hva draget gjør med bufferen */
@@ -2831,6 +2870,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .tl-legend-swatch-vac    { background: rgba(16,185,129,0.3); }
 .tl-legend-swatch-buffer { background: var(--tl-holiday); opacity: 0.4; }
 .tl-legend-today-line    { width: 10px; border-top: 1px dashed var(--tl-actual-due); display: inline-block; }
+.tl-legend-swatch-postponed {
+  background: repeating-linear-gradient(135deg, rgba(67,56,202,0.35) 0 2px, rgba(67,56,202,0.75) 2px 4px);
+}
 .tl-legend-today-bar     { width: 2px; height: 10px; background: var(--tl-actual-due); opacity: 0.85; border-radius: 1px; display: inline-block; }
 .tl-legend-today-wrap    { display: inline-flex; align-items: center; gap: 2px; }
 .input-w120       { max-width: 120px; }
@@ -4029,7 +4071,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
           </div>
           <div class="field-group">
             <label class="field-label" for="f-case-buffer">Buffer (dager) <span class="field-label-sub">blank = standard</span></label>
-            <input class="field-input" id="f-case-buffer" type="number" min="0" max="365" placeholder="Standard" />
+            <input class="field-input" id="f-case-buffer" type="number" min="0" max="365" placeholder="Standard" aria-describedby="f-case-buffer-hint" />
+            <span class="field-hint" id="f-case-buffer-hint" hidden>Et negativt tall utsetter saken etter fristen. Fristen flytter seg ikke, og saken er forfalt fra den.</span>
           </div>
           <div class="field-group">
             <label class="field-label" for="f-filing-date">Innleveringsdato <span class="field-label-sub">valgfritt</span></label>
@@ -4571,7 +4614,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.44.2';
+var APP_VERSION    = 'v4.45.1';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -6344,10 +6387,12 @@ function typeBufferFor(c) {
 }
 
 // bufferDaysFor: bufferen som faktisk gjelder for saken — egen buffer om den
-// har en, ellers standarden for typen, og 0 der buffer ikke gjelder.
+// har en, ellers standarden for typen, og 0 der buffer ikke gjelder. Negativ
+// buffer (utsatt) gjelder bare der saken kan utsettes (canPostpone).
 function bufferDaysFor(c) {
   if (!bufferAppliesTo(c)) return 0;
-  return (c && c.caseBuffer != null) ? c.caseBuffer : typeBufferFor(c);
+  var b = (c && c.caseBuffer != null) ? c.caseBuffer : typeBufferFor(c);
+  return b < 0 && !canPostpone(c) ? 0 : b;
 }
 
 // bufferAppliesTo: om fristbufferen — standard eller per sak — skal gjelde for en
@@ -6391,6 +6436,40 @@ function isoLocalDate(d) {
 // get the buffer-adjusted date.
 function effDueFor(c) {
   return getEffectiveDueDate(c ? c.dueDate : '', c);
+}
+
+// Utsatt viderebehandling. Fristen for å behandle søkerens svar er mykere enn
+// for nye søknader og oppdrag, så en viderebehandling kan legges etter fristen
+// i arbeidsplanen — en negativ buffer. Fristen flytter seg ikke: saken er
+// forfalt fra den faktiske fristen (deadlineFor). Bjelken og belegget følger
+// planen (effDueFor), som for enhver annen sak, så en utsettelse koster ikke
+// noe ekstra; straffen for forfalt kommer først når planen er passert.
+// Rene funksjoner — se test/postpone.test.js.
+// Dager etter fristen før dra-brikken varsler. Det er bare et varsel; det er
+// ingen grense for hvor langt en sak kan utsettes.
+var POSTPONE_WARN_DAYS = 14;
+
+function canPostpone(c) {
+  return !!c && c.type !== 'oppdrag' && c.status === 'viderebehandling';
+}
+
+// minBufferFor: den minste bufferen saken kan dras eller settes til.
+function minBufferFor(c) {
+  return canPostpone(c) ? -Infinity : 0;
+}
+
+// postponedDaysFor: hvor mange dager etter fristen saken er planlagt, ellers 0.
+function postponedDaysFor(c) {
+  if (!canPostpone(c)) return 0;
+  var b = bufferDaysFor(c);
+  return b < 0 ? -b : 0;
+}
+
+// deadlineFor: datoen som avgjør om saken er forfalt, og som nedtellingen
+// måles mot — den bufrede datoen som før, men den faktiske fristen for en
+// utsatt sak.
+function deadlineFor(c) {
+  return postponedDaysFor(c) > 0 ? c.dueDate : effDueFor(c);
 }
 // Hvem fristen tilhører avhenger av status, og det er den viktigste
 // domeneregelen på sakssiden: i Fristarkiv er realitetsbrevet sendt, og datoen
@@ -6438,6 +6517,7 @@ function caseBufferLabel(c) {
   if (c && c.status === 'fristarkiv') return 'Ikke aktiv i Fristarkiv';
   var own = c && c.caseBuffer != null;
   var n = own ? c.caseBuffer : typeBufferFor(c);
+  if (n < 0) return 'utsatt ' + (-n) + (n === -1 ? ' dag' : ' dager') + ' · egen';
   return n + (n === 1 ? ' dag' : ' dager') + (own ? ' · egen' : ' · standard');
 }
 
@@ -6455,12 +6535,14 @@ function statusChangePatch(toStatus, outcome, newDueDate) {
 
 // modalCaseBuffer: egen buffer fra «Rediger sak»-feltet. Byttes statusen i
 // samme lagring, forkastes den gamle verdien som står igjen i feltet — bare en
-// ny verdi skrevet inn nå beholdes. Fristarkiv har ingen buffer.
+// ny verdi skrevet inn nå beholdes. Fristarkiv har ingen buffer. Et negativt
+// tall utsetter saken, og gjelder bare Viderebehandling (canPostpone).
 // Ren funksjon — se test/typeBuffers.test.js.
 function modalCaseBuffer(orig, newStatus, raw) {
   if (newStatus === 'fristarkiv') return null;
   var t = (raw == null ? '' : String(raw)).trim();
-  var v = t === '' ? null : Math.max(0, parseInt(t, 10) || 0);
+  var v = t === '' ? null : parseInt(t, 10) || 0;
+  if (v !== null && v < 0 && newStatus !== 'viderebehandling') v = 0;
   if (orig && orig.status !== newStatus && v === (orig.caseBuffer != null ? orig.caseBuffer : null)) return null;
   return v;
 }
@@ -6741,7 +6823,8 @@ function holidayLabel(names) {
 // samtidig overlappende saker stables i stedet for å tegnes oppå hverandre.
 function assignTimelineRows(ranges) {
   var indexed = (ranges || []).map(function(r, i) {
-    return { start: r.start, end: r.end, prio: timelineRowPriority(r), i: i };
+    // laneStart: en utsatt sak trenger raden fra fristen, der streken starter
+    return { start: r.laneStart != null ? r.laneStart : r.start, end: r.end, prio: timelineRowPriority(r), i: i };
   });
   var sorted = indexed.slice().sort(function(a, b) {
     return (a.prio - b.prio) || (a.start - b.start) || (a.end - b.end);
@@ -6787,6 +6870,7 @@ function timelineRange(cas, now, horizon, past) {
   var effDue   = effDueFor(cas);
   var spanDays = timelineSpanDays(cas);
   var effEnd   = tlDueOffset(effDue, now);
+  var postponed = postponedDaysFor(cas);
   return {
     start:       Math.max(-past, timelineBarStart(cas, effDue, now)),
     end:         Math.min(horizon, effEnd),
@@ -6799,7 +6883,13 @@ function timelineRange(cas, now, horizon, past) {
     effDue:      effDue,
     isOppdrag:   isOp,
     status:      cas.status,
-    isOverdue:   effEnd < 0,
+    // Forfalt fra fristen (for en utsatt sak den faktiske); belegget og
+    // forfalt-båndet følger planen (planOverdue).
+    isOverdue:   (postponed ? tlDueOffset(cas.dueDate, now) : effEnd) < 0,
+    planOverdue: effEnd < 0,
+    postponed:   postponed,
+    // Streken fra fristen bort til bjelken trenger plass i raden
+    laneStart:   postponed ? Math.max(-past, Math.min(timelineBarStart(cas, effDue, now), tlDueOffset(cas.dueDate, now))) : null,
     unassigned:  isUnassigned(cas),
     id:          cas.id,
     caseNumber:  cas.caseNumber,
@@ -6841,10 +6931,11 @@ function timelineDayAtPx(px, pxPerDay, past) {
 }
 
 // timelineDragBuffer: ny buffer når en bjelke dras dx piksler. Til venstre gir
-// større buffer (tidligere frist), til høyre mindre. Holdes mellom 0 og max.
-function timelineDragBuffer(origBuffer, dx, pxPerDay, max) {
+// større buffer (tidligere frist), til høyre mindre. Holdes mellom min (0 når
+// den ikke gis; se minBufferFor) og max.
+function timelineDragBuffer(origBuffer, dx, pxPerDay, max, min) {
   var b = origBuffer - Math.round(dx / pxPerDay);
-  return Math.max(0, Math.min(max, b));
+  return Math.max(min == null ? 0 : min, Math.min(max, b));
 }
 
 // Omtrentlig bredde per tegn i bjelke-etiketten og plassen rundt den (px).
@@ -6883,13 +6974,16 @@ function timelineEdgeLabel(caseNumber, side) {
 }
 
 // timelineDueInfo: frist-linjen i tidslinje-popupen. Viser den faktiske fristen,
-// og når saken har buffer også datoen nedtellingen faktisk måles mot.
-function timelineDueInfo(dueTxt, effTxt, days, wdays) {
+// og når saken har buffer også datoen nedtellingen faktisk måles mot. For en
+// utsatt sak (postponed dager) måles nedtellingen mot fristen, og datoen den
+// er planlagt til står sist.
+function timelineDueInfo(dueTxt, effTxt, days, wdays, postponed) {
   var parts = [];
   if (dueTxt) parts.push('frist ' + dueTxt);
-  if (effTxt) parts.push('buffret til ' + effTxt);
+  if (effTxt && !postponed) parts.push('buffret til ' + effTxt);
   if (days !== null && days !== undefined) parts.push(days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'i dag' : days + 'd');
   if (wdays !== null && wdays !== undefined) parts.push(wdays + ' arb.dager');
+  if (effTxt && postponed) parts.push('planlagt ' + effTxt + ' (+' + postponed + ' d)');
   return parts.join(' · ');
 }
 
@@ -6919,8 +7013,10 @@ function visibleLaneCount(ranges, fromDay, toDay) {
   return n;
 }
 
-// timelineOverdueBands: forfalt-båndene — ett per forfalt sak som belegget
-// straffer (Ny og Viderebehandling, fordelt, ikke oppdrag), over de samme
+// timelineOverdueBands: forfalt-båndene — ett per sak belegget straffer for
+// forfalt (planen er passert; Ny og Viderebehandling, fordelt, ikke oppdrag).
+// En utsatt sak er forfalt fra fristen, men straffes først når planen er
+// passert, som belegget (planOverdue). Båndene ligger over de samme
 // arbeidsdagene som belegget bokfører straffen på (penaltyOffsets, se
 // overduePenaltyOffsets). Dagene slås sammen til sammenhengende stykker
 // [fra, til) i dager etter i dag.
@@ -6932,28 +7028,39 @@ function timelineOverdueBands(ranges, penaltyOffsets) {
   });
   if (!segs.length) return [];
   return (ranges || []).filter(function(r) {
-    return r.isOverdue && !r.isOppdrag && !r.unassigned && (r.status === 'ny' || r.status === 'viderebehandling');
+    return r.planOverdue && !r.isOppdrag && !r.unassigned && (r.status === 'ny' || r.status === 'viderebehandling');
   }).map(function(r) {
     return { id: r.id, caseNumber: r.caseNumber, segments: segs.map(function(s) { return s.slice(); }) };
   });
 }
 
+// bufferWord: en buffer i dra-brikken — negativ buffer er en utsettelse.
+function bufferWord(n) {
+  return n < 0 ? 'utsatt ' + (-n) : String(n);
+}
+
 // timelineDragChip: teksten i brikken over en bjelke som dras — bufferen før
-// og nå, og datoene det gir.
-function timelineDragChip(origBuffer, newBuffer, typeDefault, effTxt, dueTxt) {
-  var head = 'Buffer ' + origBuffer + ' → ' + newBuffer + (newBuffer === 1 ? ' dag' : ' dager') +
+// og nå, og datoene det gir. warn: saken er utsatt mer enn POSTPONE_WARN_DAYS.
+// blocked: bjelken er dratt mot fristen og kan ikke gå forbi den.
+function timelineDragChip(origBuffer, newBuffer, typeDefault, effTxt, dueTxt, blocked) {
+  var head = 'Buffer ' + bufferWord(origBuffer) + ' → ' + bufferWord(newBuffer) +
+             (Math.abs(newBuffer) === 1 ? ' dag' : ' dager') +
              (newBuffer === typeDefault ? ' · standard' : '');
-  var sub = (newBuffer > 0 ? 'buffret til ' + effTxt + ' · ' : '') + 'frist ' + dueTxt;
-  return { head: head, sub: sub };
+  var warn = -newBuffer > POSTPONE_WARN_DAYS;
+  var sub = blocked ? 'Bare viderebehandling kan flyttes etter fristen'
+          : warn ? 'Over ' + POSTPONE_WARN_DAYS + ' dager etter fristen · planlagt ' + effTxt
+          : newBuffer < 0 ? 'planlagt ' + effTxt + ' · frist ' + dueTxt
+          : (newBuffer > 0 ? 'buffret til ' + effTxt + ' · ' : '') + 'frist ' + dueTxt;
+  return { head: head, sub: sub, warn: warn };
 }
 
 // timelineKeyBuffer: ny buffer når Alt + pil trykkes på en bjelke. Pil til
 // venstre flytter bjelken tidligere (større buffer), til høyre senere — som
-// når den dras. null for andre taster.
-function timelineKeyBuffer(origBuffer, key, max) {
+// når den dras, og med samme grenser. null for andre taster.
+function timelineKeyBuffer(origBuffer, key, max, min) {
   var step = key === 'ArrowLeft' ? 1 : key === 'ArrowRight' ? -1 : 0;
   if (!step) return null;
-  return Math.max(0, Math.min(max, origBuffer + step));
+  return Math.max(min == null ? 0 : min, Math.min(max, origBuffer + step));
 }
 
 var cases = loadCases();
@@ -8042,8 +8149,8 @@ function sortedForPage(page) {
     }
     var va, vb;
     if (sortCol === 'daysUntil') {
-      va = daysUntil(effDueFor(a));
-      vb = daysUntil(effDueFor(b));
+      va = daysUntil(deadlineFor(a));
+      vb = daysUntil(deadlineFor(b));
     }
     else if (sortCol === 'dueDate')  { va = a.dueDate; vb = b.dueDate; }
     else if (sortCol === 'status')   { va = ORDER[a.status] || 0; vb = ORDER[b.status] || 0; }
@@ -8293,6 +8400,16 @@ function activeCaseMenuItemHtml(c) {
 
 function activeCasePillHtml(c) {
   return isActiveCaseId(c.id) ? '<span class="active-pill" title="Saken du holder på med">Pågår</span>' : '';
+}
+
+// postponePillHtml: merket «Utsatt til …» på en utsatt viderebehandling i
+// sakslistene og fristlista. Nedtellingen ved siden av måles mot fristen.
+function postponePillHtml(c) {
+  var n = postponedDaysFor(c);
+  if (!n) return '';
+  var tip = 'Planlagt ' + n + (n === 1 ? ' dag' : ' dager') + ' etter fristen ' + toDisplay(c.dueDate) +
+            '. Fristen flytter seg ikke.';
+  return '<span class="postpone-pill" title="' + esc(tip) + '">Utsatt til ' + esc(toDisplay(effDueFor(c))) + '</span>';
 }
 
 // ── Ikke fordelt: visning ──────────────────────────
@@ -8673,7 +8790,7 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
   listEl.innerHTML = rows.map(function(c) {
     var isOppdrag   = c.type === 'oppdrag';
     var isAvsluttet = c.status === 'avsluttet';
-    var days        = daysUntil(effDueFor(c));
+    var days        = daysUntil(deadlineFor(c));
     var cls         = days < 0 ? 'overdue' : days <= 3 ? 'urgent' : days <= 14 ? 'soon' : 'ok';
     // I Fristarkiv er fristen søkerens: nøytral og stiplet, uansett hvor nær.
     if (!isOppdrag && c.status === 'fristarkiv') cls = 'theirs';
@@ -8695,6 +8812,7 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
       '<span class="case-card-main"><span class="case-card-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
+      postponePillHtml(c) +
       medlPillHtml(c) +
       trackHtml(c, false) +
       '<div class="case-card-menu">' +
@@ -10744,14 +10862,25 @@ document.getElementById('btn-sak-edit-fields').addEventListener('click', functio
   if (cas) openModal(cas);
 });
 
+// «Fjern utsettelse» gir saken standardbufferen for typen tilbake.
+document.getElementById('sak-frist').addEventListener('click', function(e) {
+  if (!e.target.closest('#sak-frist-unpostpone')) return;
+  var cas = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
+  if (!cas) return;
+  dispatch('CASE_FIELD_UPDATE', { id: cas.id, patch: { caseBuffer: null } });
+  render();
+});
+
 // Fristblokken: én visning av fristen, som sier hvem den tilhører.
 function renderSakFrist(cas) {
   var box = document.getElementById('sak-frist');
   if (!box) return;
   if (!cas.dueDate) { box.style.display = 'none'; return; }
 
-  var effDue = effDueFor(cas);
-  var days   = daysUntil(effDue);
+  // En utsatt sak måles mot den faktiske fristen; planen står under
+  var effDue    = deadlineFor(cas);
+  var days      = daysUntil(effDue);
+  var postponed = postponedDaysFor(cas);
   var isApplicant = cas.type !== 'oppdrag' && cas.status === 'fristarkiv';
 
   box.className = 'sak-frist' + (isApplicant ? ' sak-frist-applicant' : '');
@@ -10765,7 +10894,12 @@ function renderSakFrist(cas) {
     (isApplicant ? '' : days < 0 ? ' overdue' : days <= 14 ? ' urgent' : '');
 
   var meta = document.getElementById('sak-frist-meta');
-  if (cas.type !== 'oppdrag' && effDue !== cas.dueDate) {
+  if (postponed) {
+    meta.innerHTML = '<span class="sak-frist-postponed">Planlagt ' + esc(toDisplay(effDueFor(cas))) + '  ·  utsatt ' +
+      postponed + (postponed === 1 ? ' dag' : ' dager') + ' etter fristen</span> ' +
+      '<button type="button" class="sak-frist-unpostpone" id="sak-frist-unpostpone">Fjern utsettelse</button>';
+    meta.style.display = '';
+  } else if (cas.type !== 'oppdrag' && effDue !== cas.dueDate) {
     var bd = bufferDaysFor(cas);
     meta.textContent = 'Faktisk frist ' + toDisplay(cas.dueDate) + '  ·  ' + bd + (bd === 1 ? ' dags' : ' dagers') + ' buffer trukket fra';
     meta.style.display = '';
@@ -12568,7 +12702,7 @@ function renderHomeDock(due) {
 document.getElementById('home-dock-toggle').addEventListener('click', function() {
   var collapsed = !loadHomeDockCollapsed();
   _lsSet(HOME_DOCK_KEY, collapsed ? '1' : '0');
-  renderHomeDock(homeDeadlineSummary(cases, function(c) { return daysUntil(effDueFor(c)); }));
+  renderHomeDock(homeDeadlineSummary(cases, function(c) { return daysUntil(deadlineFor(c)); }));
   // En skjult tidslinje har ingen bredde å regne utsnittet fra; tegn den på nytt
   if (!collapsed) renderTimeline();
 });
@@ -12592,7 +12726,7 @@ function renderHjem() {
 
   // ── Statskort ──────────────────────────────────────
   var countOppdrag = cases.filter(function(c) { return c.type === 'oppdrag' && c.status !== 'avsluttet'; }).length;
-  var due = homeDeadlineSummary(cases, function(c) { return daysUntil(effDueFor(c)); });
+  var due = homeDeadlineSummary(cases, function(c) { return daysUntil(deadlineFor(c)); });
   renderHomeMedl();
 
   var elOpp    = document.getElementById('home-count-oppdrag');
@@ -12637,7 +12771,7 @@ function renderHomeDeadlines() {
   var sumEl   = document.getElementById('home-dl-summary');
   if (!list) return;
   var rows = selectHomeDeadlines(cases, homeDeadlineFilter, function(c) {
-    return c.dueDate ? daysUntil(effDueFor(c)) : NaN;
+    return c.dueDate ? daysUntil(deadlineFor(c)) : NaN;
   });
   if (countEl) countEl.textContent = rows.length ? '(' + rows.length + ')' : '';
   if (sumEl)   sumEl.textContent   = 'Viser: ' + homeDeadlineFilterSummary(homeDeadlineFilter);
@@ -12668,6 +12802,7 @@ function renderHomeDeadlines() {
       '<span class="case-card-main"><span class="home-upcoming-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
+      postponePillHtml(c) +
       medlPillHtml(c) +
       vacBadge +
       trackHtml(c, true) +
@@ -12699,6 +12834,23 @@ function syncHomeDeadlineFilterUi() {
 // ── Arbeidsplan-tidslinje ──────────────────────────
 // targetId: id på container-elementet som skal fylles
 // draftRows: valgfri liste med utkast-saker (bulk-modal), tegnes som tl-bar-draft
+// setPostponedPart: skraverer delen av en utsatt bjelke som ligger etter den
+// faktiske fristen (actualEnd). Alle verdier er dager relativt til i dag, som
+// bjelkens synlige start og slutt. Brukes når bjelken tegnes og mens den dras.
+function setPostponedPart(bar, visStart, visEnd, actualEnd) {
+  var el = bar.querySelector('.tl-bar-postponed');
+  var from = Math.max(visStart, actualEnd);
+  if (visEnd <= visStart || from >= visEnd) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'tl-bar-postponed';
+    bar.insertBefore(el, bar.querySelector('.tl-bar-label'));
+  }
+  el.style.left  = ((from - visStart) / (visEnd - visStart) * 100).toFixed(4) + '%';
+  el.style.width = ((visEnd - from) / (visEnd - visStart) * 100).toFixed(4) + '%';
+  el.classList.toggle('is-whole', from <= visStart);
+}
+
 // ── Felles tidslinje-bygger (div-basert) ─────────────
 function buildTimelineDiv(opts) {
   var HORIZON   = opts.horizon || 365;
@@ -12820,7 +12972,8 @@ function buildTimelineDiv(opts) {
     if (opts.interactive) {
       bar.tabIndex = 0;
       bar.setAttribute('role', 'button');
-      bar.setAttribute('aria-label', r.caseNumber + (r.title ? ' — ' + r.title : '') + ', frist ' + formatDate(r.dueDate) + (r.isOverdue ? ', forfalt' : ''));
+      bar.setAttribute('aria-label', r.caseNumber + (r.title ? ' — ' + r.title : '') + ', frist ' + formatDate(r.dueDate) + (r.isOverdue ? ', forfalt' : '') +
+        (r.postponed ? ', planlagt ' + formatDate(r.effDue) + ', utsatt ' + r.postponed + (r.postponed === 1 ? ' dag' : ' dager') : ''));
     }
     // Ferie og røde dager inne i arbeidsvinduet skraveres: vinduet er
     // arbeidsdager, og bjelken strekker seg forbi dem. Vanlige helger
@@ -12838,11 +12991,42 @@ function buildTimelineDiv(opts) {
         bar.appendChild(gap);
       });
     }
+    // Utsatt: delen av bjelken etter fristen skraveres
+    if (r.postponed) setPostponedPart(bar, visStart, visEnd, r.actualEnd);
     var lbl = document.createElement('span');
     lbl.className = 'tl-bar-label';
     lbl.textContent = r.caseNumber;
     bar.appendChild(lbl);
     track.appendChild(bar);
+
+    // Utsatt: merket «+N d» ved enden, og strek fra fristen bort til bjelken
+    if (r.postponed && visEnd > visStart) {
+      var tag = document.createElement('div');
+      tag.className = 'tl-postpone-tag' + (r.isOverdue ? ' is-overdue' : '');
+      tag.dataset.row = String(r.row);
+      tag.dataset.id  = r.id;
+      tag.style.left  = pct(visEnd);
+      tag.innerHTML   = '<span>+' + r.postponed + ' d' + (r.isOverdue ? ' · forfalt' : '') + '</span>';
+      tag.setAttribute('aria-hidden', 'true');
+      track.appendChild(tag);
+      if (r.actualEnd >= -PAST) {
+        if (r.start > r.actualEnd) {
+          var pline = document.createElement('div');
+          pline.className = 'tl-actual-line' + (r.isOverdue ? ' is-overdue' : '');
+          pline.dataset.id  = r.id;
+          pline.dataset.row = String(r.row);
+          pline.style.left  = pct(r.actualEnd);
+          pline.style.width = pctW(Math.max(-PAST, r.start) - r.actualEnd);
+          track.appendChild(pline);
+        }
+        var pmark = document.createElement('div');
+        pmark.className = 'tl-actual-mark';
+        pmark.dataset.id  = r.id;
+        pmark.dataset.row = String(r.row);
+        pmark.style.left  = 'calc(' + pct(r.actualEnd) + ' - 1px)';
+        track.appendChild(pmark);
+      }
+    }
 
     if (r.hasBuffer && r.actualEnd > r.end && r.actualEnd <= HORIZON) {
       var line = document.createElement('div');
@@ -13047,8 +13231,44 @@ function _applyTimelineScroll(scrollEl, trackEl, horizon) {
     var reserved = bar.classList.contains('tl-bar-active') ? 2 * TL_LABEL_CHAR_PX : 0;
     if (lbl) lbl.textContent = timelineBarLabel(bar.dataset.cn, parseFloat(bar.dataset.spanDays) * pxPerDay - reserved);
   });
+  _placePostponeTags(trackEl);
   _layoutTimelineLanes(scrollEl);
   _updateOverduePin(scrollEl);
+}
+
+// _placePostponeTags: viser «+N d»-merket bare der det er ledig plass til
+// høyre for bjelken, så det aldri dekker en annen sak. Bredden er først kjent
+// når sporet har fått sin bredde. Utsettelsen står uansett i skraveringen og
+// popupen.
+function _placePostponeTags(trackEl) {
+  var tags = Array.prototype.slice.call(trackEl.querySelectorAll('.tl-postpone-tag'));
+  if (!tags.length) return;
+  var byRow = {};
+  trackEl.querySelectorAll('.tl-bar').forEach(function(bar) {
+    (byRow[bar.dataset.row] = byRow[bar.dataset.row] || []).push([bar.offsetLeft, bar.offsetLeft + bar.offsetWidth]);
+  });
+  tags.forEach(function(tag) { tag.style.display = ''; });
+  var placed = tags.map(function(tag) {
+    var pill = tag.firstElementChild;
+    var left = tag.offsetLeft + (parseFloat(getComputedStyle(tag).marginLeft) || 0);
+    return { tag: tag, row: tag.dataset.row, left: left, right: left + (pill ? pill.offsetWidth : 0) };
+  }).sort(function(a, b) { return a.left - b.left; });
+  placed.forEach(function(p) {
+    var taken = byRow[p.row] || (byRow[p.row] = []);
+    var fits = postponeTagFits(p.left, p.right, taken);
+    p.tag.style.display = fits ? '' : 'none';
+    if (fits) taken.push([p.left, p.right]);
+  });
+}
+
+// postponeTagFits: om merket [left, right) (px) får plass uten å overlappe
+// noe av det som allerede ligger i raden (taken: [venstre, høyre]-par), med
+// litt luft. Ren funksjon — se test/postpone.test.js.
+var TL_TAG_GAP_PX = 2;
+function postponeTagFits(left, right, taken) {
+  return !(taken || []).some(function(t) {
+    return left < t[1] + TL_TAG_GAP_PX && t[0] < right + TL_TAG_GAP_PX;
+  });
 }
 
 // Bredden pinnen dekker i venstre kant (px) — en sak bak den regnes som skjult.
@@ -13200,6 +13420,12 @@ function buildTimelineWidget(hostEl, opts) {
         '<span class="tl-legend-today-bar"></span>' +
       '</span> Faktisk frist';
     legend.appendChild(bufItem);
+    var lateItem = document.createElement('span');
+    lateItem.className = 'tl-legend-item';
+    lateItem.id = lblBufId + '-late';
+    lateItem.style.display = 'none';
+    lateItem.innerHTML = '<span class="tl-legend-swatch tl-legend-swatch-postponed"></span>Utsatt etter fristen';
+    legend.appendChild(lateItem);
   }
   footer.appendChild(legend);
 
@@ -13335,8 +13561,10 @@ function renderTimeline(opts) {
   // Sporet er tegnet på nytt; behold markeringen fra sakslisten
   if (_tlLinkedId) applyTimelineLink(_tlLinkedId, true);
   var legendOn = showBufferLegend(cases);
+  var lateOn   = cases.some(function(c) { return postponedDaysFor(c) > 0; });
   ['home-legend-buffer', 'cases-legend-buffer'].forEach(function(lid) {
     var el = document.getElementById(lid); if (el) el.style.display = legendOn ? '' : 'none';
+    var late = document.getElementById(lid + '-late'); if (late) late.style.display = lateOn ? '' : 'none';
   });
 }
 
@@ -13345,7 +13573,7 @@ function renderTimeline(opts) {
 // avgjort én gang ved oppstart. Ren funksjon — se test/logicFixes.test.js.
 function showBufferLegend(list) {
   return (list || []).some(function(c) {
-    return !!c && !!c.dueDate && c.status !== 'avsluttet' && bufferDaysFor(c) > 0;
+    return !!c && !!c.dueDate && c.status !== 'avsluttet' && bufferDaysFor(c) !== 0;
   });
 }
 
@@ -14251,7 +14479,7 @@ function _searchHitMeta(c) {
   if (c.type === 'oppdrag') label = c.status === 'avsluttet' ? 'Avsluttet oppdrag' : 'Oppdrag';
   else                      label = (STATUS_CONFIG[c.status] || {}).label || c.status || '';
   if (c.status === 'avsluttet' || !c.dueDate) return label;
-  var d = daysUntil(effDueFor(c));
+  var d = daysUntil(deadlineFor(c));
   return label + ' · ' + (d < 0 ? Math.abs(d) + ' d forfalt' : d === 0 ? 'frist i dag' : d + ' d igjen');
 }
 
@@ -14914,6 +15142,11 @@ function _syncModalBuffer() {
   var applies = st !== 'oppdrag' && st !== 'fristarkiv' && st !== 'avsluttet';
   fCaseBuffer.closest('.field-group').style.display = applies ? '' : 'none';
   fCaseBuffer.placeholder = 'Standard: ' + typeBufferFor({ status: st });
+  // Bare viderebehandling kan utsettes etter fristen (canPostpone)
+  var late = st === 'viderebehandling';
+  if (late) fCaseBuffer.removeAttribute('min'); else fCaseBuffer.min = '0';
+  var hint = document.getElementById('f-case-buffer-hint');
+  if (hint) hint.hidden = !late;
   var orig = editIdEl.value ? cases.find(function(c) { return c.id === editIdEl.value; }) : null;
   if (orig && orig.type !== 'oppdrag') {
     fCaseBuffer.value = (st === orig.status && orig.caseBuffer != null) ? String(orig.caseBuffer) : '';
@@ -15569,12 +15802,15 @@ function applyTimelineLink(id, force) {
       var caseId = el.dataset.id   || '';
       var caseObj = caseId ? cases.find(function(c) { return c.id === caseId; }) : null;
       var effDue = caseObj ? effDueFor(caseObj) : getEffectiveDueDate(due);
-      var days  = effDue ? daysUntil(effDue) : null;
-      var wdays = effDue ? workDaysUntil(effDue) : null;
-      // Nedtellingen måles mot den bufrede fristen; vis den datoen også, så
-      // tallene ikke ser ut til å stride mot fristen som står foran dem.
+      // Nedtellingen måles mot den bufrede fristen — for en utsatt sak mot den
+      // faktiske; vis den andre datoen også, så tallene ikke ser ut til å
+      // stride mot fristen som står foran dem.
+      var cdDue = caseObj ? deadlineFor(caseObj) : effDue;
+      var postponed = postponedDaysFor(caseObj);
+      var days  = cdDue ? daysUntil(cdDue) : null;
+      var wdays = cdDue ? workDaysUntil(cdDue) : null;
       var effTxt = effDue && due && effDue !== due ? formatDate(effDue) : '';
-      var infoTxt = timelineDueInfo(due ? formatDate(due) : '', effTxt, days, wdays) +
+      var infoTxt = timelineDueInfo(due ? formatDate(due) : '', effTxt, days, wdays, postponed) +
         (isUnassigned(caseObj) ? ' · ikke fordelt ennå' : '');
       popup.innerHTML = '<span class="tl-popup-cn">' + esc(cn) + '</span>' +
         (title ? '<span class="tl-popup-sep"> — </span><span class="tl-popup-title">' + esc(title) + '</span>' : '') +
@@ -15582,7 +15818,8 @@ function applyTimelineLink(id, force) {
         (caseObj && caseNotePreview(caseObj.notes) ? '<span class="tl-popup-note">' + esc(String(caseObj.notes).trim()) + '</span>' : '') +
         // Forfalt-båndet: det er her belegget bokfører arbeidet
         (el.classList.contains('tl-overdue-band') ? '<span class="tl-popup-hint">' + OVERDUE_PENALTY_WORKDAYS + ' arb.dager bokført i belegget fra i dag</span>' : '') +
-        (el.classList.contains('draggable') ? '<span class="tl-popup-hint">Dra for å endre bufferen · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd></span>' : '');
+        (postponed && !el.classList.contains('tl-overdue-band') ? '<span class="tl-popup-hint">Utsatt ' + postponed + (postponed === 1 ? ' dag' : ' dager') + ' etter fristen. Fristen flytter seg ikke.</span>' : '') +
+        (el.classList.contains('draggable') ? '<span class="tl-popup-hint">Dra for å endre bufferen' + (canPostpone(caseObj) ? ', også forbi fristen' : '') + ' · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd></span>' : '');
     }
     popup.style.display = 'block';
     // Hold popupen innenfor vinduet nær høyre kant
@@ -16101,8 +16338,9 @@ function init() {
         host.appendChild(d.chip);
       }
       var eff = effDueWithBuffer(d.cas.dueDate, d.newBuffer);
-      var t = timelineDragChip(d.origBuffer, d.newBuffer, typeBufferFor(d.cas), formatDate(eff), formatDate(d.cas.dueDate));
-      d.chip.innerHTML = '<b>' + esc(t.head) + '</b><small>' + esc(t.sub) + '</small>';
+      var t = timelineDragChip(d.origBuffer, d.newBuffer, typeBufferFor(d.cas), formatDate(eff), formatDate(d.cas.dueDate), d.blocked);
+      d.chip.classList.toggle('is-warn', t.warn);
+      d.chip.innerHTML = '<b>' + (t.warn ? '⚠ ' : '') + esc(t.head) + '</b><small>' + esc(t.sub) + '</small>';
       var b = d.bar.getBoundingClientRect(), h = host.getBoundingClientRect();
       d.chip.style.left = (b.left + b.width / 2 - h.left) + 'px';
       d.chip.style.top  = (b.top - h.top - 8) + 'px';
@@ -16131,7 +16369,10 @@ function init() {
         tlId: track.parentElement.id,
         pxPerDay: track.offsetWidth / (g.past + g.horizon),
         origBuffer: bufferDaysFor(cas),
+        minBuffer: minBufferFor(cas),
         newBuffer: null,
+        blocked: false,
+        tag: track.querySelector('.tl-postpone-tag[data-id="' + CSS.escape(cas.id) + '"]'),
         actualEnd: tlDueOffset(cas.dueDate, g.now),
         line: ensureMarker(track, 'tl-actual-line', cas.id, bar),
         mark: ensureMarker(track, 'tl-actual-mark', cas.id, bar),
@@ -16154,22 +16395,35 @@ function init() {
         var pop = document.querySelector('.tl-popup');
         if (pop) pop.style.display = 'none';
       }
-      var newBuffer = timelineDragBuffer(d.origBuffer, dx, d.pxPerDay, TYPE_BUFFER_MAX);
+      var newBuffer = timelineDragBuffer(d.origBuffer, dx, d.pxPerDay, TYPE_BUFFER_MAX, d.minBuffer);
       d.newBuffer = newBuffer;
-      d.bar.classList.toggle('at-limit', newBuffer <= 0 || newBuffer >= TYPE_BUFFER_MAX);
+      // Dratt mot fristen på en sak som ikke kan utsettes
+      d.blocked = newBuffer <= 0 && d.minBuffer === 0 &&
+                  timelineDragBuffer(d.origBuffer, dx, d.pxPerDay, TYPE_BUFFER_MAX, -Infinity) < 0;
+      d.bar.classList.toggle('at-limit', newBuffer <= d.minBuffer || newBuffer >= TYPE_BUFFER_MAX);
 
       var eff    = effDueWithBuffer(d.cas.dueDate, newBuffer);
       var effEnd = tlDueOffset(eff, d.g.now);
       var start  = Math.max(-d.g.past, timelineBarStart(d.cas, eff, d.g.now));
       d.bar.style.left  = d.g.pct(start);
       d.bar.style.width = d.g.pctW(effEnd - start);
+      if (d.tag) d.tag.style.display = 'none'; // merket følger ikke med; brikken tar over
 
-      var show = newBuffer > 0;
-      d.line.style.display = show ? '' : 'none';
-      d.mark.style.display = show ? '' : 'none';
-      if (show) {
-        d.line.style.left  = d.g.pct(effEnd);
-        d.line.style.width = d.g.pctW(d.actualEnd - effEnd);
+      var late = newBuffer < 0;
+      if (late) {
+        setPostponedPart(d.bar, start, effEnd, d.actualEnd);
+        var part = d.bar.querySelector('.tl-bar-postponed');
+        if (part) part.classList.add('is-live');
+      } else {
+        setPostponedPart(d.bar, start, start, d.actualEnd); // fjerner skraveringen
+      }
+      d.mark.style.display = newBuffer !== 0 ? '' : 'none';
+      var lineFrom = late ? d.actualEnd : effEnd;
+      var lineTo   = late ? start : d.actualEnd;
+      d.line.style.display = newBuffer !== 0 && lineTo > lineFrom ? '' : 'none';
+      if (lineTo > lineFrom) {
+        d.line.style.left  = d.g.pct(lineFrom);
+        d.line.style.width = d.g.pctW(lineTo - lineFrom);
       }
       showChip(d);
     });
@@ -16203,7 +16457,7 @@ function init() {
       var cas = cases.find(function(c) { return c.id === bar.dataset.id; });
       if (!cas) return;
       var orig = bufferDaysFor(cas);
-      var next = timelineKeyBuffer(orig, e.key, TYPE_BUFFER_MAX);
+      var next = timelineKeyBuffer(orig, e.key, TYPE_BUFFER_MAX, minBufferFor(cas));
       if (next === null) return;
       e.preventDefault();
       if (next === orig) return;
