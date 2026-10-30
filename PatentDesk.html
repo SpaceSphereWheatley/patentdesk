@@ -1068,6 +1068,7 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
   .nav-tab                 { justify-content: center; padding: var(--space-3) 0; margin: 1px var(--space-1); border-radius: var(--radius); }
   .nav-tab .nav-count      { display: none; }
   .main-content            { margin-left: 48px; padding: var(--space-8) var(--space-6) 3rem; }
+  .home-dock               { left: 48px; padding-left: var(--space-6); padding-right: var(--space-6); }
   .field-row               { grid-template-columns: 1fr; }
   .stat-cards              { grid-template-columns: 1fr 1fr; }
   .drawer-logo-row         { padding: 1.4rem 0 var(--space-7); justify-content: center; }
@@ -1291,31 +1292,25 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .home-card-clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ── Arbeidsplan fast nederst (hjem) ── */
-/* Løsnet ser feltet ut som en vanlig seksjon. Sitter det fast nederst, får
-   det en hvit bunnlinje i hele innholdsområdets bredde (::before går ut i
-   main-contents sidemarg); selve tidslinjen beholder bredden, så bjelkene
-   ikke hopper når feltet fester seg eller løsner. */
+/* Feltet står alltid fast nederst i innholdsområdet, som en bunnlinje i hele
+   bredden ved siden av menyen. Sidemargen er den samme som main-content har,
+   så tidslinjen blir like bred som lista over. Hjem får luft nederst like høy
+   som feltet (--home-dock-h, satt i syncToastLift), så ingen rader skjules. */
 .home-dock {
-  position: sticky; bottom: 0; z-index: 20; margin-top: var(--space-5);
-  padding: var(--space-3) 0 var(--space-4);
-}
-.home-dock::before {
-  content: ''; position: absolute; z-index: -1; top: 0; bottom: 0;
-  left: calc(-1 * var(--space-10)); right: calc(-1 * var(--space-10));
+  position: fixed; bottom: 0; left: 260px; right: 0; z-index: 20;
+  padding: var(--space-3) var(--space-10) var(--space-4);
   background: var(--surface); border-top: 1px solid var(--border2);
   box-shadow: 0 -6px 18px rgba(0,0,0,0.08);
-  opacity: 0; transition: opacity var(--dur-base);
+  transition: left var(--dur-slow) ease;
 }
-.home-dock.is-stuck::before { opacity: 1; }
-#home-dock-sentinel { height: 1px; }
+.drawer.collapsed ~ .main-content .home-dock { left: 48px; }
+#view-hjem { padding-bottom: var(--home-dock-h, 0px); }
 .home-dock-head { display: flex; align-items: center; gap: var(--space-5); }
 .home-dock-toggle {
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px;
   background: transparent; border: none; padding: 0 var(--space-3) 0 0; cursor: pointer;
-  font-family: var(--font-head); font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--muted);
-  transition: color var(--dur-base);
+  font-family: var(--font-head); font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--text);
 }
-.home-dock.is-stuck .home-dock-toggle { color: var(--text); }
 .home-dock-chevron { display: inline-block; width: 1.1em; text-align: center; color: var(--text-subtle); }
 .home-dock-summary { font-size: var(--text-sm); color: var(--text-subtle); }
 .home-dock.is-collapsed #home-tl-host { display: none; }
@@ -3116,7 +3111,6 @@ tr:hover .sak-tag-display.sak-tag-empty,
           </div>
           <div id="home-tl-host"></div>
         </section>
-        <div id="home-dock-sentinel" aria-hidden="true"></div>
       </div>
 
       <!-- Saksliste -->
@@ -12545,11 +12539,15 @@ function homeListBadges(rows) {
 var HOME_DOCK_KEY = 'pt_home_dock_collapsed';
 function loadHomeDockCollapsed() { return _lsGet(HOME_DOCK_KEY) === '1'; }
 
-// Varslene nederst løftes over Arbeidsplan-feltet mens Hjem er åpen.
+// Varslene nederst løftes over Arbeidsplan-feltet mens Hjem er åpen, og Hjem
+// får like mye luft nederst, så feltet ikke dekker de siste radene.
 function syncToastLift() {
   var dock = document.getElementById('home-dock');
-  var on = activePage === 'hjem' && dock && dock.offsetParent !== null;
-  document.documentElement.style.setProperty('--toast-lift', on ? dock.offsetHeight + 'px' : '0px');
+  // offsetParent er alltid null for et fast element; getClientRects er tom når det er skjult.
+  var on = activePage === 'hjem' && dock && dock.getClientRects().length > 0;
+  var h = on ? dock.offsetHeight + 'px' : '0px';
+  document.documentElement.style.setProperty('--toast-lift', h);
+  document.documentElement.style.setProperty('--home-dock-h', h);
 }
 
 function renderHomeDock(due) {
@@ -12578,21 +12576,6 @@ if (typeof ResizeObserver === 'function') {
   new ResizeObserver(syncToastLift).observe(document.getElementById('home-dock'));
 }
 
-// Sitter feltet fast nederst? Markøren står rett etter det: er den under
-// vinduet, har feltet ikke nådd plassen sin ennå. Ren funksjon — se
-// test/homeDock.test.js.
-function dockIsStuck(sentinelTop, viewportBottom) {
-  return sentinelTop > viewportBottom;
-}
-
-if (typeof IntersectionObserver === 'function') {
-  new IntersectionObserver(function(entries) {
-    var en = entries[entries.length - 1];
-    var bottom = en.rootBounds ? en.rootBounds.bottom : window.innerHeight;
-    document.getElementById('home-dock').classList.toggle('is-stuck',
-      !en.isIntersecting && dockIsStuck(en.boundingClientRect.top, bottom));
-  }).observe(document.getElementById('home-dock-sentinel'));
-}
 
 // Forfalt-kortet hopper ned til fristlista
 _bindCardActivate(document.getElementById('home-card-forfalt'), function() {
