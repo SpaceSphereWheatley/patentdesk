@@ -7,6 +7,28 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.44.0] - 2026-10-30
+Hjem viser forfalte frister ett sted, og Arbeidsplan er alltid synlig nederst.
+
+### Changed
+- **Arbeidsplan ligger fast nederst på Hjem.** Tidslinjen står i bunnen av
+  vinduet mens du blar i fristlista, og legger seg på plassen sin når du blar
+  helt ned. «▾ Arbeidsplan» slår den sammen til en stripe som viser antall
+  forfalte og neste frist; valget huskes. Varsler som «Angre» vises over den.
+  Sakslistene er som før.
+- **Fristlista står rett under kortene**, med merkene «N forfalt» og «N innen
+  7 dager» i overskriften. Søkerens frister i Fristarkiv telles ikke i merkene.
+- **Forfalt-kortet teller alle dine forfalte frister** — Ny, Viderebehandling
+  og oppdrag — og viser fordelingen under tallet. Før telte kortet bare Ny,
+  mens fristvarselet telte alle, så Hjem kunne vise to ulike tall. Klikk på
+  kortet hopper ned til fristlista.
+
+### Removed
+- **Fristvarsel-banneret** øverst på Hjem. Det samme står nå i Forfalt-kortet
+  og fristlista.
+- «x forfalt» under Nye saker i saksflyten, som telte det samme som
+  Forfalt-kortet.
+
 ## [4.43.0] - 2026-10-29
 En lenke til siden der nye saker fordeles, rett ved «Legg til saker».
 
