@@ -7,6 +7,21 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.45.1] - 2026-10-30
+
+### Changed
+- «Finnes»-merket i forhåndsvisningen under Legg til saker er bare et merke og
+  ikke lenger en lenke.
+
+### Fixed
+- Ferielista i Innstillinger sorteres: pågående og kommende perioder kommer
+  først etter dato, og ferdige perioder sist med den nyeste øverst. Før sto
+  periodene i den rekkefølgen de ble lagt inn.
+- Legger du inn eller endrer en ferieperiode som overlapper en annen, sier
+  varselet hvilke perioder den overlapper. Perioden lagres likevel.
+- Klikk på «Finnes» i Legg til saker lukker ikke lenger dialogen. Før gikk
+  hele den innlimte lista tapt.
+
 ## [4.45.0] - 2026-10-30
 Viderebehandlinger kan flyttes etter fristen, så tidslinjen blir en
 arbeidsplan.
