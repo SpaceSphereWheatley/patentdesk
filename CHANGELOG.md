@@ -10,11 +10,10 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 ## [4.44.1] - 2026-10-30
 
 ### Changed
-- Arbeidsplan nederst på Hjem ser ut som en bunnlinje mens den sitter fast:
-  hvit bakgrunn, strek og skygge går i hele innholdsområdets bredde. Når du
-  har blada helt ned og feltet står på plassen sin, forsvinner bakgrunnen, og
-  feltet ser ut som de andre seksjonene. Selve tidslinjen beholder bredden, så
-  ingenting hopper når feltet fester seg eller løsner.
+- Arbeidsplan står nå alltid fast nederst på Hjem, som en hvit bunnlinje i
+  hele innholdsområdets bredde ved siden av menyen. Feltet løsner ikke lenger
+  når du blar helt ned. Tidslinjen er like bred som fristlista, og Hjem får
+  luft nederst, så feltet aldri dekker de siste radene.
 
 ## [4.44.0] - 2026-10-30
 Hjem viser forfalte frister ett sted, og Arbeidsplan er alltid synlig nederst.

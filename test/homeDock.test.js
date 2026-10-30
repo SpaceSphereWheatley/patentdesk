@@ -75,18 +75,14 @@ test('the deadline banner is gone from Hjem', () => {
   assert.ok(!/function renderFristDigest/.test(html), 'banner code still present');
 });
 
-// ── Arbeidsplan: sitter fast eller har løsnet ─────────────────
-const { dockIsStuck } = loadFunctions(['dockIsStuck']);
-
-// Markøren står rett etter feltet. Er den under vinduet, står feltet ikke på
-// plassen sin ennå — det sitter fast nederst.
-test('dockIsStuck is true while the marker after the dock is below the window', () => {
-  assert.strictEqual(dockIsStuck(1400, 1000), true);
-  assert.strictEqual(dockIsStuck(1001, 1000), true);
-});
-
-test('dockIsStuck is false once the dock has reached its own place', () => {
-  assert.strictEqual(dockIsStuck(1000, 1000), false);
-  assert.strictEqual(dockIsStuck(820, 1000), false);
-  assert.strictEqual(dockIsStuck(-50, 1000), false, 'scrolled past it');
+// ── Arbeidsplan sitter alltid fast nederst ────────────────────
+// Feltet løsnet før når man blada helt ned, og første gang siden ble åpnet
+// kunne det stå uten bakgrunn over lista. Nå er det festet hele tiden.
+test('the Arbeidsplan dock is always fixed to the bottom', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'PatentDesk.html'), 'utf8');
+  const rule = html.match(/\.home-dock \{[^}]*\}/);
+  assert.ok(rule, '.home-dock rule missing');
+  assert.match(rule[0], /position:\s*fixed/);
+  assert.match(rule[0], /bottom:\s*0/);
+  assert.ok(!/home-dock-sentinel|dockIsStuck|is-stuck/.test(html), 'unstick logic still present');
 });
