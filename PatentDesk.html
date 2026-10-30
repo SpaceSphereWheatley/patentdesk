@@ -382,9 +382,8 @@ a:focus-visible,
 .bulk-dup-title > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bulk-dup-tag {
   flex-shrink: 0; font-size: var(--text-2xs); font-weight: 600; color: var(--dup-tag-text);
-  background: var(--dup-tag-bg); border-radius: var(--radius-pill); padding: 2px 8px; text-decoration: none;
+  background: var(--dup-tag-bg); border-radius: var(--radius-pill); padding: 2px 8px; cursor: default;
 }
-.bulk-dup-tag:hover { text-decoration: underline; }
 .bulk-dup-notice {
   display: flex; gap: var(--space-3); align-items: flex-start; margin-top: var(--space-5);
   padding: var(--space-3) var(--space-5); background: var(--notice-warn-bg);
@@ -4572,7 +4571,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.44.1';
+var APP_VERSION    = 'v4.44.2';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -7646,19 +7645,21 @@ function _dispatch(action, payload) {
     }
 
     case 'VACATION_ADD': {
+      var addClash = vacationClashText(vacationClashes(vacations, payload.from, payload.to));
       vacations.push({ from: payload.from, to: payload.to, label: payload.label });
       saveVacations();
       renderVacationList();
-      showToast('✓ Ferieperiode lagt til');
+      showToast((addClash ? '⚠ ' : '✓ ') + 'Ferieperiode lagt til' + addClash);
       break;
     }
 
     case 'VACATION_EDIT': {
       if (vacations[payload.idx]) {
+        var editClash = vacationClashText(vacationClashes(vacations, payload.from, payload.to, payload.idx));
         vacations[payload.idx] = { from: payload.from, to: payload.to, label: payload.label };
         saveVacations();
         renderVacationList();
-        showToast('✓ Ferieperiode oppdatert');
+        showToast((editClash ? '⚠ ' : '✓ ') + 'Ferieperiode oppdatert' + editClash);
       }
       break;
     }
@@ -13419,6 +13420,32 @@ function renderInnstillinger() {
   renderMedleserList();
 }
 
+// Rekkefølgen i ferielista: pågående og kommende perioder etter dato, så de
+// ferdige med den siste først. Gir indekser i vacations, så Rediger og Slett
+// fortsatt peker på riktig periode. Ren funksjon — se test/vacationList.test.js.
+function vacationListOrder(vacs, today) {
+  var idx = vacs.map(function(v, i) { return i; });
+  var open = idx.filter(function(i) { return vacs[i].to >= today; });
+  var done = idx.filter(function(i) { return vacs[i].to < today; });
+  open.sort(function(a, b) { return vacs[a].from < vacs[b].from ? -1 : vacs[a].from > vacs[b].from ? 1 : a - b; });
+  done.sort(function(a, b) { return vacs[a].from > vacs[b].from ? -1 : vacs[a].from < vacs[b].from ? 1 : a - b; });
+  return open.concat(done);
+}
+
+// Perioder som deler minst én dag med from–to. skipIdx er perioden som
+// redigeres, så den ikke overlapper seg selv.
+function vacationClashes(vacs, from, to, skipIdx) {
+  return vacs.filter(function(v, i) { return i !== skipIdx && v.from <= to && from <= v.to; });
+}
+
+// Tillegget i varselet når en ny eller endret periode overlapper andre.
+function vacationClashText(clashes) {
+  if (!clashes.length) return '';
+  return ' · overlapper ' + clashes.map(function(v) {
+    return (v.label || 'Ferie') + ' (' + toDisplay(v.from) + '–' + toDisplay(v.to) + ')';
+  }).join(', ');
+}
+
 function renderVacationList() {
   var list = document.getElementById('vacation-list');
   if (!list) return;
@@ -13427,7 +13454,8 @@ function renderVacationList() {
     list.innerHTML = '<p class="vac-empty">Ingen ferieperioder registrert.</p>';
     return;
   }
-  list.innerHTML = vacations.map(function(v, i) {
+  list.innerHTML = vacationListOrder(vacations, today).map(function(i) {
+    var v = vacations[i];
     var status = v.to < today ? 'done' : (v.from <= today ? 'active' : 'upcoming');
     var badge = status === 'done'
       ? '<span class="vac-status-badge done">Ferdig</span>'
@@ -15145,7 +15173,7 @@ function _renderModalBulkPreview() {
     var dateDisp = dateOk ? toDisplay(row.date) : (row.date || '—');
     var titleHtml = row.dup
       ? '<div class="bulk-preview-cell bulk-dup-title"><span>' + esc(row.title || '') + '</span>' +
-          '<a href="#" class="bulk-dup-tag" data-id="' + esc(row.dup.id) + '" title="Åpne saken som allerede ligger inne">Finnes · ' + esc(_bulkDupLabel(row.dup)) + '</a></div>'
+          '<span class="bulk-dup-tag" title="Saken ligger allerede inne">Finnes · ' + esc(_bulkDupLabel(row.dup)) + '</span></div>'
       : '<div class="bulk-preview-cell">' + esc(row.title || '') + '</div>';
     var checkLabel = row.dup ? 'Legg inn ' + (row.cn || '') + ' likevel' : 'Velg ' + (row.cn || 'rad');
     return '<div class="bulk-preview-row' + (row.dup ? ' is-dup' : '') + '" data-rid="' + row.id + '">' +
@@ -15226,13 +15254,6 @@ document.getElementById('modal-bulk-preview').addEventListener('change', functio
   if (row) { row.checked = e.target.checked; _updateModalBulkCount(); renderTimeline({ target: 'modal-timeline', draftRows: _modalBulkParsed.filter(function(r){return r.checked;}) }); }
 });
 document.getElementById('modal-bulk-preview').addEventListener('click', function(e) {
-  var tag = e.target.closest('.bulk-dup-tag');
-  if (tag) {
-    e.preventDefault();
-    closeModal();
-    navigateTo('sak/' + tag.dataset.id);
-    return;
-  }
   var del = e.target.closest('.bulk-del');
   if (!del) return;
   _modalBulkParsed = _modalBulkParsed.filter(function(r) { return r.id !== del.dataset.rid; });
