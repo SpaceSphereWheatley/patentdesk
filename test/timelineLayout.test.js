@@ -6,8 +6,8 @@ const { loadFunctions } = require('./extractFunctions');
 const {
   timelineLaneGeometry, visibleLaneCount, timelineOverdueBands, timelineDragChip, timelineKeyBuffer
 } = loadFunctions(
-  ['timelineLaneGeometry', 'visibleLaneCount', 'timelineOverdueBands', 'timelineDragChip', 'timelineKeyBuffer'],
-  { vars: ['TL_LANE'] }
+  ['timelineLaneGeometry', 'visibleLaneCount', 'timelineOverdueBands', 'timelineDragChip', 'timelineKeyBuffer', 'bufferWord'],
+  { vars: ['TL_LANE', 'POSTPONE_WARN_DAYS'] }
 );
 const plain = (v) => JSON.parse(JSON.stringify(v));
 
@@ -53,7 +53,7 @@ test('visibleLaneCount is at least one, also with nothing in view', () => {
 
 // ── Punkt 2: forfalt-båndet ────────────────────────────────────────────────
 
-const overdueNy = { id: 'a', caseNumber: 'A', isOverdue: true, isOppdrag: false, unassigned: false, status: 'ny' };
+const overdueNy = { id: 'a', caseNumber: 'A', isOverdue: true, planOverdue: true, isOppdrag: false, unassigned: false, status: 'ny' };
 
 test('timelineOverdueBands merges the penalty days into runs', () => {
   // Tor, fre, man → [0, 2) og [4, 5)
@@ -69,7 +69,7 @@ test('timelineOverdueBands gives every overdue case its own band on the same day
 
 test('timelineOverdueBands leaves out cases the belegg does not charge', () => {
   const rs = [
-    Object.assign({}, overdueNy, { isOverdue: false }),
+    Object.assign({}, overdueNy, { isOverdue: false, planOverdue: false }),
     Object.assign({}, overdueNy, { isOppdrag: true }),
     Object.assign({}, overdueNy, { unassigned: true }),
     Object.assign({}, overdueNy, { status: 'fristarkiv' }),
@@ -86,7 +86,8 @@ test('timelineOverdueBands draws nothing when there are no penalty days', () => 
 test('timelineDragChip shows the old and new buffer and the dates it gives', () => {
   assert.deepStrictEqual(plain(timelineDragChip(5, 8, 0, '3.12.2026', '11.12.2026')), {
     head: 'Buffer 5 → 8 dager',
-    sub:  'buffret til 3.12.2026 · frist 11.12.2026'
+    sub:  'buffret til 3.12.2026 · frist 11.12.2026',
+    warn: false
   });
 });
 

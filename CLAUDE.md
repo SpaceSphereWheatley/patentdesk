@@ -76,7 +76,12 @@ These two stores have distinct responsibilities. Do not conflate them.
     conflict, and no due-date buffer. Treat a Fristarkiv date as a milestone
     marking when the case may come back, not as a block of work.
   - `Viderebehandling` — the applicant has answered and the examiner must
-    process the response. Real work again.
+    process the response. Real work again. Its deadline is softer, so it can
+    be **postponed** past the due date (a negative buffer, `canPostpone`).
+    The deadline does not move: the case is overdue from the real `dueDate`
+    (`deadlineFor`). The bar and the belegg follow the plan (`effDueFor`)
+    like any other case, so postponing costs nothing extra; the overdue
+    penalty applies only once the planned date has passed.
   - `Avsluttet` — done; excluded from all workload logic.
 - Oppdrag are separate from this: they carry an explicit `duration` (in
   workdays) and always use their actual `dueDate` (never buffered).
