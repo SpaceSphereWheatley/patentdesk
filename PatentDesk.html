@@ -1291,18 +1291,31 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .home-card-clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ── Arbeidsplan fast nederst (hjem) ── */
+/* Løsnet ser feltet ut som en vanlig seksjon. Sitter det fast nederst, får
+   det en hvit bunnlinje i hele innholdsområdets bredde (::before går ut i
+   main-contents sidemarg); selve tidslinjen beholder bredden, så bjelkene
+   ikke hopper når feltet fester seg eller løsner. */
 .home-dock {
   position: sticky; bottom: 0; z-index: 20; margin-top: var(--space-5);
-  background: var(--surface); border: 1px solid var(--border2); border-bottom: none;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: 0 -6px 18px rgba(0,0,0,0.08);
-  padding: var(--space-3) var(--space-6) var(--space-4);
+  padding: var(--space-3) 0 var(--space-4);
 }
+.home-dock::before {
+  content: ''; position: absolute; z-index: -1; top: 0; bottom: 0;
+  left: calc(-1 * var(--space-10)); right: calc(-1 * var(--space-10));
+  background: var(--surface); border-top: 1px solid var(--border2);
+  box-shadow: 0 -6px 18px rgba(0,0,0,0.08);
+  opacity: 0; transition: opacity var(--dur-base);
+}
+.home-dock.is-stuck::before { opacity: 1; }
+#home-dock-sentinel { height: 1px; }
 .home-dock-head { display: flex; align-items: center; gap: var(--space-5); }
 .home-dock-toggle {
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px;
   background: transparent; border: none; padding: 0 var(--space-3) 0 0; cursor: pointer;
-  font-family: var(--font-head); font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--text);
+  font-family: var(--font-head); font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--muted);
+  transition: color var(--dur-base);
 }
+.home-dock.is-stuck .home-dock-toggle { color: var(--text); }
 .home-dock-chevron { display: inline-block; width: 1.1em; text-align: center; color: var(--text-subtle); }
 .home-dock-summary { font-size: var(--text-sm); color: var(--text-subtle); }
 .home-dock.is-collapsed #home-tl-host { display: none; }
@@ -3103,6 +3116,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
           </div>
           <div id="home-tl-host"></div>
         </section>
+        <div id="home-dock-sentinel" aria-hidden="true"></div>
       </div>
 
       <!-- Saksliste -->
@@ -4564,7 +4578,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.44.0';
+var APP_VERSION    = 'v4.44.1';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -12562,6 +12576,22 @@ document.getElementById('home-dock-toggle').addEventListener('click', function()
 
 if (typeof ResizeObserver === 'function') {
   new ResizeObserver(syncToastLift).observe(document.getElementById('home-dock'));
+}
+
+// Sitter feltet fast nederst? Markøren står rett etter det: er den under
+// vinduet, har feltet ikke nådd plassen sin ennå. Ren funksjon — se
+// test/homeDock.test.js.
+function dockIsStuck(sentinelTop, viewportBottom) {
+  return sentinelTop > viewportBottom;
+}
+
+if (typeof IntersectionObserver === 'function') {
+  new IntersectionObserver(function(entries) {
+    var en = entries[entries.length - 1];
+    var bottom = en.rootBounds ? en.rootBounds.bottom : window.innerHeight;
+    document.getElementById('home-dock').classList.toggle('is-stuck',
+      !en.isIntersecting && dockIsStuck(en.boundingClientRect.top, bottom));
+  }).observe(document.getElementById('home-dock-sentinel'));
 }
 
 // Forfalt-kortet hopper ned til fristlista
