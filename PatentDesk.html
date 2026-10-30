@@ -13230,8 +13230,44 @@ function _applyTimelineScroll(scrollEl, trackEl, horizon) {
     var reserved = bar.classList.contains('tl-bar-active') ? 2 * TL_LABEL_CHAR_PX : 0;
     if (lbl) lbl.textContent = timelineBarLabel(bar.dataset.cn, parseFloat(bar.dataset.spanDays) * pxPerDay - reserved);
   });
+  _placePostponeTags(trackEl);
   _layoutTimelineLanes(scrollEl);
   _updateOverduePin(scrollEl);
+}
+
+// _placePostponeTags: viser «+N d»-merket bare der det er ledig plass til
+// høyre for bjelken, så det aldri dekker en annen sak. Bredden er først kjent
+// når sporet har fått sin bredde. Utsettelsen står uansett i skraveringen og
+// popupen.
+function _placePostponeTags(trackEl) {
+  var tags = Array.prototype.slice.call(trackEl.querySelectorAll('.tl-postpone-tag'));
+  if (!tags.length) return;
+  var byRow = {};
+  trackEl.querySelectorAll('.tl-bar').forEach(function(bar) {
+    (byRow[bar.dataset.row] = byRow[bar.dataset.row] || []).push([bar.offsetLeft, bar.offsetLeft + bar.offsetWidth]);
+  });
+  tags.forEach(function(tag) { tag.style.display = ''; });
+  var placed = tags.map(function(tag) {
+    var pill = tag.firstElementChild;
+    var left = tag.offsetLeft + (parseFloat(getComputedStyle(tag).marginLeft) || 0);
+    return { tag: tag, row: tag.dataset.row, left: left, right: left + (pill ? pill.offsetWidth : 0) };
+  }).sort(function(a, b) { return a.left - b.left; });
+  placed.forEach(function(p) {
+    var taken = byRow[p.row] || (byRow[p.row] = []);
+    var fits = postponeTagFits(p.left, p.right, taken);
+    p.tag.style.display = fits ? '' : 'none';
+    if (fits) taken.push([p.left, p.right]);
+  });
+}
+
+// postponeTagFits: om merket [left, right) (px) får plass uten å overlappe
+// noe av det som allerede ligger i raden (taken: [venstre, høyre]-par), med
+// litt luft. Ren funksjon — se test/postpone.test.js.
+var TL_TAG_GAP_PX = 2;
+function postponeTagFits(left, right, taken) {
+  return !(taken || []).some(function(t) {
+    return left < t[1] + TL_TAG_GAP_PX && t[0] < right + TL_TAG_GAP_PX;
+  });
 }
 
 // Bredden pinnen dekker i venstre kant (px) — en sak bak den regnes som skjult.
