@@ -215,3 +215,14 @@ test('timelineRange gives a postponed case a lane from its real deadline', () =>
   assert.strictEqual(r.laneStart, r.actualEnd);
   assert.strictEqual(timelineRange(vb(), now, 90, 30).laneStart, null);
 });
+
+test('postponeTagFits shows the tag only where nothing else in the row is in the way', () => {
+  const { postponeTagFits } = loadFunctions(['postponeTagFits'], { vars: ['TL_TAG_GAP_PX'] });
+  // Egen bjelke slutter der merket starter; neste bjelke langt unna
+  assert.strictEqual(postponeTagFits(104, 140, [[50, 100], [200, 300]]), true);
+  // Neste bjelke starter under merket
+  assert.strictEqual(postponeTagFits(104, 140, [[50, 100], [130, 200]]), false);
+  // Rett inntil uten luft regnes som i veien
+  assert.strictEqual(postponeTagFits(104, 140, [[141, 200]]), false);
+  assert.strictEqual(postponeTagFits(104, 140, []), true);
+});

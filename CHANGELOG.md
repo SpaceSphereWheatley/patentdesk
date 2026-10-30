@@ -19,8 +19,9 @@ arbeidsplan.
   sak kan utsettes, men brikken blir gul når saken legges mer enn 14 dager
   etter fristen.
 - **Utsatte saker er merket.** I tidslinjen er delen av bjelken etter fristen
-  skravert. Ved enden står «+N d», og en stiplet strek går fra den faktiske
-  fristen til bjelken. I sakslistene og fristlista på Hjem står «Utsatt til
+  skravert. Ved enden står «+N d» når det er plass til det, så merket aldri
+  dekker andre saker, og en stiplet strek går fra den faktiske fristen til
+  bjelken. I sakslistene og fristlista på Hjem står «Utsatt til
   …». På sakssiden står datoen saken er planlagt til, med knappen «Fjern
   utsettelse». Forklaringen under tidslinjen har fått «Utsatt etter fristen».
 
