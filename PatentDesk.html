@@ -1880,8 +1880,12 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
    Erstatter hero + «Forfallsdato» + «Buffer», og sier hvem fristen tilhører. */
 .sak-frist          { background: var(--surface); border: 1px solid var(--border);
                       border-left: 3px solid var(--s-ny-text); border-radius: var(--radius-lg);
-                      padding: var(--space-5) var(--space-7); margin-bottom: var(--space-6);
-                      max-width: 34rem; }
+                      padding: var(--space-4) var(--space-7); margin: var(--space-5) 0 var(--space-6);
+                      display: flex; align-items: center; flex-wrap: wrap; column-gap: var(--space-7); row-gap: var(--space-2); }
+.sak-frist .sak-frist-owner { margin-bottom: 0; }
+.sak-frist .sak-frist-meta  { margin-top: 0; }
+.sak-frist .sak-frist-meta:empty { display: none; }
+.sak-frist .sak-frist-note  { margin: 0 0 0 auto; padding: 0; border: none; }
 .sak-frist-applicant { border-left-color: var(--s-frist-text); }
 .sak-frist-owner    { display: inline-block; font-size: var(--text-2xs); font-weight: var(--weight-bold);
                       letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
@@ -2880,6 +2884,38 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .modal-footer-between { display: flex; align-items: center; justify-content: space-between; padding: var(--space-5) var(--space-7); border-top: 1px solid var(--border); flex-shrink: 0; }
 .modal-footer-gap { display: flex; align-items: center; gap: var(--space-5); }
 .sak-topbar-right { display: flex; align-items: center; gap: var(--space-3); }
+/* Alle knappene i sakshodet har samme høyde; ⋯ er kvadratisk. */
+.sak-topbar-right .btn-sm, .sak-topbar-right .btn-sak-forward {
+  box-sizing: border-box; height: 36px; display: inline-flex; align-items: center; gap: var(--space-2); line-height: 1; }
+.sak-topbar-right #btn-sak-more { width: 36px; justify-content: center; padding: 0; font-size: var(--text-md); }
+/* Sakshodet: saksnummer med statusknapp, tittelen under i vanlig tekst */
+.sak-title-row     { display: flex; align-items: center; gap: var(--space-4); }
+.sak-subtitle      { display: block; font-size: var(--text-md); color: var(--text); font-weight: var(--weight-medium); margin-top: var(--space-1); }
+.sak-status-wrap   { position: relative; }
+.sak-status-chip   { display: inline-flex; align-items: center; gap: var(--space-2); font: inherit; font-size: var(--text-sm);
+                     font-weight: var(--weight-semibold); padding: var(--space-1) var(--space-4); border-radius: var(--radius-pill);
+                     cursor: pointer; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); }
+.sak-status-chip::after { content: '\25BE'; font-size: 0.7em; opacity: 0.7; }
+.sak-status-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sak-status-chip.tone-ny      { background: var(--s-ny-bg);      color: var(--s-ny-text);      border-color: var(--s-ny-border); }
+.sak-status-chip.tone-videre  { background: var(--s-videre-bg);  color: var(--s-videre-text);  border-color: var(--s-videre-border); }
+.sak-status-chip.tone-frist   { background: var(--s-frist-bg);   color: var(--s-frist-text);   border-color: var(--s-frist-border); }
+.sak-status-chip.tone-avsl    { background: var(--s-avsl-bg);    color: var(--s-avsl-text);    border-color: var(--s-avsl-border); }
+.sak-status-chip.tone-oppdrag { background: var(--s-oppdrag-bg); color: var(--s-oppdrag-text); border-color: var(--s-oppdrag-border); }
+.sak-status-menu   { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; min-width: 240px;
+                     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+                     box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: var(--space-2); }
+.sak-status-menu .sak-status-btn-group { flex-direction: column; gap: 2px; }
+.sak-status-menu .sak-status-btn,
+.sak-status-menu .sak-status-btn[class*="active-"] { width: 100%; display: flex; align-items: center; gap: var(--space-3);
+                     text-align: left; font-size: var(--text-sm); border: none; border-radius: var(--radius);
+                     background: none; color: var(--text); padding: var(--space-3) var(--space-4); }
+.sak-status-menu .sak-status-btn:hover { background: var(--surface2); }
+.sak-status-menu .sak-status-btn[class*="active-"] { background: var(--surface2); font-weight: var(--weight-semibold); }
+.sak-status-menu .sak-status-btn[class*="active-"]::after { content: '\2713'; margin-left: auto; color: var(--primary); }
+.sak-status-hint   { font-size: var(--text-xs); color: var(--muted-text); padding: var(--space-3) var(--space-4) var(--space-1);
+                     margin-top: var(--space-2); border-top: 1px solid var(--border); }
+.sak-status-hint:empty { display: none; }
 .flex-gap-sm      { display: flex; gap: var(--space-2); }
 .tl-legend-swatch-vac    { background: rgba(16,185,129,0.3); }
 .tl-legend-swatch-buffer { background: var(--tl-holiday); opacity: 0.4; }
@@ -3659,8 +3695,22 @@ tr:hover .sak-tag-display.sak-tag-empty,
           <div class="sak-top-left">
             <button class="btn-back" id="btn-sak-back"><svg class="ti" aria-hidden="true"><use href="#ti-arrow-left"/></svg> Tilbake</button>
             <div>
-              <h1 class="page-title" id="sak-page-title">Saksdetaljer</h1>
-              <span class="case-count" id="sak-page-sub"></span>
+              <div class="sak-title-row">
+                <h1 class="page-title" id="sak-page-title">Saksdetaljer</h1>
+                <div class="sak-status-wrap" id="sak-status-wrap">
+                  <button type="button" class="sak-status-chip" id="sak-status-chip" aria-haspopup="true" aria-expanded="false" aria-controls="sak-status-menu" title="Endre status"></button>
+                  <div class="sak-status-menu" id="sak-status-menu" hidden>
+                    <div class="sak-status-btn-group" id="sak-status-btns" role="group" aria-label="Status">
+                      <button class="sak-status-btn" data-status="ny"><svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg> Ny</button>
+                      <button class="sak-status-btn" data-status="viderebehandling"><svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg> Viderebehandling</button>
+                      <button class="sak-status-btn" data-status="fristarkiv"><svg class="ti" aria-hidden="true"><use href="#ti-archive"/></svg> Fristarkiv</button>
+                      <button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>
+                    </div>
+                    <div class="sak-status-hint" id="sak-status-hint"></div>
+                  </div>
+                </div>
+              </div>
+              <span class="sak-subtitle" id="sak-page-sub"></span>
             </div>
           </div>
           <div class="sak-topbar-right">
@@ -3777,16 +3827,6 @@ tr:hover .sak-tag-display.sak-tag-empty,
                   <dt>Tittel</dt><dd id="sak-title"></dd>
                 </div>
               </dl>
-
-              <div class="sak-info-block">
-                <span class="sak-info-label" id="lbl-sak-status">Status</span>
-                <div class="sak-status-btn-group" id="sak-status-btns" role="group" aria-labelledby="lbl-sak-status">
-                  <button class="sak-status-btn" data-status="ny"><svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg> Ny</button>
-                  <button class="sak-status-btn" data-status="viderebehandling"><svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg> Viderebehandling</button>
-                  <button class="sak-status-btn" data-status="fristarkiv"><svg class="ti" aria-hidden="true"><use href="#ti-archive"/></svg> Fristarkiv</button>
-                  <button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>
-                </div>
-              </div>
 
               <div class="sak-info-block">
                 <label class="sak-info-label" for="sak-tags">Stikkord</label>
@@ -4629,7 +4669,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.48.0';
+var APP_VERSION    = 'v4.49.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4849,7 +4889,7 @@ function statusTransition(fromStatus, toStatus, isOppdrag) {
 }
 
 // Den framoverrettede handlingen fra en gitt status: det ene trykket som
-// bringer saken videre i flyten. Gir «Marker som fullført»-knappen etikett og
+// bringer saken videre i flyten. Gir «Brev sendt»-knappen etikett og
 // mål, slik at knappen er en avledning av statusmodellen og ikke enda en
 // hardkodet overgang. null betyr at saken ikke har noe neste steg.
 // Ren funksjon — se test/sakLayout.test.js.
@@ -4860,7 +4900,7 @@ function forwardAction(status, isOppdrag) {
   if (isOppdrag) return { label: 'Merk som utført', toStatus: 'avsluttet', choice: null };
 
   if (status === 'ny' || status === 'viderebehandling') {
-    return { label: 'Marker som fullført', toStatus: 'fristarkiv', choice: null };
+    return { label: 'Brev sendt', toStatus: 'fristarkiv', choice: null };
   }
   // Fra Fristarkiv kan saken gå to veier, så brukeren må velge selv.
   if (status === 'fristarkiv') {
@@ -4874,6 +4914,33 @@ function forwardAction(status, isOppdrag) {
 // status har sitt eget steg (Ny → 2, Fristarkiv/Viderebehandling → 3,
 // Avsluttet → 4); alle svarrunder deler det tredje steget, som bytter etikett
 // etter runden. Utfallet lagres på saken som `outcome` ved avslutning.
+// Statusknappen i sakshodet: navnet som i menyen og fargetonen for statusen.
+// Ren funksjon — se test/sakStatusMenu.test.js.
+function sakStatusChip(status, isOppdrag, outcome) {
+  var s = status || 'ny';
+  if (s === 'avsluttet') {
+    var o = (!isOppdrag && outcome && Object.prototype.hasOwnProperty.call(OUTCOMES, outcome)) ? OUTCOMES[outcome].label : '';
+    return { label: 'Avsluttet' + (o ? ' · ' + o : ''), tone: 'avsl' };
+  }
+  if (isOppdrag) return { label: 'Aktiv', tone: 'oppdrag' };
+  if (s === 'viderebehandling') return { label: 'Viderebehandling', tone: 'videre' };
+  if (s === 'fristarkiv')       return { label: 'Fristarkiv', tone: 'frist' };
+  return { label: 'Ny', tone: 'ny' };
+}
+
+// Undertittelen i sakshodet er bare tittelen; statusen har egen knapp.
+// Ren funksjon — se test/sakStatusMenu.test.js.
+function sakSubtitle(cas) {
+  return (cas && cas.title) || '';
+}
+
+// Hint nederst i statusmenyen: det vanlige steget er hovedknappen.
+// Ren funksjon — se test/sakStatusMenu.test.js.
+function statusMenuHint(status, isOppdrag) {
+  var a = forwardAction(status || 'ny', isOppdrag);
+  return a ? 'Vanligste steg er knappen til høyre: «' + a.label.replace(/\s*…$/, '') + '».' : '';
+}
+
 var OUTCOMES = {
   meddelt: { label: 'Meddelt', state: 'granted' },
   avslatt: { label: 'Avslått', state: 'refused' },
@@ -5010,7 +5077,7 @@ function rowAction(status, isOppdrag) {
   if (isOppdrag) return { type: 'complete-oppdrag', label: 'Merk som utført' };
   if (status === 'fristarkiv')       return { type: 'choice-fristarkiv', label: 'Registrer svar …' };
   if (status === 'viderebehandling') return { type: 'choice-videre', label: 'Fullfør behandling …' };
-  return { type: 'confirm', label: 'Marker som fullført' };
+  return { type: 'confirm', label: 'Brev sendt' };
 }
 
 // ── Dato-hjelper: auto-formatering ────────────────
@@ -9016,14 +9083,14 @@ function openTagModal(id, toStatus, callback, opts) {
   document.getElementById('tag-case-number').textContent = theCase ? theCase.caseNumber : '';
   document.getElementById('f-tags').value = (theCase && theCase.tags) ? theCase.tags : '';
   document.getElementById('tag-modal-title').childNodes[0].textContent =
-    opts.editOutcome ? 'Endre utfall — ' : isClosing ? 'Avslutt sak — ' : 'Marker som fullført — ';
+    opts.editOutcome ? 'Endre utfall — ' : isClosing ? 'Avslutt sak — ' : 'Brev sendt — ';
   document.getElementById('tag-modal-desc').textContent = pendingTagNeedsOutcome
     ? 'Velg utfall, og legg eventuelt til stikkord.'
     : isClosing
       ? 'Legg til stikkord for denne saken (valgfritt).'
       : 'Legg til stikkord for denne saken (valgfritt). Saken sendes til Fristarkiv.';
   document.getElementById('btn-tag-confirm').textContent =
-    opts.editOutcome ? 'Lagre' : isClosing ? 'Avslutt sak' : 'Marker som fullført';
+    opts.editOutcome ? 'Lagre' : isClosing ? 'Avslutt sak' : 'Brev sendt';
   document.getElementById('tag-outcome-group').style.display = pendingTagNeedsOutcome ? '' : 'none';
   var current = opts.editOutcome && theCase ? theCase.outcome : null;
   document.querySelectorAll('#tag-outcome-group input[name="outcome"]').forEach(function(r) { r.checked = r.value === current; });
@@ -10707,8 +10774,7 @@ function renderSak(id) {
 
   // Topptekst + fane-tittel
   document.getElementById('sak-page-title').textContent = cas.caseNumber;
-  var cfg = isOppdrag ? { label: 'Oppdrag' } : (STATUS_CONFIG[cas.status] || {});
-  document.getElementById('sak-page-sub').textContent = (cas.title || '') + (cfg.label ? '  ·  ' + cfg.label : '');
+  document.getElementById('sak-page-sub').textContent = sakSubtitle(cas);
   document.title = cas.caseNumber + (cas.title ? ' — ' + cas.title : '') + ' — PatentDesk';
   document.getElementById('sak-sticky-cn').textContent = cas.caseNumber;
 
@@ -10768,6 +10834,16 @@ function renderSak(id) {
       btn.classList.add(isOppdrag && btn.dataset.status === 'ny' ? 'active-oppdrag' : 'active-' + (cas.status || 'ny'));
     }
   });
+  var chipInfo = sakStatusChip(cas.status, isOppdrag, cas.outcome);
+  var chip = document.getElementById('sak-status-chip');
+  if (chip) {
+    chip.textContent = chipInfo.label;
+    chip.className = 'sak-status-chip tone-' + chipInfo.tone;
+    chip.setAttribute('aria-label', 'Status: ' + chipInfo.label + '. Endre status');
+  }
+  var hintEl = document.getElementById('sak-status-hint');
+  if (hintEl) hintEl.textContent = statusMenuHint(cas.status, isOppdrag);
+  setSakStatusMenu(false);
 
   renderSakChecklist(isOppdrag ? null : data);
 
@@ -12051,12 +12127,8 @@ function updateCaseField(id, patch) {
   // Oppdater topptekst
   var updated = cases.find(function(c) { return c.id === id; });
   if (updated) {
-    var isOppdrag = updated.type === 'oppdrag';
-    var cfgLabel  = isOppdrag
-      ? (updated.status === 'avsluttet' ? 'Avsluttet' : 'Oppdrag')
-      : ((STATUS_CONFIG[updated.status] || {}).label || '');
     document.getElementById('sak-page-title').textContent = updated.caseNumber;
-    document.getElementById('sak-page-sub').textContent = (updated.title || '') + (cfgLabel ? '  ·  ' + cfgLabel : '');
+    document.getElementById('sak-page-sub').textContent = sakSubtitle(updated);
     document.getElementById('sak-sticky-cn').textContent = updated.caseNumber;
     document.title = updated.caseNumber + (updated.title ? ' — ' + updated.title : '') + ' — PatentDesk';
   }
@@ -12168,8 +12240,40 @@ document.getElementById('sak-tags-editor').addEventListener('click', function() 
   document.addEventListener('click', function(e) { if (!wrap.contains(e.target)) hideSugg(); });
 })();
 
+// Statusmenyen i sakshodet
+function setSakStatusMenu(open) {
+  var menu = document.getElementById('sak-status-menu');
+  var chip = document.getElementById('sak-status-chip');
+  if (!menu || !chip) return;
+  menu.hidden = !open;
+  chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+document.getElementById('sak-status-chip').addEventListener('click', function() {
+  var menu = document.getElementById('sak-status-menu');
+  setSakStatusMenu(menu.hidden);
+  if (!menu.hidden) {
+    var cur = menu.querySelector('.sak-status-btn[class*="active-"]') || menu.querySelector('.sak-status-btn');
+    if (cur) cur.focus();
+  }
+});
+document.addEventListener('click', function(e) {
+  var wrap = document.getElementById('sak-status-wrap');
+  if (wrap && !wrap.contains(e.target)) setSakStatusMenu(false);
+});
+document.getElementById('sak-status-wrap').addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { setSakStatusMenu(false); document.getElementById('sak-status-chip').focus(); }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    var items = Array.prototype.slice.call(document.querySelectorAll('#sak-status-btns .sak-status-btn'));
+    var i = items.indexOf(document.activeElement);
+    if (i === -1) return;
+    e.preventDefault();
+    items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+  }
+});
+
 document.getElementById('sak-status-btns').addEventListener('click', function(e) {
   var btn = e.target.closest('.sak-status-btn'); if (!btn) return;
+  setSakStatusMenu(false);
   var id  = activeSakId; if (!id) return;
   var theCase = cases.find(function(c) { return c.id === id; });
   if (!theCase) return;

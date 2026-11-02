@@ -7,6 +7,22 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.49.0] - 2026-11-02
+
+### Changed
+- Status endres ett sted på sakssiden: en statusknapp ved saksnummeret
+  («Ny ▾») åpner en meny med Ny, Viderebehandling, Fristarkiv og Avsluttet.
+  Statusknappene i Saksinformasjon er fjernet. Menyen kan brukes med
+  piltaster, og Esc lukker den.
+- Tittelen står i vanlig tekst under saksnummeret, uten statusen etter seg.
+- Fristblokken er en stripe over hele bredden, med luft over.
+- «Marker som fullført» heter «Brev sendt» – det er det knappen gjør fra Ny
+  og Viderebehandling. Gjelder også ⋯-menyen i listene og stikkord-dialogen.
+
+### Fixed
+- ⋯-knappen i sakshodet var lavere enn knappene ved siden av. Alle knappene
+  i sakshodet har nå samme høyde.
+
 ## [4.48.0] - 2026-11-02
 
 ### Changed

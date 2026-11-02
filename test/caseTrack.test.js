@@ -218,7 +218,7 @@ test('pipelineCounts handles an empty list', () => {
 // ── rowAction ────────────────────────────────────────
 
 test('rowAction gives the forward step per status, matching the old list buttons', () => {
-  assert.deepStrictEqual(plain(rowAction('ny', false)), { type: 'confirm', label: 'Marker som fullført' });
+  assert.deepStrictEqual(plain(rowAction('ny', false)), { type: 'confirm', label: 'Brev sendt' });
   assert.deepStrictEqual(plain(rowAction('fristarkiv', false)), { type: 'choice-fristarkiv', label: 'Registrer svar …' });
   assert.deepStrictEqual(plain(rowAction('viderebehandling', false)), { type: 'choice-videre', label: 'Fullfør behandling …' });
   assert.strictEqual(rowAction('avsluttet', false), null);
