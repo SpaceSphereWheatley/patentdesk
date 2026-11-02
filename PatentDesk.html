@@ -2296,6 +2296,14 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-date-inp:focus  { outline: none; border-color: var(--accent-dim); background: var(--surface); }
 .mh-date-inp::placeholder { color: var(--muted); opacity: 0.5; }
 .mh-date-inp[aria-invalid="true"] { border-color: var(--danger); }
+.mh-title           { grid-column: 2 / -1; display: flex; align-items: center; gap: var(--space-2);
+                      font-size: var(--text-2xs); color: var(--muted); min-width: 0;
+                      margin-top: calc(-1 * var(--space-2)); }
+.mh-title-inp       { flex: 1; min-width: 0; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm);
+                      color: var(--text); font-family: var(--font-body); font-size: var(--text-xs);
+                      padding: 1px var(--space-2); text-overflow: ellipsis; }
+.mh-title-inp:focus { outline: none; border-color: var(--accent-dim); background: var(--surface); }
+.mh-title-inp::placeholder { color: var(--muted); opacity: 0.5; }
 .mh-bg-toggle       { font-size: var(--text-2xs); font-family: var(--font-body); white-space: nowrap;
                       padding: 2px var(--space-3); border-radius: var(--radius-pill); cursor: pointer;
                       background: var(--surface); border: 1px solid var(--border2); color: var(--muted);
@@ -2361,7 +2369,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 @media (max-width: 720px) {
   .mh-row           { grid-template-columns: 2.2rem 1fr; row-gap: var(--space-2); }
-  .mh-cats, .mh-flags, .mh-bg-toggle, .mh-dates { grid-column: 2; }
+  .mh-cats, .mh-flags, .mh-bg-toggle, .mh-dates, .mh-title { grid-column: 2; }
 }
 
 /* Kravstabell: gul rad for patenterbar med formelle feil */
@@ -7681,7 +7689,8 @@ function _dispatch(action, payload) {
       var doc = data.docs[payload.idx];
       if (!doc) break;
       var isDate = payload.field === 'pubDate' || payload.field === 'effDate';
-      doc[payload.field] = payload.field === 'ref' ? sanitizeText(payload.value)
+      var isText = payload.field === 'ref' || payload.field === 'title';
+      doc[payload.field] = isText                  ? sanitizeText(payload.value)
                          : isDate                  ? String(payload.value || '')
                          : !!payload.value;
       // Bakgrunnsmothold kan ikke være X eller Y — rydd bort kravsreferansene
@@ -7691,7 +7700,7 @@ function _dispatch(action, payload) {
       // på nytt midt i redigeringen ville flyttet markøren.
       if (isDate) {
         refreshMhFlags(data);
-      } else if (payload.field !== 'ref') {
+      } else if (!isText) {
         renderSakDocs(data);
         renderSakClaimsTable(data);
       }
@@ -10544,8 +10553,16 @@ function opsDocIdDate(ref) {
   return '';
 }
 
-// Publiseringsdato og motholdets egen dato (tidligste prioritet, ellers
-// inngivelsesdatoen) fra et published-data/biblio-svar. Har nummeret flere
+// Tittelen fra invention-title: engelsk når den finnes, ellers den første.
+// Teksten beholdes slik OPS leverer den, bare med mellomrommene ryddet.
+function opsTitle(bib) {
+  var titles = opsAsArray(bib && bib['invention-title']);
+  var t = titles.filter(function(x) { return x && x['@lang'] === 'en'; })[0] || titles[0];
+  return String((t && t.$) || '').replace(/\s+/g, ' ').trim();
+}
+
+// Publiseringsdato, motholdets egen dato (tidligste prioritet, ellers
+// inngivelsesdatoen) og tittel fra et published-data/biblio-svar. Har nummeret flere
 // publiseringer (A1, B1 …), velges den med samme kind-kode, ellers den
 // tidligste. null når svaret ikke har noen brukbar publisering.
 function parseOpsBiblio(json, kind) {
@@ -10557,7 +10574,8 @@ function parseOpsBiblio(json, kind) {
         .map(opsDocIdDate).filter(Boolean).sort();
       return { kind: (x && x['@kind']) || '',
                pubDate: opsDocIdDate(bib['publication-reference']),
-               effDate: prios[0] || opsDocIdDate(bib['application-reference']) };
+               effDate: prios[0] || opsDocIdDate(bib['application-reference']),
+               title: opsTitle(bib) };
     })
     .filter(function(x) { return x.pubDate; })
     .sort(function(a, b) { return a.pubDate < b.pubDate ? -1 : a.pubDate > b.pubDate ? 1 : 0; });
@@ -10566,14 +10584,15 @@ function parseOpsBiblio(json, kind) {
 }
 
 // Hva OPS skal fylle inn: bare tomme felt. Der feltet alt har en annen dato,
-// røres det ikke, men forskjellen meldes i conflicts.
+// røres det ikke, men forskjellen meldes i conflicts. En annen tittel meldes
+// ikke — den kan godt være en du har skrevet selv, f.eks. på norsk.
 function opsFillPlan(doc, dates) {
   var patch = {}, conflicts = [];
-  ['pubDate', 'effDate'].forEach(function(f) {
+  ['pubDate', 'effDate', 'title'].forEach(function(f) {
     var ops = dates[f] || '', mine = (doc && doc[f]) || '';
     if (!ops) return;
     if (!mine) patch[f] = ops;
-    else if (mine !== ops) conflicts.push({ field: f, mine: mine, ops: ops });
+    else if (mine !== ops && f !== 'title') conflicts.push({ field: f, mine: mine, ops: ops });
   });
   return { patch: patch, conflicts: conflicts };
 }
@@ -10628,7 +10647,7 @@ function ensureSakDocs(data) {
   data.docs = data.docs.map(function(d, i) {
     d = d || {};
     return { id: 'D' + (i + 1), ref: d.ref || '',
-             pubDate: d.pubDate || '', effDate: d.effDate || '',
+             pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
              p: !!d.p, e: !!d.e, background: !!d.background };
   });
   var selectable = {};
@@ -11704,6 +11723,10 @@ function renderSakDocs(data) {
         mhDateHtml(d, i, 'pubDate', 'Publisert') +
         mhDateHtml(d, i, 'effDate', 'Prioritet/inng.') +
       '</span>' +
+      '<label class="mh-title">Tittel ' +
+        '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '"' +
+        ' title="' + esc(d.title) + '" placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
+        ' aria-label="' + esc('Tittel for ' + d.id) + '" /></label>' +
     '</div>';
   }).join('');
   el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
@@ -11778,7 +11801,10 @@ function mhOpsBtnHtml(d, i) {
 // datoer du alt har ført inn (de røres ikke).
 function opsFillMessage(plan, dates) {
   var label = { pubDate: 'publisert', effDate: 'prioritet/inng.' };
-  var filled = Object.keys(plan.patch).map(function(f) { return label[f] + ' ' + toDisplay(plan.patch[f]); });
+  // Tittelen er for lang for meldingen — den står i feltet
+  var filled = Object.keys(plan.patch).map(function(f) {
+    return f === 'title' ? 'tittel' : label[f] + ' ' + toDisplay(plan.patch[f]);
+  });
   var parts = [];
   parts.push(filled.length ? '✓ Hentet fra OPS (' + dates.kind + '): ' + filled.join(', ')
                            : 'Ingen tomme datofelt å fylle (OPS ' + dates.kind + ')');
@@ -12601,6 +12627,15 @@ function mhOpsFetch(id, idx, btn) {
 
 document.getElementById('sak-docs-mothold').addEventListener('input', function(e) {
   var id = activeSakId; if (!id) return;
+  var titleInp = e.target.closest('.mh-title-inp');
+  if (titleInp) {
+    titleInp.title = titleInp.value; // hele tittelen ved hover når den er kuttet
+    var tIdx = parseInt(titleInp.dataset.idx, 10), tVal = titleInp.value;
+    debounceSakEdit(function() {
+      dispatch('DOC_FIELD_CHANGE', { id: id, idx: tIdx, field: 'title', value: tVal.trim() });
+    });
+    return;
+  }
   var inp = e.target.closest('.mh-ref-inp'); if (!inp) return;
   syncMhExtLink(inp);
   var idx = parseInt(inp.dataset.idx, 10), val = inp.value;
@@ -12618,6 +12653,13 @@ document.getElementById('sak-docs-mothold').addEventListener('change', function(
     dateInp.removeAttribute('aria-invalid');
     dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(dateInp.dataset.idx, 10),
       field: dateInp.dataset.field, value: iso });
+    return;
+  }
+  var titleInp = e.target.closest('.mh-title-inp');
+  if (titleInp) {
+    clearTimeout(_sakTypingTimer);
+    dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(titleInp.dataset.idx, 10),
+      field: 'title', value: titleInp.value.trim() });
     return;
   }
   var inp = e.target.closest('.mh-ref-inp'); if (!inp) return;

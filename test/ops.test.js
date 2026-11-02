@@ -7,7 +7,7 @@ const { loadFunctions } = require('./extractFunctions');
 
 const { opsPubNumber, opsDate, parseOpsBiblio, opsFillPlan, opsFillMessage, opsErrorMessage } = loadFunctions([
   'normalizePubNumber', 'opsPubNumber', 'opsDate', 'opsAsArray', 'opsDocIdDate',
-  'parseOpsBiblio', 'opsFillPlan', 'opsFillMessage', 'opsErrorMessage', 'toDisplay',
+  'opsTitle', 'parseOpsBiblio', 'opsFillPlan', 'opsFillMessage', 'opsErrorMessage', 'toDisplay',
 ]);
 
 // Et ekte svar fra OPS (published-data/biblio, JSON) for WO 2016/169730 A1:
@@ -154,4 +154,38 @@ test('opsFillMessage says when nothing was empty, and names disagreements', () =
   const msg = opsFillMessage(opsFillPlan({ pubDate: '2016-10-28', effDate: '2015-04-24' }, dates), dates);
   assert.match(msg, /Ingen tomme datofelt/);
   assert.match(msg, /OPS sier publisert 2016\.10\.27, du har 2016\.10\.28 — ikke endret/);
+});
+
+// ── Tittel ──
+
+test('parseOpsBiblio reads the English title from the real WO fixture', () => {
+  assert.strictEqual(parseOpsBiblio(WO_FIXTURE, 'A1').title,
+    'MOBILE APPARATUS AND METHOD FOR THE IN-SITU CALIBRATION OF A GAS CONCENTRATION MEASURING DEVICE');
+});
+
+test('parseOpsBiblio title: English when present, else the first, else empty', () => {
+  const withTitle = (t) => {
+    const d = exDoc('A1', '20200102', ['20180101']);
+    if (t !== undefined) d['bibliographic-data']['invention-title'] = t;
+    return wrap([d]);
+  };
+  assert.strictEqual(parseOpsBiblio(withTitle({ '@lang': 'de', $: 'VORRICHTUNG' }), '').title, 'VORRICHTUNG');
+  assert.strictEqual(parseOpsBiblio(withTitle([{ '@lang': 'fr', $: 'DISPOSITIF' }, { '@lang': 'de', $: 'VORRICHTUNG' }]), '').title, 'DISPOSITIF');
+  assert.strictEqual(parseOpsBiblio(withTitle([{ '@lang': 'de', $: 'VORRICHTUNG' }, { '@lang': 'en', $: 'DEVICE' }]), '').title, 'DEVICE');
+  assert.strictEqual(parseOpsBiblio(withTitle({ '@lang': 'en', $: '  DEVICE\n FOR X ' }), '').title, 'DEVICE FOR X');
+  assert.strictEqual(parseOpsBiblio(withTitle(undefined), '').title, '');
+});
+
+test('opsFillPlan fills an empty title but never reports a different one', () => {
+  const dates = { pubDate: '2016-10-27', effDate: '', title: 'DEVICE' };
+  assert.strictEqual(opsFillPlan({ pubDate: '', effDate: '', title: '' }, dates).patch.title, 'DEVICE');
+  const kept = opsFillPlan({ pubDate: '2016-10-27', effDate: '', title: 'Anordning for kalibrering' }, dates);
+  assert.deepStrictEqual({ ...kept.patch }, {});
+  assert.strictEqual(kept.conflicts.length, 0);
+});
+
+test('opsFillMessage names the title among the filled fields', () => {
+  const dates = { pubDate: '2016-10-27', effDate: '2015-04-24', title: 'DEVICE', kind: 'A1' };
+  const msg = opsFillMessage(opsFillPlan({}, dates), dates);
+  assert.match(msg, /prioritet\/inng\. 2015\.04\.24, tittel\.$/);
 });

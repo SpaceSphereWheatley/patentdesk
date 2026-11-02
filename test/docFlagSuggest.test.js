@@ -97,3 +97,10 @@ test('ensureSakDocs keeps the document dates and defaults them to empty', () => 
   assert.strictEqual(data.docs[1].pubDate, '');
   assert.strictEqual(data.docs[1].effDate, '');
 });
+
+test('ensureSakDocs keeps the document title and defaults it to empty', () => {
+  const data = { docs: [{ ref: 'WO 1', title: 'DEVICE' }, { ref: 'EP 2' }], claims: [] };
+  ensureSakDocs(data);
+  assert.strictEqual(data.docs[0].title, 'DEVICE');
+  assert.strictEqual(data.docs[1].title, '');
+});
