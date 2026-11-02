@@ -7,6 +7,23 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.46.0] - 2026-11-02
+
+### Added
+- «Formalia 2» er nytt første punkt i sjekklisten under Forberedelse (A · Saken),
+  for formaliakontrollen som gjøres når saken kommer inn. Gjelder
+  standardmalen; har du en egen sjekkliste-mal, legg punktet til under
+  Innstillinger → Saksmappe og sjekkliste.
+
+### Changed
+- «Avh. av» i kravsvurderingen følger nå nærmeste selvstendige krav i stedet
+  for å kopiere kravet over. Nye krav avhenger som standard av krav 1 (eller
+  det nærmeste selvstendige kravet over), og når du endrer avhengigheten på et
+  krav, peker kravene under det på nærmeste selvstendige krav. Gjør du et krav
+  selvstendig, henger kravene under det på det nye kravet.
+- Et krav du selv gjør selvstendig, regnes som manuelt satt og stopper
+  kaskaden, så et nytt kravsett ikke viskes ut av en endring lenger opp.
+
 ## [4.45.1] - 2026-10-30
 
 ### Changed
