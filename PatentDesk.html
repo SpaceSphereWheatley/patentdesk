@@ -1679,6 +1679,28 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .case-card:hover .case-card-menu { opacity: 1; pointer-events: auto; }
 
 .case-card .days-badge  { width: 76px; flex-shrink: 0; text-align: center; }
+.days-badge.days-badge-closed { background: var(--surface2); color: var(--muted-text); border: 1px solid var(--border); }
+/* Alle saker: kolonneoverskrifter som sorterer. Bredden følger kortraden. */
+.case-list-head { display: flex; align-items: center; gap: 0.85rem; padding: 0 calc(var(--space-6) + 1px) var(--space-2); }
+.case-list-head[hidden] { display: none; }
+.clh       { background: none; border: none; padding: 0; font: inherit; font-size: var(--text-2xs); letter-spacing: var(--tracking-label);
+             text-transform: uppercase; color: var(--muted-text); cursor: pointer; text-align: left; white-space: nowrap; }
+.clh:hover { color: var(--primary); }
+.clh:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
+.clh.is-on { color: var(--text); font-weight: var(--weight-semibold); }
+.clh-arrow { color: var(--primary); margin-left: var(--space-1); }
+.clh-label { display: none; font-size: var(--text-2xs); color: var(--muted-text); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.clh-frist { width: 76px; flex-shrink: 0; }
+.clh-cn    { width: 110px; flex-shrink: 0; }
+.clh-tittel { flex: 1; min-width: 60px; }
+.clh-status { width: 560px; flex-shrink: 0; }
+.clh-menu  { width: var(--case-menu-w, 64px); flex-shrink: 0; }
+@media (max-width: 1100px) {
+  .case-list-head { gap: var(--space-5); flex-wrap: wrap; }
+  .clh, .clh-tittel, .clh-status { width: auto; flex: none; }
+  .clh-label { display: inline; }
+  .clh-menu  { display: none; }
+}
 .case-card .status-pill { width: 120px; flex-shrink: 0; text-align: center; }
 .case-card-cn           { color: var(--accent-text); font-size: var(--text-sm); letter-spacing: var(--tracking-wide); white-space: nowrap; width: 110px; flex-shrink: 0; }
 .case-card-title        { flex: 1; font-size: var(--text-sm); color: var(--text); min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3253,6 +3275,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 
         <div id="cases-tl-host" style="display:none;"></div>
 
+        <div class="case-list-head" id="case-list-head" role="group" aria-label="Sorter sakene" hidden></div>
         <div id="case-list" class="case-list" style="display:none;"></div>
         <div class="table-empty" id="card-list-empty" style="display:none;">
           Ingen saker her. Bruk «+ Legg til saker» for å opprette en ny.
@@ -4669,7 +4692,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.49.0';
+var APP_VERSION    = 'v4.50.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -8220,16 +8243,98 @@ function casesForPage(page) {
   return cases.filter(function(c) { return (c.status || 'ny') === page && c.type !== 'oppdrag'; });
 }
 
+// ── Alle saker: sortering på kolonneoverskriftene ──
+// Sorteringen huskes mellom besøk (pt_alle_sort).
+var ALL_SORT_KEYS = ['frist', 'cn', 'tittel', 'status'];
+var ALL_SORT_STORE_KEY = 'pt_alle_sort';
+
+// Ren funksjon — se test/allCasesSort.test.js.
+function normalizeAllSort(v) {
+  var key = (v && ALL_SORT_KEYS.indexOf(v.key) !== -1) ? v.key : null;
+  if (!key) return { key: 'frist', dir: 'asc' };
+  return { key: key, dir: v.dir === 'desc' ? 'desc' : 'asc' };
+}
+
+// Samme kolonne snur retningen; en ny kolonne starter stigende.
+// Ren funksjon — se test/allCasesSort.test.js.
+function nextAllSort(cur, key) {
+  var c = normalizeAllSort(cur);
+  if (c.key === key) return { key: key, dir: c.dir === 'asc' ? 'desc' : 'asc' };
+  return normalizeAllSort({ key: key, dir: 'asc' });
+}
+
+// Rekkefølgen i saksflyten: aktive oppdrag, Ny, Viderebehandling, Fristarkiv, Avsluttet.
+// Ren funksjon — se test/allCasesSort.test.js.
+function allCasesStatusRank(c) {
+  if (c.status === 'avsluttet') return 4;
+  if (c.type === 'oppdrag') return 0;
+  return { ny: 1, viderebehandling: 2, fristarkiv: 3 }[c.status || 'ny'] || 1;
+}
+
+// Sorterer en kopi av lista. dueOf gir fristen merket viser (deadlineFor i
+// appen); på frist står avsluttede saker alltid sist, sist avsluttet først.
+// Saksnummer avgjør når alt annet er likt. Ren funksjon — se test/allCasesSort.test.js.
+function sortAllCases(list, sort, dueOf) {
+  var srt = normalizeAllSort(sort);
+  var sgn = srt.dir === 'desc' ? -1 : 1;
+  var due = dueOf || function(c) { return c.dueDate || ''; };
+  function str(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+  function byCn(a, b) { return String(a.caseNumber || '').localeCompare(String(b.caseNumber || ''), 'nb', { numeric: true }); }
+  return list.slice().sort(function(a, b) {
+    var r = 0;
+    if (srt.key === 'frist') {
+      var ca = a.status === 'avsluttet', cb = b.status === 'avsluttet';
+      if (ca !== cb) return ca ? 1 : -1;
+      r = ca ? str(closedDate(b) || '', closedDate(a) || '') : sgn * str(due(a) || '', due(b) || '');
+    } else if (srt.key === 'cn') {
+      r = sgn * byCn(a, b);
+    } else if (srt.key === 'tittel') {
+      r = sgn * String(a.title || '').localeCompare(String(b.title || ''), 'nb', { sensitivity: 'base' });
+    } else {
+      r = sgn * (allCasesStatusRank(a) - allCasesStatusRank(b));
+      if (!r) r = str(due(a) || '', due(b) || '');
+    }
+    return r || byCn(a, b);
+  });
+}
+
+// Dager siden saken ble avsluttet, eller null. Ren funksjon — se test/allCasesSort.test.js.
+function closedDaysAgo(c, todayIso) {
+  if (!c || c.status !== 'avsluttet') return null;
+  var d = closedDate(c);
+  if (!d) return null;
+  return Math.round((new Date(todayIso + 'T00:00:00') - new Date(String(d).slice(0, 10) + 'T00:00:00')) / 86400000);
+}
+
+function loadAllSort() {
+  var raw = _lsGet(ALL_SORT_STORE_KEY), v = null;
+  try { v = raw ? JSON.parse(raw) : null; } catch (e) { v = null; }
+  return normalizeAllSort(v);
+}
+
+function renderAllSortHead(show) {
+  var head = document.getElementById('case-list-head');
+  if (!head) return;
+  head.hidden = !show;
+  if (!show) return;
+  var cur = loadAllSort();
+  var cols = [['frist', 'Frist'], ['cn', 'Saksnr'], ['tittel', 'Tittel'], ['status', 'Status']];
+  head.innerHTML = '<span class="clh-label">Sorter:</span>' + cols.map(function(col) {
+    var on = cur.key === col[0];
+    var dirTxt = cur.dir === 'asc' ? 'stigende' : 'synkende';
+    return '<button type="button" class="clh clh-' + col[0] + (on ? ' is-on' : '') + '" data-sort="' + col[0] + '"' +
+      ' aria-pressed="' + (on ? 'true' : 'false') + '"' +
+      ' title="Sorter på ' + col[1].toLowerCase() + (on ? ' (nå ' + dirTxt + ')' : '') + '">' + col[1] +
+      (on ? '<span class="clh-arrow" aria-hidden="true">' + (cur.dir === 'asc' ? '\u25B2' : '\u25BC') + '</span>' : '') +
+      '</button>';
+  }).join('') + '<span class="clh-menu" aria-hidden="true"></span>';
+}
+
 function sortedForPage(page) {
   var ORDER = { ny:0, viderebehandling:1, fristarkiv:2, avsluttet:3 };
   var isOversikt = !!(PAGES[page] && PAGES[page].showAll);
+  if (isOversikt) return sortAllCases(casesForPage(page), loadAllSort(), deadlineFor);
   return casesForPage(page).slice().sort(function(a, b) {
-    // Alle saker: sorter på saksnummer synkende som default
-    if (isOversikt && sortCol === 'daysUntil') {
-      var va = (a.caseNumber || '').toLowerCase();
-      var vb = (b.caseNumber || '').toLowerCase();
-      return va < vb ? 1 : va > vb ? -1 : 0;
-    }
     var va, vb;
     if (sortCol === 'daysUntil') {
       va = daysUntil(deadlineFor(a));
@@ -8795,6 +8900,7 @@ function render() {
   if (filterBar) filterBar.style.display = 'block';
   // Alle sakslister viser samme rad: frist, saksnummer, tittel og forløpsspor.
   // Neste steg ligger i ⋯-menyen.
+  renderAllSortHead(isOversikt && sorted.length > 0);
   renderCaseList(sorted, { filter: tagFilter }, caseList, cardEmpty);
 }
 
@@ -8899,10 +9005,14 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
     if (cls === 'theirs') tips.push('Søkerens svarfrist — ikke din arbeidsfrist');
     if (isUnassigned(c)) tips.push('Ikke fordelt ennå — teller ikke i belegget');
     if (periodOverlapsVacation(c)) tips.push(vacationTipText(c));
+    var closedAgo   = isAvsluttet ? closedDaysAgo(c, todayStr()) : null;
     var daysBadge   = !isAvsluttet
       ? '<span class="days-badge ' + cls + '"' + (tips.length ? ' title="' + esc(tips.join(' · ')) + '"' : '') + '>' +
           esc(daysTxt) + '</span>'
-      : '<span class="days-badge days-badge-placeholder"></span>';
+      : closedAgo !== null
+        ? '<span class="days-badge days-badge-closed" title="Avsluttet ' + esc(toDisplay(String(closedDate(c)).slice(0, 10))) + '">' +
+            (closedAgo === 0 ? 'I dag' : closedAgo + 'd siden') + '</span>'
+        : '<span class="days-badge days-badge-placeholder"></span>';
     var tooltip     = c.tags ? ' title="' + esc(c.tags) + '"' : '';
     var cardCls     = (isOppdrag ? ' case-card-oppdrag' : '') + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '');
     var cnCls       = isOppdrag ? ' case-card-cn-oppdrag' : '';
@@ -15022,6 +15132,13 @@ document.getElementById('logo-home-link').addEventListener('click', function(e) 
 });
 
 // ── Sortering ──────────────────────────────────────
+document.getElementById('case-list-head').addEventListener('click', function(e) {
+  var btn = e.target.closest('.clh[data-sort]'); if (!btn) return;
+  _lsSet(ALL_SORT_STORE_KEY, JSON.stringify(nextAllSort(loadAllSort(), btn.dataset.sort)));
+  render();
+  var again = document.querySelector('#case-list-head .clh[data-sort="' + btn.dataset.sort + '"]');
+  if (again) again.focus();
+});
 document.querySelectorAll('th.sortable').forEach(function(th) {
   th.addEventListener('click', function() {
     var col = th.dataset.col;

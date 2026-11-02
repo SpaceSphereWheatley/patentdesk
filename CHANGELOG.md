@@ -7,6 +7,22 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.50.0] - 2026-11-02
+
+### Added
+- Alle saker har kolonneoverskrifter du kan sortere på: Frist, Saksnr,
+  Tittel og Status. Et nytt klikk på samme kolonne snur retningen, og
+  sorteringen huskes til neste gang. Status sorteres i saksflytens rekkefølge
+  (Oppdrag, Ny, Viderebehandling, Fristarkiv, Avsluttet). På smale skjermer
+  blir overskriftene en «Sorter:»-linje.
+- Avsluttede saker viser hvor lenge siden de ble avsluttet («41d siden», med
+  datoen i verktøytipset) der fristen sto tom.
+
+### Changed
+- Alle saker sorteres på frist som standard, med avsluttede saker sist. Før
+  var standarden saksnummer, nyeste først — velg Saksnr to ganger for å få
+  den tilbake.
+
 ## [4.49.0] - 2026-11-02
 
 ### Changed
