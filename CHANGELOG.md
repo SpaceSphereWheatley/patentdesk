@@ -7,6 +7,89 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.51.0] - 2026-11-02
+
+### Added
+- Alle saker har kolonneoverskrifter du kan sortere på: Frist, Saksnr,
+  Tittel og Status. Et nytt klikk på samme kolonne snur retningen, og
+  sorteringen huskes til neste gang. Status sorteres i saksflytens rekkefølge
+  (Oppdrag, Ny, Viderebehandling, Fristarkiv, Avsluttet). På smale skjermer
+  blir overskriftene en «Sorter:»-linje.
+- Avsluttede saker viser hvor lenge siden de ble avsluttet («41d siden», med
+  datoen i verktøytipset) der fristen sto tom.
+
+### Changed
+- Alle saker sorteres på frist som standard, med avsluttede saker sist. Før
+  var standarden saksnummer, nyeste først — velg Saksnr to ganger for å få
+  den tilbake.
+
+## [4.50.0] - 2026-11-02
+
+### Changed
+- Status endres ett sted på sakssiden: en statusknapp ved saksnummeret
+  («Ny ▾») åpner en meny med Ny, Viderebehandling, Fristarkiv og Avsluttet.
+  Statusknappene i Saksinformasjon er fjernet. Menyen kan brukes med
+  piltaster, og Esc lukker den.
+- Tittelen står i vanlig tekst under saksnummeret, uten statusen etter seg.
+- Fristblokken er en stripe over hele bredden, med luft over.
+- «Marker som fullført» heter «Brev sendt» – det er det knappen gjør fra Ny
+  og Viderebehandling. Gjelder også ⋯-menyen i listene og stikkord-dialogen.
+
+### Fixed
+- ⋯-knappen i sakshodet var lavere enn knappene ved siden av. Alle knappene
+  i sakshodet har nå samme høyde.
+
+## [4.49.0] - 2026-11-02
+
+### Changed
+- Statusene heter det samme overalt som i menyen. Saksflyten på Oversikt har
+  overskriftene Nye saker, Fristarkiv og Viderebehandling (før 1. brev,
+  Venter på svar og Svarrunder), med en forklaring under: «til 1. brev»,
+  «venter på svar», «svar til behandling». I forløpet heter steget saken står
+  på, det samme som lista den ligger i: Ny, Fristarkiv eller
+  Viderebehandling. Rundenummeret står fortsatt («Fristarkiv · 2»).
+- Blått betyr nå «her kan du gjøre noe», og gull er bare identitet. Knapper
+  som «Marker som fullført», «+ Legg til», JSON og CSV, avkrysningsbokser,
+  felt i fokus, valgt fane og valgt dag i datovelgeren er blå. Logo,
+  saksnummer, CPC-koder, A/B/C-merkene, aktiv sak, i dag-linja og grafene
+  beholder gullfargen.
+
+## [4.48.0] - 2026-11-02
+
+### Added
+- CPC-banneret på Oversikt kan lukkes med ×, og forblir lukket. CPC-databasen
+  lastes fortsatt inn under Innstillinger → Saksbehandling.
+
+### Changed
+- Belegg er et eget kort på Oversikt, der «Dager til fridag» sto: prosent i
+  beleggsfargen, en søyle mot 100 % kapasitet og trenden for neste periode.
+  Går belegget over 100 %, vises overskuddet som et skravert felt etter
+  100 %-merket og som tekst («26% over kapasitet»).
+- Neste fridag er en linje under kortene i stedet for et eget kort.
+- Sakslistene med én status (Nye saker, Viderebehandling, Fristarkiv,
+  Oppdrag) viser det kompakte forløpet fra Oversikt i stedet for de brede
+  pilene, så titlene får plass og ikke kuttes. Rundenummeret står fortsatt
+  («Viderebeh. · 3»). Alle saker beholder hele forløpet.
+
+## [4.47.1] - 2026-11-02
+
+### Changed
+- Dempet tekst og gull tekst er mørkere, så de er lesbare: grå hjelpetekst,
+  inaktive menypunkter og etiketter går fra kontrast 2,4 til 4,5, og
+  saksnummer og annen gull tekst fra 3,2 til 4,8 mot bakgrunnen. Knapper,
+  kanter og flater beholder fargene sine.
+
+### Fixed
+- «Alle saker» i menyen viser ikke lenger et tall. Merket telte bare de
+  avsluttede sakene, så det sto 1 selv om lista hadde 13 saker.
+
+### Security
+- Datamappe-raden i Innstillinger → Data er et tydelig varsel så lenge dataene
+  bare ligger i nettleseren: tømmes nettleserdata, er alt borte. Varselet
+  gjelder også når tilgangen til mappen ikke er gitt. I nettlesere som ikke kan
+  lagre til en mappe, var raden skjult; nå vises varselet der også, med råd om
+  å eksportere JSON jevnlig.
+
 ## [4.47.0] - 2026-11-02
 Motholdene kan nå hente datoer og tittel fra EPO sin Open Patent Services
 (OPS), og har fått tilbake et tittelfelt.

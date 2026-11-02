@@ -41,14 +41,14 @@ test('fristOwnerNote: bare Fristarkiv sier at fristen ikke koster arbeid', () =>
 });
 
 // ── forwardAction ──────────────────────────────────
-// Etiketten på «Marker som fullført» er en avledning av statusmodellen, ikke
+// Etiketten på «Brev sendt» er en avledning av statusmodellen, ikke
 // en hardkodet streng per knapp.
 
 test('forwardAction: Ny og Viderebehandling fullføres til Fristarkiv', () => {
   assert.deepStrictEqual(Object.assign({}, forwardAction('ny', false)),
-    { label: 'Marker som fullført', toStatus: 'fristarkiv', choice: null });
+    { label: 'Brev sendt', toStatus: 'fristarkiv', choice: null });
   assert.deepStrictEqual(Object.assign({}, forwardAction('viderebehandling', false)),
-    { label: 'Marker som fullført', toStatus: 'fristarkiv', choice: null });
+    { label: 'Brev sendt', toStatus: 'fristarkiv', choice: null });
 });
 
 test('forwardAction: Fristarkiv har to mulige utfall, så den åpner valgpopupen', () => {
