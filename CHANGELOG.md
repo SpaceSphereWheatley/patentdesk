@@ -7,6 +7,30 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.54.0] - 2026-11-02
+
+### Added
+- Sakssiden viser hvilken runde saken er i, under tittelen: «Runde 2 · brev
+  2026.03.02 · svar 2026.10.20 (endrede krav)», eller «venter på svar» i
+  Fristarkiv.
+- **Svar mottatt** (knappen i Fristarkiv) registrerer søkerens svar i én
+  dialog: mottaksdato, hva som kom inn (endrede krav, endret beskrivelse
+  eller kun argumenter) og din frist. Fristen foreslås fra mottaksdatoen,
+  med antall måneder fra Innstillinger → Frister. Erstatter valget mellom
+  viderebehandling og avslutning; avslutning ligger som en lenke i dialogen.
+- **Avgjør** (knappen i Viderebehandling) gir tre utfall: nytt
+  realitetsbrev (til Fristarkiv med søkers frist), godkjenning (avsluttes
+  som meddelt) eller avslag (avsluttes som avslått). Godkjenning teller ikke
+  som en ny runde.
+- «Svar og endringer» øverst i Vurdering i Viderebehandling: en sjekkliste
+  for svaret (lest, § 13-grunnlag, ny vurdering, tilleggsgransking) som
+  starter tom i hver runde.
+
+### Changed
+- I Viderebehandling er fasene Saken og Gransking lukket som standard, så
+  svaret og vurderingen står først. Åpner eller lukker du dem selv, huskes
+  det for seg i Viderebehandling og påvirker ikke nye saker.
+
 ## [4.53.0] - 2026-11-02
 
 ### Added
