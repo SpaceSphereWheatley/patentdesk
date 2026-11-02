@@ -879,6 +879,11 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 
 .settings-row           { display: flex; align-items: center; justify-content: space-between; gap: var(--space-8); padding: var(--space-6) var(--space-7); border-bottom: 1px solid var(--border); }
 .settings-row:last-child{ border-bottom: none; }
+/* Datamappe uten mappe: dataene finnes bare i nettleseren — vises som varsel */
+.settings-row.is-data-risk { background: var(--notice-warn-bg); box-shadow: inset 3px 0 0 var(--color-warn); }
+.settings-row.is-data-risk .settings-label-title,
+.settings-row.is-data-risk .settings-label-sub { color: var(--notice-warn-text); }
+.settings-row.is-data-risk #backup-folder-sub { font-weight: 600; }
 .settings-label         { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .settings-label-title   { font-size: var(--text-base); color: var(--text); }
 .settings-label-sub     { font-size: var(--text-xs); color: var(--muted); }
@@ -8166,6 +8171,15 @@ function sortedForPage(page) {
 // ════════════════════════════════════════════════════════════════════════════
 
 // ── Navigasjon ─────────────────────────────────────
+// Sider uten tellemerke i menyen. Alle saker lister hver sak, så et tall der
+// sier ikke noe du kan handle på (og telte tidligere bare de avsluttede).
+var NAV_PAGES_WITHOUT_BADGE = ['hjem', 'statistikk', 'innstillinger', 'avsluttet'];
+
+// Ren funksjon — se test/navBadge.test.js.
+function navHasBadge(page) {
+  return NAV_PAGES_WITHOUT_BADGE.indexOf(page) === -1;
+}
+
 function updateNav() {
   // Grupper saker per side i én gjennomgang i stedet for ett filter per fane
   var byPage = { ny: [], viderebehandling: [], fristarkiv: [], avsluttet: [], oppdrag: [] };
@@ -8177,8 +8191,8 @@ function updateNav() {
   document.querySelectorAll('.nav-tab').forEach(function(tab) {
     var page = tab.dataset.page;
     tab.classList.toggle('active', page === activePage);
-    if (page === 'hjem' || page === 'statistikk' || page === 'innstillinger') return;
     var badge = tab.querySelector('.nav-count');
+    if (!navHasBadge(page)) { if (badge) badge.remove(); return; }
     if (!badge) { badge = document.createElement('span'); badge.className = 'nav-count'; tab.appendChild(badge); }
     if (page === 'medlesing') {
       badge.textContent = medlesing.filter(function(m) { return !m.completed; }).length;
@@ -9749,6 +9763,21 @@ function _bkFmtTime(iso) {
   return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + ' kl. ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
 
+// Hva Datamappe-raden skal si når dataene bare ligger i nettleseren. Gir null
+// når en mappe er valgt og tilgang er gitt — da viser raden mappestatusen.
+// Ren funksjon — se test/dataFolderNotice.test.js.
+function dataFolderNotice(supported, dirName, permGranted) {
+  var risk = 'Data lagres kun i nettleseren. Tømmes nettleserdata, er alt borte.';
+  if (!supported) return { warn: true, sub: risk,
+    sub2: 'Denne nettleseren kan ikke lagre til en mappe — eksporter JSON jevnlig.', btn: null };
+  if (!dirName) return { warn: true, sub: risk,
+    sub2: 'Velg en mappe for arbeidsfil og daglige kopier', btn: 'Velg mappe' };
+  if (!permGranted) return { warn: true,
+    sub: 'Tilgang ikke gitt til ' + dirName + ' — data lagres foreløpig kun i nettleseren.',
+    sub2: 'Arbeidsfilen oppdateres når tilgang er gitt', btn: 'Gi tilgang' };
+  return null;
+}
+
 function _bkUpdateSettingsUI() {
   var cb = document.getElementById('backup-enabled-cb');
   if (!cb) return;
@@ -9765,28 +9794,28 @@ function _bkUpdateSettingsUI() {
   }
   var row = document.getElementById('backup-folder-row');
   if (!row) return;
-  if (!_bkFsaSupported()) { row.style.display = 'none'; return; }
   row.style.display = '';
   var sub1 = document.getElementById('backup-folder-sub');
   var sub2 = document.getElementById('backup-folder-sub2');
   var btn  = document.getElementById('btn-backup-folder');
   function setBtn(label) {
-    if (btn) btn.innerHTML = '<svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> ' + label;
+    if (!btn) return;
+    btn.style.display = label ? '' : 'none';
+    if (label) btn.innerHTML = '<svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> ' + label;
   }
-  if (!_bkDirHandle) {
-    if (sub1) sub1.textContent = 'Data lagres kun i nettleseren';
-    if (sub2) sub2.textContent = 'Velg en mappe for arbeidsfil og daglige kopier';
-    setBtn('Velg mappe');
-    return;
+  function show(n) {
+    row.classList.toggle('is-data-risk', !!(n && n.warn));
+    if (!n) return;
+    if (sub1) sub1.textContent = n.sub;
+    if (sub2) sub2.textContent = n.sub2;
+    setBtn(n.btn);
   }
+  if (!_bkFsaSupported() || !_bkDirHandle) { show(dataFolderNotice(_bkFsaSupported(), null, false)); return; }
   var dirName = _bkDirHandle.name;
   _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
-    if (perm !== 'granted') {
-      if (sub1) sub1.textContent = '⚠ Tilgang ikke gitt — ' + dirName;
-      if (sub2) sub2.textContent = 'Arbeidsfilen oppdateres når tilgang er gitt';
-      setBtn('Gi tilgang');
-      return;
-    }
+    var notice = dataFolderNotice(true, dirName, perm === 'granted');
+    show(notice);
+    if (notice) return;
     var wfLast = _lsGet(WORKFILE_LAST_KEY), dayLast = _lsGet(BACKUP_LAST_FILE_KEY);
     if (sub1) sub1.textContent = dirName + (wfLast ? ' — arbeidsfil lagret ' + _bkFmtTime(wfLast) : ' — arbeidsfil ikke skrevet ennå');
     if (sub2) {

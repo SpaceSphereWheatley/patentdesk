@@ -7,6 +7,17 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Fixed
+- «Alle saker» i menyen viser ikke lenger et tall. Merket telte bare de
+  avsluttede sakene, så det sto 1 selv om lista hadde 13 saker.
+
+### Security
+- Datamappe-raden i Innstillinger → Data er et tydelig varsel så lenge dataene
+  bare ligger i nettleseren: tømmes nettleserdata, er alt borte. Varselet
+  gjelder også når tilgangen til mappen ikke er gitt. I nettlesere som ikke kan
+  lagre til en mappe, var raden skjult; nå vises varselet der også, med råd om
+  å eksportere JSON jevnlig.
+
 ## [4.45.1] - 2026-10-30
 
 ### Changed
