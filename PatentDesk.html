@@ -4614,7 +4614,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.45.1';
+var APP_VERSION    = 'v4.46.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4646,6 +4646,7 @@ var CHECKLIST_KEY = 'pt_checklist_tpl';
 
 var CHECKLIST_DEFAULT = [
   { phase: 'Forberedelse', items: [
+    { id: 'formalia-2',     label: 'Formalia 2',                                     type: 'check' },
     { id: 'hent-sant',      label: 'Hent dokumenter fra SANT',                       type: 'check' },
     { id: 'les-soknad',     label: 'Les søknaden (krav, beskrivelse, tegninger)',     type: 'check' },
     { id: 'vesentlige',     label: 'Identifiser vesentlige trekk',                   type: 'check' },

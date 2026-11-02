@@ -138,3 +138,19 @@ test('claimLabelAriaLabel: tom etikett sier at den ikke er satt', () => {
   assert.strictEqual(aria.claimLabelAriaLabel(2, undefined), 'Krav 2 — etikett (ikke satt)');
   assert.strictEqual(aria.claimLabelAriaLabel(2, '   '), 'Krav 2 — etikett (ikke satt)');
 });
+
+// ── Standardmalen ────────────────────────────────────────────────────────────
+
+const { CHECKLIST_DEFAULT } = loadFunctions([], { vars: ['CHECKLIST_DEFAULT'] });
+
+test('CHECKLIST_DEFAULT: Formalia 2 er første punkt i saken', () => {
+  const first = CHECKLIST_DEFAULT[0];
+  assert.strictEqual(checklistGroupPhase(first.phase), 'saken');
+  assert.strictEqual(first.items[0].id, 'formalia-2');
+  assert.strictEqual(first.items[0].label, 'Formalia 2');
+});
+
+test('CHECKLIST_DEFAULT: alle punkt-id-er er unike', () => {
+  const ids = CHECKLIST_DEFAULT.flatMap((g) => g.items.map((i) => i.id));
+  assert.strictEqual(new Set(ids).size, ids.length);
+});
