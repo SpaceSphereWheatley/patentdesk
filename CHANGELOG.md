@@ -7,6 +7,14 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.45.2] - 2026-11-02
+
+### Changed
+- Dempet tekst og gull tekst er mørkere, så de er lesbare: grå hjelpetekst,
+  inaktive menypunkter og etiketter går fra kontrast 2,4 til 4,5, og
+  saksnummer og annen gull tekst fra 3,2 til 4,8 mot bakgrunnen. Knapper,
+  kanter og flater beholder fargene sine.
+
 ### Fixed
 - «Alle saker» i menyen viser ikke lenger et tall. Merket telte bare de
   avsluttede sakene, så det sto 1 selv om lista hadde 13 saker.
