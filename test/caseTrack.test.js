@@ -108,15 +108,15 @@ test('caseTrack: Formalia is always done', () => {
   });
 });
 
-test('caseTrack: Ny — first letter is active, everything after is future', () => {
+test('caseTrack: Ny — the active step is named after the status (as in the menu), everything after is future', () => {
   const c = sak('ny', NY);
   assert.deepStrictEqual(plain(states(c)), ['done', 'active', 'future', 'future']);
-  assert.deepStrictEqual(plain(labels(c)), ['Formalia', '1. brev', 'Svar', 'Avgjørelse']);
+  assert.deepStrictEqual(plain(labels(c)), ['Formalia', 'Ny', 'Svar', 'Avgjørelse']);
 });
 
 test('caseTrack: Fristarkiv — waiting on the applicant, round shown from 2', () => {
-  assert.deepStrictEqual(plain(caseTrack(sak('fristarkiv', R1_SENT))[2]), { label: 'Venter på svar', state: 'wait' });
-  assert.deepStrictEqual(plain(caseTrack(sak('fristarkiv', R2_SENT))[2]), { label: 'Venter på svar · 2', state: 'wait' });
+  assert.deepStrictEqual(plain(caseTrack(sak('fristarkiv', R1_SENT))[2]), { label: 'Fristarkiv', state: 'wait' });
+  assert.deepStrictEqual(plain(caseTrack(sak('fristarkiv', R2_SENT))[2]), { label: 'Fristarkiv · 2', state: 'wait' });
   assert.strictEqual(caseTrack(sak('fristarkiv', R1_SENT))[1].state, 'done');
 });
 
@@ -241,9 +241,14 @@ test('OUTCOMES defines the three decisions with their track states', () => {
 // ── currentTrackSlot ─────────────────────────────────
 
 test('currentTrackSlot picks the step the case is on, for the dashboard mini-track', () => {
-  assert.deepStrictEqual(plain(currentTrackSlot(caseTrack(sak('ny', NY)))), { label: '1. brev', state: 'active' });
-  assert.deepStrictEqual(plain(currentTrackSlot(caseTrack(sak('fristarkiv', R1_SENT)))), { label: 'Venter på svar', state: 'wait' });
+  assert.deepStrictEqual(plain(currentTrackSlot(caseTrack(sak('ny', NY)))), { label: 'Ny', state: 'active' });
+  assert.deepStrictEqual(plain(currentTrackSlot(caseTrack(sak('fristarkiv', R1_SENT)))), { label: 'Fristarkiv', state: 'wait' });
   assert.deepStrictEqual(plain(currentTrackSlot(caseTrack(sak('viderebehandling', R2_REPLY)))), { label: 'Viderebeh. · 3', state: 'caution' });
   assert.deepStrictEqual(plain(currentTrackSlot(caseTrack(sak('avsluttet', [], { outcome: 'avslatt' })))), { label: 'Avslått', state: 'refused' });
   assert.strictEqual(currentTrackSlot(null), null);
+});
+
+test('caseTrack: a done first round keeps its step name, so history still reads as steps', () => {
+  assert.strictEqual(caseTrack(sak('fristarkiv', R1_SENT))[1].label, '1. brev');
+  assert.strictEqual(caseTrack(sak('viderebehandling', R2_REPLY))[1].label, '1. brev');
 });

@@ -7,6 +7,21 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.48.0] - 2026-11-02
+
+### Changed
+- Statusene heter det samme overalt som i menyen. Saksflyten på Oversikt har
+  overskriftene Nye saker, Fristarkiv og Viderebehandling (før 1. brev,
+  Venter på svar og Svarrunder), med en forklaring under: «til 1. brev»,
+  «venter på svar», «svar til behandling». I forløpet heter steget saken står
+  på, det samme som lista den ligger i: Ny, Fristarkiv eller
+  Viderebehandling. Rundenummeret står fortsatt («Fristarkiv · 2»).
+- Blått betyr nå «her kan du gjøre noe», og gull er bare identitet. Knapper
+  som «Marker som fullført», «+ Legg til», JSON og CSV, avkrysningsbokser,
+  felt i fokus, valgt fane og valgt dag i datovelgeren er blå. Logo,
+  saksnummer, CPC-koder, A/B/C-merkene, aktiv sak, i dag-linja og grafene
+  beholder gullfargen.
+
 ## [4.47.0] - 2026-11-02
 
 ### Added
