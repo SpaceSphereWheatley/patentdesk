@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { suggestDocFlags, applicationDatesError, ensureSakDocs } = loadFunctions(
-  ['suggestDocFlags', 'applicationDatesError', 'ensureSakDocs', 'toDisplay'],
+  ['suggestDocFlags', 'applicationDatesError', 'ensureSakDocs', 'claimDocSelectable', 'toDisplay'],
   { vars: ['MAX_INVENTIVE_DOCS'] }
 );
 

@@ -7,6 +7,20 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.51.1] - 2026-11-02
+
+### Fixed
+- E-dokumenter (eldre søknader) kan ikke lenger brukes mot
+  oppfinnelseshøyden. De teller bare for nyhet, jf. patentloven § 2 tredje
+  ledd. Velgeren for oppfinnelseshøyde viser dem ikke, eksisterende
+  koblinger ryddes bort når saken åpnes eller dokumentet merkes E, og
+  granskingsrapporten kan ikke lenger vise «E,Y» eller «E,X» for
+  oppfinnelseshøyde. Som nyhetsmothold («E,X») fungerer de som før.
+- Et krav uten nyhet regnes nå alltid som uten oppfinnelseshøyde, også når
+  lagrede data (f.eks. importerte) sier noe annet. Regelen ligger nå i én
+  felles funksjon, så tabell, sammendrag, fremdrift og rapport alltid er
+  enige.
+
 ## [4.51.0] - 2026-11-02
 
 ### Added

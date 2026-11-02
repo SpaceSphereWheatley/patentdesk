@@ -4735,7 +4735,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.51.0';
+var APP_VERSION    = 'v4.51.1';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -7798,8 +7798,9 @@ function _dispatch(action, payload) {
       doc[payload.field] = isText                  ? sanitizeText(payload.value)
                          : isDate                  ? String(payload.value || '')
                          : !!payload.value;
-      // Bakgrunnsmothold kan ikke være X eller Y — rydd bort kravsreferansene
-      if (payload.field === 'background' && doc.background) ensureSakDocs(data);
+      // Bakgrunnsmothold kan ikke være X eller Y, og E-dokumenter ikke Y/X for
+      // oppfinnelseshøyde — rydd bort kravsreferansene
+      if ((payload.field === 'background' || payload.field === 'e') && doc[payload.field]) ensureSakDocs(data);
       saveSakData(payload.id, data);
       // Referansen skrives i feltet som allerede står i DOM-en; å tegne lista
       // på nytt midt i redigeringen ville flyttet markøren.
@@ -7817,7 +7818,7 @@ function _dispatch(action, payload) {
       ensureSakDocs(data);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
       if (!claim) break;
-      toggleClaimDoc(claim, payload.field, payload.docId);
+      toggleClaimDoc(claim, payload.field, payload.docId, data.docs);
       // Nyhet tar nøyaktig ett mothold, så velgeren lukkes etter valget
       if (payload.field === 'novelty') _sakOpenDocPop = null;
       saveSakData(payload.id, data);
@@ -10737,8 +10738,11 @@ function getClaimCascadeValue(claims, claimNum, field) {
   return true;
 }
 
-// Effektiv verdi for et krav (lagret verdi prioriteres, ellers cascade)
+// Effektiv verdi for et krav (lagret verdi prioriteres, ellers cascade).
+// Et krav uten nyhet er alltid låst til ingen oppfinnelseshøyde — regelen
+// bor her, så ingen kaller trenger å lappe rundt inkonsistent lagret data.
 function effectiveClaimValue(claims, claim, field) {
+  if (field === 'inventive' && effectiveClaimValue(claims, claim, 'novelty') === false) return false;
   if (claim[field] !== null) return claim[field];
   return getClaimCascadeValue(claims, claim.num, field);
 }
@@ -10748,6 +10752,15 @@ function effectiveClaimValue(claims, claim, field) {
 // noveltyDoc på det ene motholdet som tar nyheten, og inventiveDocs på det
 // ene eller de to som til sammen tar oppfinnelseshøyden.
 var MAX_INVENTIVE_DOCS = 2;
+
+// Motholdene som kan velges for nyhet eller oppfinnelseshøyde. Bakgrunns-
+// mothold er aldri X/Y. E-dokumenter (eldre søknader) teller bare for nyhet,
+// jf. patentloven § 2 tredje ledd — aldri mot oppfinnelseshøyden.
+function claimDocSelectable(docs, field) {
+  return (docs || []).filter(function(d) {
+    return !d.background && !(field === 'inventive' && d.e);
+  });
+}
 
 function nextDocId(docs) { return 'D' + ((docs || []).length + 1); }
 
@@ -10898,13 +10911,14 @@ function ensureSakDocs(data) {
              pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
              p: !!d.p, e: !!d.e, background: !!d.background };
   });
-  var selectable = {};
-  data.docs.forEach(function(d) { if (!d.background) selectable[d.id] = true; });
+  var forNovelty = {}, forInventive = {};
+  claimDocSelectable(data.docs, 'novelty').forEach(function(d) { forNovelty[d.id] = true; });
+  claimDocSelectable(data.docs, 'inventive').forEach(function(d) { forInventive[d.id] = true; });
   (data.claims || []).forEach(function(c) {
-    if (!selectable[c.noveltyDoc]) c.noveltyDoc = null;
+    if (!forNovelty[c.noveltyDoc]) c.noveltyDoc = null;
     var seen = {};
     c.inventiveDocs = (Array.isArray(c.inventiveDocs) ? c.inventiveDocs : []).filter(function(x) {
-      if (!selectable[x] || seen[x]) return false;
+      if (!forInventive[x] || seen[x]) return false;
       seen[x] = true;
       return true;
     }).slice(0, MAX_INVENTIVE_DOCS);
@@ -10938,7 +10952,11 @@ function removeDocAt(docs, claims, idx) {
 // Velger/fravelger et mothold på et krav. Nyhet tar nøyaktig ett; klikk på
 // et annet erstatter, klikk på samme fjerner. Oppfinnelseshøyde tar inntil
 // MAX_INVENTIVE_DOCS — valg utover grensen ignoreres.
-function toggleClaimDoc(claim, field, docId) {
+function toggleClaimDoc(claim, field, docId, docs) {
+  if (field === 'inventive' && docs) {
+    var picked = docs.find(function(d) { return d.id === docId; });
+    if (picked && picked.e) return claim; // E teller bare for nyhet
+  }
   if (field === 'novelty') {
     claim.noveltyDoc = (claim.noveltyDoc === docId) ? null : docId;
     return claim;
@@ -10964,6 +10982,8 @@ function claimDocCategory(claims, claim, doc) {
   // Motsatt: et krav som har fått nyhet/OH tilbake beholder det lagrede
   // motholdet, men det skal ikke telle før vurderingen igjen er ✗.
   if (effInventive !== false) return 'A';
+  // E-dokumenter kan ikke brukes mot oppfinnelseshøyden (§ 2 tredje ledd).
+  if (doc.e) return 'A';
   var inv = claim.inventiveDocs || [];
   if (inv.indexOf(doc.id) === -1) return 'A';
   return inv.length > 1 ? 'Y' : 'X';
@@ -12117,10 +12137,12 @@ function claimDocChipHtml(data, c, field, effNovelty) {
 
 function claimDocPopHtml(data, c, field, ids) {
   var isNovelty  = field === 'novelty';
-  var selectable = (data.docs || []).filter(function(d) { return !d.background; });
+  var selectable = claimDocSelectable(data.docs, field);
   if (!selectable.length) {
+    var onlyE = !isNovelty && claimDocSelectable(data.docs, 'novelty').length > 0;
     return '<span class="doc-pop"><span class="doc-pop-hint" style="border-top:none;margin-top:0;">' +
-      'Ingen mothold registrert ennå.</span></span>';
+      (onlyE ? 'E-dokumenter teller bare for nyhet, ikke for oppfinnelseshøyde.'
+             : 'Ingen mothold registrert ennå.') + '</span></span>';
   }
   var opts = selectable.map(function(d) {
     var on   = ids.indexOf(d.id) !== -1;
