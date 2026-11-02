@@ -7,6 +7,36 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.47.0] - 2026-11-02
+Motholdene kan nå hente datoer og tittel fra EPO sin Open Patent Services
+(OPS), og har fått tilbake et tittelfelt.
+
+### Added
+- **Hent datoer og tittel fra OPS.** En ⤓-knapp ved siden av Espacenet-lenken
+  på hvert mothold henter tre ting fra OPS. Deretter regnes P/E-forslagene ut
+  som før.
+  - Publiseringsdatoen.
+  - Motholdets egen dato: tidligste prioritet, ellers inngivelsesdatoen.
+  - Tittelen: den engelske når den finnes, ellers den første. Teksten står slik
+    OPS leverer den, ofte med store bokstaver.
+  - Bare tomme felt fylles. En dato eller tittel du har ført inn selv, blir
+    aldri overskrevet. Er OPS uenig, sier meldingen det, for eksempel «OPS sier
+    publisert 2016.10.27, du har 2016.10.28 — ikke endret».
+  - Har nummeret flere publiseringer (A1, B1 …), brukes den med samme
+    kind-kode som i referansen, ellers den første.
+  - Knappen er grå når referansen ikke er et publikasjonsnummer, eller når
+    nøklene mangler. Verktøytipset sier hvorfor.
+  - Feil som ukjent nummer, avviste nøkler, brukt kvote og manglende nett gir
+    en kort melding, og feltene blir ikke rørt.
+- **Tittel på motholdene.** Hvert mothold har igjen et tittelfelt, nå på en egen
+  linje under datoene. Det fylles av ⤓, eller du kan skrive i det selv. Lange
+  titler kuttes med «…», og hele tittelen vises når du holder musen over.
+  Tittelen er ikke med i teksten «Kopier rapport» gir.
+- **EPO OPS i Innstillinger.** Under Saksbehandling er det en ny seksjon for
+  consumer key og secret fra EPO, med en knapp som tester tilkoblingen.
+  Nøklene lagres bare i denne nettleseren. De tas ikke med i eksport, backup
+  eller arbeidsfil, men fjernes av «Slett alle data».
+
 ## [4.46.0] - 2026-11-02
 
 ### Added
