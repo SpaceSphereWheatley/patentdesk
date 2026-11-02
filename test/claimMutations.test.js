@@ -3,8 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
-const { isValidDep, applyDepChange, migrateClaimNotes, triAriaLabel } = loadFunctions(
-  ['isValidDep', 'applyDepChange', 'migrateClaimNotes', 'triAriaLabel']
+const { isValidDep, applyDepChange, nearestIndependentClaim, migrateClaimNotes, triAriaLabel } = loadFunctions(
+  ['isValidDep', 'applyDepChange', 'nearestIndependentClaim', 'migrateClaimNotes', 'triAriaLabel']
 );
 
 // Bygger et kravsett slik defaultSakData gjør det, men kompakt.
@@ -52,11 +52,11 @@ test('applyDepChange: setter dep og markerer kravet som manuelt', () => {
   assert.strictEqual(cs[1].depManual, true);
 });
 
-test('applyDepChange: null nullstiller depManual (kravet blir selvstendig)', () => {
+test('applyDepChange: null gjør kravet selvstendig og låser det mot kaskader', () => {
   const cs = claims([{}, { dep: 1, depManual: true }, {}]);
   applyDepChange(cs, 2, null);
   assert.strictEqual(cs[1].dep, null);
-  assert.strictEqual(cs[1].depManual, false);
+  assert.strictEqual(cs[1].depManual, true);
 });
 
 test('applyDepChange: kaskaderer til etterfølgende auto-krav', () => {
@@ -65,10 +65,42 @@ test('applyDepChange: kaskaderer til etterfølgende auto-krav', () => {
   assert.deepStrictEqual(cs.map((c) => c.dep), [null, 1, 1, 1]);
 });
 
+test('applyDepChange: etterfølgende krav peker på nærmeste selvstendige krav, ikke kravet over', () => {
+  const cs = claims([{}, { dep: 1 }, { dep: 1 }, { dep: 1 }, { dep: 1 }]);
+  applyDepChange(cs, 3, 2);
+  assert.deepStrictEqual(cs.map((c) => c.dep), [null, 1, 2, 1, 1]);
+});
+
+test('applyDepChange: et krav som gjøres selvstendig blir forelder for kravene under', () => {
+  const cs = claims([{}, { dep: 1 }, { dep: 1 }, { dep: 1 }, { dep: 1 }]);
+  applyDepChange(cs, 3, null);
+  assert.deepStrictEqual(cs.map((c) => c.dep), [null, 1, null, 3, 3]);
+});
+
+test('applyDepChange: kaskaden stopper ved et selvstendig krav brukeren har satt', () => {
+  const cs = claims([{}, { dep: 1 }, { dep: 1 }, { dep: 1 }, { dep: 1 }, { dep: 1 }]);
+  applyDepChange(cs, 4, null);   // krav 4 selvstendig → 5, 6 peker på 4
+  applyDepChange(cs, 2, null);   // krav 2 selvstendig → 3 peker på 2, men 4 består
+  assert.deepStrictEqual(cs.map((c) => c.dep), [null, null, 2, null, 4, 4]);
+});
+
 test('applyDepChange: kaskaden stopper ved første manuelt satte krav', () => {
   const cs = claims([{}, {}, {}, { dep: 2, depManual: true }, {}]);
   applyDepChange(cs, 2, 1);
   assert.deepStrictEqual(cs.map((c) => c.dep), [null, 1, 1, 2, null]);
+});
+
+// ── nearestIndependentClaim ────────────────────────
+
+test('nearestIndependentClaim: finner nærmeste selvstendige krav før posisjonen', () => {
+  const cs = claims([{}, { dep: 1 }, {}, { dep: 3 }, { dep: 4 }]);
+  assert.strictEqual(nearestIndependentClaim(cs, 5), 3);
+  assert.strictEqual(nearestIndependentClaim(cs, 2), 1);
+});
+
+test('nearestIndependentClaim: null når det ikke finnes noe krav før', () => {
+  assert.strictEqual(nearestIndependentClaim([], 0), null);
+  assert.strictEqual(nearestIndependentClaim(claims([{}]), 0), null);
 });
 
 test('applyDepChange: returnerer kravnumrene som faktisk ble endret', () => {
@@ -144,4 +176,23 @@ test('triAriaLabel: arvet verdi sier at den er arvet', () => {
 test('triAriaLabel: låsing har forrang over arv', () => {
   assert.strictEqual(triAriaLabel(4, 'inventive', false, true, true),
     'Krav 4 — oppfinnelseshøyde: nei (låst, krav mangler nyhet)');
+});
+
+// ── ensureClaims: nye krav ─────────────────────────
+
+const { ensureClaims } = loadFunctions(['ensureClaims', 'nearestIndependentClaim']);
+
+test('ensureClaims: nye krav avhenger av krav 1 som standard', () => {
+  const d = ensureClaims({ numClaims: 4, claims: [] });
+  assert.deepStrictEqual(d.claims.map((c) => c.dep), [null, 1, 1, 1]);
+  assert.ok(d.claims.every((c) => c.depManual === false));
+});
+
+test('ensureClaims: nye krav peker på nærmeste selvstendige krav, ikke kravet over', () => {
+  const d = ensureClaims({ numClaims: 3, claims: [] });
+  d.claims[1].dep = null;           // krav 2 selvstendig
+  d.claims[2].dep = 1;              // krav 3 avhenger av krav 1
+  d.numClaims = 5;
+  ensureClaims(d);
+  assert.deepStrictEqual(d.claims.map((c) => c.dep), [null, null, 1, 2, 2]);
 });
