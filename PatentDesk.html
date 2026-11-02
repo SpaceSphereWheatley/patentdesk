@@ -1372,9 +1372,6 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .home-card-forfalt { border-left: 3px solid var(--danger); border-radius: 0 var(--radius) var(--radius) 0; }
 .home-card-forfalt .home-card-label     { color: var(--danger); }
 .home-card-value-forfalt                { color: var(--danger); }
-.home-card-fridag { border-left: 3px solid var(--vacation-color); border-radius: 0 var(--radius) var(--radius) 0; }
-.home-card-fridag .home-card-label      { color: var(--vacation-color); }
-.home-card-fridag .home-card-value      { color: var(--vacation-color); }
 
 /* Statskort-grid — 3 kolonner under saksflyten */
 .home-stat-grid {
@@ -1423,12 +1420,17 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .home-section       { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-5); }
 .home-section-title { font-family: var(--font-head); font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--muted-text); letter-spacing: var(--tracking-wide); }
 
-/* Belegg-linje */
-.home-belegg-line {
-  display: flex; align-items: center; gap: var(--space-2);
-  font-size: var(--text-xs); color: var(--muted-text); padding: var(--space-1) 2px; margin-top: var(--space-1);
-}
-.home-belegg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--muted); }
+/* Belegg-kort: søylen viser 100 % som et merke; det som går over, er et eget, skravert felt */
+.home-card-belegg { border-left: 3px solid var(--border2); border-radius: 0 var(--radius) var(--radius) 0; }
+.belegg-bar       { position: relative; display: flex; height: 6px; margin: var(--space-3) 0 var(--space-2); border-radius: 3px; background: var(--border); }
+.belegg-bar-fill  { height: 100%; border-radius: 3px; background: var(--belegg-low); }
+.belegg-bar-over  { height: 100%; border-radius: 0 3px 3px 0;
+                    background: repeating-linear-gradient(135deg, var(--danger) 0 4px, var(--badge-overdue-text) 4px 8px); }
+.belegg-bar-mark  { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text); opacity: .45; }
+.belegg-over      { color: var(--danger); font-weight: var(--weight-medium); }
+/* Neste fridag: liten linje under kortene */
+.home-fridag-line { font-size: var(--text-sm); color: var(--muted-text); padding: 0 2px; margin-top: var(--space-3); }
+.home-fridag-line strong { color: var(--text); font-weight: var(--weight-semibold); }
 
 
 .home-upcoming { display: flex; flex-direction: column; gap: var(--space-2); }
@@ -1476,6 +1478,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .home-upcoming-title { flex: 1; font-size: var(--text-sm); color: var(--text); min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .home-upcoming-row .days-badge { width: 80px; flex-shrink: 0; text-align: center; }
 .home-upcoming-row .trk-mini   { margin-left: auto; }
+.case-card .trk-mini           { margin-left: auto; }
 .home-upcoming-row .vac-badge  { flex-shrink: 0; }
 .home-empty          { color: var(--muted-text); font-size: var(--text-sm); padding: var(--space-3) 0; }
 
@@ -2209,6 +2212,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .cpc-home-notice { display:flex; align-items:center; gap: var(--space-4); padding: var(--space-3) var(--space-5);
   background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); font-size: var(--text-sm); color:var(--muted-text); }
 .cpc-home-notice button { margin-left: auto; }
+.cpc-home-notice .cpc-notice-dismiss { margin-left: calc(-1 * var(--space-2)); display: inline-flex; padding: 4px; border: none; border-radius: var(--radius);
+  background: none; color: var(--muted-text); cursor: pointer; }
+.cpc-home-notice .cpc-notice-dismiss:hover { background: var(--border); color: var(--text); }
 .cpc-load-banner { display:flex; align-items:center; gap: var(--space-4); padding: var(--space-3) var(--space-4);
   background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius);
   margin-bottom: var(--space-4); }
@@ -3093,18 +3099,19 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <div class="home-card-value" id="home-count-oppdrag">—</div>
             <div class="home-card-sub">aktive oppdrag</div>
           </div>
-          <div class="home-card home-card-fridag" id="home-card-fridag">
-            <div class="home-card-label">Dager til fridag</div>
-            <div class="home-card-value" id="home-count-fridag">—</div>
-            <div class="home-card-sub" id="home-fridag-sub">—</div>
+          <div class="home-card home-card-belegg" id="home-card-belegg">
+            <div class="home-card-label">Belegg · <span id="belegg-horizon">neste 60 dager</span></div>
+            <div class="home-card-value" id="belegg-pct">—</div>
+            <div class="belegg-bar" id="belegg-bar" aria-hidden="true">
+              <span class="belegg-bar-fill" id="belegg-bar-fill"></span><span class="belegg-bar-over" id="belegg-bar-over"></span><span class="belegg-bar-mark" id="belegg-bar-mark" title="100 %"></span>
+            </div>
+            <div class="home-card-sub" id="belegg-sub"></div>
           </div>
         </div>
 
-        <!-- Belegg-linje under statskortene -->
-        <div class="home-belegg-line" id="home-belegg-strip">
-          <span class="home-belegg-dot" id="belegg-arc"></span>
-          Belegg: <strong id="belegg-pct">—</strong> denne perioden
-          <span class="home-belegg-sub" id="belegg-sub"></span>
+        <!-- Neste fridag: én linje under statskortene -->
+        <div class="home-fridag-line" id="home-fridag-line" hidden>
+          <span id="home-fridag-lead"></span> · <span id="home-fridag-sub"></span>
         </div>
 
         <section class="home-section" id="home-frister">
@@ -8779,6 +8786,14 @@ function trackHtml(c, mini) {
   return '<div class="trk" role="group" aria-label="Forløp: ' + esc(cur.label) + '">' + slots.map(trackStepHtml).join('') + '</div>';
 }
 
+// Sakslister med én status viser det kompakte forløpet (som på Oversikt), så
+// tittelen får plassen; rundenummeret står fortsatt i etiketten. Alle saker
+// beholder hele forløpet, for der er statusene ulike fra rad til rad.
+// Ren funksjon — se test/listTrack.test.js.
+function listTrackMini(page) {
+  return ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag'].indexOf(page) !== -1;
+}
+
 // ── Felles kortliste-renderer ──────────────────────
 function renderCaseList(sorted, opts, listEl, emptyEl) {
   var filter      = opts.filter || null;
@@ -8831,7 +8846,7 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
       unassignedPillHtml(c) +
       postponePillHtml(c) +
       medlPillHtml(c) +
-      trackHtml(c, false) +
+      trackHtml(c, listTrackMini(activePage)) +
       '<div class="case-card-menu">' +
         '<button class="btn-card-hist" data-id="' + c.id + '" title="Historikk" aria-label="Historikk">⏱</button>' +
         '<button class="btn-card-more" data-id="' + c.id + '" title="Mer" aria-label="Flere handlinger">⋯</button>' +
@@ -10149,24 +10164,48 @@ function computeBelegg(horizonDays) {
            potentialBusy: potentialBusy, potentialPct: potentialPct };
 }
 
+// Belegg-søylen i prosent av sin egen bredde. Over 100 % vokser skalaen, så
+// det som går over kapasiteten, blir et eget felt etter 100 %-merket; skalaen
+// stopper på 200 % så merket ikke krymper bort. overPct er alltid det sanne
+// overskuddet. Ren funksjon — se test/beleggBar.test.js.
+function beleggBar(pct) {
+  var p = (typeof pct === 'number' && isFinite(pct) && pct > 0) ? pct : 0;
+  var scale = Math.min(Math.max(p, 100), 200);
+  var fill  = Math.round(Math.min(p, 100) / scale * 100);
+  var over  = p > 100 ? 100 - fill : 0;
+  return { fill: fill, over: over, mark: Math.round(100 / scale * 100), overPct: Math.max(p - 100, 0) };
+}
+
 function renderBeleggCard() {
   var res   = computeBelegg(beleggHorizon);
   var pct   = res.pct1;
   var pct2  = res.pct2;
-  var dot   = document.getElementById('belegg-arc');
+  var card  = document.getElementById('home-card-belegg');
   var pctEl = document.getElementById('belegg-pct');
   var subEl = document.getElementById('belegg-sub');
   if (!pctEl || !subEl) return;
 
   var color = pct < 60 ? 'var(--belegg-low)' : pct < 80 ? 'var(--belegg-mid)' : 'var(--danger)';
-  if (dot) dot.style.background = color;
+  if (card) card.style.borderLeftColor = color;
   pctEl.textContent = pct + '%';
   pctEl.style.color = color;
+  var hzEl = document.getElementById('belegg-horizon');
+  if (hzEl) hzEl.textContent = 'neste ' + beleggHorizon + ' dager';
+
+  var bar = beleggBar(pct);
+  var fillEl = document.getElementById('belegg-bar-fill');
+  var overEl = document.getElementById('belegg-bar-over');
+  var markEl = document.getElementById('belegg-bar-mark');
+  if (fillEl) { fillEl.style.width = bar.fill + '%'; fillEl.style.background = color;
+                fillEl.style.borderRadius = bar.over ? '3px 0 0 3px' : '3px'; }
+  if (overEl) overEl.style.width = bar.over + '%';
+  if (markEl) markEl.style.left = bar.mark + '%';
 
   var diff = pct2 - pct;
   var arrow = diff > 2 ? '↑' : diff < -2 ? '↓' : '→';
   var cls2  = diff > 2 ? 'belegg-sub-up' : diff < -2 ? 'belegg-sub-down' : 'belegg-sub-same';
-  subEl.innerHTML = '&nbsp;·&nbsp;<span class="' + cls2 + '">' + arrow + ' ' + pct2 + '%</span> neste periode' +
+  subEl.innerHTML = (bar.overPct ? '<span class="belegg-over">' + bar.overPct + ' % over kapasitet</span>&nbsp;·&nbsp;' : '') +
+    '<span class="' + cls2 + '">' + arrow + ' ' + pct2 + '%</span> neste periode' +
     (res.potentialPct > 0
       ? '&nbsp;·&nbsp;<span class="belegg-potential" title="Saker du har meldt deg på, men ikke fått fordelt ennå">+' + res.potentialPct + '% hvis du får de ikke-fordelte</span>'
       : '');
@@ -11226,9 +11265,18 @@ function _cpcSetLoaded() {
   _cpcUpdateSettingsStatus();
 }
 
+var CPC_NOTICE_DISMISSED_KEY = 'pt_cpc_notice_dismissed';
+
+// Banneret på Oversikt vises mens CPC-databasen mangler, til du lukker det.
+// Innlasting ligger fortsatt i Innstillinger. Ren funksjon — se test/cpcNotice.test.js.
+function shouldShowCpcNotice(loaded, dismissed) {
+  return !loaded && !dismissed;
+}
+
 function _cpcShowNotice() {
   var notice = document.getElementById('cpc-home-notice');
   if (!notice) return;
+  if (!shouldShowCpcNotice(false, _lsGet(CPC_NOTICE_DISMISSED_KEY) === '1')) { notice.style.display = 'none'; return; }
   notice.className = 'cpc-home-notice';
   notice.innerHTML =
     '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" class="cpc-notice-icon">' +
@@ -11237,8 +11285,14 @@ function _cpcShowNotice() {
       '<circle cx="8" cy="11.5" r="0.8" fill="currentColor"/>' +
     '</svg>' +
     '<span>CPC-databasen er ikke lastet. Autofullfør for klasser er ikke tilgjengelig.</span>' +
-    '<button class="cpc-load-banner-btn" id="btn-cpc-notice-load">Last inn</button>';
+    '<button class="cpc-load-banner-btn" id="btn-cpc-notice-load">Last inn</button>' +
+    '<button type="button" class="cpc-notice-dismiss" id="btn-cpc-notice-dismiss" title="Skjul — CPC-databasen lastes inn under Innstillinger → Saksbehandling" aria-label="Skjul varselet">' +
+      '<svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>';
   notice.style.display = 'flex';
+  document.getElementById('btn-cpc-notice-dismiss').addEventListener('click', function() {
+    _lsSet(CPC_NOTICE_DISMISSED_KEY, '1');
+    _cpcHideNotice();
+  });
   document.getElementById('btn-cpc-notice-load').addEventListener('click', function() {
     document.getElementById('cpc-file-input').click();
   });
@@ -12791,12 +12845,14 @@ function renderHjem() {
   if (forfaltCard) forfaltCard.classList.toggle('home-card-overdue-active', due.total > 0);
   renderHomeDock(due);
 
-  // ── Dager til fridag-kort ──────────────────────────
-  var elFridag    = document.getElementById('home-count-fridag');
-  var elFridagSub = document.getElementById('home-fridag-sub');
-  var nextHoliday = getNextHoliday();
-  if (nextHoliday && elFridag && elFridagSub) {
-    elFridag.textContent = nextHoliday.days === 0 ? 'I dag' : String(nextHoliday.days);
+  // ── Neste fridag-linje ─────────────────────────────
+  var elFridagLine = document.getElementById('home-fridag-line');
+  var elFridagLead = document.getElementById('home-fridag-lead');
+  var elFridagSub  = document.getElementById('home-fridag-sub');
+  var nextHoliday  = getNextHoliday();
+  if (elFridagLine) elFridagLine.hidden = !nextHoliday;
+  if (nextHoliday && elFridagLead && elFridagSub) {
+    elFridagLead.innerHTML = fridagLead(nextHoliday.days);
     var hd = new Date(nextHoliday.date + 'T00:00:00');
     elFridagSub.textContent = hd.toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' }) + ' · ' + nextHoliday.label;
   }
@@ -12811,6 +12867,14 @@ function renderHjem() {
 // ── Fristlista på Oversikt ─────────────────────────
 // Én liste sortert etter frist. Hva som er med, styres av homeDeadlineFilter
 // (se selectHomeDeadlines); forfalte står i rødt der de er i lista.
+// Starten på fridag-linja på Oversikt (HTML, tallet i fet skrift).
+// Ren funksjon — se test/beleggBar.test.js.
+function fridagLead(days) {
+  if (days === 0) return 'Fridag i dag';
+  if (days === 1) return 'Neste fridag i morgen';
+  return 'Neste fridag om <strong>' + days + ' dager</strong>';
+}
+
 function renderHomeDeadlines() {
   var list    = document.getElementById('home-upcoming-list');
   var countEl = document.getElementById('home-dl-count');
