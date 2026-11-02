@@ -94,12 +94,65 @@ These two stores have distinct responsibilities. Do not conflate them.
 
 ---
 
+## Agent team workflow
+
+Development is done by a team of subagents defined in `.claude/agents/`. The
+main session is the **orchestrator**: it routes work between agents, passes
+each one only the inputs listed below, and brings decisions to the owner. The
+**owner** (the user) is project manager and has the final say.
+
+| Agent | Role | Writes | Model |
+|---|---|---|---|
+| `spec` | Intent → requirements + acceptance criteria; pushes back on scope | nothing (reports) | opus |
+| `architect` | Structural decisions before code: data, migrations, function boundaries | nothing (reports) | opus |
+| `qa` | Writes tests from the spec **before** building; reviews the diff after | `test/` only | opus |
+| `builder` | Implements until QA's tests pass | `PatentDesk.html` | opus |
+| `ux-critic` | Mockups before UI changes; reviews built screens | scratchpad mockups | sonnet |
+| `security` | Reviews XSS, imports/exports, storage, confidential data | nothing (reports) | opus |
+| `docs` | Version bump, CHANGELOG, README/CLAUDE.md sync at release | docs + `APP_VERSION` | sonnet |
+
+### Tiers
+The orchestrator picks a tier (spec confirms it for Feature/Structural); the
+owner can override.
+
+- **Fix** — a bug or small logic change, no UI or stored-data change.
+  `qa` (test reproducing the bug) → `builder` → `qa` (review).
+- **Feature** — new or changed behaviour, possibly UI.
+  `spec` → ⏸ owner approves spec → `ux-critic` mockup (if UI) → ⏸ owner
+  approves mockup → `qa` (tests) → `builder` → `qa` review + `ux-critic`
+  review (if UI) + `security` (if triggered) → ⏸ owner approves.
+- **Structural** — new stored data, `SCHEMA_VERSION` bump, import/export
+  format, or a change across many functions.
+  As Feature, with `architect` after the spec is approved (⏸ owner approves
+  the design), and `security` always reviews.
+
+`docs` runs once per release, after the owner approves, not per change.
+
+### Security triggers
+Call `security` whenever a change touches: rendering of user-entered,
+pasted or imported text (`innerHTML`, attributes); import, export or paste
+parsing; localStorage/IndexedDB writes or migrations; or anything that adds
+network access or dynamic code.
+
+### Rules for the orchestrator
+- **Independence.** `qa`, `ux-critic` and `security` get the spec, the
+  acceptance criteria and the diff — never the builder's reasoning or
+  summary. The builder never edits tests; if a test looks wrong, it goes
+  back to `qa` and the owner.
+- **Loop limit.** If `qa` returns CHANGES REQUIRED, send the findings to
+  `builder` and re-review. After two rounds without PASS, stop and bring it
+  to the owner.
+- **Disagreements** between agents (e.g. spec vs. UX, QA vs. builder) go to
+  the owner with both positions, not resolved silently.
+- **Owner gates** (⏸) are real stops: wait for the owner's answer.
+- Keep handoffs short: each agent gets the minimum context it needs.
+
 ## Working conventions
 
 ### Before any UI change
-Always present a **visual mockup** and wait for approval before reading or
-editing the file. For logic-only changes with no visual component, skip the
-mockup and proceed directly.
+Always present a **visual mockup** (produced by `ux-critic`) and wait for
+approval before editing the file. For logic-only changes with no visual
+component, skip the mockup and proceed directly.
 
 ### When the file is uploaded
 Treat the uploaded file as ground truth. Previously delivered changes may not
@@ -114,7 +167,8 @@ be present in a re-uploaded file — re-apply as needed. Always grep
 
 ### Test first
 Every new change — bug fix, new logic, refactor of a pure function — must
-come with a test before (or alongside) the implementation. Add or update a
+come with a test before the implementation. The `qa` agent writes these
+tests from the spec; the builder does not. Add or update a
 test in `test/*.test.js` using the `loadFunctions` harness
 (`test/extractFunctions.js`) that exercises the new/changed behavior, and run
 `npm test` before considering the change done. UI-only/render code with no
@@ -141,4 +195,5 @@ asked.
 | `PatentDesk.html` | The entire application |
 | `CHANGELOG.md` | Version history (Keep a Changelog 1.1.0 format) |
 | `CLAUDE.md` | These instructions |
+| `.claude/agents/*.md` | Agent team definitions (see Agent team workflow) |
 | `cpc_v2.json` | CPC classification data (external, loaded into IndexedDB) |
