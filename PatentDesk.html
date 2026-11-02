@@ -4621,7 +4621,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.45.2';
+var APP_VERSION    = 'v4.46.1';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4653,6 +4653,7 @@ var CHECKLIST_KEY = 'pt_checklist_tpl';
 
 var CHECKLIST_DEFAULT = [
   { phase: 'Forberedelse', items: [
+    { id: 'formalia-2',     label: 'Formalia 2',                                     type: 'check' },
     { id: 'hent-sant',      label: 'Hent dokumenter fra SANT',                       type: 'check' },
     { id: 'les-soknad',     label: 'Les søknaden (krav, beskrivelse, tegninger)',     type: 'check' },
     { id: 'vesentlige',     label: 'Identifiser vesentlige trekk',                   type: 'check' },
@@ -10289,7 +10290,7 @@ function defaultSakData(numClaims) {
   });
   var claims = [];
   for (var i = 1; i <= n; i++) {
-    var prevDep = (i > 1 && claims.length) ? claims[claims.length-1].dep : null; claims.push({ num: i, novelty: null, inventive: null, formal: null, notes: '', independent: false, dep: i === 1 ? null : prevDep, depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] });
+    claims.push({ num: i, novelty: null, inventive: null, formal: null, notes: '', independent: false, dep: nearestIndependentClaim(claims, claims.length), depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] });
   }
   return { numClaims: n, filingDate: '', priorityDate: '', checklist: checklist, classes: [], docs: [], claims: claims };
 }
@@ -10299,7 +10300,7 @@ function ensureClaims(data) {
   if (!Array.isArray(data.claims)) data.claims = [];
   while (data.claims.length < n) {
     var i = data.claims.length + 1;
-    var prevDep2 = (i > 1 && data.claims.length) ? data.claims[data.claims.length-1].dep : null; data.claims.push({ num: i, novelty: null, inventive: null, formal: null, notes: '', independent: false, dep: i === 1 ? null : prevDep2, depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] });
+    data.claims.push({ num: i, novelty: null, inventive: null, formal: null, notes: '', independent: false, dep: nearestIndependentClaim(data.claims, data.claims.length), depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] });
   }
   if (data.claims.length > n) data.claims = data.claims.slice(0, n);
   return data;
@@ -10312,19 +10313,33 @@ function isValidDep(claimNum, val) {
   return typeof val === 'number' && !isNaN(val) && val >= 1 && val < claimNum;
 }
 
+// Nummeret på nærmeste selvstendige krav (dep === null) før posisjon idx i
+// claims, eller null hvis det ikke finnes noe. Brukes som standardavhengighet:
+// et nytt eller kaskadert krav henger på det selvstendige kravet det står
+// under, ikke på kravet rett over. Ren funksjon — se test/claimMutations.test.js.
+function nearestIndependentClaim(claims, idx) {
+  for (var i = Math.min(idx, claims.length) - 1; i >= 0; i--) {
+    if (claims[i] && claims[i].dep === null) return claims[i].num;
+  }
+  return null;
+}
+
 // Setter avhengigheten på ett krav og lar den renne nedover til etterfølgende
 // krav som ikke er satt manuelt — kravsett er som regel skrevet slik at en
 // hel hale av uselvstendige krav henger på det samme selvstendige kravet.
-// Muterer claims og returnerer kravnumrene som faktisk ble endret.
+// Kravene i halen peker på nærmeste selvstendige krav over seg, ikke på
+// kravet over. Et krav brukeren setter (også til selvstendig) er manuelt og
+// stopper kaskaden, slik at et nytt kravsett ikke viskes ut av en endring
+// lenger opp. Muterer claims og returnerer kravnumrene som ble berørt.
 function applyDepChange(claims, claimNum, val) {
   var idx = claims.findIndex(function(c) { return c.num === claimNum; });
   if (idx < 0) return [];
   var touched = [claimNum];
   claims[idx].dep = val;
-  claims[idx].depManual = (val !== null);
+  claims[idx].depManual = true;
   for (var i = idx + 1; i < claims.length; i++) {
     if (claims[i].depManual) break;
-    claims[i].dep = val;
+    claims[i].dep = nearestIndependentClaim(claims, i);
     touched.push(claims[i].num);
   }
   return touched;
