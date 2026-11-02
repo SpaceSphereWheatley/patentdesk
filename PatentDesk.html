@@ -2288,6 +2288,12 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-id              { font-weight: var(--weight-bold); font-size: var(--text-base);
                       color: var(--primary); font-variant-numeric: tabular-nums; }
 .mh-row-bg .mh-id   { color: var(--muted-text); }
+.mh-row-withdrawn   { background: var(--surface); border-style: dashed; }
+.mh-row-withdrawn .mh-id { color: var(--muted-text); }
+.mh-ref-struck      { font-size: var(--text-sm); color: var(--muted-text); text-decoration: line-through;
+                      padding: 0 var(--space-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mh-restore         { color: var(--primary-dim); }
+.mh-withdrawn-label { font-size: var(--text-xs); color: var(--muted-text); font-style: italic; }
 .mh-ref-inp         { background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
                       color: var(--text); font-family: var(--font-body); font-size: var(--text-sm);
                       padding: var(--space-1) var(--space-2); width: 100%; min-width: 0;
@@ -4735,7 +4741,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.51.1';
+var APP_VERSION    = 'v4.52.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -7657,6 +7663,14 @@ function _dispatch(action, payload) {
         lsSetSafe(sakKey(undoSnapshot.sakId), undoSnapshot.sakData);
       }
       // Fjernede krav settes tilbake; resten av saksdetaljene blir som de er
+      if (undoSnapshot.mode === 'docs') {
+        var dsData = loadSakData(undoSnapshot.caseId);
+        if (dsData) {
+          dsData.docs = undoSnapshot.before.docs;
+          dsData.claims = undoSnapshot.before.claims;
+          saveSakData(undoSnapshot.caseId, dsData);
+        }
+      }
       if (undoSnapshot.mode === 'claims') {
         var ccData = loadSakData(undoSnapshot.caseId);
         if (ccData) {
@@ -7779,9 +7793,43 @@ function _dispatch(action, payload) {
     case 'DOC_REMOVE': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       ensureSakDocs(data);
-      var next = removeDocAt(data.docs, data.claims, payload.idx);
+      var doc = data.docs[payload.idx];
+      if (!doc) break;
+      var drCase = cases.find(function(c) { return c.id === payload.id; });
+      // Etter første brev er D-numrene låst — merk i stedet for å slette
+      var withdraw = docRemoveWithdraws(drCase);
+      if (!withdraw) {
+        AppState.undoSnapshot = {
+          mode: 'docs', caseId: payload.id, logIds: [], label: drCase ? drCase.caseNumber : '',
+          before: { docs: JSON.parse(JSON.stringify(data.docs)), claims: JSON.parse(JSON.stringify(data.claims || [])) },
+          activeCase: activeCase, medlLog: medlLog
+        };
+      }
+      var next = withdraw ? withdrawDocAt(data.docs, data.claims, payload.idx)
+                          : removeDocAt(data.docs, data.claims, payload.idx);
       data.docs = next.docs;
       data.claims = next.claims;
+      saveSakData(payload.id, data);
+      renderSakDocs(data);
+      renderSakClaimsTable(data);
+      if (withdraw) {
+        showToast(doc.id + ' merket ikke lenger relevant');
+      } else {
+        var renum = payload.idx < data.docs.length
+          ? ' – ' + data.docs.slice(payload.idx).map(function(d, k) {
+              return 'D' + (payload.idx + k + 2) + ' heter nå ' + d.id;
+            }).join(', ')
+          : '';
+        showUndoToast(doc.id + ' fjernet' + renum);
+      }
+      break;
+    }
+
+    case 'DOC_RESTORE': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      ensureSakDocs(data);
+      if (!data.docs[payload.idx]) break;
+      data.docs = restoreDocAt(data.docs, payload.idx);
       saveSakData(payload.id, data);
       renderSakDocs(data);
       renderSakClaimsTable(data);
@@ -10758,11 +10806,40 @@ var MAX_INVENTIVE_DOCS = 2;
 // jf. patentloven § 2 tredje ledd — aldri mot oppfinnelseshøyden.
 function claimDocSelectable(docs, field) {
   return (docs || []).filter(function(d) {
-    return !d.background && !(field === 'inventive' && d.e);
+    return !d.background && !d.withdrawn && !(field === 'inventive' && d.e);
   });
 }
 
 function nextDocId(docs) { return 'D' + ((docs || []).length + 1); }
+
+// Når et brev er sendt, er D-numrene låst: de står i brevet søkeren har
+// fått. «Fjern» merker da motholdet «Ikke lenger relevant» i stedet for å
+// slette og renummerere.
+function docRemoveWithdraws(c) {
+  return lettersSent(c && c.history) > 0;
+}
+
+// Merker motholdet på idx som ikke lenger relevant. Nummeret beholdes, men
+// kravsreferansene til det fjernes. Returnerer nye { docs, claims }.
+function withdrawDocAt(docs, claims, idx) {
+  docs = docs || []; claims = claims || [];
+  if (idx < 0 || idx >= docs.length) return { docs: docs, claims: claims };
+  var id = docs[idx].id;
+  return {
+    docs: docs.map(function(d, i) { return i === idx ? Object.assign({}, d, { withdrawn: true }) : d; }),
+    claims: claims.map(function(c) {
+      return Object.assign({}, c, {
+        noveltyDoc: c.noveltyDoc === id ? null : c.noveltyDoc,
+        inventiveDocs: (c.inventiveDocs || []).filter(function(x) { return x !== id; })
+      });
+    })
+  };
+}
+
+// Gjør motholdet vanlig igjen. Kravsreferansene kommer ikke tilbake.
+function restoreDocAt(docs, idx) {
+  return (docs || []).map(function(d, i) { return i === idx ? Object.assign({}, d, { withdrawn: false }) : d; });
+}
 
 // Publikasjonsnummeret slik Espacenet vil ha det: «WO 2020/123456 A1» blir
 // «WO2020123456A1». Mellomrom, skråstrek og tusenskilletegn fjernes.
@@ -10909,7 +10986,7 @@ function ensureSakDocs(data) {
     d = d || {};
     return { id: 'D' + (i + 1), ref: d.ref || '',
              pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
-             p: !!d.p, e: !!d.e, background: !!d.background };
+             p: !!d.p, e: !!d.e, background: !!d.background, withdrawn: !!d.withdrawn };
   });
   var forNovelty = {}, forInventive = {};
   claimDocSelectable(data.docs, 'novelty').forEach(function(d) { forNovelty[d.id] = true; });
@@ -10973,6 +11050,7 @@ function toggleClaimDoc(claim, field, docId, docs) {
 function claimDocCategory(claims, claim, doc) {
   var effNovelty   = effectiveClaimValue(claims, claim, 'novelty');
   var effInventive = effectiveClaimValue(claims, claim, 'inventive');
+  if (doc.withdrawn) return null;
   if (effNovelty === null || effInventive === null) return null;
   if (doc.background) return 'A';
   // Krav uten nyhet: bare nyhetsmotholdet er relevant. Oppfinnelseshøyden er
@@ -11012,6 +11090,7 @@ function formatSearchReport(claims, docs) {
   return rows.map(function(row, i) {
     var doc  = docs[i];
     var head = doc.id + (doc.ref ? '  ' + doc.ref : '');
+    if (doc.withdrawn) return head + '\n  (ikke lenger relevant)';
     var body = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) { return '  ' + docCategoryLabel(doc, cat) + ': krav ' + formatClaimRanges(row[cat]); });
     return head + '\n' + (body.length ? body.join('\n') : '  (ingen vurderte krav)');
@@ -11989,9 +12068,21 @@ function renderSakDocs(data) {
   // rapporten, så raden og «Kopier rapport» aldri kan si ulike ting.
   var rows = buildSearchReport(data.claims || [], docs);
   var app  = { filingDate: data.filingDate, priorityDate: data.priorityDate };
+  var locked = docRemoveWithdraws(cases.find(function(c) { return c.id === activeSakId; }));
 
   el.innerHTML = docs.map(function(d, i) {
     var row  = rows[i];
+
+    if (d.withdrawn) {
+      return '<div class="mh-row mh-row-withdrawn" data-idx="' + i + '">' +
+        '<span class="mh-id">' + esc(d.id) + '</span>' +
+        '<span class="mh-ref"><span class="mh-ref-struck">' + esc(d.ref || '—') + '</span></span>' +
+        '<span class="mh-cats"><span class="mh-withdrawn-label">Ikke lenger relevant</span></span>' +
+        '<span class="mh-flags"></span><span></span>' +
+        '<button type="button" class="mh-bg-toggle mh-restore" data-mh-restore="' + i + '"' +
+          ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt.">Gjenopprett</button>' +
+      '</div>';
+    }
 
     var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) {
@@ -12010,7 +12101,9 @@ function renderSakDocs(data) {
       '<span class="mh-cats">' + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
-      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '" title="Fjern" aria-label="Fjern ' + esc(d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
+      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
+        ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
+        ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
       '<span class="mh-dates">' +
         mhDateHtml(d, i, 'pubDate', 'Publisert') +
         mhDateHtml(d, i, 'effDate', 'Prioritet/inng.') +
@@ -12902,6 +12995,8 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
   var id = activeSakId; if (!id) return;
   var del = e.target.closest('[data-mh-del]');
   if (del) { dispatch('DOC_REMOVE', { id: id, idx: parseInt(del.dataset.mhDel, 10) }); return; }
+  var restore = e.target.closest('[data-mh-restore]');
+  if (restore) { dispatch('DOC_RESTORE', { id: id, idx: parseInt(restore.dataset.mhRestore, 10) }); return; }
   var ops = e.target.closest('.mh-ops');
   if (ops) { mhOpsFetch(id, parseInt(ops.dataset.ops, 10), ops); return; }
   var flag = e.target.closest('.mh-flag');

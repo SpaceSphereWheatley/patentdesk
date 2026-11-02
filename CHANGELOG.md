@@ -7,7 +7,18 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
-## [4.51.1] - 2026-11-02
+## [4.52.0] - 2026-11-02
+
+### Added
+- Mothold kan angres: «Fjern» før første brev gir en «Angre»-melding som
+  også sier hvilke mothold som fikk nytt nummer («D2 fjernet – D3 heter nå
+  D2»).
+- Når et brev er sendt, er D-numrene låst. «Fjern» merker da motholdet
+  «Ikke lenger relevant» i stedet for å slette det: det beholder nummeret,
+  vises gjennomstreket, forsvinner fra nyhets- og OH-velgerne, og
+  kravkoblingene til det fjernes. Granskingsrapporten tar det med som
+  «(ikke lenger relevant)», så numrene fortsatt stemmer med brevene.
+  «Gjenopprett» gjør det vanlig igjen (koblingene settes på nytt).
 
 ### Fixed
 - E-dokumenter (eldre søknader) kan ikke lenger brukes mot
