@@ -7,6 +7,28 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.47.0] - 2026-11-02
+Motholdene kan nå hente datoene sine fra EPO sin Open Patent Services (OPS).
+
+### Added
+- **Hent datoer fra OPS.** En ⤓-knapp ved siden av Espacenet-lenken på hvert
+  mothold henter publiseringsdatoen og motholdets egen dato (tidligste
+  prioritet, ellers inngivelsesdatoen) fra OPS. Deretter regnes P/E-forslagene
+  ut som før.
+  - Bare tomme datofelt fylles. En dato du har ført inn selv, blir aldri
+    overskrevet. Er OPS uenig, sier meldingen det, for eksempel «OPS sier
+    publisert 2016.10.27, du har 2016.10.28 — ikke endret».
+  - Har nummeret flere publiseringer (A1, B1 …), brukes den med samme
+    kind-kode som i referansen, ellers den første.
+  - Knappen er grå når referansen ikke er et publikasjonsnummer, eller når
+    nøklene mangler. Verktøytipset sier hvorfor.
+  - Feil som ukjent nummer, avviste nøkler, brukt kvote og manglende nett gir
+    en kort melding, og feltene blir ikke rørt.
+- **EPO OPS i Innstillinger.** Under Saksbehandling er det en ny seksjon for
+  consumer key og secret fra EPO, med en knapp som tester tilkoblingen.
+  Nøklene lagres bare i denne nettleseren. De tas ikke med i eksport, backup
+  eller arbeidsfil, men fjernes av «Slett alle data».
+
 ## [4.46.0] - 2026-11-02
 
 ### Added

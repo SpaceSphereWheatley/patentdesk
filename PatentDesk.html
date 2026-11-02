@@ -1604,6 +1604,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 }
 .btn-copy-path:hover { opacity: 1; }
 
+/* Innstillinger: EPO OPS-nøkler */
+.ops-fields        { display: grid; grid-template-columns: max-content minmax(0, 22rem); gap: var(--space-3) var(--space-5); align-items: center; }
+.ops-test-row      { display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+@media (max-width: 600px) { .ops-fields { grid-template-columns: 1fr; } }
+
 /* Innstillinger: tekstfelt for saksmappe-rot */
 .settings-row-col {
   flex-direction: column;
@@ -2255,6 +2260,14 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       color: var(--muted); transition: color var(--dur-base); }
 .mh-ext[href]:hover { color: var(--accent); }
 .mh-ext[aria-disabled="true"] { opacity: 0.35; cursor: default; }
+.mh-ops             { display: inline-flex; flex-shrink: 0; padding: 2px; border-radius: var(--radius-sm);
+                      background: none; border: none; cursor: pointer;
+                      color: var(--muted); transition: color var(--dur-base); }
+.mh-ops:hover:not([aria-disabled="true"]) { color: var(--accent); }
+.mh-ops[aria-disabled="true"] { opacity: 0.35; cursor: default; }
+.mh-ops[aria-busy="true"] { cursor: progress; animation: mh-ops-pulse 1s ease-in-out infinite; }
+@keyframes mh-ops-pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .mh-ops[aria-busy="true"] { animation: none; opacity: 0.5; } }
 
 /* Utledet kategori per mothold — overtar kolonnen tittelfeltet hadde */
 .mh-cats            { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; min-width: 0; }
@@ -3505,6 +3518,28 @@ tr:hover .sak-tag-display.sak-tag-empty,
                   </div>
                 </div>
               </section>
+
+              <section class="settings-section">
+                <h2 class="settings-section-title">EPO OPS</h2>
+                <div class="settings-group">
+                  <div class="settings-row settings-row-col">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Nøkler til Open Patent Services <span class="field-label-sub">valgfritt</span></span>
+                      <span class="settings-label-sub">Brukes av ⤓ på motholdene for å hente publiserings- og prioritetsdato. Nøklene lagres bare i denne nettleseren og tas ikke med i eksport eller backup.</span>
+                    </div>
+                    <div class="ops-fields">
+                      <label class="field-label" for="input-ops-key">Consumer key</label>
+                      <input class="field-input" id="input-ops-key" type="password" autocomplete="off" spellcheck="false" />
+                      <label class="field-label" for="input-ops-secret">Consumer secret</label>
+                      <input class="field-input" id="input-ops-secret" type="password" autocomplete="off" spellcheck="false" />
+                    </div>
+                    <div class="ops-test-row">
+                      <button class="s-btn" id="btn-ops-test" type="button">Test tilkobling</button>
+                      <span class="settings-label-sub" id="ops-status" role="status"></span>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </div>
 
             <div class="settings-pane" id="settings-pane-data" data-settings-pane="data" role="tabpanel" aria-labelledby="settings-tab-data">
@@ -4614,7 +4649,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.46.0';
+var APP_VERSION    = 'v4.47.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4638,6 +4673,10 @@ var MEDL_LOG_KEY      = 'pt_medl_log';
 var SETTINGS_TAB_KEY  = 'pt_settings_tab';
 var TL_VIEW_KEY       = 'pt_tl_view';
 var CASE_SOURCE_KEY   = 'pt_case_source';
+// EPO OPS-nøklene. Bare i denne nettleseren: de er bevisst utelatt fra
+// makeExportPayload(), så de havner aldri i eksport, backup eller arbeidsfil.
+var OPS_KEY_KEY       = 'pt_ops_key';
+var OPS_SECRET_KEY    = 'pt_ops_secret';
 var AUTOSAVE_KEY = 'pt_autosave';
 var SAK_KEY_PREFIX = 'pt_sak_';
 
@@ -10468,6 +10507,90 @@ function espacenetUrl(ref) {
   return pn ? 'https://worldwide.espacenet.com/patent/search?q=pn%3D' + encodeURIComponent(pn) : null;
 }
 
+// ── EPO OPS: rene hjelpere ──────────────────────────
+// Referansen i OPS sitt epodoc-format, med kind-koden for seg:
+// «WO 2016/169730 A1» → { epodoc: 'WO2016169730', kind: 'A1' }. null når
+// referansen ikke ser ut som et publikasjonsnummer.
+function opsPubNumber(ref) {
+  var m = /^([A-Z]{2})(\d+)([A-Z]\d?)?$/.exec(normalizePubNumber(ref));
+  if (!m) return null;
+  var cc = m[1], num = m[2];
+  // WO 2020/12345: løpenummeret etter et firesifret år har seks sifre i OPS
+  if (cc === 'WO' && /^(19|20)\d\d/.test(num) && num.length > 4 && num.length < 10) {
+    num = num.slice(0, 4) + num.slice(4).padStart(6, '0');
+  }
+  // US 2008/0264140: OPS dropper nullen foran løpenummeret
+  if (cc === 'US' && num.length === 11 && num.charAt(4) === '0') {
+    num = num.slice(0, 4) + num.slice(5);
+  }
+  return { epodoc: cc + num, kind: m[3] || '' };
+}
+
+// OPS-dato «20161027» → «2016-10-27»; alt annet → ''.
+function opsDate(s) {
+  return /^\d{8}$/.test(s || '') ? s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8) : '';
+}
+
+// OPS-JSON gir et enkelt objekt når det er ett element, og en liste ellers.
+function opsAsArray(x) { return x == null ? [] : (Array.isArray(x) ? x : [x]); }
+
+// Datoen i en { document-id: [...] }-blokk, uansett hvilken id-type som har den.
+function opsDocIdDate(ref) {
+  var ids = opsAsArray(ref && ref['document-id']);
+  for (var i = 0; i < ids.length; i++) {
+    var d = opsDate(ids[i] && ids[i].date && ids[i].date.$);
+    if (d) return d;
+  }
+  return '';
+}
+
+// Publiseringsdato og motholdets egen dato (tidligste prioritet, ellers
+// inngivelsesdatoen) fra et published-data/biblio-svar. Har nummeret flere
+// publiseringer (A1, B1 …), velges den med samme kind-kode, ellers den
+// tidligste. null når svaret ikke har noen brukbar publisering.
+function parseOpsBiblio(json, kind) {
+  var root = json && json['ops:world-patent-data'];
+  var docs = opsAsArray(root && root['exchange-documents'] && root['exchange-documents']['exchange-document'])
+    .map(function(x) {
+      var bib = (x && x['bibliographic-data']) || {};
+      var prios = opsAsArray(bib['priority-claims'] && bib['priority-claims']['priority-claim'])
+        .map(opsDocIdDate).filter(Boolean).sort();
+      return { kind: (x && x['@kind']) || '',
+               pubDate: opsDocIdDate(bib['publication-reference']),
+               effDate: prios[0] || opsDocIdDate(bib['application-reference']) };
+    })
+    .filter(function(x) { return x.pubDate; })
+    .sort(function(a, b) { return a.pubDate < b.pubDate ? -1 : a.pubDate > b.pubDate ? 1 : 0; });
+  if (!docs.length) return null;
+  return docs.filter(function(x) { return kind && x.kind === kind; })[0] || docs[0];
+}
+
+// Hva OPS skal fylle inn: bare tomme felt. Der feltet alt har en annen dato,
+// røres det ikke, men forskjellen meldes i conflicts.
+function opsFillPlan(doc, dates) {
+  var patch = {}, conflicts = [];
+  ['pubDate', 'effDate'].forEach(function(f) {
+    var ops = dates[f] || '', mine = (doc && doc[f]) || '';
+    if (!ops) return;
+    if (!mine) patch[f] = ops;
+    else if (mine !== ops) conflicts.push({ field: f, mine: mine, ops: ops });
+  });
+  return { patch: patch, conflicts: conflicts };
+}
+
+function opsErrorMessage(kind) {
+  switch (kind) {
+    case 'nocreds':  return 'Legg inn OPS-nøklene under Innstillinger → Saksbehandling først.';
+    case 'badref':   return 'Referansen ser ikke ut som et publikasjonsnummer, f.eks. WO 2020/123456 A1.';
+    case 'auth':     return 'OPS avviste nøklene. Sjekk consumer key og secret i Innstillinger.';
+    case 'notfound': return 'OPS fant ikke dokumentet. Sjekk publikasjonsnummeret.';
+    case 'quota':    return 'OPS avviste forespørselen (kvote eller fair use). Prøv igjen senere.';
+    case 'network':  return 'Fikk ikke kontakt med OPS. Sjekk nettforbindelsen.';
+    case 'parse':    return 'OPS svarte, men svaret manglet publiseringsdato.';
+    default:         return 'Noe gikk galt i oppslaget mot OPS.';
+  }
+}
+
 // Forslag til P- og E-flagg ut fra datoene — bare forslag, flaggene settes
 // aldri av seg selv. app = { filingDate, priorityDate }; motholdet har
 // pubDate (publisert) og effDate (eget prioritets- eller inngivelsesdato).
@@ -11571,6 +11694,7 @@ function renderSakDocs(data) {
       '<span class="mh-ref">' +
         '<input class="mh-ref-inp" type="text" data-idx="' + i + '" value="' + esc(d.ref) + '" placeholder="f.eks. WO 2020/123456 A1" aria-label="Publikasjonsnummer for ' + esc(d.id) + '" />' +
         mhExtLinkHtml(d) +
+        mhOpsBtnHtml(d, i) +
       '</span>' +
       '<span class="mh-cats">' + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
@@ -11633,6 +11757,35 @@ function syncMhExtLink(inp) {
   var url = espacenetUrl(inp.value);
   if (url) { a.href = url; a.removeAttribute('aria-disabled'); }
   else     { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); }
+  var btn = inp.parentNode.querySelector('.mh-ops');
+  if (btn) btn.outerHTML = mhOpsBtnHtml({ id: btn.dataset.docId, ref: inp.value }, parseInt(btn.dataset.ops, 10));
+}
+
+// ⤓-knappen: henter datoene fra EPO OPS. Grå når referansen mangler eller
+// nøklene ikke er lagt inn; verktøytipset sier hvorfor.
+function mhOpsBtnHtml(d, i) {
+  var why = !hasOpsCreds() ? 'Legg inn OPS-nøklene under Innstillinger for å hente datoer'
+          : !opsPubNumber(d.ref) ? 'Skriv et publikasjonsnummer først'
+          : '';
+  return '<button type="button" class="mh-ops" data-ops="' + i + '" data-doc-id="' + esc(d.id) + '"' +
+    (why ? ' aria-disabled="true"' : '') +
+    ' title="' + esc(why || 'Hent datoer fra EPO OPS (fyller bare tomme felt)') + '"' +
+    ' aria-label="Hent datoer for ' + esc(d.id) + ' fra EPO OPS">' +
+    '<svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg></button>';
+}
+
+// Teksten etter et oppslag: hva som ble fylt inn, og hvor OPS er uenig med
+// datoer du alt har ført inn (de røres ikke).
+function opsFillMessage(plan, dates) {
+  var label = { pubDate: 'publisert', effDate: 'prioritet/inng.' };
+  var filled = Object.keys(plan.patch).map(function(f) { return label[f] + ' ' + toDisplay(plan.patch[f]); });
+  var parts = [];
+  parts.push(filled.length ? '✓ Hentet fra OPS (' + dates.kind + '): ' + filled.join(', ')
+                           : 'Ingen tomme datofelt å fylle (OPS ' + dates.kind + ')');
+  plan.conflicts.forEach(function(c) {
+    parts.push('OPS sier ' + label[c.field] + ' ' + toDisplay(c.ops) + ', du har ' + toDisplay(c.mine) + ' — ikke endret');
+  });
+  return parts.join('. ') + '.';
 }
 
 // Chip ved siden av tri-state-knappen: vises bare når vurderingen er ✗, altså
@@ -12324,6 +12477,73 @@ document.getElementById('btn-copy-classes').addEventListener('click', function()
   });
 });
 
+// ── EPO OPS: nøkler og oppslag ─────────────────────
+var OPS_BASE = 'https://ops.epo.org/3.2';
+
+function loadOpsCreds() {
+  try { return { key: localStorage.getItem(OPS_KEY_KEY) || '', secret: localStorage.getItem(OPS_SECRET_KEY) || '' }; }
+  catch(e) { return { key: '', secret: '' }; }
+}
+function saveOpsCreds(c) {
+  lsSetSafe(OPS_KEY_KEY, c.key); lsSetSafe(OPS_SECRET_KEY, c.secret);
+  _opsToken = null; // nye nøkler — det gamle tokenet hører til de forrige
+}
+function hasOpsCreds() { var c = loadOpsCreds(); return !!(c.key && c.secret); }
+
+// Feil fra OPS-kallene bærer en kind som opsErrorMessage() kjenner.
+function OpsError(kind) { this.kind = kind; }
+
+// Tokenet varer ca. 20 minutter; det gjenbrukes til ett minutt før det går ut.
+var _opsToken = null; // { value, expires }
+function opsAccessToken(force) {
+  if (!force && _opsToken && Date.now() < _opsToken.expires) return Promise.resolve(_opsToken.value);
+  var c = loadOpsCreds();
+  if (!c.key || !c.secret) return Promise.reject(new OpsError('nocreds'));
+  return fetch(OPS_BASE + '/auth/accesstoken', {
+    method: 'POST',
+    headers: { 'Authorization': 'Basic ' + btoa(c.key + ':' + c.secret),
+               'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=client_credentials'
+  }).then(function(r) {
+    if (r.status === 400 || r.status === 401) throw new OpsError('auth');
+    if (r.status === 403) throw new OpsError('quota');
+    if (!r.ok) throw new OpsError('http');
+    return r.json();
+  }).then(function(j) {
+    var secs = parseInt(j.expires_in, 10) || 1200;
+    _opsToken = { value: j.access_token, expires: Date.now() + (secs - 60) * 1000 };
+    return _opsToken.value;
+  });
+}
+
+// Henter { pubDate, effDate, kind } for en referanse. Ved 401 er tokenet
+// gått ut på serversiden — da hentes et nytt én gang.
+function opsFetchDates(ref) {
+  var pn = opsPubNumber(ref);
+  if (!pn) return Promise.reject(new OpsError('badref'));
+  function get(retry) {
+    return opsAccessToken(retry).then(function(token) {
+      return fetch(OPS_BASE + '/rest-services/published-data/publication/epodoc/' +
+                   encodeURIComponent(pn.epodoc) + '/biblio',
+                   { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+    }).then(function(r) {
+      if (r.status === 401 && !retry) return get(true);
+      if (r.status === 404) throw new OpsError('notfound');
+      if (r.status === 403) throw new OpsError('quota');
+      if (!r.ok) throw new OpsError('http');
+      return r.json().catch(function() { throw new OpsError('parse'); }).then(function(j) {
+        var dates = parseOpsBiblio(j, pn.kind);
+        if (!dates) throw new OpsError('parse');
+        return dates;
+      });
+    });
+  }
+  return get(false).catch(function(e) {
+    // fetch() kaster TypeError når nettet eller brannmuren stopper kallet
+    throw e instanceof OpsError ? e : new OpsError('network');
+  });
+}
+
 // ── Mothold ────────────────────────────────────────
 document.getElementById('btn-mothold-add').addEventListener('click', function() {
   var id = activeSakId; if (!id) return;
@@ -12334,6 +12554,8 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
   var id = activeSakId; if (!id) return;
   var del = e.target.closest('[data-mh-del]');
   if (del) { dispatch('DOC_REMOVE', { id: id, idx: parseInt(del.dataset.mhDel, 10) }); return; }
+  var ops = e.target.closest('.mh-ops');
+  if (ops) { mhOpsFetch(id, parseInt(ops.dataset.ops, 10), ops); return; }
   var flag = e.target.closest('.mh-flag');
   if (flag) {
     dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(flag.dataset.idx, 10),
@@ -12346,6 +12568,36 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
       field: 'background', value: bg.getAttribute('aria-pressed') !== 'true' });
   }
 });
+
+// Henter datoene for mothold idx og fyller de tomme feltene. Referansen tas
+// fra feltet slik det står nå, og lagres først så oppslaget og saken er enige.
+function mhOpsFetch(id, idx, btn) {
+  if (btn.getAttribute('aria-disabled') === 'true' || btn.getAttribute('aria-busy') === 'true') return;
+  var inp = btn.parentNode.querySelector('.mh-ref-inp');
+  var ref = inp ? inp.value.trim() : '';
+  clearTimeout(_sakTypingTimer);
+  dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: 'ref', value: ref });
+  btn.setAttribute('aria-busy', 'true');
+  opsFetchDates(ref).then(function(dates) {
+    var data = loadSakData(id) || defaultSakData(0);
+    ensureSakDocs(data);
+    var doc = data.docs[idx];
+    // Motholdet kan ha blitt fjernet eller endret mens vi ventet
+    if (!doc || doc.ref !== sanitizeText(ref)) { showToast('Motholdet er endret — oppslaget ble forkastet.'); return; }
+    var plan = opsFillPlan(doc, dates);
+    Object.keys(plan.patch).forEach(function(f) {
+      dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: f, value: plan.patch[f] });
+    });
+    if (activeSakId === id) renderSakDocs(loadSakData(id));
+    showToast(opsFillMessage(plan, dates));
+  }).catch(function(err) {
+    showToast(opsErrorMessage(err && err.kind));
+  }).then(function() {
+    // Knappen kan være tegnet på nytt; finn den igjen før den låses opp
+    var b = document.querySelector('#sak-docs-mothold .mh-ops[data-ops="' + idx + '"]');
+    if (b) b.removeAttribute('aria-busy');
+  });
+}
 
 document.getElementById('sak-docs-mothold').addEventListener('input', function(e) {
   var id = activeSakId; if (!id) return;
@@ -15913,6 +16165,37 @@ function applyTimelineLink(id, force) {
     openBar(el);
   });
 
+})();
+
+// ── EPO OPS-innstilling ────────────────────────────
+(function() {
+  var keyInp = document.getElementById('input-ops-key');
+  var secInp = document.getElementById('input-ops-secret');
+  var status = document.getElementById('ops-status');
+  if (!keyInp || !secInp) return;
+  function showSaved() {
+    status.textContent = hasOpsCreds() ? 'Nøkler lagret' : 'Ikke satt opp';
+  }
+  var c = loadOpsCreds();
+  keyInp.value = c.key; secInp.value = c.secret;
+  showSaved();
+  function save() {
+    saveOpsCreds({ key: keyInp.value.trim(), secret: secInp.value.trim() });
+    showSaved();
+  }
+  keyInp.addEventListener('change', save);
+  secInp.addEventListener('change', save);
+  document.getElementById('btn-ops-test').addEventListener('click', function() {
+    save();
+    var btn = this;
+    btn.disabled = true;
+    status.textContent = 'Tester …';
+    opsAccessToken(true).then(function() {
+      status.textContent = '✓ Tilkoblet';
+    }).catch(function(err) {
+      status.textContent = opsErrorMessage(err && err.kind);
+    }).then(function() { btn.disabled = false; });
+  });
 })();
 
 // ── Saksmappe-innstilling ──────────────────────────
