@@ -4628,7 +4628,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.46.1';
+var APP_VERSION    = 'v4.47.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -10204,7 +10204,7 @@ function renderBeleggCard() {
   var diff = pct2 - pct;
   var arrow = diff > 2 ? '↑' : diff < -2 ? '↓' : '→';
   var cls2  = diff > 2 ? 'belegg-sub-up' : diff < -2 ? 'belegg-sub-down' : 'belegg-sub-same';
-  subEl.innerHTML = (bar.overPct ? '<span class="belegg-over">' + bar.overPct + ' % over kapasitet</span>&nbsp;·&nbsp;' : '') +
+  subEl.innerHTML = (bar.overPct ? '<span class="belegg-over">' + bar.overPct + '% over kapasitet</span>&nbsp;·&nbsp;' : '') +
     '<span class="' + cls2 + '">' + arrow + ' ' + pct2 + '%</span> neste periode' +
     (res.potentialPct > 0
       ? '&nbsp;·&nbsp;<span class="belegg-potential" title="Saker du har meldt deg på, men ikke fått fordelt ennå">+' + res.potentialPct + '% hvis du får de ikke-fordelte</span>'

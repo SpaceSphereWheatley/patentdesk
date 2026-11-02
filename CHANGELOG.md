@@ -7,6 +7,23 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.47.0] - 2026-11-02
+
+### Added
+- CPC-banneret på Oversikt kan lukkes med ×, og forblir lukket. CPC-databasen
+  lastes fortsatt inn under Innstillinger → Saksbehandling.
+
+### Changed
+- Belegg er et eget kort på Oversikt, der «Dager til fridag» sto: prosent i
+  beleggsfargen, en søyle mot 100 % kapasitet og trenden for neste periode.
+  Går belegget over 100 %, vises overskuddet som et skravert felt etter
+  100 %-merket og som tekst («26% over kapasitet»).
+- Neste fridag er en linje under kortene i stedet for et eget kort.
+- Sakslistene med én status (Nye saker, Viderebehandling, Fristarkiv,
+  Oppdrag) viser det kompakte forløpet fra Oversikt i stedet for de brede
+  pilene, så titlene får plass og ikke kuttes. Rundenummeret står fortsatt
+  («Viderebeh. · 3»). Alle saker beholder hele forløpet.
+
 ## [4.46.1] - 2026-11-02
 
 ### Changed
