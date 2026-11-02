@@ -8,8 +8,8 @@ const { normalizeSettingsTab, stepSettingsTab, SETTINGS_TABS } = loadFunctions(
   { vars: ['SETTINGS_TABS', 'SETTINGS_TAB_LEGACY'] }
 );
 
-test('SETTINGS_TABS is the three main sections in menu order', () => {
-  assert.deepStrictEqual(Array.from(SETTINGS_TABS), ['arbeidsmengde', 'saksbehandling', 'data']);
+test('SETTINGS_TABS is the four main sections in menu order', () => {
+  assert.deepStrictEqual(Array.from(SETTINGS_TABS), ['arbeidsmengde', 'frister', 'saksbehandling', 'data']);
 });
 
 test('normalizeSettingsTab keeps a known tab', () => {
@@ -35,7 +35,8 @@ test('normalizeSettingsTab maps a stored sub-section from v4.35.0 to its main se
 });
 
 test('stepSettingsTab moves to the next and previous tab', () => {
-  assert.strictEqual(stepSettingsTab('arbeidsmengde', 1), 'saksbehandling');
+  assert.strictEqual(stepSettingsTab('arbeidsmengde', 1), 'frister');
+  assert.strictEqual(stepSettingsTab('frister', 1), 'saksbehandling');
   assert.strictEqual(stepSettingsTab('data', -1), 'saksbehandling');
 });
 
@@ -45,5 +46,5 @@ test('stepSettingsTab wraps around at both ends', () => {
 });
 
 test('stepSettingsTab starts from the first tab when the current id is unknown', () => {
-  assert.strictEqual(stepSettingsTab('finnes-ikke', 1), 'saksbehandling');
+  assert.strictEqual(stepSettingsTab('finnes-ikke', 1), 'frister');
 });

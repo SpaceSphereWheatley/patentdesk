@@ -7,6 +7,19 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.53.0] - 2026-11-02
+
+### Added
+- Ny side under Innstillinger: **Frister**. Her endrer du fristene som
+  foreslås i dialogene: søkers frist etter 1. realitetsbrev, søkers frist
+  etter senere realitetsbrev og din egen frist for å behandle svar (1–24
+  måneder). Datoen kan fortsatt endres i dialogen, og eksisterende saker
+  endres ikke. Fristene følger med i eksport og import.
+
+### Changed
+- Søkers frist foreslås nå til 3 måneder etter både første og senere
+  realitetsbrev (før 6 måneder).
+
 ## [4.52.0] - 2026-11-02
 
 ### Added

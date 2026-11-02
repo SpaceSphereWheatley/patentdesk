@@ -40,7 +40,7 @@ test('encodeCase and decodeCase round-trip every known status', () => {
 
 const { statusTransition } = loadFunctions(
   ['statusTransition'],
-  { vars: ['FRIST_NY_TIL_FRISTARKIV', 'FRIST_FRISTARKIV_TIL_VIDERE', 'FRIST_VIDERE_TIL_FRISTARKIV'] }
+  { vars: ['DEADLINE_DEFAULTS'] }
 );
 
 test('statusTransition: en overgang til samme status er ingen overgang', () => {
@@ -58,13 +58,13 @@ test('Ny → Fristarkiv: bekreftelse, stikkord og ny frist — og teller som nyb
   assert.strictEqual(t.needsConfirm, true);
   assert.strictEqual(t.needsTags, true);
   assert.strictEqual(t.needsDueDate, true);
-  assert.strictEqual(t.suggestMonths, 6);
+  assert.strictEqual(t.suggestMonths, 3);
   assert.strictEqual(t.logType, 'ny');
 });
 
 test('Ny → Fristarkiv: fristteksten nevner det foreslåtte antallet måneder', () => {
   const t = statusTransition('ny', 'fristarkiv', false);
-  assert.match(t.dueDateDesc, /Foreslått frist er 6 måneder fra i dag/);
+  assert.match(t.dueDateDesc, /Foreslått frist er 3 måneder fra i dag/);
   assert.match(t.confirmDesc, /nybehandlet/);
 });
 
@@ -73,7 +73,7 @@ test('Viderebehandling → Fristarkiv: ny frist, men ingen bekreftelse eller sti
   assert.strictEqual(t.needsConfirm, false);
   assert.strictEqual(t.needsTags, false);
   assert.strictEqual(t.needsDueDate, true);
-  assert.strictEqual(t.suggestMonths, 6);
+  assert.strictEqual(t.suggestMonths, 3);
   assert.strictEqual(t.logType, 'videre');
 });
 

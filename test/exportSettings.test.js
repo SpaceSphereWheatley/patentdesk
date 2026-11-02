@@ -4,8 +4,8 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { readImportSettings, isValidChecklistTemplate } = loadFunctions(
-  ['readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter', 'normalizeWorkWindows', 'migrateWorkWindowsToWorkdays', 'normalizeTypeBuffers'],
-  { vars: ['HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS', 'WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX', 'TYPE_BUFFER_DEFAULTS', 'TYPE_BUFFER_MAX'] }
+  ['readImportSettings', 'isValidChecklistTemplate', 'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter', 'normalizeWorkWindows', 'migrateWorkWindowsToWorkdays', 'normalizeTypeBuffers', 'normalizeDeadlines'],
+  { vars: ['DEADLINE_DEFAULTS', 'DEADLINE_MAX', 'HOME_DEADLINE_KINDS', 'HOME_DEADLINE_HORIZONS', 'WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX', 'TYPE_BUFFER_DEFAULTS', 'TYPE_BUFFER_MAX'] }
 );
 
 const TPL = [

@@ -2288,6 +2288,8 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-id              { font-weight: var(--weight-bold); font-size: var(--text-base);
                       color: var(--primary); font-variant-numeric: tabular-nums; }
 .mh-row-bg .mh-id   { color: var(--muted-text); }
+.settings-label-sub a { color: var(--primary); text-decoration: none; }
+.settings-label-sub a:hover { text-decoration: underline; }
 .mh-row-withdrawn   { background: var(--surface); border-style: dashed; }
 .mh-row-withdrawn .mh-id { color: var(--muted-text); }
 .mh-ref-struck      { font-size: var(--text-sm); color: var(--muted-text); text-decoration: line-through;
@@ -3397,6 +3399,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
         <div class="settings-layout">
           <nav class="settings-nav" aria-label="Innstillinger" role="tablist" aria-orientation="vertical">
             <button class="settings-nav-item" id="settings-tab-arbeidsmengde" data-settings-tab="arbeidsmengde" role="tab" aria-controls="settings-pane-arbeidsmengde">Arbeidsmengde</button>
+            <button class="settings-nav-item" id="settings-tab-frister" data-settings-tab="frister" role="tab" aria-controls="settings-pane-frister">Frister</button>
             <button class="settings-nav-item" id="settings-tab-saksbehandling" data-settings-tab="saksbehandling" role="tab" aria-controls="settings-pane-saksbehandling">Saksbehandling</button>
             <button class="settings-nav-item" id="settings-tab-data" data-settings-tab="data" role="tab" aria-controls="settings-pane-data">Data</button>
           </nav>
@@ -3520,6 +3523,50 @@ tr:hover .sak-tag-display.sak-tag-empty,
                       </div>
                       <span class="field-error" id="vac-error"></span>
                     </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="settings-pane" id="settings-pane-frister" data-settings-pane="frister" role="tabpanel" aria-labelledby="settings-tab-frister">
+              <section class="settings-section">
+                <h2 class="settings-section-title">Frister</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-sub">Forslagene i dialogene når du sender brev eller registrerer svar. Du kan alltid endre datoen i dialogen, og eksisterende saker endres ikke. Arbeidsdager og buffer per sakstype ligger under <a href="#" data-goto-settings-tab="arbeidsmengde">Arbeidsmengde</a>.</span>
+                    </div>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Søkers frist etter 1. realitetsbrev</span>
+                      <span class="settings-label-sub">Foreslås ved «Brev sendt» fra Ny</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-dl-firstLetter" data-dl-key="firstLetter" type="number" min="1" max="24" step="1" aria-label="Søkers frist etter 1. realitetsbrev, måneder" />
+                      <span class="s-unit">mnd</span></label>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Søkers frist etter senere realitetsbrev</span>
+                      <span class="settings-label-sub">Foreslås ved «Brev sendt» fra Viderebehandling</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-dl-laterLetter" data-dl-key="laterLetter" type="number" min="1" max="24" step="1" aria-label="Søkers frist etter senere realitetsbrev, måneder" />
+                      <span class="s-unit">mnd</span></label>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Din frist for å behandle svar</span>
+                      <span class="settings-label-sub">Foreslås når søkerens svar registreres</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-dl-response" data-dl-key="response" type="number" min="1" max="24" step="1" aria-label="Din frist for å behandle svar, måneder" />
+                      <span class="s-unit">mnd</span></label>
+                  </div>
+                  <div class="settings-row tdf-foot">
+                    <span class="settings-label-sub">Standard: 3 / 3 / 3 måneder</span>
+                    <button class="s-btn" id="btn-dl-reset">Tilbakestill til standard</button>
                   </div>
                 </div>
               </section>
@@ -4741,7 +4788,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.52.0';
+var APP_VERSION    = 'v4.53.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4757,6 +4804,7 @@ var BELEGG_KEY   = 'pt_belegg_horizon';
 var BUFFER_KEY   = 'pt_frist_buffer';   // gammel global buffer, leses bare ved oppgradering
 var TYPE_BUFFER_KEY = 'pt_type_buffers';
 var WORK_WINDOW_KEY = 'pt_work_windows';
+var DEADLINES_KEY   = 'pt_deadlines';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
 var UNASSIGNED_REMINDER_KEY = 'pt_unassigned_reminder';
@@ -4897,10 +4945,25 @@ function medlesingProgress(template, checklist) {
   return { checked: checked, total: total, done: total > 0 && checked === total };
 }
 
-// Frister i måneder
-var FRIST_NY_TIL_FRISTARKIV     = 6;
-var FRIST_FRISTARKIV_TIL_VIDERE = 3;
-var FRIST_VIDERE_TIL_FRISTARKIV = 6;
+// Fristene som foreslås i dialogene, i måneder. Kan endres under
+// Innstillinger → Frister. firstLetter/laterLetter er søkerens frist etter
+// første og senere realitetsbrev; response er egen frist for å behandle svaret.
+var DEADLINE_DEFAULTS = { firstLetter: 3, laterLetter: 3, response: 3 };
+var DEADLINE_MAX = 24;
+
+// Tar lagrede/importerte frister og returnerer et fullstendig sett. Hver verdi
+// valideres for seg — en ugyldig faller tilbake til standarden.
+// Ren funksjon — se test/deadlineSettings.test.js.
+function normalizeDeadlines(raw) {
+  var src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  var out = {};
+  Object.keys(DEADLINE_DEFAULTS).forEach(function(k) {
+    var v = src[k];
+    out[k] = (typeof v === 'number' && isFinite(v) && v >= 1 && v <= DEADLINE_MAX)
+      ? Math.floor(v) : DEADLINE_DEFAULTS[k];
+  });
+  return out;
+}
 
 // Beskriver hva en statusovergang krever av dialoger, og hvordan den skal
 // bokføres. Dette er den ene fasiten for saksflyten: både sakslista og
@@ -4908,8 +4971,10 @@ var FRIST_VIDERE_TIL_FRISTARKIV = 6;
 // ikke kan havne i Fristarkiv med saksbehandlerens egen frist stående som om
 // den var søkerens. Returnerer null når det ikke er noen reell overgang.
 // Ren funksjon — se test/caseStatus.test.js.
-function statusTransition(fromStatus, toStatus, isOppdrag) {
+function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
   if (!toStatus || fromStatus === toStatus) return null;
+  var dl = deadlines || DEADLINE_DEFAULTS;
+  function months(n) { return n + (n === 1 ? ' måned' : ' måneder'); }
 
   var t = {
     needsConfirm:  false,
@@ -4941,20 +5006,20 @@ function statusTransition(fromStatus, toStatus, isOppdrag) {
     t.needsConfirm  = fromNy;
     t.needsTags     = fromNy;
     t.needsDueDate  = true;
-    t.suggestMonths = fromNy ? FRIST_NY_TIL_FRISTARKIV : FRIST_VIDERE_TIL_FRISTARKIV;
+    t.suggestMonths = fromNy ? dl.firstLetter : dl.laterLetter;
     t.logType       = fromNy ? 'ny' : 'videre';
     t.confirmDesc   = 'registreres som nybehandlet og sendes til Fristarkiv';
     t.dueDateDesc   = fromNy
-      ? 'Saken markeres som fullført og sendes til Fristarkiv. Foreslått frist er ' + FRIST_NY_TIL_FRISTARKIV + ' måneder fra i dag.'
-      : 'Saken sendes tilbake til Fristarkiv. Foreslått frist er ' + FRIST_VIDERE_TIL_FRISTARKIV + ' måneder fra i dag.';
+      ? 'Saken markeres som fullført og sendes til Fristarkiv. Foreslått frist er ' + months(dl.firstLetter) + ' fra i dag.'
+      : 'Saken sendes tilbake til Fristarkiv. Foreslått frist er ' + months(dl.laterLetter) + ' fra i dag.';
     return t;
   }
 
   // Søkeren har svart, og svaret skal behandles. Ny frist er vår egen.
   if (toStatus === 'viderebehandling' && fromStatus === 'fristarkiv') {
     t.needsDueDate  = true;
-    t.suggestMonths = FRIST_FRISTARKIV_TIL_VIDERE;
-    t.dueDateDesc   = 'Saken sendes til Viderebehandling. Foreslått frist er ' + FRIST_FRISTARKIV_TIL_VIDERE + ' måneder fra i dag.';
+    t.suggestMonths = dl.response;
+    t.dueDateDesc   = 'Saken sendes til Viderebehandling. Foreslått frist er ' + months(dl.response) + ' fra i dag.';
     return t;
   }
 
@@ -5607,6 +5672,7 @@ function makeExportPayload() {
     typeBuffers: typeBuffers,
     workWindows: workWindows,
     workWindowUnit: 'workdays',
+    deadlines:  deadlines,
     homeDeadlineFilter: homeDeadlineFilter,
     activeCase: activeCase,
     unassignedReminder: unassignedReminder,
@@ -5650,6 +5716,9 @@ function readImportSettings(d) {
   if (d.workWindows && typeof d.workWindows === 'object' && !Array.isArray(d.workWindows)) {
     // Eksport fra før v4.42.0 har varigheter i kalenderdager
     out.workWindows = normalizeWorkWindows(d.workWindowUnit === 'workdays' ? d.workWindows : migrateWorkWindowsToWorkdays(d.workWindows));
+  }
+  if (d.deadlines && typeof d.deadlines === 'object' && !Array.isArray(d.deadlines)) {
+    out.deadlines = normalizeDeadlines(d.deadlines);
   }
   if (Array.isArray(d.medlesing)) {
     out.medlesing = d.medlesing.filter(function(m) {
@@ -6475,6 +6544,14 @@ function loadWorkWindows() {
 }
 function saveWorkWindows(w) {
   lsSetSafe(WORK_WINDOW_KEY, JSON.stringify(w));
+}
+function loadDeadlines() {
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(DEADLINES_KEY)); } catch(e) {}
+  return normalizeDeadlines(raw);
+}
+function saveDeadlines(d) {
+  lsSetSafe(DEADLINES_KEY, JSON.stringify(d));
 }
 function loadHomeDeadlineFilter() {
   try { return normalizeHomeDeadlineFilter(JSON.parse(localStorage.getItem(HOME_DEADLINE_KEY))); }
@@ -7365,6 +7442,7 @@ var productionGoal = loadGoal();
 var beleggHorizon  = loadBeleggHorizon();
 var typeBuffers    = loadTypeBuffers();
 var workWindows    = loadWorkWindows();
+var deadlines      = loadDeadlines();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
 var activeCase = loadActiveCase();
 var unassignedReminder = loadUnassignedReminder();
@@ -8107,6 +8185,19 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'SETTINGS_DEADLINE_CHANGE': {
+      // value null = tilbake til standard; key null = alle tilbake til standard
+      var nextDl = Object.assign({}, deadlines);
+      if (payload.key == null) nextDl = Object.assign({}, DEADLINE_DEFAULTS);
+      else if (payload.key in DEADLINE_DEFAULTS) {
+        nextDl[payload.key] = payload.value == null ? DEADLINE_DEFAULTS[payload.key] : payload.value;
+      }
+      deadlines = normalizeDeadlines(nextDl);
+      saveDeadlines(deadlines);
+      showToast(payload.key == null ? '✓ Fristene tilbakestilt' : '✓ Frist lagret');
+      break;
+    }
+
     case 'HOME_DEADLINE_FILTER_SET': {
       homeDeadlineFilter = normalizeHomeDeadlineFilter(payload.filter);
       saveHomeDeadlineFilter(homeDeadlineFilter);
@@ -8259,6 +8350,7 @@ function _dispatch(action, payload) {
         }
         if ('typeBuffers' in s) { typeBuffers = s.typeBuffers; saveTypeBuffers(typeBuffers); }
         if ('workWindows' in s) { workWindows = s.workWindows; saveWorkWindows(workWindows); }
+        if ('deadlines' in s) { deadlines = s.deadlines; saveDeadlines(deadlines); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
         if ('activeCase' in s) { activeCase = s.activeCase; saveActiveCase(activeCase); }
@@ -8319,6 +8411,7 @@ function _dispatch(action, payload) {
       activeCase = null;
       typeBuffers = normalizeTypeBuffers(null);
       workWindows = normalizeWorkWindows(null);
+      deadlines = normalizeDeadlines(null);
       homeDeadlineFilter = defaultHomeDeadlineFilter();
       undoSnapshot = null; // en åpen «Angre» skal ikke kunne hente sakene tilbake
       closeBackdrop('delete-all-backdrop-2');
@@ -9381,7 +9474,7 @@ function runStatusTransition(id, toStatus, opts) {
   var theCase = cases.find(function(c) { return c.id === id; });
   if (!theCase) return;
   var isOppdrag = theCase.type === 'oppdrag';
-  var t = statusTransition(theCase.status, toStatus, isOppdrag);
+  var t = statusTransition(theCase.status, toStatus, isOppdrag, deadlines);
   if (!t) return;
 
   // Oppdrag har sin egen avslutning, som også fører statistikken.
@@ -14316,7 +14409,7 @@ function showBufferLegend(list) {
 // ── Innstillinger ──────────────────────────────────
 // ── Innstillinger: venstremeny ─────────────────────
 // Rekkefølgen følger menyen; piltastene går i denne rekkefølgen.
-var SETTINGS_TABS = ['arbeidsmengde', 'saksbehandling', 'data'];
+var SETTINGS_TABS = ['arbeidsmengde', 'frister', 'saksbehandling', 'data'];
 // v4.35.0 lagret underseksjonen; den åpner nå hovedseksjonen den hører til.
 var SETTINGS_TAB_LEGACY = { produksjon: 'arbeidsmengde', sakstype: 'arbeidsmengde', ferie: 'arbeidsmengde', medlesere: 'saksbehandling', sjekkliste: 'saksbehandling', saksmappe: 'saksbehandling', cpc: 'saksbehandling', sikkerhetskopi: 'data', eksport: 'data', faresone: 'data', om: 'data' };
 
@@ -14379,6 +14472,7 @@ function renderInnstillinger() {
   var remInp = document.getElementById('input-unassigned-reminder');
   if (remInp) remInp.value = String(unassignedReminder);
   _renderWorkWindowInputs();
+  _renderDeadlineInputs();
   _bkUpdateSettingsUI();
   renderVacationList();
   renderMedleserList();
@@ -16768,6 +16862,36 @@ function _caseSourceFillInputs() {
   sel.addEventListener('change', function() {
     dispatch('SETTINGS_BELEGG_CHANGE', { value: parseInt(this.value, 10) });
   });
+})();
+
+// ── Frister (måneder som foreslås i dialogene) ─────
+function _renderDeadlineInputs() {
+  document.querySelectorAll('[data-dl-key]').forEach(function(inp) {
+    var k = inp.dataset.dlKey;
+    inp.value = String(deadlines[k]);
+    inp.placeholder = String(DEADLINE_DEFAULTS[k]);
+  });
+}
+(function() {
+  document.querySelectorAll('[data-dl-key]').forEach(function(inp) {
+    inp.addEventListener('change', function() {
+      var raw = this.value.trim();
+      var v = parseInt(raw, 10);
+      // Tomt felt = standard; et ugyldig tall avvises og feltet tilbakestilles
+      if (raw !== '' && !(v >= 1 && v <= DEADLINE_MAX)) { _renderDeadlineInputs(); return; }
+      dispatch('SETTINGS_DEADLINE_CHANGE', { key: this.dataset.dlKey, value: raw === '' ? null : v });
+      _renderDeadlineInputs();
+    });
+  });
+  var reset = document.getElementById('btn-dl-reset');
+  if (reset) reset.addEventListener('click', function() {
+    dispatch('SETTINGS_DEADLINE_CHANGE', { key: null });
+    _renderDeadlineInputs();
+  });
+  document.querySelectorAll('[data-goto-settings-tab]').forEach(function(a) {
+    a.addEventListener('click', function(e) { e.preventDefault(); showSettingsTab(this.dataset.gotoSettingsTab, true); });
+  });
+  _renderDeadlineInputs();
 })();
 
 // ── Standard per sakstype (varighet + buffer) ──────
