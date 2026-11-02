@@ -133,3 +133,30 @@ test('toggleResponseCheck ignores unknown items', () => {
   toggleResponseCheck(data, 2, 'nope');
   assert.deepStrictEqual(plain(responseChecked(data, 2)), []);
 });
+
+// ── Fremdriftslinjen ──
+
+const { sakChecklistProgress } = loadFunctions(
+  ['lettersSent', 'examinationRound', 'responseChecked', 'sakChecklistProgress'],
+  { vars: ['RESPONSE_CHECKLIST'] }
+);
+
+const TPL = [{ phase: 'A', items: [{ id: 'a1' }, { id: 'a2' }] }, { phase: 'B', items: [{ id: 'b1' }] }];
+
+test('progress shows the main checklist outside Viderebehandling', () => {
+  const data = { checklist: { a1: true, a2: null, b1: false } };
+  ['ny', 'fristarkiv', 'avsluttet'].forEach((status) => {
+    assert.deepStrictEqual(plain(sakChecklistProgress({ status, history: [sent1] }, data, TPL)),
+      { label: 'Sjekkliste', done: 2, total: 3 }, status);
+  });
+});
+
+test('progress shows the response checklist for the current round in Viderebehandling', () => {
+  const data = { checklist: { a1: true, a2: true, b1: true }, responseChecks: { 2: ['read'], 3: ['read', 'basis'] } };
+  assert.deepStrictEqual(plain(sakChecklistProgress({ status: 'viderebehandling', history: [sent1, answer1] }, data, TPL)),
+    { label: 'Svar – runde 2', done: 1, total: 4 });
+});
+
+test('oppdrag keep the main checklist label even in odd states', () => {
+  assert.strictEqual(sakChecklistProgress({ type: 'oppdrag', status: 'ny' }, { checklist: {} }, TPL).label, 'Sjekkliste');
+});

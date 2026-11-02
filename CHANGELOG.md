@@ -7,6 +7,11 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Changed
+- I Viderebehandling viser fremdriftslinjen øverst og i sticky-baren
+  sjekklisten for svaret («Svar – runde 2 · 2 / 4») i stedet for
+  førsterundesjekklisten, som ikke lenger sier noe om arbeidet som gjenstår.
+
 ## [4.54.0] - 2026-11-02
 
 ### Added

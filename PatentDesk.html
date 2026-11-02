@@ -3801,7 +3801,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <button class="sak-anchor" data-anchor="vurdering">Vurdering</button>
           </nav>
           <div class="sak-sticky-progress">
-            <span class="sak-sticky-label">Sjekkliste</span>
+            <span class="sak-sticky-label" id="sak-sticky-cl-label">Sjekkliste</span>
             <div class="sak-sticky-track"><div class="sak-sticky-fill sak-sticky-fill-cl" id="sak-sticky-cl-bar"></div></div>
             <span class="sak-sticky-pct" id="sak-sticky-cl-pct"></span>
           </div>
@@ -3895,7 +3895,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <div class="sak-progress-bars">
               <div class="sak-progress-item">
                 <div class="sak-progress-label">
-                  <span>Sjekkliste</span>
+                  <span id="sak-prog-checklist-label">Sjekkliste</span>
                   <span class="sak-progress-pct" id="sak-prog-checklist-pct">0 / 0</span>
                 </div>
                 <div class="sak-progress-track">
@@ -5209,6 +5209,20 @@ function responseChecked(data, round) {
   var list = all && Array.isArray(all[round]) ? all[round] : [];
   return list.slice();
 }
+// Fremdriftslinjen øverst og i sticky-baren: hovedsjekklisten, eller i
+// Viderebehandling sjekklisten for svaret i runden saken er i.
+function sakChecklistProgress(c, data, template) {
+  if (c && c.type !== 'oppdrag' && c.status === 'viderebehandling') {
+    var round = examinationRound(c);
+    return { label: 'Svar – runde ' + round, done: responseChecked(data, round).length, total: RESPONSE_CHECKLIST.length };
+  }
+  var items = [];
+  (template || []).forEach(function(p) { p.items.forEach(function(i) { items.push(i); }); });
+  var cl = (data && data.checklist) || {};
+  return { label: 'Sjekkliste', total: items.length,
+           done: items.filter(function(i) { return cl[i.id] !== null && cl[i.id] !== undefined; }).length };
+}
+
 function toggleResponseCheck(data, round, id) {
   if (!RESPONSE_CHECKLIST.some(function(i) { return i.id === id; })) return data;
   if (!data.responseChecks || typeof data.responseChecks !== 'object') data.responseChecks = {};
@@ -8331,6 +8345,7 @@ function _dispatch(action, payload) {
       toggleResponseCheck(rData, examinationRound(rc), payload.item);
       saveSakData(payload.id, rData);
       renderSakResponse(rc, rData);
+      updateSakProgress(rData);
       break;
     }
 
@@ -12703,12 +12718,14 @@ function renderSakResultSummary(data) {
 }
 
 function updateSakProgress(data) {
-  // Sjekkliste-progress
-  var allItems = [];
-  getChecklistTemplate().forEach(function(p) { p.items.forEach(function(i) { allItems.push(i); }); });
-  var total   = allItems.length;
-  var done    = allItems.filter(function(i) { return data.checklist[i.id] !== null && data.checklist[i.id] !== undefined; }).length;
+  // Sjekkliste-progress (i Viderebehandling: sjekklisten for svaret)
+  var progCase = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
+  var prog    = sakChecklistProgress(progCase, data, getChecklistTemplate());
+  var total   = prog.total;
+  var done    = prog.done;
   var clPct   = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('sak-prog-checklist-label').textContent = prog.label;
+  document.getElementById('sak-sticky-cl-label').textContent = prog.label;
   document.getElementById('sak-prog-checklist-pct').textContent = done + ' / ' + total;
   document.getElementById('sak-prog-checklist-bar').style.width  = clPct + '%';
 
