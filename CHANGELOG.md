@@ -7,6 +7,30 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.53.0] - 2026-11-03
+
+### Added
+- Runder: hvert realitetsbrev («Brev sendt» eller Avgjør → nytt realitetsbrev)
+  lagrer nå en frossen kopi av kravvurderingen og motholdene som ble brukt.
+  «Svar mottatt» fyller inn søkerens svar i runden.
+- «Runde N ⇥» på rundelinjen åpner en skuff med forrige runde, med én linje per
+  krav. Har saken flere runder, velger du runde i en veljer. På brede vinduer
+  kan skuffen festes.
+- Mothold som kom til i en senere runde får merket «ny i runde N».
+- «Lagre nåværende vurdering som runde N» for saker som allerede er forbi runde
+  1. Slike runder merkes «lagret i ettertid».
+- Runder tas med i eksport og import.
+- Angrer du «Brev sendt», fjernes runden som ble lagret sammen med den.
+  Belegg og frister påvirkes ikke av runder.
+
+### Changed
+- Dataformatet oppgraderes automatisk (skjema 8). Ellers er alt som før.
+
+### Fixed
+- Import: saksdetaljer som ikke er gyldige hoppes nå over, og en
+  sammenslåingsimport overskriver ikke lenger detaljer for saker som ikke
+  finnes i filen.
+
 ## [4.52.3] - 2026-11-03
 
 ### Fixed
