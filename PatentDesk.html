@@ -2972,6 +2972,55 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-title-row     { display: flex; align-items: center; gap: var(--space-4); }
 .sak-round-line    { display: block; font-size: var(--text-sm); color: var(--muted-text); margin-top: var(--space-1); font-variant-numeric: tabular-nums; }
 .sak-round-line:empty { display: none; }
+.sak-round-line .btn-round { font: inherit; font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  color: var(--primary-dim); background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-pill);
+  padding: 1px var(--space-3); margin-left: var(--space-3); cursor: pointer; vertical-align: baseline; }
+.sak-round-line .btn-round:hover { border-color: var(--primary); }
+.sak-round-line .btn-round[aria-expanded="true"] { background: var(--s-videre-bg); border-color: var(--primary); }
+.sak-round-line .rd-link { color: var(--primary); text-decoration: underline; background: none; border: 0; font: inherit;
+  font-size: var(--text-xs); padding: 0; margin-left: var(--space-3); cursor: pointer; }
+
+/* ── Rundeskuff (rd-) ── */
+.rd { position: fixed; top: 0; right: 0; bottom: 0; width: 340px; z-index: 60;
+  background: var(--surface); border-left: 1px solid var(--border); box-shadow: -6px 0 24px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column; font-size: var(--text-sm); color: var(--text); }
+.rd[hidden] { display: none; }
+.rd.rd-is-pinned { box-shadow: none; z-index: 45; }
+/* Festet: skuffen er en kolonne; smalere marger så kravtabellen får plass ved 1180–1300 px */
+body.rd-pinned .main-content { margin-right: 340px; padding-left: var(--space-8); padding-right: var(--space-8); }
+body.rd-pinned .sak-sticky-bar { right: 340px; }
+.rd-head  { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border); }
+.rd-title { font-weight: var(--weight-semibold); font-size: var(--text-md); margin-right: auto; }
+.rd-ib    { font: inherit; font-size: var(--text-xs); color: var(--muted-text); background: none; border: 1px solid transparent;
+  border-radius: var(--radius-sm); padding: 3px 7px; cursor: pointer; }
+.rd-ib:hover { border-color: var(--border2); color: var(--text); }
+.rd-ib[aria-pressed="true"] { background: var(--s-videre-bg); border-color: var(--s-videre-border); color: var(--s-videre-text); font-weight: var(--weight-semibold); }
+.rd-tabs  { display: flex; gap: var(--space-1); flex-wrap: wrap; padding: var(--space-3) var(--space-5) 0; }
+.rd-tab   { font: inherit; font-size: var(--text-xs); font-weight: var(--weight-semibold); padding: 3px 10px; cursor: pointer;
+  border-radius: var(--radius-pill); border: 1px solid var(--border2); background: var(--surface); color: var(--muted-text); }
+.rd-tab.on { background: var(--s-videre-bg); border-color: var(--primary); color: var(--primary-dim); }
+.rd-meta  { padding: var(--space-3) var(--space-5); color: var(--muted-text); font-size: var(--text-xs); line-height: 1.5;
+  border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.rd-frozen { display: block; margin-top: var(--space-1); font-style: italic; }
+.rd-body  { padding: var(--space-2) var(--space-5); overflow: auto; flex: 1; }
+.rd-sec   { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--muted-text);
+  font-weight: var(--weight-semibold); margin: var(--space-4) 0 var(--space-1); }
+.rd-line  { display: grid; grid-template-columns: 1.6rem 3.4rem 1fr; gap: var(--space-2); align-items: baseline;
+  padding: var(--space-1) 0; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.rd-line b { color: var(--primary); }
+.rd-v     { white-space: nowrap; }
+.rd-n     { color: var(--text-on-no); font-weight: var(--weight-semibold); }
+.rd-y     { color: #047857; font-weight: var(--weight-semibold); }
+.rd-na    { color: var(--muted-text); }
+.rd-d     { color: var(--muted-text); font-size: var(--text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.rd-legend { font-size: var(--text-2xs); color: var(--muted-text); margin-top: var(--space-1); }
+.rd-docs  { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.rd-doc   { font-size: var(--text-xs); font-weight: var(--weight-semibold); padding: 1px var(--space-3); border-radius: var(--radius-pill);
+  border: 1px solid var(--border2); background: var(--surface2); }
+.rd-empty { padding: var(--space-6) var(--space-1); color: var(--muted-text); text-align: center; }
+.rd-foot  { padding: var(--space-3) var(--space-5); border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--muted-text); }
+.mh-round-new { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--s-videre-text); background: var(--s-videre-bg);
+  border: 1px solid var(--s-videre-border); border-radius: var(--radius-pill); padding: 1px var(--space-3); white-space: nowrap; }
 .sak-svar-count    { font-size: var(--text-xs); color: var(--muted-text); font-weight: var(--weight-medium); text-transform: none; letter-spacing: 0; }
 .sak-subtitle      { display: block; font-size: var(--text-md); color: var(--text); font-weight: var(--weight-medium); margin-top: var(--space-1); }
 .sak-status-wrap   { position: relative; }
@@ -3161,6 +3210,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
         <span class="drawer-version logo-version"></span>
       </div>
     </nav>
+
+    <!-- ══ RUNDESKUFF (forrige runde, skrivebeskyttet) ══ -->
+    <aside class="rd" id="round-drawer" aria-label="Tidligere runde" hidden></aside>
 
     <!-- ══ INNHOLD ══ -->
     <main class="main-content">
@@ -4837,7 +4889,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
 var APP_VERSION    = 'v4.52.3';
-var SCHEMA_VERSION = 7;
+var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
 var DEFAULT_DOC_ROOT = 'C:\\Users\\brukernavn\\Dokumenter\\Saksdokumenter';
@@ -5219,6 +5271,206 @@ function sanitizeResponseExtra(extra) {
       return x === 'claims' || x === 'description';
     }) : undefined
   };
+}
+
+// ── Rundeøyeblikksbilder (schema 8) ────────────────
+// Vurderingen slik den var da et realitetsbrev gikk ut, lagret i
+// saksdetaljene (pt_sak_{id}.rounds) — aldri i pt_cases, så belegg og frister
+// er uberørt. En runde: { n, letter: { date, deadline }, response: { date,
+// changes } | null, claims: [normalizeClaim], docIds: ['D1', …], backfilled? }.
+// Alle funksjonene her er rene og muterer ikke input — se test/rounds.test.js.
+function roundIsoDate(v) {
+  return (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && isValidDate(v)) ? v : null;
+}
+function isRoundDocId(v) {
+  return typeof v === 'string' && /^D\d+$/.test(v);
+}
+function roundTriState(v) {
+  return v === true || v === false ? v : null;
+}
+
+// Hvitlistet kopi av ett krav. Ukjente nøkler (også __proto__) tas ikke med,
+// og krav uten nyhet låses til ingen oppfinnelseshøyde.
+function normalizeClaim(raw, i) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  var num = (typeof raw.num === 'number' && Number.isInteger(raw.num) && raw.num >= 1) ? raw.num : (i + 1);
+  var novelty = roundTriState(raw.novelty);
+  var inventive = novelty === false ? false : roundTriState(raw.inventive);
+  var dep = (typeof raw.dep === 'number' && Number.isInteger(raw.dep) && raw.dep >= 1 && raw.dep < num) ? raw.dep : null;
+  return {
+    num: num, novelty: novelty, inventive: inventive, formal: roundTriState(raw.formal),
+    independent: raw.independent === true, dep: dep, depManual: raw.depManual === true,
+    label: typeof raw.label === 'string' ? raw.label : '',
+    noveltyDoc: isRoundDocId(raw.noveltyDoc) ? raw.noveltyDoc : null,
+    inventiveDocs: Array.isArray(raw.inventiveDocs) ? raw.inventiveDocs.filter(isRoundDocId) : []
+  };
+}
+
+function normalizeRoundClaims(list) {
+  if (!Array.isArray(list)) return [];
+  var out = [];
+  list.forEach(function(c, i) { var n = normalizeClaim(c, i); if (n) out.push(n); });
+  return out;
+}
+
+// Ny runde n: dyp kopi av kravene og de motholdene som ikke er trukket.
+function makeRoundSnapshot(n, sakData, letterDate, deadline) {
+  var docs = (sakData && Array.isArray(sakData.docs)) ? sakData.docs : [];
+  var docIds = [];
+  docs.forEach(function(d) {
+    if (d && !d.withdrawn && isRoundDocId(d.id) && docIds.indexOf(d.id) === -1) docIds.push(d.id);
+  });
+  return {
+    n: n,
+    letter: { date: roundIsoDate(letterDate), deadline: roundIsoDate(deadline) },
+    response: null,
+    claims: normalizeRoundClaims(sakData && sakData.claims),
+    docIds: docIds
+  };
+}
+
+function roundsOf(data) {
+  return (data && Array.isArray(data.rounds)) ? data.rounds : [];
+}
+
+function roundsSortedCopy(list) {
+  return list.slice().sort(function(a, b) { return a.n - b.n; });
+}
+
+// Rundene etter en statusovergang. ctx: { from, to, isOppdrag, lettersAfter,
+// sakData, today, deadline, response } (response = sanitizeResponseExtra(...)).
+function roundsAfterTransition(rounds, ctx) {
+  if (!ctx || ctx.isOppdrag) return [];
+  var after = ctx.lettersAfter || 0;
+  var list = (Array.isArray(rounds) ? rounds : []).filter(function(r) {
+    return r && typeof r === 'object' && typeof r.n === 'number' && r.n <= after;
+  }).map(function(r) { return JSON.parse(JSON.stringify(r)); });
+  var from = ctx.from, to = ctx.to;
+  if (to === 'fristarkiv' && (from === 'ny' || from === 'viderebehandling')) {
+    if (after >= 1) {
+      list = list.filter(function(r) { return r.n !== after; });
+      list.push(makeRoundSnapshot(after, ctx.sakData, ctx.today, ctx.deadline));
+      list = roundsSortedCopy(list);
+    }
+  } else if (from === 'fristarkiv' && to === 'viderebehandling' && list.length) {
+    var resp = ctx.response || {};
+    list[list.length - 1].response = {
+      date: roundIsoDate(resp.received) || roundIsoDate(ctx.today),
+      changes: Array.isArray(resp.changes) ? resp.changes.filter(function(x) {
+        return x === 'claims' || x === 'description';
+      }) : []
+    };
+  }
+  return list;
+}
+
+// Lagrede/importerte runder: alt som ikke har riktig form forkastes eller
+// nulles, ukjente nøkler tas ikke med, sortert på n med én runde per n.
+function normalizeRounds(raw) {
+  if (!Array.isArray(raw)) return [];
+  var out = [], seen = {};
+  raw.forEach(function(r) {
+    if (!r || typeof r !== 'object' || Array.isArray(r)) return;
+    if (typeof r.n !== 'number' || !Number.isInteger(r.n) || r.n < 1 || seen[r.n]) return;
+    seen[r.n] = true;
+    var letter = (r.letter && typeof r.letter === 'object' && !Array.isArray(r.letter)) ? r.letter : {};
+    var resp = (r.response && typeof r.response === 'object' && !Array.isArray(r.response)) ? r.response : null;
+    var docIds = [];
+    (Array.isArray(r.docIds) ? r.docIds : []).forEach(function(id) {
+      if (isRoundDocId(id) && docIds.indexOf(id) === -1) docIds.push(id);
+    });
+    var round = {
+      n: r.n,
+      letter: { date: roundIsoDate(letter.date), deadline: roundIsoDate(letter.deadline) },
+      response: resp ? {
+        date: roundIsoDate(resp.date),
+        changes: Array.isArray(resp.changes) ? resp.changes.filter(function(x) {
+          return x === 'claims' || x === 'description';
+        }) : []
+      } : null,
+      claims: normalizeRoundClaims(r.claims),
+      docIds: docIds
+    };
+    if (r.backfilled === true) round.backfilled = true;
+    out.push(round);
+  });
+  return roundsSortedCopy(out);
+}
+
+// Saksdetaljer fra en importfil (fil, sikkerhetskopi, arbeidsfil): rundene
+// normaliseres, resten er som før.
+function normalizeImportSakDetails(sd) {
+  if (!sd || typeof sd !== 'object' || Array.isArray(sd)) return sd;
+  var out = {};
+  Object.keys(sd).forEach(function(k) { if (k !== '__proto__') out[k] = sd[k]; });
+  out.rounds = normalizeRounds(sd.rounds);
+  return out;
+}
+
+function roundMark(v, letter) {
+  return v === true ? letter + '✓' : v === false ? letter + '✗' : '–';
+}
+
+// Én linje per frosset krav i rundeskuffen, regnet ut fra runden alene.
+function roundDrawerLines(round) {
+  if (!round || typeof round !== 'object') return [];
+  return normalizeRoundClaims(round.claims).map(function(c) {
+    var docs = [];
+    [c.noveltyDoc].concat(c.inventiveDocs).forEach(function(id) {
+      if (id && docs.indexOf(id) === -1) docs.push(id);
+    });
+    return { num: c.num, novelty: roundMark(c.novelty, 'N'), inventive: roundMark(c.inventive, 'O'),
+             docs: docs, label: c.label };
+  });
+}
+
+// Runden et mothold først var med i. Står det ikke i noen runde, er det nytt
+// i runden saken er i nå (høyeste n + 1). Ingen runder: null (ingen merking).
+function docFirstRound(rounds, docId) {
+  if (!Array.isArray(rounds) || !rounds.length) return null;
+  var max = 0, first = null;
+  rounds.forEach(function(r) {
+    if (!r || typeof r.n !== 'number') return;
+    if (r.n > max) max = r.n;
+    if (Array.isArray(r.docIds) && r.docIds.indexOf(docId) !== -1 && (first === null || r.n < first)) first = r.n;
+  });
+  if (!max) return null;
+  return first !== null ? first : max + 1;
+}
+
+// Rundene som kan vises: aldri flere enn brevene som faktisk er sendt.
+function visibleRounds(c, rounds) {
+  if (!c || c.type === 'oppdrag') return [];
+  var sent = lettersSent(c.history);
+  return (Array.isArray(rounds) ? rounds : []).filter(function(r) {
+    return r && typeof r.n === 'number' && r.n <= sent;
+  });
+}
+
+function canBackfillRound(c, rounds) {
+  if (!c || c.type === 'oppdrag') return false;
+  return lettersSent(c.history) >= 1 && !(Array.isArray(rounds) && rounds.length);
+}
+
+// «Lagre nåværende vurdering som runde N»: dagens vurdering, merket som lagret
+// i ettertid. Brev- og svardato hentes fra historikken.
+function backfillRound(c, sakData) {
+  var info = responseRoundInfo(c);
+  var deadline = c && c.status === 'fristarkiv' ? c.dueDate : null;
+  var snap = makeRoundSnapshot(lettersSent(c && c.history), sakData, info.letter, deadline);
+  if (info.received) {
+    snap.response = { date: roundIsoDate(info.received), changes: Array.isArray(info.changes) ? info.changes.filter(function(x) {
+      return x === 'claims' || x === 'description';
+    }) : [] };
+  }
+  snap.backfilled = true;
+  return snap;
+}
+
+// «Angre» på en statusendring: rundene slik de var før.
+function roundsAfterUndo(current, snap) {
+  if (snap && Array.isArray(snap.roundsBefore)) return JSON.parse(JSON.stringify(snap.roundsBefore));
+  return Array.isArray(current) ? current : [];
 }
 
 // Egen frist for å behandle svaret: antall måneder fra mottaksdatoen.
@@ -6396,11 +6648,28 @@ var SCHEMA_MIGRATIONS = {
       try { data = JSON.parse(raw); } catch(e) { continue; } // ugyldig JSON røres ikke
       if (migrateDocTitles(data)) localStorage.setItem(key, JSON.stringify(data));
     }
-  }
+  },
   // v6 → v7: avsluttede saker kan ha `outcome` (meddelt/avslått/henlagt). Feltet
   // er valgfritt, og migrateCases normaliserer det ved hver lasting, så
   // eksisterende data trenger ingen omskriving — eldre avsluttede saker står
   // uten utfall og vises som «Avsluttet».
+  // v7 → v8: saksdetaljene får rounds[] (øyeblikksbilder av vurderingen ved
+  // hvert realitetsbrev). Eksisterende saker starter tomme; lettersSent er
+  // urørt, og en sak forbi første brev kan lagre dagens vurdering i ettertid.
+  // Bare pt_sak_* røres — pt_cases har aldri runder. Idempotent.
+  7: function() {
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (!key || key.indexOf(SAK_KEY_PREFIX) !== 0) continue;
+      var raw = localStorage.getItem(key);
+      if (!raw) continue;
+      var data;
+      try { data = JSON.parse(raw); } catch(e) { continue; } // ugyldig JSON røres ikke
+      if (!data || typeof data !== 'object' || Array.isArray(data) || Array.isArray(data.rounds)) continue;
+      data.rounds = [];
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+  }
 };
 
 function migrateAll() {
@@ -6982,6 +7251,27 @@ function caseBufferLabel(c) {
 // behandlet, så saken går tilbake til standarden for sin nye type. En sak som
 // går videre, er din — «ikke fordelt» fjernes.
 // Ren funksjon — se test/typeBuffers.test.js og test/unassigned.test.js.
+// Kroken i CASE_STATUS_CHANGE: regner ut rundene etter overgangen og lagrer
+// dem i pt_sak_{id} bare når de endres. Gir rundene før (for «Angre»), eller
+// null når ingenting ble endret.
+function applyRoundsTransition(theCase, fromStatus, toStatus, patch, respExtra) {
+  var data = loadSakData(theCase.id);
+  var before = roundsOf(data);
+  var base = data || defaultSakData(0);
+  var view = ensureClaims(Object.assign({}, base, { claims: Array.isArray(base.claims) ? base.claims.slice() : [] }));
+  var after = roundsAfterTransition(before, {
+    from: fromStatus, to: toStatus, isOppdrag: theCase.type === 'oppdrag',
+    lettersAfter: lettersSent(patch.history), sakData: view, today: todayStr(),
+    deadline: toStatus === 'fristarkiv' ? (patch.dueDate || theCase.dueDate || null) : null,
+    response: respExtra
+  });
+  if (JSON.stringify(after) === JSON.stringify(before)) return null;
+  var snapBefore = JSON.parse(JSON.stringify(before));
+  base.rounds = after;
+  saveSakData(theCase.id, base);
+  return snapBefore;
+}
+
 function statusChangePatch(toStatus, outcome, newDueDate) {
   var patch = { status: toStatus, outcome: normaliseOutcome(toStatus, outcome), caseBuffer: null,
                 unassigned: false, unassignedSince: null };
@@ -7789,6 +8079,12 @@ function _dispatch(action, payload) {
       });
       // Persister
       saveCases();
+      // Rundeøyeblikksbilder i saksdetaljene (eneste krok); «Angre» tar dem tilbake
+      var roundsBefore = applyRoundsTransition(theCase, fromStatus, toStatus, patch, respExtra);
+      if (roundsBefore) {
+        AppState.undoSnapshot.roundsBefore = roundsBefore;
+        AppState.undoSnapshot.roundsCaseId = id;
+      }
       if (logType) AppState.undoSnapshot.logIds.push(logEvent(logType, theCase.caseNumber, theCase.title));
       // Render
       render();
@@ -7984,6 +8280,14 @@ function _dispatch(action, payload) {
           saveSakData(undoSnapshot.caseId, ccData);
         }
       }
+      // Statusendring: bare rundene settes tilbake, resten av saksdetaljene står
+      if (undoSnapshot.roundsCaseId) {
+        var rdData = loadSakData(undoSnapshot.roundsCaseId);
+        if (rdData) {
+          rdData.rounds = roundsAfterUndo(roundsOf(rdData), undoSnapshot);
+          saveSakData(undoSnapshot.roundsCaseId, rdData);
+        }
+      }
       activeCase = activeCaseAfterUndo(undoSnapshot, activeCase);
       saveActiveCase(activeCase);
       medlLog = medlLogAfterUndo(undoSnapshot.medlLog, medlLog);
@@ -8058,6 +8362,21 @@ function _dispatch(action, payload) {
       saveSakData(id, data);
       renderSakAssessment(data);
       if (payload.undoable) showUndoToast(payload.toast || 'Krav fjernet');
+      break;
+    }
+
+    case 'ROUND_BACKFILL': {
+      // «Lagre nåværende vurdering som runde N»: bare når saken er forbi et
+      // brev og ikke har noen runder som kan vises
+      var bfCase = cases.find(function(c) { return c.id === payload.id; });
+      if (!bfCase) break;
+      var bfData = loadSakData(payload.id) || defaultSakData(0);
+      if (!canBackfillRound(bfCase, visibleRounds(bfCase, roundsOf(bfData)))) break;
+      var bfView = ensureClaims(Object.assign({}, bfData, { claims: Array.isArray(bfData.claims) ? bfData.claims.slice() : [] }));
+      bfData.rounds = [backfillRound(bfCase, bfView)];
+      saveSakData(payload.id, bfData);
+      if (activeSakId === payload.id) renderSak(payload.id);
+      showToast('✓ Vurderingen er lagret som runde ' + bfData.rounds[0].n);
       break;
     }
 
@@ -9284,6 +9603,7 @@ function render() {
   updateNav();
   renderActiveCaseChip();
   showView(activePage);
+  if (activePage !== 'sak' && _roundDrawer.open) closeRoundDrawer();
   if (activePage === 'hjem')          { renderHjem();          return; }
   if (activePage === 'statistikk')    { renderStats();         return; }
   if (activePage === 'innstillinger') { renderInnstillinger(); return; }
@@ -10678,6 +10998,12 @@ function prepareImportData(data) {
   var migrated = migrateCases(data.cases.map(decodeCase));
   var valid    = migrated.filter(_validateImportCase);
   data.cases   = valid;
+  // Saksdetaljene skrives rått til pt_sak_* ved import — rundene normaliseres her
+  if (data.sakDetails && typeof data.sakDetails === 'object' && !Array.isArray(data.sakDetails)) {
+    Object.keys(data.sakDetails).forEach(function(id) {
+      data.sakDetails[id] = normalizeImportSakDetails(data.sakDetails[id]);
+    });
+  }
   // Validate stats structure — ignore if malformed
   if (data.stats && (typeof data.stats !== 'object' || !Array.isArray(data.stats.log))) {
     delete data.stats;
@@ -11020,7 +11346,7 @@ function defaultSakData(numClaims) {
   for (var i = 1; i <= n; i++) {
     claims.push({ num: i, novelty: null, inventive: null, formal: null, notes: '', independent: false, dep: nearestIndependentClaim(claims, claims.length), depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] });
   }
-  return { numClaims: n, filingDate: '', priorityDate: '', checklist: checklist, classes: [], docs: [], claims: claims };
+  return { numClaims: n, filingDate: '', priorityDate: '', checklist: checklist, classes: [], docs: [], claims: claims, rounds: [] };
 }
 
 function ensureClaims(data) {
@@ -11554,7 +11880,9 @@ function renderSak(id) {
   // Topptekst + fane-tittel
   document.getElementById('sak-page-title').textContent = cas.caseNumber;
   document.getElementById('sak-page-sub').textContent = sakSubtitle(cas);
-  document.getElementById('sak-page-round').textContent = sakRoundLine(cas);
+  if (_roundDrawer.open && _roundDrawer.caseId !== id) closeRoundDrawer();
+  renderSakRoundLine(cas, data);
+  renderRoundDrawer();
   renderSakResponse(cas, data);
   document.title = cas.caseNumber + (cas.title ? ' — ' + cas.title : '') + ' — PatentDesk';
   document.getElementById('sak-sticky-cn').textContent = cas.caseNumber;
@@ -11972,6 +12300,176 @@ function _checklistSlotHtml(data, groups, fallbackTitle) {
 
 // «Svar og endringer»: sjekklisten for søkerens svar, øverst i Vurdering.
 // Vises bare i Viderebehandling, og starter tom i hver runde.
+// ── Rundeskuff ─────────────────────────────────────
+// «Runde N ⇥» på rundelinjen åpner forrige runde slik den ble frosset. Skuffen
+// er et overlegg som lukkes med Esc, klikk utenfor og når saken forlates;
+// festet blir den en kolonne ved siden av innholdet. Festet-tilstanden ligger
+// bare i minnet. All tekst fra runden settes med textContent.
+var ROUND_PIN_MIN_WIDTH = 1180;
+var _roundDrawer = { open: false, caseId: null, n: null, pinned: false };
+
+// Festing krever plass til kravtabellen ved siden av skuffen: minst ~1180 px
+// vindu, og med utvidet sidemeny minst ROUND_PIN_MIN_CONTENT px ved siden av den
+// (sidemenyen kollapses ikke automatisk).
+var ROUND_PIN_MIN_CONTENT = 1000;
+function roundPinAllowed() {
+  var nav = document.querySelector('.drawer');
+  var navW = nav ? nav.getBoundingClientRect().width : 0;
+  return window.innerWidth >= ROUND_PIN_MIN_WIDTH && window.innerWidth - navW >= ROUND_PIN_MIN_CONTENT;
+}
+
+function rdEl(tag, cls, text) {
+  var el = document.createElement(tag);
+  if (cls) el.className = cls;
+  if (text != null) el.textContent = text;
+  return el;
+}
+
+function renderSakRoundLine(cas, data) {
+  var el = document.getElementById('sak-page-round');
+  el.textContent = '';
+  var text = sakRoundLine(cas);
+  if (!text) return;
+  el.appendChild(rdEl('span', null, text));
+  var rounds = visibleRounds(cas, roundsOf(data));
+  if (rounds.length) {
+    var n = rounds[rounds.length - 1].n;
+    var btn = rdEl('button', 'btn-round', 'Runde ' + n + ' ⇥');
+    btn.type = 'button';
+    btn.setAttribute('aria-controls', 'round-drawer');
+    btn.setAttribute('aria-expanded', _roundDrawer.open && _roundDrawer.caseId === cas.id ? 'true' : 'false');
+    btn.title = 'Vis vurderingen fra runde ' + n + ' slik den var da brevet ble sendt';
+    el.appendChild(btn);
+  } else if (canBackfillRound(cas, rounds)) {
+    var sent = lettersSent(cas.history);
+    var link = rdEl('button', 'rd-link', 'Lagre nåværende vurdering som runde ' + sent);
+    link.type = 'button';
+    link.title = 'Lagrer kravene slik de står nå, som runde ' + sent;
+    el.appendChild(link);
+  }
+}
+
+function openRoundDrawer(caseId) {
+  _roundDrawer = { open: true, caseId: caseId, n: null, pinned: false };
+  renderRoundDrawer();
+  var close = document.querySelector('#round-drawer button[aria-label="Lukk"]');
+  if (close) close.focus();
+}
+
+function closeRoundDrawer() {
+  var wasOpen = _roundDrawer.open;
+  _roundDrawer = { open: false, caseId: null, n: null, pinned: false };
+  renderRoundDrawer();
+  return wasOpen;
+}
+
+function roundMetaText(round) {
+  var parts = [];
+  if (round.letter && round.letter.date) parts.push('Brev ' + toDisplay(round.letter.date));
+  if (round.letter && round.letter.deadline) parts.push('frist ' + toDisplay(round.letter.deadline));
+  if (round.response) {
+    var what = responseChangesLabel(round.response.changes);
+    parts.push('svar ' + (round.response.date ? toDisplay(round.response.date) : 'mottatt') + (what ? ' (' + what + ')' : ''));
+  }
+  if (round.backfilled) parts.push('lagret i ettertid');
+  return parts.join(' · ');
+}
+
+function renderRoundDrawer() {
+  var el = document.getElementById('round-drawer');
+  if (!el) return;
+  var btn = document.querySelector('#sak-page-round .btn-round');
+  var cas = _roundDrawer.open ? cases.find(function(c) { return c.id === _roundDrawer.caseId; }) : null;
+  var rounds = cas ? visibleRounds(cas, roundsOf(loadSakData(cas.id))) : [];
+  if (!_roundDrawer.open || !rounds.length) {
+    _roundDrawer = { open: false, caseId: null, n: null, pinned: false };
+    el.hidden = true;
+    el.textContent = '';
+    el.classList.remove('rd-is-pinned');
+    document.body.classList.remove('rd-pinned');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    return;
+  }
+  var round = rounds.find(function(r) { return r.n === _roundDrawer.n; }) || rounds[rounds.length - 1];
+  _roundDrawer.n = round.n;
+  if (!roundPinAllowed()) _roundDrawer.pinned = false;
+  var pinned = _roundDrawer.pinned;
+
+  el.textContent = '';
+  var head = rdEl('div', 'rd-head');
+  head.appendChild(rdEl('span', 'rd-title', 'Runde ' + round.n));
+  if (roundPinAllowed()) {
+    var pin = rdEl('button', 'rd-ib rd-pin', pinned ? 'Festet' : 'Fest');
+    pin.type = 'button';
+    pin.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+    pin.title = pinned ? 'Løsne – lukkes igjen med Esc eller klikk utenfor' : 'Hold åpen mens du arbeider';
+    head.appendChild(pin);
+  }
+  var close = rdEl('button', 'rd-ib rd-close', '✕');
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Lukk');
+  close.title = pinned ? 'Lukk' : 'Lukk (Esc)';
+  head.appendChild(close);
+  el.appendChild(head);
+
+  if (rounds.length >= 2) {
+    var tabs = rdEl('div', 'rd-tabs');
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', 'Velg runde');
+    rounds.forEach(function(r) {
+      var t = rdEl('button', 'rd-tab' + (r.n === round.n ? ' on' : ''), 'Runde ' + r.n);
+      t.type = 'button';
+      t.setAttribute('role', 'tab');
+      t.setAttribute('aria-selected', r.n === round.n ? 'true' : 'false');
+      t.dataset.round = String(r.n);
+      tabs.appendChild(t);
+    });
+    el.appendChild(tabs);
+  }
+
+  var meta = rdEl('div', 'rd-meta', roundMetaText(round));
+  if (!round.backfilled) meta.appendChild(rdEl('span', 'rd-frozen', 'Frosset da brevet ble sendt. Endres ikke av senere arbeid.'));
+  el.appendChild(meta);
+
+  var body = rdEl('div', 'rd-body');
+  var lines = roundDrawerLines(round);
+  if (!lines.length) {
+    body.appendChild(rdEl('div', 'rd-empty', 'Ingen krav i denne runden.'));
+  } else {
+    body.appendChild(rdEl('div', 'rd-sec', 'Krav'));
+    lines.forEach(function(l) {
+      var line = rdEl('div', 'rd-line');
+      line.appendChild(rdEl('b', null, String(l.num)));
+      var v = rdEl('span', 'rd-v');
+      [l.novelty, l.inventive].forEach(function(mark, i) {
+        if (i) v.appendChild(document.createTextNode(' '));
+        v.appendChild(rdEl('span', mark.indexOf('✓') !== -1 ? 'rd-y' : mark.indexOf('✗') !== -1 ? 'rd-n' : 'rd-na', mark));
+      });
+      line.appendChild(v);
+      var d = l.docs.join(', ');
+      line.appendChild(rdEl('span', 'rd-d', [d, l.label].filter(Boolean).join(' · ')));
+      body.appendChild(line);
+    });
+    body.appendChild(rdEl('div', 'rd-legend', 'N = nyhet, O = oppfinnelseshøyde'));
+  }
+  body.appendChild(rdEl('div', 'rd-sec', 'Dokumenter i runden'));
+  var ids = Array.isArray(round.docIds) ? round.docIds : [];
+  if (ids.length) {
+    var chips = rdEl('div', 'rd-docs');
+    ids.forEach(function(id) { chips.appendChild(rdEl('span', 'rd-doc', id)); });
+    body.appendChild(chips);
+  } else {
+    body.appendChild(rdEl('div', 'rd-legend', 'Ingen dokumenter'));
+  }
+  el.appendChild(body);
+  el.appendChild(rdEl('div', 'rd-foot', pinned ? 'Skrivebeskyttet · Festet til du lukker' : 'Skrivebeskyttet · Esc lukker'));
+
+  el.classList.toggle('rd-is-pinned', pinned);
+  document.body.classList.toggle('rd-pinned', pinned);
+  el.hidden = false;
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+
 function renderSakResponse(cas, data) {
   var el = document.getElementById('sak-svar');
   if (!el) return;
@@ -12536,7 +13034,9 @@ function renderSakDocs(data) {
   // rapporten, så raden og «Kopier rapport» aldri kan si ulike ting.
   var rows = buildSearchReport(data.claims || [], docs);
   var app  = { filingDate: data.filingDate, priorityDate: data.priorityDate };
-  var locked = docRemoveWithdraws(cases.find(function(c) { return c.id === activeSakId; }));
+  var docsCase = cases.find(function(c) { return c.id === activeSakId; });
+  var locked = docRemoveWithdraws(docsCase);
+  var docRounds = visibleRounds(docsCase, roundsOf(data));
 
   el.innerHTML = docs.map(function(d, i) {
     var row  = rows[i];
@@ -12566,7 +13066,7 @@ function renderSakDocs(data) {
         mhExtLinkHtml(d) +
         mhOpsBtnHtml(d, i) +
       '</span>' +
-      '<span class="mh-cats">' + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
+      '<span class="mh-cats">' + mhRoundBadgeHtml(docRounds, d.id) + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
       '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
@@ -12583,6 +13083,15 @@ function renderSakDocs(data) {
     '</div>';
   }).join('');
   el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+}
+
+// «ny i runde N» på et mothold som ikke var med i første runde. Ingen merking
+// når saken ikke har lagrede runder.
+function mhRoundBadgeHtml(rounds, docId) {
+  var first = docFirstRound(rounds, docId);
+  if (!first || first <= 1) return '';
+  return '<span class="mh-round-new" title="' + esc('Kom til i runde ' + first + ' – ikke med i tidligere brev') + '">' +
+    esc('ny i runde ' + first) + '</span>';
 }
 
 // P/E-knappene. Et forslag vises som stiplet kant med begrunnelsen i
@@ -13604,6 +14113,45 @@ document.addEventListener('keydown', function(e) {
 // eller vinduet endrer størrelse.
 window.addEventListener('scroll', function() { if (_sakOpenDocPop) positionDocPop(); }, true);
 window.addEventListener('resize', function() { if (_sakOpenDocPop) positionDocPop(); });
+
+// ── Rundeskuff: hendelser ──────────────────────────
+document.getElementById('sak-page-round').addEventListener('click', function(e) {
+  if (e.target.closest('.btn-round')) {
+    if (_roundDrawer.open) closeRoundDrawer(); else openRoundDrawer(activeSakId);
+    return;
+  }
+  if (e.target.closest('.rd-link') && activeSakId) dispatch('ROUND_BACKFILL', { id: activeSakId });
+});
+document.getElementById('round-drawer').addEventListener('click', function(e) {
+  var tab = e.target.closest('.rd-tab');
+  if (tab) { _roundDrawer.n = parseInt(tab.dataset.round, 10); renderRoundDrawer(); return; }
+  if (e.target.closest('.rd-pin')) {
+    _roundDrawer.pinned = !_roundDrawer.pinned && roundPinAllowed();
+    renderRoundDrawer();
+    var pinBtn = this.querySelector('.rd-pin');
+    if (pinBtn) pinBtn.focus();
+    return;
+  }
+  if (e.target.closest('.rd-close')) {
+    closeRoundDrawer();
+    var rb = document.querySelector('#sak-page-round .btn-round');
+    if (rb) rb.focus();
+  }
+});
+// Klikk utenfor lukker et overlegg (ikke en festet skuff). mousedown, så et
+// klikk som tegner skuffen på nytt ikke regnes som «utenfor».
+document.addEventListener('mousedown', function(e) {
+  if (!_roundDrawer.open || _roundDrawer.pinned) return;
+  if (e.target.closest('#round-drawer') || e.target.closest('#sak-page-round .btn-round')) return;
+  closeRoundDrawer();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape' || !_roundDrawer.open || _roundDrawer.pinned) return;
+  closeRoundDrawer();
+  var rb = document.querySelector('#sak-page-round .btn-round');
+  if (rb) rb.focus();
+});
+window.addEventListener('resize', function() { if (_roundDrawer.open) renderRoundDrawer(); });
 
 // Kravsvurdering: tri-toggle knapper
 document.getElementById('sak-claims-tbody').addEventListener('click', function(e) {
