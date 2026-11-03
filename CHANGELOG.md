@@ -57,6 +57,12 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   ellers. Det følger seksjonens bredde, så å lukke sidemenyen kan få treet
   tilbake ved siden av tabellen.
 
+### Removed
+- Scriptet `Lag-PatentDesk-snarvei.ps1`, som lagde en Edge-snarvei med eget
+  ikon, er fjernet sammen med beskrivelsen i README. Snarveien forsvant med
+  jevne mellomrom fra skrivebordet; åpne `PatentDesk.html` med en vanlig
+  snarvei i stedet.
+
 ### Fixed
 - E-dokumenter (eldre søknader) kan ikke lenger brukes mot
   oppfinnelseshøyden. De teller bare for nyhet, jf. patentloven § 2 tredje
