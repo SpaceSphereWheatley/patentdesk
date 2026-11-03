@@ -22,7 +22,8 @@ the file, introduce imports, or add any external dependencies.
 ### Data stores
 - `cases[]` in localStorage — case list, used for filtering, stats, and the
   sidebar. Keyed `pt_cases`.
-- `pt_sak_{id}` in localStorage — full per-case detail data.
+- `pt_sak_{id}` in localStorage — full per-case detail data, including
+  `rounds[]` (frozen per-office-action snapshots of claim assessment and citations).
 - IndexedDB — CPC classification database (`cpc_v2.json`, 253 K+ symbols).
   Only `{code, inUse}` is persisted per case; descriptions are looked up live
   from `_cpcDb` and never stored.
@@ -35,7 +36,7 @@ These two stores have distinct responsibilities. Do not conflate them.
 
 ### Versioning
 - Version string: `APP_VERSION` (SemVer, e.g. `v4.4.4`)
-- Schema version: `SCHEMA_VERSION` (integer, currently `7`)
+- Schema version: `SCHEMA_VERSION` (integer, currently `8`)
 - Versioning follows **Semantic Versioning**: bump patch for fixes, minor for
   meaningful features, major for breaking changes. Do not bump mid-session —
   only at the end of a batch of related changes.
