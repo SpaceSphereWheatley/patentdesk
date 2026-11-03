@@ -2178,7 +2178,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-claims-table th { white-space: normal; overflow-wrap: normal; padding: var(--space-4) 4px;
                        letter-spacing: 0.06em; line-height: 1.3; }
 .sak-claims-table td { padding-left: 4px; padding-right: 4px; }
-.sak-th-notes       { text-align: center; }
+.sak-th-notes       { text-align: left; }
+/* Notater-overskriften starter der notatteksten starter:
+   td-padding + input-ramme (1px) + input-padding. */
+.sak-claims-table th.sak-th-notes { text-align: left;
+                                    padding-left: calc(var(--space-2) + 1px + var(--space-2)); }
 .sak-td-krav        { text-align: center; font-size: var(--text-base); cursor: pointer; user-select: none; }
 .claim-row-independent td { border-top: 2px solid var(--accent) !important; }
 .sak-td-check       { text-align: center; padding: var(--space-2) var(--space-3); }
@@ -2242,6 +2246,8 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-claim-note:focus { outline: none; border-color: var(--primary-dim);
                         background: var(--surface2); }
 .sak-claim-note::placeholder { color: var(--muted-text); opacity: 0.5; }
+/* Lange notater får "…" når feltet ikke er i fokus (kun visning). */
+.sak-claim-note:not(:focus) { text-overflow: ellipsis; }
 
 /* Resultatoversikt */
 .sak-result-table   { width: 100%; }
