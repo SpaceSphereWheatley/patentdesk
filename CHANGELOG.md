@@ -7,6 +7,15 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.52.3] - 2026-11-03
+
+### Fixed
+- «Angre» etter at du har fjernet et mothold eller redusert antall krav kunne
+  overskrive endringer du rakk å gjøre i kravene eller motholdene før du
+  trykket. Nå forsvinner «Angre»-meldingen så snart du endrer krav,
+  kravkoblinger, mothold eller antall krav i saken; endringer i sjekkliste,
+  notater eller andre saker påvirker den ikke.
+
 ## [4.52.2] - 2026-11-03
 
 ### Changed
