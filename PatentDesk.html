@@ -5956,6 +5956,18 @@ function activeCaseAfterUndo(snapshot, current) {
   return (snapshot && snapshot.activeCase) || null;
 }
 
+// «Angre» for slettet sitering / færre krav gjenoppretter hele docs/claims.
+// Endres sakens krav eller siteringer etterpå, må øyeblikksbildet forkastes,
+// ellers ville «Angre» overskrive de senere endringene.
+function undoInvalidatedBy(snapshot, actionType, payload) {
+  if (!snapshot || (snapshot.mode !== 'docs' && snapshot.mode !== 'claims')) return false;
+  if (!payload || payload.id !== snapshot.caseId) return false;
+  return ['CLAIM_TOGGLE', 'CLAIM_SET', 'CLAIM_DOC_TOGGLE', 'CLAIM_DEP_CHANGE',
+    'CLAIM_LABEL_CHANGE', 'CLAIM_NOTE_CHANGE',
+    'DOC_ADD', 'DOC_REMOVE', 'DOC_RESTORE', 'DOC_FIELD_CHANGE',
+    'SAK_CLAIM_COUNT_CHANGE'].indexOf(actionType) !== -1;
+}
+
 // «Angre» for en endring på én sak: verdiene feltene i patch hadde før.
 // extra er resten av øyeblikksbildet (pågående sak, medlesingsloggen).
 function undoPatchSnapshot(c, patch, extra) {
@@ -7722,6 +7734,7 @@ var AppState = {
 // stempler lagringstidspunktet og planlegger sikkerhetskopi og skriving av
 // arbeidsfilen etter hver handling.
 function dispatch(action, payload) {
+  if (undoInvalidatedBy(undoSnapshot, action, payload)) dropUndo();
   _dispatch(action, payload);
   _wfStampSaved();
   scheduleAutoBackup();
@@ -10984,6 +10997,14 @@ function showUndoToast(msg) {
     if (t.parentNode) { t.style.transition = 'opacity 0.4s'; t.style.opacity = '0'; setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 400); }
     undoSnapshot = null;
   }, 6000);
+}
+
+// Forkast «Angre»: øyeblikksbildet tømmes og toasten fjernes.
+function dropUndo() {
+  undoSnapshot = null;
+  clearTimeout(undoToastTimer);
+  var t = document.getElementById('undo-toast');
+  if (t && t.parentNode) t.parentNode.removeChild(t);
 }
 
 
