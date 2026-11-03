@@ -196,4 +196,6 @@ asked.
 | `CHANGELOG.md` | Version history (Keep a Changelog 1.1.0 format) |
 | `CLAUDE.md` | These instructions |
 | `.claude/agents/*.md` | Agent team definitions (see Agent team workflow) |
+| `test/*.test.js` | Unit tests (`npm test`) |
+| `test/e2e/*.e2e.js` | Browser layout tests, not in `npm test`; run `node --test test/e2e/*.e2e.js` (skipped if Playwright is missing) |
 | `cpc_v2.json` | CPC classification data (external, loaded into IndexedDB) |
