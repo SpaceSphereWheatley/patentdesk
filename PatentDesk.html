@@ -6879,6 +6879,23 @@ function postponedDaysFor(c) {
 function deadlineFor(c) {
   return postponedDaysFor(c) > 0 ? c.dueDate : effDueFor(c);
 }
+
+// fristDisplayDate: datoen fristblokken viser. En avsluttet sak viser den
+// faktiske fristen — bufferen er bare et planleggingsverktøy for åpne saker.
+// Ren funksjon — se test/sakFristCountdown.test.js.
+function fristDisplayDate(c) {
+  return c.status === 'avsluttet' ? c.dueDate : deadlineFor(c);
+}
+
+// fristMetaMode: hvilken tilleggslinje fristblokken viser — 'postponed'
+// (utsatt), 'buffer' (buffer trukket fra) eller '' (ingen). Avsluttet: ingen.
+// Ren funksjon — se test/sakFristCountdown.test.js.
+function fristMetaMode(c) {
+  if (c.status === 'avsluttet') return '';
+  if (postponedDaysFor(c) > 0) return 'postponed';
+  if (c.type !== 'oppdrag' && effDueFor(c) !== c.dueDate) return 'buffer';
+  return '';
+}
 // Hvem fristen tilhører avhenger av status, og det er den viktigste
 // domeneregelen på sakssiden: i Fristarkiv er realitetsbrevet sendt, og datoen
 // er søkerens frist til å svare oss — ikke vår egen. Den skilnaden skal stå
@@ -6896,6 +6913,8 @@ function fristOwnerLabel(c) {
 // og en forfalt frist er forfalt i kalenderdager uansett hvem den tilhørte.
 // Ren funksjon — se test/sakFristCountdown.test.js.
 function fristCountdownLabel(c, days, workDays) {
+  // Avsluttet: arbeidet er gjort, så en passert frist er ikke overtid.
+  if (c && c.status === 'avsluttet') return c.type === 'oppdrag' ? 'Utført' : 'Avsluttet';
   if (days === 0) return 'i dag';
   if (days < 0) {
     var over = Math.abs(days);
@@ -6905,6 +6924,17 @@ function fristCountdownLabel(c, days, workDays) {
                     (c.status === 'ny' || c.status === 'viderebehandling');
   if (ownDeadline) return workDays + (workDays === 1 ? ' arbeidsdag' : ' arbeidsdager') + ' igjen';
   return days + (days === 1 ? ' dag' : ' dager') + ' igjen';
+}
+
+// CSS-modifikator for nedtellingen. Avsluttet farges aldri, og søkerens frist
+// (fristarkiv, ikke oppdrag) er ikke vårt etterslep, så den farges heller ikke.
+// Ren funksjon — se test/sakFristCountdown.test.js.
+function fristCountdownTone(c, days) {
+  if (c && c.status === 'avsluttet') return '';
+  if (c && c.type !== 'oppdrag' && c.status === 'fristarkiv') return '';
+  if (days < 0) return 'overdue';
+  if (days <= 14) return 'urgent';
+  return '';
 }
 
 function fristOwnerNote(c) {
@@ -11743,8 +11773,9 @@ function renderSakFrist(cas) {
   if (!box) return;
   if (!cas.dueDate) { box.style.display = 'none'; return; }
 
-  // En utsatt sak måles mot den faktiske fristen; planen står under
-  var effDue    = deadlineFor(cas);
+  // En utsatt sak måles mot den faktiske fristen; planen står under.
+  // En avsluttet sak viser alltid den faktiske fristen.
+  var effDue    = fristDisplayDate(cas);
   var days      = daysUntil(effDue);
   var postponed = postponedDaysFor(cas);
   var isApplicant = cas.type !== 'oppdrag' && cas.status === 'fristarkiv';
@@ -11755,17 +11786,17 @@ function renderSakFrist(cas) {
 
   var left = document.getElementById('sak-frist-left');
   left.textContent = fristCountdownLabel(cas, days, workDaysUntil(effDue));
-  // Søkerens frist er ikke vårt etterslep, så den skal ikke farges som hastesak.
-  left.className = 'sak-frist-left' +
-    (isApplicant ? '' : days < 0 ? ' overdue' : days <= 14 ? ' urgent' : '');
+  var tone = fristCountdownTone(cas, days);
+  left.className = 'sak-frist-left' + (tone ? ' ' + tone : '');
 
   var meta = document.getElementById('sak-frist-meta');
-  if (postponed) {
+  var metaMode = fristMetaMode(cas);
+  if (metaMode === 'postponed') {
     meta.innerHTML = '<span class="sak-frist-postponed">Planlagt ' + esc(toDisplay(effDueFor(cas))) + '  ·  utsatt ' +
       postponed + (postponed === 1 ? ' dag' : ' dager') + ' etter fristen</span> ' +
       '<button type="button" class="sak-frist-unpostpone" id="sak-frist-unpostpone">Fjern utsettelse</button>';
     meta.style.display = '';
-  } else if (cas.type !== 'oppdrag' && effDue !== cas.dueDate) {
+  } else if (metaMode === 'buffer') {
     var bd = bufferDaysFor(cas);
     meta.textContent = 'Faktisk frist ' + toDisplay(cas.dueDate) + '  ·  ' + bd + (bd === 1 ? ' dags' : ' dagers') + ' buffer trukket fra';
     meta.style.display = '';
