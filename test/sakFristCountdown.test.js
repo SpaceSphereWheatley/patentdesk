@@ -120,3 +120,89 @@ test('claimFieldAriaLabel: navngir krav og kolonne', () => {
 test('claimFieldAriaLabel: ukjent felt gir et brukbart navn framfor å kaste', () => {
   assert.strictEqual(claimFieldAriaLabel(1, 'tull'), 'Krav 1');
 });
+
+// ── fristDisplayDate / fristMetaMode ───────────────
+// Fristblokken på sakssiden. For en avsluttet sak er planen (bufferen)
+// uinteressant: vis den faktiske fristen og ingen plan-/bufferlinje.
+// Lastes per test, slik at en manglende funksjon bare feiler disse testene.
+
+const FRIST_DEPS = ['isoLocalDate', 'getEffectiveDueDate', 'effDueFor', 'bufferAppliesTo', 'typeBufferFor',
+  'bufferDaysFor', 'canPostpone', 'postponedDaysFor', 'deadlineFor'];
+
+function fristFns() {
+  return loadFunctions(['fristDisplayDate', 'fristMetaMode'].concat(FRIST_DEPS), {
+    globals: {
+      // Standardbuffer slik at en buffer faktisk trekkes fra der den gjelder
+      typeBuffers: { ny: 3, viderebehandling: 1 },
+      isNonWorkday: () => false,
+    },
+  });
+}
+
+function fsak(status, extra) {
+  return Object.assign({ id: 'f', caseNumber: 'F', type: 'sak', status: status, dueDate: '2026-11-04' }, extra);
+}
+
+test('fristDisplayDate/fristMetaMode: avsluttet med standardbuffer viser faktisk frist og ingen meta', () => {
+  const { fristDisplayDate, fristMetaMode, effDueFor } = fristFns();
+  const c = fsak('avsluttet');
+  assert.notStrictEqual(effDueFor(c), c.dueDate, 'forutsetning: bufferen gjelder for avsluttet');
+  assert.strictEqual(fristDisplayDate(c), '2026-11-04');
+  assert.strictEqual(fristMetaMode(c), '');
+});
+
+test('fristDisplayDate/fristMetaMode: avsluttet med egen positiv buffer viser faktisk frist og ingen meta', () => {
+  const { fristDisplayDate, fristMetaMode } = fristFns();
+  const c = fsak('avsluttet', { caseBuffer: 5 });
+  assert.strictEqual(fristDisplayDate(c), '2026-11-04');
+  assert.strictEqual(fristMetaMode(c), '');
+});
+
+test('fristDisplayDate/fristMetaMode: ny med buffer viser bufret dato og bufferlinje', () => {
+  const { fristDisplayDate, fristMetaMode } = fristFns();
+  const c = fsak('ny');
+  assert.strictEqual(fristDisplayDate(c), '2026-11-01');
+  assert.strictEqual(fristMetaMode(c), 'buffer');
+  const own = fsak('ny', { caseBuffer: 2 });
+  assert.strictEqual(fristDisplayDate(own), '2026-11-02');
+  assert.strictEqual(fristMetaMode(own), 'buffer');
+});
+
+test('fristDisplayDate/fristMetaMode: utsatt viderebehandling viser faktisk frist og utsatt-linje', () => {
+  const { fristDisplayDate, fristMetaMode } = fristFns();
+  const c = fsak('viderebehandling', { caseBuffer: -2 });
+  assert.strictEqual(fristDisplayDate(c), '2026-11-04');
+  assert.strictEqual(fristMetaMode(c), 'postponed');
+});
+
+test('fristDisplayDate/fristMetaMode: viderebehandling med positiv buffer er en vanlig buffer', () => {
+  const { fristDisplayDate, fristMetaMode } = fristFns();
+  const c = fsak('viderebehandling');
+  assert.strictEqual(fristDisplayDate(c), '2026-11-03');
+  assert.strictEqual(fristMetaMode(c), 'buffer');
+});
+
+test('fristDisplayDate/fristMetaMode: ny uten buffer har ingen meta', () => {
+  const { fristDisplayDate, fristMetaMode } = fristFns();
+  const c = fsak('ny', { caseBuffer: 0 });
+  assert.strictEqual(fristDisplayDate(c), '2026-11-04');
+  assert.strictEqual(fristMetaMode(c), '');
+});
+
+test('fristDisplayDate/fristMetaMode: oppdrag bruker alltid faktisk frist og har ingen meta', () => {
+  const { fristDisplayDate, fristMetaMode } = fristFns();
+  for (const status of ['ny', 'viderebehandling', 'fristarkiv', 'avsluttet']) {
+    const c = fsak(status, { type: 'oppdrag', caseBuffer: 4 });
+    assert.strictEqual(fristDisplayDate(c), '2026-11-04', status);
+    assert.strictEqual(fristMetaMode(c), '', status);
+  }
+});
+
+test('fristDisplayDate/fristMetaMode: fristarkiv viser søkers faktiske frist og ingen meta', () => {
+  const { fristDisplayDate, fristMetaMode } = fristFns();
+  for (const extra of [{}, { caseBuffer: 4 }, { caseBuffer: -2 }]) {
+    const c = fsak('fristarkiv', extra);
+    assert.strictEqual(fristDisplayDate(c), '2026-11-04');
+    assert.strictEqual(fristMetaMode(c), '');
+  }
+});
