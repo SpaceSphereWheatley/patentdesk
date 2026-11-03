@@ -26,6 +26,11 @@ powershell -ExecutionPolicy Bypass -File .\Lag-PatentDesk-snarvei.ps1
 Du får en snarvei på skrivebordet og i Start-menyen som åpner PatentDesk i
 eget Edge-vindu med PatentDesk-ikonet. Ingen administratorrettigheter trengs.
 
+For å omgjøre dette, kjør `Fjern-PatentDesk-snarvei.ps1` fra samme mappe. Det
+fjerner Edge-snarveiene og ikonkopien, og lager en vanlig snarvei på
+skrivebordet som åpner `PatentDesk.html` direkte (`-IngenNySnarvei` hopper
+over den siste delen).
+
 ## Hvordan data lagres
 
 All data lever i nettleseren, begrenset til filens opprinnelse:
@@ -95,6 +100,10 @@ powershell -ExecutionPolicy Bypass -File .\Lag-PatentDesk-snarvei.ps1
 
 This creates a Desktop and Start-menu shortcut that opens PatentDesk in its
 own Edge window with the PatentDesk icon. No admin rights required.
+
+To undo it, run `Fjern-PatentDesk-snarvei.ps1` from the same folder. It removes
+the Edge shortcuts and the icon copy, and creates a plain Desktop shortcut that
+opens `PatentDesk.html` directly (`-IngenNySnarvei` skips that last step).
 
 ## How data is stored
 
