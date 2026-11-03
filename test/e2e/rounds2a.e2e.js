@@ -12,7 +12,7 @@
 //   #round-drawer                   the drawer (hidden/absent when closed)
 //     .rd-title                     «Runde N»
 //     .rd-tab                       picker buttons «Runde 1», «Runde 2» (only with >= 2 rounds)
-//     button[aria-pressed]          «Fest»/«Festet» toggle (only at >= ~1180 px)
+//     button[aria-pressed]          «Fest»/«Festet» toggle (only when window − sidebar >= 1060 px)
 //     button[aria-label="Lukk"]     close
 //     .rd-line                      one per frozen claim
 //     .rd-frozen                    «Frosset da brevet ble sendt …» (not on backfilled rounds)
@@ -214,12 +214,14 @@ e2e('AC11 picker with two rounds: opens the latest, switches to round 1', async 
 });
 
 // ── AC11: pinning ──────────────────────────────────────────────────────────
-e2e('AC11 pinning is offered at 1280 px; pinned drawer stays open and the claims table does not overflow', async () => {
-  const { page, close } = await openCase(1280, { status: 'viderebehandling', history: HIST_V1, rounds: [R1] });
+// Fix round F4: pinning needs window − sidebar >= 1060 px, so 1320 px with the
+// sidebar expanded (was 1280 px before the fix round).
+e2e('AC11 pinning is offered at 1320 px; pinned drawer stays open and the claims table does not overflow', async () => {
+  const { page, close } = await openCase(1320, { status: 'viderebehandling', history: HIST_V1, rounds: [R1] });
   await openDrawer(page);
   const pin = drawer(page).locator('button[aria-pressed]');
   assert.equal(await pin.count(), 1);
-  assert.ok(await pin.isVisible(), 'Fest visible at 1280');
+  assert.ok(await pin.isVisible(), 'Fest visible at 1320');
   assert.equal(await pin.getAttribute('aria-pressed'), 'false');
   await pin.click();
   await page.waitForTimeout(150);
@@ -267,7 +269,7 @@ e2e('AC11 pinning is not offered below ~1180 px (overlay only)', async () => {
 });
 
 e2e('AC11 pinned state is not persisted', async () => {
-  const { page, close } = await openCase(1280, { status: 'viderebehandling', history: HIST_V1, rounds: [R1] });
+  const { page, close } = await openCase(1320, { status: 'viderebehandling', history: HIST_V1, rounds: [R1] });
   await openDrawer(page);
   await drawer(page).locator('button[aria-pressed]').click();
   await page.waitForTimeout(50);

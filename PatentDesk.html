@@ -6733,7 +6733,7 @@ function saveSakData(id, data) {
       if (c && c.novelty === false && c.inventive !== false) c.inventive = false;
     });
   }
-  lsSetSafe(sakKey(id), JSON.stringify(data));
+  return lsSetSafe(sakKey(id), JSON.stringify(data));
 }
 
 // ── Sjekkliste-mal ─────────────────────────────────
@@ -7253,7 +7253,8 @@ function caseBufferLabel(c) {
 // Ren funksjon — se test/typeBuffers.test.js og test/unassigned.test.js.
 // Kroken i CASE_STATUS_CHANGE: regner ut rundene etter overgangen og lagrer
 // dem i pt_sak_{id} bare når de endres. Gir rundene før (for «Angre»), eller
-// null når ingenting ble endret.
+// null når ingenting ble endret eller lagringen feilet (da varsles brukeren,
+// og «Angre» skal ikke ta tilbake en skriving som aldri skjedde).
 function applyRoundsTransition(theCase, fromStatus, toStatus, patch, respExtra) {
   var data = loadSakData(theCase.id);
   var before = roundsOf(data);
@@ -7268,7 +7269,10 @@ function applyRoundsTransition(theCase, fromStatus, toStatus, patch, respExtra) 
   if (JSON.stringify(after) === JSON.stringify(before)) return null;
   var snapBefore = JSON.parse(JSON.stringify(before));
   base.rounds = after;
-  saveSakData(theCase.id, base);
+  if (!saveSakData(theCase.id, base)) {
+    showToast('✗ Runden kunne ikke lagres – lagringsplassen er full', true);
+    return null;
+  }
   return snapBefore;
 }
 
@@ -8867,16 +8871,14 @@ function _dispatch(action, payload) {
         });
         cases = merged;
         saveCases();
-        if (d.sakDetails) {
-          Object.keys(d.sakDetails).forEach(function(id) { saveSakData(id, d.sakDetails[id]); });
-        }
+        var sdWrite = importSakDetailsToWrite(d.sakDetails, d.cases, 'merge');
+        Object.keys(sdWrite).forEach(function(id) { saveSakData(id, sdWrite[id]); });
       } else {
         cases = d.cases;
         if (d.stats) stats = d.stats;
         saveCases(); saveStats();
-        if (d.sakDetails) {
-          Object.keys(d.sakDetails).forEach(function(id) { saveSakData(id, d.sakDetails[id]); });
-        }
+        var sdAll = importSakDetailsToWrite(d.sakDetails, d.cases, 'replace');
+        Object.keys(sdAll).forEach(function(id) { saveSakData(id, sdAll[id]); });
         if (Array.isArray(d.vacations)) { vacations = d.vacations; saveVacations(); }
         if (d.docRoot) {
           saveDocRoot(d.docRoot);
@@ -11000,8 +11002,11 @@ function prepareImportData(data) {
   data.cases   = valid;
   // Saksdetaljene skrives rått til pt_sak_* ved import — rundene normaliseres her
   if (data.sakDetails && typeof data.sakDetails === 'object' && !Array.isArray(data.sakDetails)) {
+    // Oppføringer som ikke er rene objekter forkastes, så lokale detaljer beholdes
     Object.keys(data.sakDetails).forEach(function(id) {
-      data.sakDetails[id] = normalizeImportSakDetails(data.sakDetails[id]);
+      var sd = data.sakDetails[id];
+      if (!sd || typeof sd !== 'object' || Array.isArray(sd)) { delete data.sakDetails[id]; return; }
+      data.sakDetails[id] = normalizeImportSakDetails(sd);
     });
   }
   // Validate stats structure — ignore if malformed
@@ -11009,6 +11014,24 @@ function prepareImportData(data) {
     delete data.stats;
   }
   return { data: data, skipped: migrated.length - valid.length };
+}
+
+// Velger hvilke saksdetaljer DATA_IMPORT skriver til pt_sak_*. Flett: bare for
+// saker som besto valideringen i samme import. Erstatt: som før, alle
+// oppføringer. Aldri en oppføring som ikke er et rent objekt. Ren funksjon —
+// se test/roundsFixes.test.js.
+function importSakDetailsToWrite(sakDetails, validCases, mode) {
+  var out = {};
+  if (!sakDetails || typeof sakDetails !== 'object' || Array.isArray(sakDetails)) return out;
+  var ok = {};
+  (Array.isArray(validCases) ? validCases : []).forEach(function(c) { if (c && c.id != null) ok[c.id] = true; });
+  Object.keys(sakDetails).forEach(function(id) {
+    var sd = sakDetails[id];
+    if (!sd || typeof sd !== 'object' || Array.isArray(sd)) return;
+    if (mode === 'merge' && !Object.prototype.hasOwnProperty.call(ok, id)) return;
+    out[id] = sd;
+  });
+  return out;
 }
 
 // Fyller import-modalen med antall og fletteforklaring (matcher på sakens id),
@@ -12305,17 +12328,27 @@ function _checklistSlotHtml(data, groups, fallbackTitle) {
 // er et overlegg som lukkes med Esc, klikk utenfor og når saken forlates;
 // festet blir den en kolonne ved siden av innholdet. Festet-tilstanden ligger
 // bare i minnet. All tekst fra runden settes med textContent.
-var ROUND_PIN_MIN_WIDTH = 1180;
 var _roundDrawer = { open: false, caseId: null, n: null, pinned: false };
 
-// Festing krever plass til kravtabellen ved siden av skuffen: minst ~1180 px
-// vindu, og med utvidet sidemeny minst ROUND_PIN_MIN_CONTENT px ved siden av den
-// (sidemenyen kollapses ikke automatisk).
-var ROUND_PIN_MIN_CONTENT = 1000;
-function roundPinAllowed() {
-  var nav = document.querySelector('.drawer');
-  var navW = nav ? nav.getBoundingClientRect().width : 0;
-  return window.innerWidth >= ROUND_PIN_MIN_WIDTH && window.innerWidth - navW >= ROUND_PIN_MIN_CONTENT;
+// Festing krever plass til innholdet ved siden av sidemenyen: vindu − sidemeny
+// ≥ ROUND_PIN_MIN_CONTENT px (≈ 1320 px vindu med utvidet sidemeny, ≈ 1110 px
+// med kollapset). Sidemenyen kollapses ikke automatisk. Ren med argumenter —
+// se test/roundsFixes.test.js; uten argumenter leses vindu og sidemeny.
+var ROUND_PIN_MIN_CONTENT = 1060;
+function roundPinAllowed(winWidth, sidebarWidth) {
+  if (winWidth == null) winWidth = window.innerWidth;
+  if (sidebarWidth == null) {
+    var nav = document.querySelector('.drawer');
+    sidebarWidth = nav ? nav.getBoundingClientRect().width : 0;
+  }
+  return winWidth - sidebarWidth >= ROUND_PIN_MIN_CONTENT;
+}
+
+// Runden har ingen lagret vurdering: ingen krav, eller nyhet og
+// oppfinnelseshøyde er uvurdert på alle. Ren funksjon — se test/roundsFixes.test.js.
+function roundIsUnassessed(round) {
+  var claims = round && Array.isArray(round.claims) ? round.claims : [];
+  return claims.every(function(c) { return !c || (c.novelty == null && c.inventive == null); });
 }
 
 function rdEl(tag, cls, text) {
@@ -12433,9 +12466,8 @@ function renderRoundDrawer() {
 
   var body = rdEl('div', 'rd-body');
   var lines = roundDrawerLines(round);
-  if (!lines.length) {
-    body.appendChild(rdEl('div', 'rd-empty', 'Ingen krav i denne runden.'));
-  } else {
+  if (roundIsUnassessed(round)) body.appendChild(rdEl('div', 'rd-empty', 'Ingen vurdering lagret'));
+  if (lines.length) {
     body.appendChild(rdEl('div', 'rd-sec', 'Krav'));
     lines.forEach(function(l) {
       var line = rdEl('div', 'rd-line');
@@ -14143,10 +14175,14 @@ document.getElementById('round-drawer').addEventListener('click', function(e) {
 document.addEventListener('mousedown', function(e) {
   if (!_roundDrawer.open || _roundDrawer.pinned) return;
   if (e.target.closest('#round-drawer') || e.target.closest('#sak-page-round .btn-round')) return;
+  // Å skjule/vise sidemenyen lukker ikke skuffen — festeregelen sjekkes på nytt
+  if (e.target.closest('#drawer-toggle-btn')) return;
   closeRoundDrawer();
 });
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape' || !_roundDrawer.open || _roundDrawer.pinned) return;
+  // Esc i en åpen dialog lukker bare dialogen
+  if (document.querySelector('.modal-backdrop.open')) return;
   closeRoundDrawer();
   var rb = document.querySelector('#sak-page-round .btn-round');
   if (rb) rb.focus();
@@ -18082,6 +18118,12 @@ function init() {
       saveDrawerCollapsed(collapsed);
       _toggleBtn.innerHTML = collapsed ? '&#8250;' : '&#8249;';
       _toggleBtn.title = collapsed ? 'Vis navigasjon' : 'Skjul navigasjon';
+      // Festeregelen avhenger av sidemenyens bredde: sjekk på nytt når
+      // overgangen er ferdig (og som reserve om den ikke fyrer)
+      setTimeout(function() { if (_roundDrawer.open) renderRoundDrawer(); }, 450);
+    });
+    _drawer.addEventListener('transitionend', function(e) {
+      if (e.target === _drawer && e.propertyName === 'width' && _roundDrawer.open) renderRoundDrawer();
     });
   }
 
