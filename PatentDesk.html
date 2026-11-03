@@ -5142,7 +5142,16 @@ function responseRoundInfo(c) {
   for (var i = letterIdx + 1; i < hist.length; i++) {
     var h = hist[i];
     if (h && h.type === 'status' && h.from === 'fristarkiv' && h.to === 'viderebehandling') {
-      info.received = h.received || String(h.date || '').slice(0, 10) || null;
+      // Lagret/importert data kan ha hva som helst i received — bare en
+      // gyldig ISO-dato brukes, ellers datoen for overgangen.
+      // (Sjekken står her selv, så funksjonen ikke trenger andre hjelpere.)
+      var rec = null;
+      if (typeof h.received === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(h.received)) {
+        var rd = new Date(h.received + 'T00:00:00');
+        if (!isNaN(rd.getTime()) && rd.getFullYear() === +h.received.slice(0, 4) &&
+            rd.getMonth() + 1 === +h.received.slice(5, 7) && rd.getDate() === +h.received.slice(8, 10)) rec = h.received;
+      }
+      info.received = rec || String(h.date || '').slice(0, 10) || null;
       info.changes  = Array.isArray(h.changes) ? h.changes.slice() : null;
     }
   }
@@ -5179,6 +5188,19 @@ function sakRoundLine(c) {
   return parts.join(' · ');
 }
 
+// «Svar mottatt»-tillegget til historikken, renset: received bare som gyldig
+// ISO-dato, changes bare 'claims'/'description'. Andre nøkler tas ikke med.
+function sanitizeResponseExtra(extra) {
+  if (!extra || typeof extra !== 'object' || Array.isArray(extra)) return null;
+  var r = extra.received;
+  return {
+    received: (typeof r === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r) && isValidDate(r)) ? r : undefined,
+    changes: Array.isArray(extra.changes) ? extra.changes.filter(function(x) {
+      return x === 'claims' || x === 'description';
+    }) : undefined
+  };
+}
+
 // Egen frist for å behandle svaret: antall måneder fra mottaksdatoen.
 function responseDueDate(received, months) {
   return addMonthsClamped(new Date(received + 'T00:00:00'), months);
@@ -5206,8 +5228,14 @@ var RESPONSE_CHECKLIST = [
 ];
 function responseChecked(data, round) {
   var all = data && data.responseChecks;
-  var list = all && Array.isArray(all[round]) ? all[round] : [];
-  return list.slice();
+  var list = all && typeof all === 'object' && Array.isArray(all[round]) ? all[round] : [];
+  // Bare kjente punkter, hvert én gang — uansett hva som er lagret/importert
+  var out = [];
+  list.forEach(function(id) {
+    if (typeof id !== 'string' || out.indexOf(id) !== -1) return;
+    if (RESPONSE_CHECKLIST.some(function(i) { return i.id === id; })) out.push(id);
+  });
+  return out;
 }
 // Fremdriftslinjen øverst og i sticky-baren: hovedsjekklisten, eller i
 // Viderebehandling sjekklisten for svaret i runden saken er i.
@@ -7687,14 +7715,10 @@ function _dispatch(action, payload) {
       if (typeof payload.tags === 'string') patch.tags = payload.tags;
       patch.history = appendHistory(theCase, fromStatus, toStatus);
       // «Svar mottatt»: mottaksdato og hva som kom inn følger overgangen
-      if (payload.historyExtra && typeof payload.historyExtra === 'object') {
+      var respExtra = sanitizeResponseExtra(payload.historyExtra);
+      if (respExtra) {
         var last = patch.history.length - 1;
-        patch.history[last] = Object.assign({}, patch.history[last], {
-          received: isValidDate(payload.historyExtra.received) ? payload.historyExtra.received : undefined,
-          changes: Array.isArray(payload.historyExtra.changes) ? payload.historyExtra.changes.filter(function(x) {
-            return x === 'claims' || x === 'description';
-          }) : undefined
-        });
+        patch.history[last] = Object.assign({}, patch.history[last], respExtra);
       }
       AppState.undoSnapshot = undoPatchSnapshot(theCase, patch, { activeCase: activeCase, medlLog: medlLog });
       AppState.cases = cases.map(function(c) {
@@ -8016,6 +8040,7 @@ function _dispatch(action, payload) {
       var drCase = cases.find(function(c) { return c.id === payload.id; });
       // Etter første brev er D-numrene låst — merk i stedet for å slette
       var withdraw = docRemoveWithdraws(drCase);
+      var docsBefore = data.docs.slice();
       if (!withdraw) {
         AppState.undoSnapshot = {
           mode: 'docs', caseId: payload.id, logIds: [], label: drCase ? drCase.caseNumber : '',
@@ -8033,12 +8058,7 @@ function _dispatch(action, payload) {
       if (withdraw) {
         showToast(doc.id + ' merket ikke lenger relevant');
       } else {
-        var renum = payload.idx < data.docs.length
-          ? ' – ' + data.docs.slice(payload.idx).map(function(d, k) {
-              return 'D' + (payload.idx + k + 2) + ' heter nå ' + d.id;
-            }).join(', ')
-          : '';
-        showUndoToast(doc.id + ' fjernet' + renum);
+        showUndoToast(docRemoveToast(docsBefore, payload.idx));
       }
       break;
     }
@@ -11105,6 +11125,16 @@ function claimDocSelectable(docs, field) {
   });
 }
 
+// Teksten i angre-toasten når et mothold slettes før første brev: hvilke
+// mothold som får nytt nummer. docsBefore er listen før slettingen.
+function docRemoveToast(docsBefore, idx) {
+  var docs = docsBefore || [];
+  var removed = docs[idx] ? docs[idx].id : 'D' + (idx + 1);
+  var renamed = [];
+  for (var j = idx + 1; j < docs.length; j++) renamed.push(docs[j].id + ' heter nå D' + j);
+  return removed + ' fjernet' + (renamed.length ? ' – ' + renamed.join(', ') : '');
+}
+
 function nextDocId(docs) { return 'D' + ((docs || []).length + 1); }
 
 // Når et brev er sendt, er D-numrene låst: de står i brevet søkeren har
@@ -11325,9 +11355,13 @@ function removeDocAt(docs, claims, idx) {
 // et annet erstatter, klikk på samme fjerner. Oppfinnelseshøyde tar inntil
 // MAX_INVENTIVE_DOCS — valg utover grensen ignoreres.
 function toggleClaimDoc(claim, field, docId, docs) {
-  if (field === 'inventive' && docs) {
-    var picked = docs.find(function(d) { return d.id === docId; });
-    if (picked && picked.e) return claim; // E teller bare for nyhet
+  if (docs) {
+    // Samme regel som velgerne (claimDocSelectable). Et valg som allerede
+    // står på kravet kan likevel fjernes.
+    var current = field === 'novelty' ? claim.noveltyDoc === docId
+                : (Array.isArray(claim.inventiveDocs) && claim.inventiveDocs.indexOf(docId) !== -1);
+    var ok = claimDocSelectable(docs, field).some(function(d) { return d.id === docId; });
+    if (!ok && !current) return claim;
   }
   if (field === 'novelty') {
     claim.noveltyDoc = (claim.noveltyDoc === docId) ? null : docId;
