@@ -234,3 +234,24 @@ test('F4: plain citation still selectable and toggles off', () => {
   core.toggleClaimDoc(c, 'inventive', 'D1', docsF4);
   assert.deepStrictEqual(plain(c.inventiveDocs), []);
 });
+
+test('F4: an existing pick can still be removed after the doc stops being selectable', () => {
+  // Kravet har allerede valgene; dokumentene blir senere bakgrunn/trukket/E.
+  const c = { num: 1, dep: null, noveltyDoc: 'D2', inventiveDocs: ['D2', 'D3', 'D4'] };
+  core.toggleClaimDoc(c, 'novelty', 'D2', docsF4);     // bakgrunn
+  assert.strictEqual(c.noveltyDoc, null);
+  core.toggleClaimDoc(c, 'inventive', 'D2', docsF4);   // bakgrunn
+  core.toggleClaimDoc(c, 'inventive', 'D3', docsF4);   // trukket
+  core.toggleClaimDoc(c, 'inventive', 'D4', docsF4);   // E, ikke lov for oppfinnelseshøyde
+  assert.deepStrictEqual(plain(c.inventiveDocs), []);
+  c.noveltyDoc = 'D3';
+  core.toggleClaimDoc(c, 'novelty', 'D3', docsF4);     // trukket
+  assert.strictEqual(c.noveltyDoc, null);
+});
+
+test('F4: removing a stale pick does not re-add it on the next click', () => {
+  const c = { num: 1, dep: null, noveltyDoc: null, inventiveDocs: ['D3'] };
+  core.toggleClaimDoc(c, 'inventive', 'D3', docsF4);
+  core.toggleClaimDoc(c, 'inventive', 'D3', docsF4);
+  assert.deepStrictEqual(plain(c.inventiveDocs), []);
+});

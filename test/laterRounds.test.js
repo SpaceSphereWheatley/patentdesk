@@ -17,7 +17,8 @@ const {
   toggleResponseCheck,
   RESPONSE_CHECKLIST,
 } = loadFunctions([
-  'lettersSent', 'examinationRound', 'toDisplay', 'addMonthsClamped', 'isoLocalDate',
+  'lettersSent', 'examinationRound', 'toDisplay', 'parseDate', 'isValidDate',
+  'addMonthsClamped', 'isoLocalDate',
   'responseRoundInfo', 'sakRoundLine', 'responseChangesLabel', 'responseDueDate',
   'phaseCollapseKey', 'isPhaseCollapsed', 'responseChecked', 'toggleResponseCheck',
 ], { vars: ['RESPONSE_CHECKLIST'] });
