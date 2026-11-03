@@ -4830,7 +4830,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.52.0';
+var APP_VERSION    = 'v4.52.1';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -10389,7 +10389,7 @@ function _wfShowPermBar() {
   bar.appendChild(later);
   document.body.appendChild(bar);
   grant.addEventListener('click', _wfRequestAccess);
-  later.addEventListener('click', _wfHidePermBar);
+  later.addEventListener('click', function() { _wfPermDismissed = true; _wfHidePermBar(); });
 }
 
 function _wfHidePermBar() {
@@ -10399,6 +10399,7 @@ function _wfHidePermBar() {
 
 function _wfRequestAccess() {
   if (!_bkDirHandle) return;
+  _wfPermAsked = true; // høyst én automatisk forespørsel per sidelasting
   _bkDirHandle.requestPermission({ mode: 'readwrite' }).then(function(p) {
     if (p !== 'granted') { showToast('Tilgang ble ikke gitt'); return; }
     _wfHidePermBar();
@@ -10406,6 +10407,32 @@ function _wfRequestAccess() {
     _wfSync();
   }).catch(function() {});
 }
+
+// Første klikk i appen ber også om tilgang, så brukeren slipper å treffe linjen.
+// Ren funksjon — se test/wfShouldAutoAsk.test.js.
+function wfShouldAutoAsk(s) {
+  return !!(s.supported && s.hasHandle && !s.permGranted && !s.attempted && !s.dismissed && !s.onPermBar);
+}
+
+var _wfPermAsked = false;     // tilgang er bedt om denne økten, automatisk eller manuelt
+var _wfPermDismissed = false; // «Senere» trykket denne sidelastingen
+
+// Fangstfase, så den kjører selv om andre lyttere stopper klikket. Endrer ikke klikket.
+function _wfAutoAskOnClick(e) {
+  if (_wfPermAsked || _wfPermDismissed || !_bkDirHandle || !_bkFsaSupported()) return;
+  var bar = document.getElementById('wf-perm-bar');
+  var folderBtn = document.getElementById('btn-backup-folder');
+  // Mappeknappen har sin egen tilgangsflyt — behandles som linjen (ingen dobbel forespørsel)
+  var onPermBar = !!(e.target && ((bar && bar.contains(e.target)) || (folderBtn && folderBtn.contains(e.target))));
+  _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
+    var granted = perm === 'granted';
+    if (granted) { document.removeEventListener('click', _wfAutoAskOnClick, true); return; }
+    if (!wfShouldAutoAsk({ supported: _bkFsaSupported(), hasHandle: !!_bkDirHandle, permGranted: granted,
+      attempted: _wfPermAsked, dismissed: _wfPermDismissed, onPermBar: onPermBar })) return;
+    _wfRequestAccess(); // setter _wfPermAsked før requestPermission
+  }).catch(function() {});
+}
+document.addEventListener('click', _wfAutoAskOnClick, true);
 
 // ── UI ─────────────────────────────────────────────
 function _bkFmtTime(iso) {
@@ -10546,6 +10573,7 @@ document.getElementById('btn-backup-folder').addEventListener('click', function(
   if (_bkDirHandle) {
     _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(perm) {
       if (perm === 'granted') { pick(); return; } // bytt mappe
+      _wfPermAsked = true; // ingen ny automatisk forespørsel etter denne
       _bkDirHandle.requestPermission({ mode: 'readwrite' }).then(function(p2) {
         if (p2 === 'granted') { _wfHidePermBar(); _bkUpdateSettingsUI(); _wfSync(); }
         else pick();

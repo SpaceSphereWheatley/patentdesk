@@ -7,6 +7,18 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.52.1] - 2026-11-03
+
+### Changed
+- Edge husker ikke «Tillat ved hvert besøk» for sider som åpnes som fil
+  (file://), så tilgangen til datamappen forsvinner hver gang fanen lukkes.
+  Nå ber appen om tilgang ved det første klikket i appen, så du slipper å
+  trykke «Gi tilgang» på linjen «Datamappen er ikke tilkoblet». Du må
+  fortsatt si ja i Edges spørsmål.
+- Appen spør høyst én gang hver gang den åpnes. Den spør ikke igjen etter
+  «Senere», og ikke når du klikker på selve linjen eller på «Velg mappe»,
+  som har sin egen flyt.
+
 ## [4.52.0] - 2026-11-03
 
 ### Added
