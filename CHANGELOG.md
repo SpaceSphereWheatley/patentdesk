@@ -7,6 +7,15 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.52.2] - 2026-11-03
+
+### Changed
+- Kravsvurdering: et kravnotat som ikke får plass i feltet slutter nå på «…»
+  så lenge du ikke redigerer det. Klikker du inn i feltet, vises hele teksten.
+  Ingenting som er lagret, endres.
+- Overskriften «Notater» står nå venstrejustert på linje med notatteksten, i
+  stedet for sentrert.
+
 ## [4.52.1] - 2026-11-03
 
 ### Changed
@@ -18,6 +27,13 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 - Appen spør høyst én gang hver gang den åpnes. Den spør ikke igjen etter
   «Senere», og ikke når du klikker på selve linjen eller på «Velg mappe»,
   som har sin egen flyt.
+
+### Fixed
+- Fristblokken på sakssiden viser ikke lenger ferdige saker og oppdrag som
+  forsinket. Et utført oppdrag kunne stå med f.eks. «257 dager på overtid» i
+  rødt; nå står det «Utført» (oppdrag) eller «Avsluttet», uten farge.
+- En avsluttet sak viser nå sin egentlige frist i fristblokken, uten
+  buffret dato og uten linjen «Faktisk frist … · N dagers buffer trukket fra».
 
 ## [4.52.0] - 2026-11-03
 
