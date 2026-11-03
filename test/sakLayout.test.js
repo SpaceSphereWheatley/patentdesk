@@ -44,18 +44,19 @@ test('fristOwnerNote: bare Fristarkiv sier at fristen ikke koster arbeid', () =>
 // Etiketten på «Brev sendt» er en avledning av statusmodellen, ikke
 // en hardkodet streng per knapp.
 
-test('forwardAction: Ny og Viderebehandling fullføres til Fristarkiv', () => {
+test('forwardAction: Ny sender brev til Fristarkiv', () => {
   assert.deepStrictEqual(Object.assign({}, forwardAction('ny', false)),
-    { label: 'Brev sendt', toStatus: 'fristarkiv', choice: null });
-  assert.deepStrictEqual(Object.assign({}, forwardAction('viderebehandling', false)),
     { label: 'Brev sendt', toStatus: 'fristarkiv', choice: null });
 });
 
-test('forwardAction: Fristarkiv har to mulige utfall, så den åpner valgpopupen', () => {
-  const a = forwardAction('fristarkiv', false);
-  assert.strictEqual(a.label, 'Registrer svar …');
-  assert.strictEqual(a.toStatus, null);
-  assert.strictEqual(a.choice, 'fristarkiv');
+test('forwardAction: Viderebehandling åpner Avgjør-dialogen (nytt brev, godkjenning eller avslag)', () => {
+  assert.deepStrictEqual(Object.assign({}, forwardAction('viderebehandling', false)),
+    { label: 'Avgjør', toStatus: null, choice: 'videre' });
+});
+
+test('forwardAction: Fristarkiv registrerer svaret og starter neste runde', () => {
+  assert.deepStrictEqual(Object.assign({}, forwardAction('fristarkiv', false)),
+    { label: 'Svar mottatt', toStatus: 'viderebehandling', choice: null });
 });
 
 test('forwardAction: et aktivt oppdrag merkes utført', () => {

@@ -657,6 +657,13 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .choice-icon  { font-size: var(--text-lg); flex-shrink: 0; line-height: 1; }
 .choice-label { font-size: var(--text-base); color: var(--text); }
 .choice-sub   { font-size: var(--text-xs); color: var(--muted-text); margin-top: 0.1rem; }
+.svar-changes { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); }
+.svar-change  { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text); cursor: pointer; }
+.svar-error   { color: var(--text-on-no); font-size: var(--text-xs); min-height: 0; margin: 0; }
+.svar-error:empty { display: none; }
+.svar-alt     { background: none; border: none; padding: 0; margin-top: var(--space-4); cursor: pointer;
+                font-size: var(--text-xs); color: var(--muted-text); text-decoration: underline; font-family: var(--font-body); }
+.svar-alt:hover { color: var(--text); }
 
 /* ── 13. Statistikk-side ──────────────────────────── */
 .stat-section       { display: flex; flex-direction: column; gap: var(--space-5); }
@@ -2162,13 +2169,21 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 /* Kravsvurdering-tabell */
 .sak-claims-table   { width: 100%; table-layout: fixed; }
 .sak-claims-table th { text-align: center; }
-.sak-th-krav        { width: 3.5rem; text-align: center; }
-.sak-th-check       { width: 10.5rem; text-align: center; }
+.sak-th-krav        { width: 40px; text-align: center; }
+/* Smale kolonner så tabellen passer ved siden av PDF-en (960–1280 px).
+   Formelle feil har ingen chip og trenger bare knappen. */
+.sak-th-check       { width: 108px; text-align: center; }
+.sak-th-check.sak-th-formal { width: 72px; }
+/* Overskriften brytes heller enn å gjøre kolonnen bredere. */
+.sak-claims-table th { white-space: normal; overflow-wrap: normal; padding: var(--space-4) 4px;
+                       letter-spacing: 0.06em; line-height: 1.3; }
+.sak-claims-table td { padding-left: 4px; padding-right: 4px; }
 .sak-th-notes       { text-align: center; }
 .sak-td-krav        { text-align: center; font-size: var(--text-base); cursor: pointer; user-select: none; }
 .claim-row-independent td { border-top: 2px solid var(--accent) !important; }
 .sak-td-check       { text-align: center; padding: var(--space-2) var(--space-3); }
 .sak-td-notes       { text-align: center; }
+.sak-claims-table td.sak-td-notes { padding-left: var(--space-2); padding-right: var(--space-2); }
 
 /* Kolonneoverskrift: fremdrift og ferdig */
 .sak-th-check       { vertical-align: bottom; }
@@ -2180,7 +2195,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 /* Tri-state knapper — bold fargede piller */
 .sak-tri-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 3.2rem; padding: var(--space-1) var(--space-4);
+  min-width: 2.8rem; padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-pill); border: 2px solid transparent;
   font-size: var(--text-sm); font-weight: var(--weight-bold); font-family: var(--font-body);
   cursor: pointer; line-height: 1; transition: filter var(--dur-instant), transform var(--dur-instant);
@@ -2288,6 +2303,14 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-id              { font-weight: var(--weight-bold); font-size: var(--text-base);
                       color: var(--primary); font-variant-numeric: tabular-nums; }
 .mh-row-bg .mh-id   { color: var(--muted-text); }
+.settings-label-sub a { color: var(--primary); text-decoration: none; }
+.settings-label-sub a:hover { text-decoration: underline; }
+.mh-row-withdrawn   { background: var(--surface); border-style: dashed; }
+.mh-row-withdrawn .mh-id { color: var(--muted-text); }
+.mh-ref-struck      { font-size: var(--text-sm); color: var(--muted-text); text-decoration: line-through;
+                      padding: 0 var(--space-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mh-restore         { color: var(--primary-dim); }
+.mh-withdrawn-label { font-size: var(--text-xs); color: var(--muted-text); font-style: italic; }
 .mh-ref-inp         { background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
                       color: var(--text); font-family: var(--font-body); font-size: var(--text-sm);
                       padding: var(--space-1) var(--space-2); width: 100%; min-width: 0;
@@ -2357,11 +2380,12 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-add:hover       { color: var(--primary); border-color: var(--primary-dim); }
 
 /* Kravstabell: mothold-chip ved siden av tri-state-knappen */
-.claim-doc-wrap     { display: inline-flex; align-items: center; gap: var(--space-2); position: relative; }
+.claim-doc-wrap     { display: inline-flex; align-items: center; gap: 4px; position: relative; }
+/* min-width rommer den bredeste chipen («D1+D2»), så kolonnene ikke hopper. */
 .claim-doc-chip     { display: inline-flex; align-items: center; justify-content: center;
-                      min-width: 4rem;
+                      min-width: 3.2rem;
                       font-size: var(--text-2xs); font-weight: var(--weight-semibold); font-family: var(--font-body);
-                      padding: 2px var(--space-3); border-radius: var(--radius-sm); cursor: pointer;
+                      padding: 2px 5px; border-radius: var(--radius-sm); cursor: pointer;
                       white-space: nowrap; background: rgba(37,99,235,0.10); color: var(--primary);
                       border: 1px solid rgba(37,99,235,0.35);
                       transition: background var(--dur-base), border-color var(--dur-base); }
@@ -2447,6 +2471,13 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
    minstebredde i stedet for å la .table-wrap scrolle internt. */
 .krav-layout > .table-wrap { min-width: 0; }
 .kt-tree            { min-width: 120px; max-width: 260px; }
+/* Treet plasseres etter kravseksjonens egen bredde, ikke vinduets: den
+   avhenger av sidemenyen og hvor bred halvskjermen er. */
+.krav-wrap          { container-type: inline-size; }
+@container (max-width: 899px) {
+  .krav-layout      { grid-template-columns: 1fr; }
+  .kt-tree          { max-width: none; width: 100%; }
+}
 .kt-outer           { border: 1px solid var(--border); border-radius: var(--radius);
                       padding: var(--space-1); background: var(--surface); }
 .kt-group           { border: 1px solid var(--border); border-radius: var(--radius);
@@ -2479,9 +2510,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .kt-empty           { font-size: var(--text-xs); color: var(--muted-text); padding: var(--space-3) var(--space-5); }
 
 /* Etikett-celle i tabellen */
-.sak-th-tag         { width: 128px; text-align: center; }
-.sak-th-dep         { width: 80px; text-align: center; }
-.sak-tag-display    { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+.sak-th-tag         { width: 68px; text-align: center; }
+.sak-th-dep         { width: 56px; text-align: center; }
+.sak-tag-display    { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 0 2px;
                       font-size: var(--text-xs); color: var(--muted-text); cursor: pointer; white-space: nowrap; }
 .sak-tag-display:hover { color: var(--text); }
 /* Plassholderen er alltid synlig, men dempet: er den usynlig til raden hovres,
@@ -2497,9 +2528,13 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-tag-input:focus { outline: none; border-color: var(--primary); }
 
 /* Avhengig-av select */
-.sak-dep-inp        { width: 44px; font-family: monospace; font-size: var(--text-sm); text-align: center;
-                      padding: 2px var(--space-1); border-radius: var(--radius); background: var(--surface2);
-                      border: 1px solid var(--border2); color: var(--muted-text); }
+.sak-dep-inp        { width: 48px; font-family: monospace; font-size: var(--text-sm); text-align: center;
+                      padding: 2px 2px; border-radius: var(--radius); background: var(--surface2);
+                      border: 1px solid var(--border2); color: var(--muted-text);
+                      -moz-appearance: textfield; appearance: textfield; }
+/* Uten pilene får «199» plass i den smale Avh.-kolonnen. */
+.sak-dep-inp::-webkit-inner-spin-button,
+.sak-dep-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .sak-dep-inp.dep-manual { border-color: var(--accent); color: var(--text); }
 .sak-dep-sel        { background: var(--surface2); border: 1px solid var(--border2);
                       color: var(--muted-text); font-family: var(--font-body); font-size: var(--text-xs);
@@ -2600,10 +2635,6 @@ tr:hover .sak-tag-display.sak-tag-empty,
 }
 @media (max-width: 1300px) {
   .sak-sticky-progress { display: none; }
-}
-@media (max-width: 1000px) {
-  .krav-layout      { grid-template-columns: 1fr; }
-  .kt-tree          { width: 100%; }
 }
 @media (max-width: 900px) {
   .sak-anchors      { display: none; }
@@ -2933,6 +2964,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-topbar-right #btn-sak-more { width: 36px; justify-content: center; padding: 0; font-size: var(--text-md); }
 /* Sakshodet: saksnummer med statusknapp, tittelen under i vanlig tekst */
 .sak-title-row     { display: flex; align-items: center; gap: var(--space-4); }
+.sak-round-line    { display: block; font-size: var(--text-sm); color: var(--muted-text); margin-top: var(--space-1); font-variant-numeric: tabular-nums; }
+.sak-round-line:empty { display: none; }
+.sak-svar-count    { font-size: var(--text-xs); color: var(--muted-text); font-weight: var(--weight-medium); text-transform: none; letter-spacing: 0; }
 .sak-subtitle      { display: block; font-size: var(--text-md); color: var(--text); font-weight: var(--weight-medium); margin-top: var(--space-1); }
 .sak-status-wrap   { position: relative; }
 .sak-status-chip   { display: inline-flex; align-items: center; gap: var(--space-2); font: inherit; font-size: var(--text-sm);
@@ -3391,6 +3425,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
         <div class="settings-layout">
           <nav class="settings-nav" aria-label="Innstillinger" role="tablist" aria-orientation="vertical">
             <button class="settings-nav-item" id="settings-tab-arbeidsmengde" data-settings-tab="arbeidsmengde" role="tab" aria-controls="settings-pane-arbeidsmengde">Arbeidsmengde</button>
+            <button class="settings-nav-item" id="settings-tab-frister" data-settings-tab="frister" role="tab" aria-controls="settings-pane-frister">Frister</button>
             <button class="settings-nav-item" id="settings-tab-saksbehandling" data-settings-tab="saksbehandling" role="tab" aria-controls="settings-pane-saksbehandling">Saksbehandling</button>
             <button class="settings-nav-item" id="settings-tab-data" data-settings-tab="data" role="tab" aria-controls="settings-pane-data">Data</button>
           </nav>
@@ -3514,6 +3549,50 @@ tr:hover .sak-tag-display.sak-tag-empty,
                       </div>
                       <span class="field-error" id="vac-error"></span>
                     </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="settings-pane" id="settings-pane-frister" data-settings-pane="frister" role="tabpanel" aria-labelledby="settings-tab-frister">
+              <section class="settings-section">
+                <h2 class="settings-section-title">Frister</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-sub">Forslagene i dialogene når du sender brev eller registrerer svar. Du kan alltid endre datoen i dialogen, og eksisterende saker endres ikke. Arbeidsdager og buffer per sakstype ligger under <a href="#" data-goto-settings-tab="arbeidsmengde">Arbeidsmengde</a>.</span>
+                    </div>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Søkers frist etter 1. realitetsbrev</span>
+                      <span class="settings-label-sub">Foreslås ved «Brev sendt» fra Ny</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-dl-firstLetter" data-dl-key="firstLetter" type="number" min="1" max="24" step="1" aria-label="Søkers frist etter 1. realitetsbrev, måneder" />
+                      <span class="s-unit">mnd</span></label>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Søkers frist etter senere realitetsbrev</span>
+                      <span class="settings-label-sub">Foreslås ved «Brev sendt» fra Viderebehandling</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-dl-laterLetter" data-dl-key="laterLetter" type="number" min="1" max="24" step="1" aria-label="Søkers frist etter senere realitetsbrev, måneder" />
+                      <span class="s-unit">mnd</span></label>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Din frist for å behandle svar</span>
+                      <span class="settings-label-sub">Foreslås når søkerens svar registreres</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-dl-response" data-dl-key="response" type="number" min="1" max="24" step="1" aria-label="Din frist for å behandle svar, måneder" />
+                      <span class="s-unit">mnd</span></label>
+                  </div>
+                  <div class="settings-row tdf-foot">
+                    <span class="settings-label-sub">Standard: 3 / 3 / 3 måneder</span>
+                    <button class="s-btn" id="btn-dl-reset">Tilbakestill til standard</button>
                   </div>
                 </div>
               </section>
@@ -3738,7 +3817,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <button class="sak-anchor" data-anchor="vurdering">Vurdering</button>
           </nav>
           <div class="sak-sticky-progress">
-            <span class="sak-sticky-label">Sjekkliste</span>
+            <span class="sak-sticky-label" id="sak-sticky-cl-label">Sjekkliste</span>
             <div class="sak-sticky-track"><div class="sak-sticky-fill sak-sticky-fill-cl" id="sak-sticky-cl-bar"></div></div>
             <span class="sak-sticky-pct" id="sak-sticky-cl-pct"></span>
           </div>
@@ -3777,6 +3856,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
                 </div>
               </div>
               <span class="sak-subtitle" id="sak-page-sub"></span>
+              <span class="sak-round-line" id="sak-page-round"></span>
             </div>
           </div>
           <div class="sak-topbar-right">
@@ -3831,7 +3911,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
             <div class="sak-progress-bars">
               <div class="sak-progress-item">
                 <div class="sak-progress-label">
-                  <span>Sjekkliste</span>
+                  <span id="sak-prog-checklist-label">Sjekkliste</span>
                   <span class="sak-progress-pct" id="sak-prog-checklist-pct">0 / 0</span>
                 </div>
                 <div class="sak-progress-track">
@@ -3982,6 +4062,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
           </button>
           <div class="sak-phase-body" id="sak-phase-body-vurdering">
 
+            <div id="sak-svar"></div>
+
             <section class="sak-section" data-sak-section="claims">
               <h2 class="sak-section-title sak-section-title-row">
                 <span class="sak-section-title-left">Kravsvurdering</span>
@@ -3990,6 +4072,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
                   <input class="field-input sak-numclaims-input" id="sak-num-claims" type="number" min="1" max="200" placeholder="—" />
                 </span>
               </h2>
+              <div class="krav-wrap">
               <div class="krav-layout">
                 <div class="table-wrap">
                   <table class="case-table sak-claims-table">
@@ -3999,8 +4082,8 @@ tr:hover .sak-tag-display.sak-tag-empty,
                         <th class="sak-th-tag"></th>
                         <th class="sak-th-dep">Avh. av</th>
                         <th class="sak-th-check" id="sak-th-novelty">Nyhet</th>
-                        <th class="sak-th-check" id="sak-th-inventive">Oppfinnelseshøyde</th>
-                        <th class="sak-th-check" id="sak-th-formal">Formelle feil</th>
+                        <th class="sak-th-check" id="sak-th-inventive">Oppfinnelses&shy;høyde</th>
+                        <th class="sak-th-check sak-th-formal" id="sak-th-formal">Formelle feil</th>
                         <th class="sak-th-notes">Notater</th>
                       </tr>
                     </thead>
@@ -4008,6 +4091,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
                   </table>
                 </div>
                 <div class="kt-tree" id="sak-claims-tree"></div>
+              </div>
               </div>
             </section>
 
@@ -4369,29 +4453,32 @@ tr:hover .sak-tag-display.sak-tag-empty,
   <div class="modal-backdrop" id="fristarkiv-choice-backdrop" aria-hidden="true">
     <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="fristarkiv-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title" id="fristarkiv-modal-title">Handling — <span id="fristarkiv-case-number"></span></h2>
+        <h2 class="modal-title" id="fristarkiv-modal-title">Svar mottatt — <span id="fristarkiv-case-number"></span></h2>
       </div>
       <div class="modal-body">
-        <p class="modal-text modal-text-mb">Hva skal skje med denne saken?</p>
-        <div class="choice-list">
-          <button class="choice-btn" id="btn-fristarkiv-videre">
-            <span class="choice-icon">🔄</span>
-            <div>
-              <div class="choice-label">Send til viderebehandling</div>
-              <div class="choice-sub">Saken krever ytterligere behandling</div>
-            </div>
-          </button>
-          <button class="choice-btn choice-btn-danger" id="btn-fristarkiv-avslutt">
-            <span class="choice-icon">✅</span>
-            <div>
-              <div class="choice-label">Avslutt sak</div>
-              <div class="choice-sub">Saken er ferdig og arkiveres som avsluttet</div>
-            </div>
-          </button>
+        <div class="field-group">
+          <label class="field-label" for="f-svar-received">Mottatt</label>
+          <input class="field-input" id="f-svar-received" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
         </div>
+        <div class="field-group">
+          <span class="field-label" id="svar-changes-label">Hva kom inn</span>
+          <div class="svar-changes" role="group" aria-labelledby="svar-changes-label">
+            <label class="svar-change"><input type="checkbox" id="f-svar-claims" value="claims" /> Endrede krav</label>
+            <label class="svar-change"><input type="checkbox" id="f-svar-description" value="description" /> Endret beskrivelse</label>
+          </div>
+          <span class="field-hint" id="svar-changes-hint">Ingen avkrysning = kun argumenter</span>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="f-svar-due">Din frist</label>
+          <input class="field-input" id="f-svar-due" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          <span class="field-hint" id="svar-due-hint"></span>
+        </div>
+        <p class="svar-error" id="svar-error" role="alert"></p>
+        <button type="button" class="svar-alt" id="btn-fristarkiv-avslutt">Avslutt saken i stedet …</button>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" id="btn-fristarkiv-cancel">Avbryt</button>
+        <button class="btn-primary" id="btn-fristarkiv-videre">Start runde 2</button>
       </div>
     </div>
   </div>
@@ -4400,26 +4487,34 @@ tr:hover .sak-tag-display.sak-tag-empty,
   <div class="modal-backdrop" id="videre-choice-backdrop" aria-hidden="true">
     <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="videre-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title" id="videre-modal-title">Handling — <span id="videre-case-number"></span></h2>
+        <h2 class="modal-title" id="videre-modal-title">Avgjør — <span id="videre-case-number"></span></h2>
       </div>
       <div class="modal-body">
-        <p class="modal-text modal-text-mb">Hva skal skje med denne saken?</p>
+        <p class="modal-text modal-text-mb">Hva blir utfallet av behandlingen?</p>
         <div class="choice-list">
           <button class="choice-btn" id="btn-videre-fristarkiv">
-            <span class="choice-icon">📁</span>
+            <span class="choice-icon">📄</span>
             <div>
-              <div class="choice-label">Tilbake til Fristarkiv</div>
-              <div class="choice-sub">Saken sendes tilbake og venter på neste steg</div>
+              <div class="choice-label">Nytt realitetsbrev</div>
+              <div class="choice-sub" id="videre-letter-sub">Til Fristarkiv med søkers frist</div>
             </div>
           </button>
-          <button class="choice-btn choice-btn-danger" id="btn-videre-avslutt">
+          <button class="choice-btn" id="btn-videre-godkjenning">
             <span class="choice-icon">✅</span>
             <div>
-              <div class="choice-label">Avslutt sak</div>
-              <div class="choice-sub">Saken er ferdig og arkiveres som avsluttet</div>
+              <div class="choice-label">Godkjenning</div>
+              <div class="choice-sub">Saken avsluttes som meddelt. Teller ikke som ny runde.</div>
+            </div>
+          </button>
+          <button class="choice-btn choice-btn-danger" id="btn-videre-avslag">
+            <span class="choice-icon">⛔</span>
+            <div>
+              <div class="choice-label">Avslag</div>
+              <div class="choice-sub">Saken avsluttes som avslått</div>
             </div>
           </button>
         </div>
+        <button type="button" class="svar-alt" id="btn-videre-avslutt">Annet utfall …</button>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" id="btn-videre-cancel">Avbryt</button>
@@ -4735,7 +4830,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.51.0';
+var APP_VERSION    = 'v4.52.0';
 var SCHEMA_VERSION = 7;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -4751,6 +4846,7 @@ var BELEGG_KEY   = 'pt_belegg_horizon';
 var BUFFER_KEY   = 'pt_frist_buffer';   // gammel global buffer, leses bare ved oppgradering
 var TYPE_BUFFER_KEY = 'pt_type_buffers';
 var WORK_WINDOW_KEY = 'pt_work_windows';
+var DEADLINES_KEY   = 'pt_deadlines';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
 var UNASSIGNED_REMINDER_KEY = 'pt_unassigned_reminder';
@@ -4891,10 +4987,25 @@ function medlesingProgress(template, checklist) {
   return { checked: checked, total: total, done: total > 0 && checked === total };
 }
 
-// Frister i måneder
-var FRIST_NY_TIL_FRISTARKIV     = 6;
-var FRIST_FRISTARKIV_TIL_VIDERE = 3;
-var FRIST_VIDERE_TIL_FRISTARKIV = 6;
+// Fristene som foreslås i dialogene, i måneder. Kan endres under
+// Innstillinger → Frister. firstLetter/laterLetter er søkerens frist etter
+// første og senere realitetsbrev; response er egen frist for å behandle svaret.
+var DEADLINE_DEFAULTS = { firstLetter: 3, laterLetter: 3, response: 3 };
+var DEADLINE_MAX = 24;
+
+// Tar lagrede/importerte frister og returnerer et fullstendig sett. Hver verdi
+// valideres for seg — en ugyldig faller tilbake til standarden.
+// Ren funksjon — se test/deadlineSettings.test.js.
+function normalizeDeadlines(raw) {
+  var src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  var out = {};
+  Object.keys(DEADLINE_DEFAULTS).forEach(function(k) {
+    var v = src[k];
+    out[k] = (typeof v === 'number' && isFinite(v) && v >= 1 && v <= DEADLINE_MAX)
+      ? Math.floor(v) : DEADLINE_DEFAULTS[k];
+  });
+  return out;
+}
 
 // Beskriver hva en statusovergang krever av dialoger, og hvordan den skal
 // bokføres. Dette er den ene fasiten for saksflyten: både sakslista og
@@ -4902,8 +5013,10 @@ var FRIST_VIDERE_TIL_FRISTARKIV = 6;
 // ikke kan havne i Fristarkiv med saksbehandlerens egen frist stående som om
 // den var søkerens. Returnerer null når det ikke er noen reell overgang.
 // Ren funksjon — se test/caseStatus.test.js.
-function statusTransition(fromStatus, toStatus, isOppdrag) {
+function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
   if (!toStatus || fromStatus === toStatus) return null;
+  var dl = deadlines || DEADLINE_DEFAULTS;
+  function months(n) { return n + (n === 1 ? ' måned' : ' måneder'); }
 
   var t = {
     needsConfirm:  false,
@@ -4935,20 +5048,20 @@ function statusTransition(fromStatus, toStatus, isOppdrag) {
     t.needsConfirm  = fromNy;
     t.needsTags     = fromNy;
     t.needsDueDate  = true;
-    t.suggestMonths = fromNy ? FRIST_NY_TIL_FRISTARKIV : FRIST_VIDERE_TIL_FRISTARKIV;
+    t.suggestMonths = fromNy ? dl.firstLetter : dl.laterLetter;
     t.logType       = fromNy ? 'ny' : 'videre';
     t.confirmDesc   = 'registreres som nybehandlet og sendes til Fristarkiv';
     t.dueDateDesc   = fromNy
-      ? 'Saken markeres som fullført og sendes til Fristarkiv. Foreslått frist er ' + FRIST_NY_TIL_FRISTARKIV + ' måneder fra i dag.'
-      : 'Saken sendes tilbake til Fristarkiv. Foreslått frist er ' + FRIST_VIDERE_TIL_FRISTARKIV + ' måneder fra i dag.';
+      ? 'Saken markeres som fullført og sendes til Fristarkiv. Foreslått frist er ' + months(dl.firstLetter) + ' fra i dag.'
+      : 'Saken sendes tilbake til Fristarkiv. Foreslått frist er ' + months(dl.laterLetter) + ' fra i dag.';
     return t;
   }
 
   // Søkeren har svart, og svaret skal behandles. Ny frist er vår egen.
   if (toStatus === 'viderebehandling' && fromStatus === 'fristarkiv') {
     t.needsDueDate  = true;
-    t.suggestMonths = FRIST_FRISTARKIV_TIL_VIDERE;
-    t.dueDateDesc   = 'Saken sendes til Viderebehandling. Foreslått frist er ' + FRIST_FRISTARKIV_TIL_VIDERE + ' måneder fra i dag.';
+    t.suggestMonths = dl.response;
+    t.dueDateDesc   = 'Saken sendes til Viderebehandling. Foreslått frist er ' + months(dl.response) + ' fra i dag.';
     return t;
   }
 
@@ -4969,13 +5082,11 @@ function forwardAction(status, isOppdrag) {
   // Et oppdrag er enten aktivt eller utført — ingen mellomstasjoner.
   if (isOppdrag) return { label: 'Merk som utført', toStatus: 'avsluttet', choice: null };
 
-  if (status === 'ny' || status === 'viderebehandling') {
-    return { label: 'Brev sendt', toStatus: 'fristarkiv', choice: null };
-  }
-  // Fra Fristarkiv kan saken gå to veier, så brukeren må velge selv.
-  if (status === 'fristarkiv') {
-    return { label: 'Registrer svar …', toStatus: null, choice: 'fristarkiv' };
-  }
+  if (status === 'ny') return { label: 'Brev sendt', toStatus: 'fristarkiv', choice: null };
+  // Etter behandlet svar: nytt realitetsbrev, godkjenning eller avslag.
+  if (status === 'viderebehandling') return { label: 'Avgjør', toStatus: null, choice: 'videre' };
+  // Søkeren har svart: «Svar mottatt»-dialogen starter neste runde.
+  if (status === 'fristarkiv') return { label: 'Svar mottatt', toStatus: 'viderebehandling', choice: null };
   return null;
 }
 
@@ -5030,6 +5141,138 @@ function lettersSent(history) {
     else if (h.from === 'fristarkiv' && h.to === 'ny' && n > 0) n--;
   });
   return n;
+}
+
+// ── Senere runder ──────────────────────────────────
+// Brevet og svaret som hører til runden saken er i nå. letter er datoen siste
+// realitetsbrev gikk ut; received/changes er fra «Svar mottatt» (eldre data
+// uten dem faller tilbake til datoen for overgangen). Ren funksjon — se
+// test/laterRounds.test.js.
+function responseRoundInfo(c) {
+  var hist = (c && Array.isArray(c.history)) ? c.history : [];
+  var info = { round: examinationRound(c), letter: null, received: null, changes: null };
+  var letterIdx = -1;
+  hist.forEach(function(h, i) {
+    if (h && h.type === 'status' && h.to === 'fristarkiv' && (h.from === 'ny' || h.from === 'viderebehandling')) letterIdx = i;
+  });
+  if (letterIdx === -1) return info;
+  info.letter = String(hist[letterIdx].date || '').slice(0, 10) || null;
+  for (var i = letterIdx + 1; i < hist.length; i++) {
+    var h = hist[i];
+    if (h && h.type === 'status' && h.from === 'fristarkiv' && h.to === 'viderebehandling') {
+      // Lagret/importert data kan ha hva som helst i received — bare en
+      // gyldig ISO-dato brukes, ellers datoen for overgangen.
+      // Strengt ISO-format kreves: isValidDate godtar også punktum-datoer.
+      var rec = (typeof h.received === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(h.received) &&
+                 isValidDate(h.received)) ? h.received : null;
+      info.received = rec || String(h.date || '').slice(0, 10) || null;
+      info.changes  = Array.isArray(h.changes) ? h.changes.slice() : null;
+    }
+  }
+  return info;
+}
+
+// Hva søkeren sendte inn, som tekst i rundelinjen. Tom streng = ukjent.
+function responseChangesLabel(changes) {
+  if (!Array.isArray(changes)) return '';
+  var claims = changes.indexOf('claims') !== -1, descr = changes.indexOf('description') !== -1;
+  if (claims && descr) return 'endrede krav og beskrivelse';
+  if (claims) return 'endrede krav';
+  if (descr)  return 'endret beskrivelse';
+  return 'kun argumenter';
+}
+
+// Linjen under tittelen på sakssiden. Tom for Ny, avsluttede saker og oppdrag.
+function sakRoundLine(c) {
+  if (!c || c.type === 'oppdrag') return '';
+  var status = c.status || 'ny';
+  if (status !== 'fristarkiv' && status !== 'viderebehandling') return '';
+  var info = responseRoundInfo(c);
+  var parts = ['Runde ' + info.round];
+  if (status === 'fristarkiv') {
+    if (info.letter) parts.push('brev sendt ' + toDisplay(info.letter));
+    parts.push('venter på svar');
+  } else {
+    if (info.letter) parts.push('brev ' + toDisplay(info.letter));
+    if (info.received) {
+      var what = responseChangesLabel(info.changes);
+      parts.push('svar ' + toDisplay(info.received) + (what ? ' (' + what + ')' : ''));
+    }
+  }
+  return parts.join(' · ');
+}
+
+// «Svar mottatt»-tillegget til historikken, renset: received bare som gyldig
+// ISO-dato, changes bare 'claims'/'description'. Andre nøkler tas ikke med.
+function sanitizeResponseExtra(extra) {
+  if (!extra || typeof extra !== 'object' || Array.isArray(extra)) return null;
+  var r = extra.received;
+  return {
+    received: (typeof r === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r) && isValidDate(r)) ? r : undefined,
+    changes: Array.isArray(extra.changes) ? extra.changes.filter(function(x) {
+      return x === 'claims' || x === 'description';
+    }) : undefined
+  };
+}
+
+// Egen frist for å behandle svaret: antall måneder fra mottaksdatoen.
+function responseDueDate(received, months) {
+  return addMonthsClamped(new Date(received + 'T00:00:00'), months);
+}
+
+// Fasekollaps: i Viderebehandling huskes valget for seg, og Saken og Gransking
+// starter lukket — da er det svaret og vurderingen som er arbeidet. I andre
+// statuser er nøkkelen bare fasenavnet, som før.
+function phaseCollapseKey(phase, status) {
+  return status === 'viderebehandling' ? 'videre:' + phase : phase;
+}
+function isPhaseCollapsed(state, phase, status) {
+  var key = phaseCollapseKey(phase, status);
+  if (state && Object.prototype.hasOwnProperty.call(state, key)) return !!state[key];
+  return status === 'viderebehandling' && (phase === 'saken' || phase === 'gransking');
+}
+
+// Sjekklisten for søkerens svar. Avkrysningene lagres per runde i
+// saksdetaljene (responseChecks), så den starter tom i hver ny runde.
+var RESPONSE_CHECKLIST = [
+  { id: 'read',     label: 'Svaret er lest' },
+  { id: 'basis',    label: 'Endringene har grunnlag i søknaden (§ 13)' },
+  { id: 'reassess', label: 'Kravene er vurdert på nytt' },
+  { id: 'search',   label: 'Behov for tilleggsgransking vurdert' }
+];
+function responseChecked(data, round) {
+  var all = data && data.responseChecks;
+  var list = all && typeof all === 'object' && Array.isArray(all[round]) ? all[round] : [];
+  // Bare kjente punkter, hvert én gang — uansett hva som er lagret/importert
+  var out = [];
+  list.forEach(function(id) {
+    if (typeof id !== 'string' || out.indexOf(id) !== -1) return;
+    if (RESPONSE_CHECKLIST.some(function(i) { return i.id === id; })) out.push(id);
+  });
+  return out;
+}
+// Fremdriftslinjen øverst og i sticky-baren: hovedsjekklisten, eller i
+// Viderebehandling sjekklisten for svaret i runden saken er i.
+function sakChecklistProgress(c, data, template) {
+  if (c && c.type !== 'oppdrag' && c.status === 'viderebehandling') {
+    var round = examinationRound(c);
+    return { label: 'Svar – runde ' + round, done: responseChecked(data, round).length, total: RESPONSE_CHECKLIST.length };
+  }
+  var items = [];
+  (template || []).forEach(function(p) { p.items.forEach(function(i) { items.push(i); }); });
+  var cl = (data && data.checklist) || {};
+  return { label: 'Sjekkliste', total: items.length,
+           done: items.filter(function(i) { return cl[i.id] !== null && cl[i.id] !== undefined; }).length };
+}
+
+function toggleResponseCheck(data, round, id) {
+  if (!RESPONSE_CHECKLIST.some(function(i) { return i.id === id; })) return data;
+  if (!data.responseChecks || typeof data.responseChecks !== 'object') data.responseChecks = {};
+  var list = responseChecked(data, round);
+  var i = list.indexOf(id);
+  if (i === -1) list.push(id); else list.splice(i, 1);
+  data.responseChecks[round] = list;
+  return data;
 }
 
 // Hvilken runde saken er i. Ny er alltid runde 1; i Fristarkiv er det runden
@@ -5145,8 +5388,8 @@ function pipelineCounts(list, year, todayIso) {
 function rowAction(status, isOppdrag) {
   if (status === 'avsluttet') return null;
   if (isOppdrag) return { type: 'complete-oppdrag', label: 'Merk som utført' };
-  if (status === 'fristarkiv')       return { type: 'choice-fristarkiv', label: 'Registrer svar …' };
-  if (status === 'viderebehandling') return { type: 'choice-videre', label: 'Fullfør behandling …' };
+  if (status === 'fristarkiv')       return { type: 'response', label: 'Svar mottatt …' };
+  if (status === 'viderebehandling') return { type: 'choice-videre', label: 'Avgjør …' };
   return { type: 'confirm', label: 'Brev sendt' };
 }
 
@@ -5601,6 +5844,7 @@ function makeExportPayload() {
     typeBuffers: typeBuffers,
     workWindows: workWindows,
     workWindowUnit: 'workdays',
+    deadlines:  deadlines,
     homeDeadlineFilter: homeDeadlineFilter,
     activeCase: activeCase,
     unassignedReminder: unassignedReminder,
@@ -5644,6 +5888,9 @@ function readImportSettings(d) {
   if (d.workWindows && typeof d.workWindows === 'object' && !Array.isArray(d.workWindows)) {
     // Eksport fra før v4.42.0 har varigheter i kalenderdager
     out.workWindows = normalizeWorkWindows(d.workWindowUnit === 'workdays' ? d.workWindows : migrateWorkWindowsToWorkdays(d.workWindows));
+  }
+  if (d.deadlines && typeof d.deadlines === 'object' && !Array.isArray(d.deadlines)) {
+    out.deadlines = normalizeDeadlines(d.deadlines);
   }
   if (Array.isArray(d.medlesing)) {
     out.medlesing = d.medlesing.filter(function(m) {
@@ -6469,6 +6716,14 @@ function loadWorkWindows() {
 }
 function saveWorkWindows(w) {
   lsSetSafe(WORK_WINDOW_KEY, JSON.stringify(w));
+}
+function loadDeadlines() {
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(DEADLINES_KEY)); } catch(e) {}
+  return normalizeDeadlines(raw);
+}
+function saveDeadlines(d) {
+  lsSetSafe(DEADLINES_KEY, JSON.stringify(d));
 }
 function loadHomeDeadlineFilter() {
   try { return normalizeHomeDeadlineFilter(JSON.parse(localStorage.getItem(HOME_DEADLINE_KEY))); }
@@ -7359,6 +7614,7 @@ var productionGoal = loadGoal();
 var beleggHorizon  = loadBeleggHorizon();
 var typeBuffers    = loadTypeBuffers();
 var workWindows    = loadWorkWindows();
+var deadlines      = loadDeadlines();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
 var activeCase = loadActiveCase();
 var unassignedReminder = loadUnassignedReminder();
@@ -7472,6 +7728,12 @@ function _dispatch(action, payload) {
       var patch = statusChangePatch(toStatus, payload.outcome, newDueDate);
       if (typeof payload.tags === 'string') patch.tags = payload.tags;
       patch.history = appendHistory(theCase, fromStatus, toStatus);
+      // «Svar mottatt»: mottaksdato og hva som kom inn følger overgangen
+      var respExtra = sanitizeResponseExtra(payload.historyExtra);
+      if (respExtra) {
+        var last = patch.history.length - 1;
+        patch.history[last] = Object.assign({}, patch.history[last], respExtra);
+      }
       AppState.undoSnapshot = undoPatchSnapshot(theCase, patch, { activeCase: activeCase, medlLog: medlLog });
       AppState.cases = cases.map(function(c) {
         return c.id === id ? Object.assign({}, c, patch) : c;
@@ -7657,6 +7919,14 @@ function _dispatch(action, payload) {
         lsSetSafe(sakKey(undoSnapshot.sakId), undoSnapshot.sakData);
       }
       // Fjernede krav settes tilbake; resten av saksdetaljene blir som de er
+      if (undoSnapshot.mode === 'docs') {
+        var dsData = loadSakData(undoSnapshot.caseId);
+        if (dsData) {
+          dsData.docs = undoSnapshot.before.docs;
+          dsData.claims = undoSnapshot.before.claims;
+          saveSakData(undoSnapshot.caseId, dsData);
+        }
+      }
       if (undoSnapshot.mode === 'claims') {
         var ccData = loadSakData(undoSnapshot.caseId);
         if (ccData) {
@@ -7779,9 +8049,39 @@ function _dispatch(action, payload) {
     case 'DOC_REMOVE': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       ensureSakDocs(data);
-      var next = removeDocAt(data.docs, data.claims, payload.idx);
+      var doc = data.docs[payload.idx];
+      if (!doc) break;
+      var drCase = cases.find(function(c) { return c.id === payload.id; });
+      // Etter første brev er D-numrene låst — merk i stedet for å slette
+      var withdraw = docRemoveWithdraws(drCase);
+      var docsBefore = data.docs.slice();
+      if (!withdraw) {
+        AppState.undoSnapshot = {
+          mode: 'docs', caseId: payload.id, logIds: [], label: drCase ? drCase.caseNumber : '',
+          before: { docs: JSON.parse(JSON.stringify(data.docs)), claims: JSON.parse(JSON.stringify(data.claims || [])) },
+          activeCase: activeCase, medlLog: medlLog
+        };
+      }
+      var next = withdraw ? withdrawDocAt(data.docs, data.claims, payload.idx)
+                          : removeDocAt(data.docs, data.claims, payload.idx);
       data.docs = next.docs;
       data.claims = next.claims;
+      saveSakData(payload.id, data);
+      renderSakDocs(data);
+      renderSakClaimsTable(data);
+      if (withdraw) {
+        showToast(doc.id + ' merket ikke lenger relevant');
+      } else {
+        showUndoToast(docRemoveToast(docsBefore, payload.idx));
+      }
+      break;
+    }
+
+    case 'DOC_RESTORE': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      ensureSakDocs(data);
+      if (!data.docs[payload.idx]) break;
+      data.docs = restoreDocAt(data.docs, payload.idx);
       saveSakData(payload.id, data);
       renderSakDocs(data);
       renderSakClaimsTable(data);
@@ -7798,8 +8098,9 @@ function _dispatch(action, payload) {
       doc[payload.field] = isText                  ? sanitizeText(payload.value)
                          : isDate                  ? String(payload.value || '')
                          : !!payload.value;
-      // Bakgrunnsmothold kan ikke være X eller Y — rydd bort kravsreferansene
-      if (payload.field === 'background' && doc.background) ensureSakDocs(data);
+      // Bakgrunnsmothold kan ikke være X eller Y, og E-dokumenter ikke Y/X for
+      // oppfinnelseshøyde — rydd bort kravsreferansene
+      if ((payload.field === 'background' || payload.field === 'e') && doc[payload.field]) ensureSakDocs(data);
       saveSakData(payload.id, data);
       // Referansen skrives i feltet som allerede står i DOM-en; å tegne lista
       // på nytt midt i redigeringen ville flyttet markøren.
@@ -7817,7 +8118,7 @@ function _dispatch(action, payload) {
       ensureSakDocs(data);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
       if (!claim) break;
-      toggleClaimDoc(claim, payload.field, payload.docId);
+      toggleClaimDoc(claim, payload.field, payload.docId, data.docs);
       // Nyhet tar nøyaktig ett mothold, så velgeren lukkes etter valget
       if (payload.field === 'novelty') _sakOpenDocPop = null;
       saveSakData(payload.id, data);
@@ -8058,6 +8359,30 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'SETTINGS_DEADLINE_CHANGE': {
+      // value null = tilbake til standard; key null = alle tilbake til standard
+      var nextDl = Object.assign({}, deadlines);
+      if (payload.key == null) nextDl = Object.assign({}, DEADLINE_DEFAULTS);
+      else if (payload.key in DEADLINE_DEFAULTS) {
+        nextDl[payload.key] = payload.value == null ? DEADLINE_DEFAULTS[payload.key] : payload.value;
+      }
+      deadlines = normalizeDeadlines(nextDl);
+      saveDeadlines(deadlines);
+      showToast(payload.key == null ? '✓ Fristene tilbakestilt' : '✓ Frist lagret');
+      break;
+    }
+
+    case 'RESPONSE_CHECK_TOGGLE': {
+      var rc = cases.find(function(c) { return c.id === payload.id; });
+      if (!rc) break;
+      var rData = loadSakData(payload.id) || defaultSakData(0);
+      toggleResponseCheck(rData, examinationRound(rc), payload.item);
+      saveSakData(payload.id, rData);
+      renderSakResponse(rc, rData);
+      updateSakProgress(rData);
+      break;
+    }
+
     case 'HOME_DEADLINE_FILTER_SET': {
       homeDeadlineFilter = normalizeHomeDeadlineFilter(payload.filter);
       saveHomeDeadlineFilter(homeDeadlineFilter);
@@ -8210,6 +8535,7 @@ function _dispatch(action, payload) {
         }
         if ('typeBuffers' in s) { typeBuffers = s.typeBuffers; saveTypeBuffers(typeBuffers); }
         if ('workWindows' in s) { workWindows = s.workWindows; saveWorkWindows(workWindows); }
+        if ('deadlines' in s) { deadlines = s.deadlines; saveDeadlines(deadlines); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
         if ('activeCase' in s) { activeCase = s.activeCase; saveActiveCase(activeCase); }
@@ -8270,6 +8596,7 @@ function _dispatch(action, payload) {
       activeCase = null;
       typeBuffers = normalizeTypeBuffers(null);
       workWindows = normalizeWorkWindows(null);
+      deadlines = normalizeDeadlines(null);
       homeDeadlineFilter = defaultHomeDeadlineFilter();
       undoSnapshot = null; // en åpen «Angre» skal ikke kunne hente sakene tilbake
       closeBackdrop('delete-all-backdrop-2');
@@ -9151,7 +9478,7 @@ function closeAllBackdrops() {
   // Står konfliktdialogen fortsatt åpen, skal tastaturet bli i den
   var wf = document.getElementById('workfile-conflict-backdrop');
   if (wf && wf.classList.contains('open')) _installFocusTrap(wf);
-  pendingConfirmId = pendingConfirmCallback = pendingFristarkivId = pendingVidereId =
+  pendingConfirmId = pendingConfirmCallback = pendingSvar = pendingVidereId =
   pendingDeleteId = pendingTagId = pendingTagStatus = pendingTagCallback =
   pendingFristCallback = pendingMedlId = null;
 }
@@ -9250,7 +9577,7 @@ function openTagModal(id, toStatus, callback, opts) {
   document.getElementById('btn-tag-confirm').textContent =
     opts.editOutcome ? 'Lagre' : isClosing ? 'Avslutt sak' : 'Brev sendt';
   document.getElementById('tag-outcome-group').style.display = pendingTagNeedsOutcome ? '' : 'none';
-  var current = opts.editOutcome && theCase ? theCase.outcome : null;
+  var current = opts.editOutcome && theCase ? theCase.outcome : (opts.presetOutcome || null);
   document.querySelectorAll('#tag-outcome-group input[name="outcome"]').forEach(function(r) { r.checked = r.value === current; });
   syncTagConfirm();
   openBackdrop('tag-backdrop');
@@ -9332,7 +9659,7 @@ function runStatusTransition(id, toStatus, opts) {
   var theCase = cases.find(function(c) { return c.id === id; });
   if (!theCase) return;
   var isOppdrag = theCase.type === 'oppdrag';
-  var t = statusTransition(theCase.status, toStatus, isOppdrag);
+  var t = statusTransition(theCase.status, toStatus, isOppdrag, deadlines);
   if (!t) return;
 
   // Oppdrag har sin egen avslutning, som også fører statistikken.
@@ -9344,11 +9671,13 @@ function runStatusTransition(id, toStatus, opts) {
   if (t.needsDueDate) steps.push('due');
 
   var tags = null, outcome = null;
+  // Søkerens svar registreres i «Svar mottatt», som også tar egen frist.
+  var isResponse = theCase.status === 'fristarkiv' && toStatus === 'viderebehandling' && !isOppdrag;
 
-  function commit(dueDate) {
+  function commit(dueDate, historyExtra) {
     dispatch('CASE_STATUS_CHANGE', {
       id: id, toStatus: toStatus, logType: t.logType, newDueDate: dueDate || null, outcome: outcome,
-      tags: tags
+      tags: tags, historyExtra: historyExtra || null
     });
   }
 
@@ -9359,7 +9688,10 @@ function runStatusTransition(id, toStatus, opts) {
     if (step === 'confirm') {
       openCompleteConfirm(id, theCase.caseNumber, t.confirmDesc, next);
     } else if (step === 'tags') {
-      openTagModal(id, toStatus, function(chosenTags, chosenOutcome) { tags = chosenTags; outcome = chosenOutcome; next(); });
+      openTagModal(id, toStatus, function(chosenTags, chosenOutcome) { tags = chosenTags; outcome = chosenOutcome; next(); },
+        { presetOutcome: opts.outcome || null });
+    } else if (step === 'due' && isResponse) {
+      openSvarModal(id, commit);
     } else if (step === 'due') {
       openFristModal(theCase.caseNumber, monthsFromToday(t.suggestMonths), t.dueDateDesc, commit);
     } else {
@@ -9369,27 +9701,62 @@ function runStatusTransition(id, toStatus, opts) {
   next();
 }
 
-// ── Fristarkiv-valgpopup ───────────────────────────
-var pendingFristarkivId = null;
+// ── «Svar mottatt» ─────────────────────────────────
+// Registrerer søkerens svar: mottaksdato, hva som kom inn og egen frist, som
+// foreslås fra mottaksdatoen. Fullført går saken til Viderebehandling og neste
+// runde starter. runStatusTransition eier selve overgangen.
+var pendingSvar = null;   // { id, callback, dueTouched }
 
-function openFristarkivChoice(id, caseNumber) {
-  pendingFristarkivId = id;
-  document.getElementById('fristarkiv-case-number').textContent = caseNumber;
+function openSvarModal(id, callback) {
+  var c = cases.find(function(x) { return x.id === id; });
+  if (!c) return;
+  pendingSvar = { id: id, callback: callback, dueTouched: false };
+  var nextRound = examinationRound(c) + 1;
+  document.getElementById('fristarkiv-case-number').textContent = c.caseNumber;
+  document.getElementById('f-svar-received').value = toDisplay(todayStr());
+  document.getElementById('f-svar-claims').checked = false;
+  document.getElementById('f-svar-description').checked = false;
+  document.getElementById('svar-error').textContent = '';
+  document.getElementById('btn-fristarkiv-videre').textContent = 'Start runde ' + nextRound;
+  _syncSvarDue();
   openBackdrop('fristarkiv-choice-backdrop');
+  setTimeout(function() { document.getElementById('f-svar-received').focus(); }, 50);
 }
-function closeFristarkivChoice() { closeBackdrop('fristarkiv-choice-backdrop'); pendingFristarkivId = null; }
+function closeFristarkivChoice() { closeBackdrop('fristarkiv-choice-backdrop'); pendingSvar = null; }
+
+// Fristen følger mottaksdatoen til brukeren selv har endret den.
+function _syncSvarDue() {
+  var received = parseDate(document.getElementById('f-svar-received').value.trim());
+  var hint = document.getElementById('svar-due-hint');
+  hint.textContent = deadlines.response + (deadlines.response === 1 ? ' måned' : ' måneder') +
+    ' fra mottatt (endres under Innstillinger → Frister)';
+  if (pendingSvar && !pendingSvar.dueTouched && isValidDate(received)) {
+    document.getElementById('f-svar-due').value = toDisplay(responseDueDate(received, deadlines.response));
+  }
+}
+['f-svar-received', 'f-svar-due'].forEach(function(elId) { autoFormatDateInput(document.getElementById(elId)); });
+document.getElementById('f-svar-received').addEventListener('input', _syncSvarDue);
+document.getElementById('f-svar-due').addEventListener('input', function() { if (pendingSvar) pendingSvar.dueTouched = true; });
 
 document.getElementById('btn-fristarkiv-cancel').addEventListener('click', closeFristarkivChoice);
 document.getElementById('fristarkiv-choice-backdrop').addEventListener('click', function(e) { if (e.target === this) closeFristarkivChoice(); });
 document.getElementById('btn-fristarkiv-videre').addEventListener('click', function() {
-  if (!pendingFristarkivId) return;
-  var id = pendingFristarkivId;
+  if (!pendingSvar) return;
+  var received = parseDate(document.getElementById('f-svar-received').value.trim());
+  var due      = parseDate(document.getElementById('f-svar-due').value.trim());
+  var err = document.getElementById('svar-error');
+  if (!isValidDate(received)) { err.textContent = 'Ugyldig mottaksdato — bruk åååå.mm.dd.'; return; }
+  if (!isValidDate(due))      { err.textContent = 'Ugyldig frist — bruk åååå.mm.dd.'; return; }
+  var changes = ['f-svar-claims', 'f-svar-description']
+    .filter(function(elId) { return document.getElementById(elId).checked; })
+    .map(function(elId) { return document.getElementById(elId).value; });
+  var cb = pendingSvar.callback;
   closeFristarkivChoice();
-  runStatusTransition(id, 'viderebehandling');
+  if (cb) cb(due, { received: received, changes: changes });
 });
 document.getElementById('btn-fristarkiv-avslutt').addEventListener('click', function() {
-  if (!pendingFristarkivId) return;
-  var id = pendingFristarkivId; closeFristarkivChoice(); runStatusTransition(id, 'avsluttet');
+  if (!pendingSvar) return;
+  var id = pendingSvar.id; closeFristarkivChoice(); runStatusTransition(id, 'avsluttet');
 });
 
 // ── Viderebehandling-valgpopup ─────────────────────
@@ -9397,7 +9764,11 @@ var pendingVidereId = null;
 
 function openVidereChoice(id, caseNumber) {
   pendingVidereId = id;
-  document.getElementById('videre-case-number').textContent = caseNumber;
+  var c = cases.find(function(x) { return x.id === id; });
+  document.getElementById('videre-case-number').textContent =
+    caseNumber + (c ? ' · runde ' + examinationRound(c) : '');
+  document.getElementById('videre-letter-sub').textContent = 'Til Fristarkiv med søkers frist (' +
+    deadlines.laterLetter + (deadlines.laterLetter === 1 ? ' måned' : ' måneder') + ')';
   openBackdrop('videre-choice-backdrop');
 }
 function closeVidereChoice() { closeBackdrop('videre-choice-backdrop'); pendingVidereId = null; }
@@ -9413,6 +9784,13 @@ document.getElementById('btn-videre-fristarkiv').addEventListener('click', funct
 document.getElementById('btn-videre-avslutt').addEventListener('click', function() {
   if (!pendingVidereId) return;
   var id = pendingVidereId; closeVidereChoice(); runStatusTransition(id, 'avsluttet');
+});
+[['btn-videre-godkjenning', 'meddelt'], ['btn-videre-avslag', 'avslatt']].forEach(function(pair) {
+  document.getElementById(pair[0]).addEventListener('click', function() {
+    if (!pendingVidereId) return;
+    var id = pendingVidereId; closeVidereChoice();
+    runStatusTransition(id, 'avsluttet', { outcome: pair[1] });
+  });
 });
 
 // ── Fullfør oppdrag ────────────────────────────────
@@ -9434,7 +9812,7 @@ function runRowAction(id) {
   var a = rowAction(c.status || 'ny', c.type === 'oppdrag');
   if (!a) return;
   if      (a.type === 'confirm')           runStatusTransition(id, 'fristarkiv');
-  else if (a.type === 'choice-fristarkiv') openFristarkivChoice(id, c.caseNumber);
+  else if (a.type === 'response')          runStatusTransition(id, 'viderebehandling');
   else if (a.type === 'choice-videre')     openVidereChoice(id, c.caseNumber);
   else if (a.type === 'complete-oppdrag')  completeOppdrag(id);
 }
@@ -10737,8 +11115,11 @@ function getClaimCascadeValue(claims, claimNum, field) {
   return true;
 }
 
-// Effektiv verdi for et krav (lagret verdi prioriteres, ellers cascade)
+// Effektiv verdi for et krav (lagret verdi prioriteres, ellers cascade).
+// Et krav uten nyhet er alltid låst til ingen oppfinnelseshøyde — regelen
+// bor her, så ingen kaller trenger å lappe rundt inkonsistent lagret data.
 function effectiveClaimValue(claims, claim, field) {
+  if (field === 'inventive' && effectiveClaimValue(claims, claim, 'novelty') === false) return false;
   if (claim[field] !== null) return claim[field];
   return getClaimCascadeValue(claims, claim.num, field);
 }
@@ -10749,7 +11130,55 @@ function effectiveClaimValue(claims, claim, field) {
 // ene eller de to som til sammen tar oppfinnelseshøyden.
 var MAX_INVENTIVE_DOCS = 2;
 
+// Motholdene som kan velges for nyhet eller oppfinnelseshøyde. Bakgrunns-
+// mothold er aldri X/Y. E-dokumenter (eldre søknader) teller bare for nyhet,
+// jf. patentloven § 2 tredje ledd — aldri mot oppfinnelseshøyden.
+function claimDocSelectable(docs, field) {
+  return (docs || []).filter(function(d) {
+    return !d.background && !d.withdrawn && !(field === 'inventive' && d.e);
+  });
+}
+
+// Teksten i angre-toasten når et mothold slettes før første brev: hvilke
+// mothold som får nytt nummer. docsBefore er listen før slettingen.
+function docRemoveToast(docsBefore, idx) {
+  var docs = docsBefore || [];
+  var removed = docs[idx] ? docs[idx].id : 'D' + (idx + 1);
+  var renamed = [];
+  for (var j = idx + 1; j < docs.length; j++) renamed.push(docs[j].id + ' heter nå D' + j);
+  return removed + ' fjernet' + (renamed.length ? ' – ' + renamed.join(', ') : '');
+}
+
 function nextDocId(docs) { return 'D' + ((docs || []).length + 1); }
+
+// Når et brev er sendt, er D-numrene låst: de står i brevet søkeren har
+// fått. «Fjern» merker da motholdet «Ikke lenger relevant» i stedet for å
+// slette og renummerere.
+function docRemoveWithdraws(c) {
+  return lettersSent(c && c.history) > 0;
+}
+
+// Merker motholdet på idx som ikke lenger relevant. Nummeret beholdes, men
+// kravsreferansene til det fjernes. Returnerer nye { docs, claims }.
+function withdrawDocAt(docs, claims, idx) {
+  docs = docs || []; claims = claims || [];
+  if (idx < 0 || idx >= docs.length) return { docs: docs, claims: claims };
+  var id = docs[idx].id;
+  return {
+    docs: docs.map(function(d, i) { return i === idx ? Object.assign({}, d, { withdrawn: true }) : d; }),
+    claims: claims.map(function(c) {
+      return Object.assign({}, c, {
+        noveltyDoc: c.noveltyDoc === id ? null : c.noveltyDoc,
+        inventiveDocs: (c.inventiveDocs || []).filter(function(x) { return x !== id; })
+      });
+    })
+  };
+}
+
+// Gjør motholdet vanlig igjen. Kravsreferansene kommer ikke tilbake.
+function restoreDocAt(docs, idx) {
+  return (docs || []).map(function(d, i) { return i === idx ? Object.assign({}, d, { withdrawn: false }) : d; });
+}
 
 // Publikasjonsnummeret slik Espacenet vil ha det: «WO 2020/123456 A1» blir
 // «WO2020123456A1». Mellomrom, skråstrek og tusenskilletegn fjernes.
@@ -10896,15 +11325,16 @@ function ensureSakDocs(data) {
     d = d || {};
     return { id: 'D' + (i + 1), ref: d.ref || '',
              pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
-             p: !!d.p, e: !!d.e, background: !!d.background };
+             p: !!d.p, e: !!d.e, background: !!d.background, withdrawn: !!d.withdrawn };
   });
-  var selectable = {};
-  data.docs.forEach(function(d) { if (!d.background) selectable[d.id] = true; });
+  var forNovelty = {}, forInventive = {};
+  claimDocSelectable(data.docs, 'novelty').forEach(function(d) { forNovelty[d.id] = true; });
+  claimDocSelectable(data.docs, 'inventive').forEach(function(d) { forInventive[d.id] = true; });
   (data.claims || []).forEach(function(c) {
-    if (!selectable[c.noveltyDoc]) c.noveltyDoc = null;
+    if (!forNovelty[c.noveltyDoc]) c.noveltyDoc = null;
     var seen = {};
     c.inventiveDocs = (Array.isArray(c.inventiveDocs) ? c.inventiveDocs : []).filter(function(x) {
-      if (!selectable[x] || seen[x]) return false;
+      if (!forInventive[x] || seen[x]) return false;
       seen[x] = true;
       return true;
     }).slice(0, MAX_INVENTIVE_DOCS);
@@ -10938,7 +11368,15 @@ function removeDocAt(docs, claims, idx) {
 // Velger/fravelger et mothold på et krav. Nyhet tar nøyaktig ett; klikk på
 // et annet erstatter, klikk på samme fjerner. Oppfinnelseshøyde tar inntil
 // MAX_INVENTIVE_DOCS — valg utover grensen ignoreres.
-function toggleClaimDoc(claim, field, docId) {
+function toggleClaimDoc(claim, field, docId, docs) {
+  if (docs) {
+    // Samme regel som velgerne (claimDocSelectable). Et valg som allerede
+    // står på kravet kan likevel fjernes.
+    var current = field === 'novelty' ? claim.noveltyDoc === docId
+                : (Array.isArray(claim.inventiveDocs) && claim.inventiveDocs.indexOf(docId) !== -1);
+    var ok = claimDocSelectable(docs, field).some(function(d) { return d.id === docId; });
+    if (!ok && !current) return claim;
+  }
   if (field === 'novelty') {
     claim.noveltyDoc = (claim.noveltyDoc === docId) ? null : docId;
     return claim;
@@ -10955,6 +11393,7 @@ function toggleClaimDoc(claim, field, docId) {
 function claimDocCategory(claims, claim, doc) {
   var effNovelty   = effectiveClaimValue(claims, claim, 'novelty');
   var effInventive = effectiveClaimValue(claims, claim, 'inventive');
+  if (doc.withdrawn) return null;
   if (effNovelty === null || effInventive === null) return null;
   if (doc.background) return 'A';
   // Krav uten nyhet: bare nyhetsmotholdet er relevant. Oppfinnelseshøyden er
@@ -10964,6 +11403,8 @@ function claimDocCategory(claims, claim, doc) {
   // Motsatt: et krav som har fått nyhet/OH tilbake beholder det lagrede
   // motholdet, men det skal ikke telle før vurderingen igjen er ✗.
   if (effInventive !== false) return 'A';
+  // E-dokumenter kan ikke brukes mot oppfinnelseshøyden (§ 2 tredje ledd).
+  if (doc.e) return 'A';
   var inv = claim.inventiveDocs || [];
   if (inv.indexOf(doc.id) === -1) return 'A';
   return inv.length > 1 ? 'Y' : 'X';
@@ -10992,6 +11433,7 @@ function formatSearchReport(claims, docs) {
   return rows.map(function(row, i) {
     var doc  = docs[i];
     var head = doc.id + (doc.ref ? '  ' + doc.ref : '');
+    if (doc.withdrawn) return head + '\n  (ikke lenger relevant)';
     var body = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) { return '  ' + docCategoryLabel(doc, cat) + ': krav ' + formatClaimRanges(row[cat]); });
     return head + '\n' + (body.length ? body.join('\n') : '  (ingen vurderte krav)');
@@ -11027,6 +11469,8 @@ function renderSak(id) {
   // Topptekst + fane-tittel
   document.getElementById('sak-page-title').textContent = cas.caseNumber;
   document.getElementById('sak-page-sub').textContent = sakSubtitle(cas);
+  document.getElementById('sak-page-round').textContent = sakRoundLine(cas);
+  renderSakResponse(cas, data);
   document.title = cas.caseNumber + (cas.title ? ' — ' + cas.title : '') + ' — PatentDesk';
   document.getElementById('sak-sticky-cn').textContent = cas.caseNumber;
 
@@ -11164,10 +11608,16 @@ function loadPhaseCollapse() {
 }
 function savePhaseCollapse(state) { lsSetSafe(PHASE_COLLAPSE_KEY, JSON.stringify(state)); }
 
+function _activeSakStatus() {
+  var c = activeSakId && cases.find(function(x) { return x.id === activeSakId; });
+  return c ? (c.status || 'ny') : 'ny';
+}
+
 function applyPhaseCollapse() {
   var state = loadPhaseCollapse();
+  var status = _activeSakStatus();
   document.querySelectorAll('.sak-phase').forEach(function(phase) {
-    var collapsed = !!state[phase.dataset.phase];
+    var collapsed = isPhaseCollapsed(state, phase.dataset.phase, status);
     phase.classList.toggle('sak-phase-collapsed', collapsed);
     var head = phase.querySelector('.sak-phase-head');
     if (head) head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
@@ -11179,7 +11629,8 @@ document.querySelectorAll('.sak-phase-head').forEach(function(head) {
     var phase = head.closest('.sak-phase');
     if (!phase) return;
     var state = loadPhaseCollapse();
-    state[phase.dataset.phase] = !state[phase.dataset.phase];
+    var status = _activeSakStatus();
+    state[phaseCollapseKey(phase.dataset.phase, status)] = !isPhaseCollapsed(state, phase.dataset.phase, status);
     savePhaseCollapse(state);
     applyPhaseCollapse();
     updateSakAnchors();
@@ -11232,8 +11683,9 @@ document.getElementById('sak-anchors').addEventListener('click', function(e) {
   // Et anker som peker inn i en lukket fase åpner den, ellers hopper man til
   // en overskrift uten innhold.
   var state = loadPhaseCollapse();
-  if (state[phase.dataset.phase]) {
-    state[phase.dataset.phase] = false;
+  var status = _activeSakStatus();
+  if (isPhaseCollapsed(state, phase.dataset.phase, status)) {
+    state[phaseCollapseKey(phase.dataset.phase, status)] = false;
     savePhaseCollapse(state);
     applyPhaseCollapse();
   }
@@ -11262,7 +11714,7 @@ function runForwardAction() {
   var cas = cases.find(function(c) { return c.id === id; }); if (!cas) return;
   var action = forwardAction(cas.status || 'ny', cas.type === 'oppdrag');
   if (!action) return;
-  if (action.choice === 'fristarkiv') { openFristarkivChoice(id, cas.caseNumber); return; }
+  if (action.choice === 'videre') { openVidereChoice(id, cas.caseNumber); return; }
   // Selve trykket er bekreftelsen; stikkord og frist spørres det fortsatt om.
   runStatusTransition(id, action.toStatus, { skipConfirm: true });
 }
@@ -11431,6 +11883,35 @@ function _checklistSlotHtml(data, groups, fallbackTitle) {
     '</section>';
   }).join('');
 }
+
+// «Svar og endringer»: sjekklisten for søkerens svar, øverst i Vurdering.
+// Vises bare i Viderebehandling, og starter tom i hver runde.
+function renderSakResponse(cas, data) {
+  var el = document.getElementById('sak-svar');
+  if (!el) return;
+  if (!cas || cas.type === 'oppdrag' || cas.status !== 'viderebehandling') { el.innerHTML = ''; return; }
+  var round = examinationRound(cas);
+  var done = responseChecked(data, round);
+  var rows = RESPONSE_CHECKLIST.map(function(item) {
+    var on = done.indexOf(item.id) !== -1;
+    return '<label class="sak-check-row sak-check-clickable' + (on ? ' sak-check-done' : '') + '">' +
+      '<input type="checkbox" class="sak-checkbox" data-svar-id="' + item.id + '"' + (on ? ' checked' : '') + ' />' +
+      '<span class="sak-check-label">' + esc(item.label) + '</span>' +
+    '</label>';
+  }).join('');
+  el.innerHTML = '<section class="sak-section" data-sak-section="svar">' +
+    '<h2 class="sak-section-title sak-section-title-row">' +
+      '<span class="sak-section-title-left">Svar og endringer – runde ' + round + '</span>' +
+      '<span class="sak-svar-count">' + done.length + ' / ' + RESPONSE_CHECKLIST.length + '</span>' +
+    '</h2>' +
+    '<div class="sak-checklist sak-checklist-flat">' + rows + '</div>' +
+  '</section>';
+}
+document.getElementById('sak-svar').addEventListener('change', function(e) {
+  var box = e.target.closest('[data-svar-id]');
+  if (!box || !activeSakId) return;
+  dispatch('RESPONSE_CHECK_TOGGLE', { id: activeSakId, item: box.dataset.svarId });
+});
 
 function renderSakChecklist(data) {
   if (!data) {
@@ -11969,9 +12450,21 @@ function renderSakDocs(data) {
   // rapporten, så raden og «Kopier rapport» aldri kan si ulike ting.
   var rows = buildSearchReport(data.claims || [], docs);
   var app  = { filingDate: data.filingDate, priorityDate: data.priorityDate };
+  var locked = docRemoveWithdraws(cases.find(function(c) { return c.id === activeSakId; }));
 
   el.innerHTML = docs.map(function(d, i) {
     var row  = rows[i];
+
+    if (d.withdrawn) {
+      return '<div class="mh-row mh-row-withdrawn" data-idx="' + i + '">' +
+        '<span class="mh-id">' + esc(d.id) + '</span>' +
+        '<span class="mh-ref"><span class="mh-ref-struck">' + esc(d.ref || '—') + '</span></span>' +
+        '<span class="mh-cats"><span class="mh-withdrawn-label">Ikke lenger relevant</span></span>' +
+        '<span class="mh-flags"></span><span></span>' +
+        '<button type="button" class="mh-bg-toggle mh-restore" data-mh-restore="' + i + '"' +
+          ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt.">Gjenopprett</button>' +
+      '</div>';
+    }
 
     var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) {
@@ -11990,7 +12483,9 @@ function renderSakDocs(data) {
       '<span class="mh-cats">' + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
-      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '" title="Fjern" aria-label="Fjern ' + esc(d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
+      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
+        ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
+        ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
       '<span class="mh-dates">' +
         mhDateHtml(d, i, 'pubDate', 'Publisert') +
         mhDateHtml(d, i, 'effDate', 'Prioritet/inng.') +
@@ -12117,10 +12612,12 @@ function claimDocChipHtml(data, c, field, effNovelty) {
 
 function claimDocPopHtml(data, c, field, ids) {
   var isNovelty  = field === 'novelty';
-  var selectable = (data.docs || []).filter(function(d) { return !d.background; });
+  var selectable = claimDocSelectable(data.docs, field);
   if (!selectable.length) {
+    var onlyE = !isNovelty && claimDocSelectable(data.docs, 'novelty').length > 0;
     return '<span class="doc-pop"><span class="doc-pop-hint" style="border-top:none;margin-top:0;">' +
-      'Ingen mothold registrert ennå.</span></span>';
+      (onlyE ? 'E-dokumenter teller bare for nyhet, ikke for oppfinnelseshøyde.'
+             : 'Ingen mothold registrert ennå.') + '</span></span>';
   }
   var opts = selectable.map(function(d) {
     var on   = ids.indexOf(d.id) !== -1;
@@ -12269,12 +12766,14 @@ function renderSakResultSummary(data) {
 }
 
 function updateSakProgress(data) {
-  // Sjekkliste-progress
-  var allItems = [];
-  getChecklistTemplate().forEach(function(p) { p.items.forEach(function(i) { allItems.push(i); }); });
-  var total   = allItems.length;
-  var done    = allItems.filter(function(i) { return data.checklist[i.id] !== null && data.checklist[i.id] !== undefined; }).length;
+  // Sjekkliste-progress (i Viderebehandling: sjekklisten for svaret)
+  var progCase = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
+  var prog    = sakChecklistProgress(progCase, data, getChecklistTemplate());
+  var total   = prog.total;
+  var done    = prog.done;
   var clPct   = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('sak-prog-checklist-label').textContent = prog.label;
+  document.getElementById('sak-sticky-cl-label').textContent = prog.label;
   document.getElementById('sak-prog-checklist-pct').textContent = done + ' / ' + total;
   document.getElementById('sak-prog-checklist-bar').style.width  = clPct + '%';
 
@@ -12317,7 +12816,7 @@ function updateSakProgress(data) {
     var thI = document.getElementById('sak-th-inventive');
     var thF = document.getElementById('sak-th-formal');
     if (thN) thN.innerHTML = thHtml('Nyhet', noveltyDone, numC);
-    if (thI) thI.innerHTML = thHtml('Oppfinnelseshøyde', inventiveDone, inventiveTotal || numC);
+    if (thI) thI.innerHTML = thHtml('Oppfinnelses&shy;høyde', inventiveDone, inventiveTotal || numC);
     if (thF) thF.innerHTML = thHtml('Formelle feil', formalDone, numC);
   }
 
@@ -12880,6 +13379,8 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
   var id = activeSakId; if (!id) return;
   var del = e.target.closest('[data-mh-del]');
   if (del) { dispatch('DOC_REMOVE', { id: id, idx: parseInt(del.dataset.mhDel, 10) }); return; }
+  var restore = e.target.closest('[data-mh-restore]');
+  if (restore) { dispatch('DOC_RESTORE', { id: id, idx: parseInt(restore.dataset.mhRestore, 10) }); return; }
   var ops = e.target.closest('.mh-ops');
   if (ops) { mhOpsFetch(id, parseInt(ops.dataset.ops, 10), ops); return; }
   var flag = e.target.closest('.mh-flag');
@@ -14199,7 +14700,7 @@ function showBufferLegend(list) {
 // ── Innstillinger ──────────────────────────────────
 // ── Innstillinger: venstremeny ─────────────────────
 // Rekkefølgen følger menyen; piltastene går i denne rekkefølgen.
-var SETTINGS_TABS = ['arbeidsmengde', 'saksbehandling', 'data'];
+var SETTINGS_TABS = ['arbeidsmengde', 'frister', 'saksbehandling', 'data'];
 // v4.35.0 lagret underseksjonen; den åpner nå hovedseksjonen den hører til.
 var SETTINGS_TAB_LEGACY = { produksjon: 'arbeidsmengde', sakstype: 'arbeidsmengde', ferie: 'arbeidsmengde', medlesere: 'saksbehandling', sjekkliste: 'saksbehandling', saksmappe: 'saksbehandling', cpc: 'saksbehandling', sikkerhetskopi: 'data', eksport: 'data', faresone: 'data', om: 'data' };
 
@@ -14262,6 +14763,7 @@ function renderInnstillinger() {
   var remInp = document.getElementById('input-unassigned-reminder');
   if (remInp) remInp.value = String(unassignedReminder);
   _renderWorkWindowInputs();
+  _renderDeadlineInputs();
   _bkUpdateSettingsUI();
   renderVacationList();
   renderMedleserList();
@@ -16651,6 +17153,36 @@ function _caseSourceFillInputs() {
   sel.addEventListener('change', function() {
     dispatch('SETTINGS_BELEGG_CHANGE', { value: parseInt(this.value, 10) });
   });
+})();
+
+// ── Frister (måneder som foreslås i dialogene) ─────
+function _renderDeadlineInputs() {
+  document.querySelectorAll('[data-dl-key]').forEach(function(inp) {
+    var k = inp.dataset.dlKey;
+    inp.value = String(deadlines[k]);
+    inp.placeholder = String(DEADLINE_DEFAULTS[k]);
+  });
+}
+(function() {
+  document.querySelectorAll('[data-dl-key]').forEach(function(inp) {
+    inp.addEventListener('change', function() {
+      var raw = this.value.trim();
+      var v = parseInt(raw, 10);
+      // Tomt felt = standard; et ugyldig tall avvises og feltet tilbakestilles
+      if (raw !== '' && !(v >= 1 && v <= DEADLINE_MAX)) { _renderDeadlineInputs(); return; }
+      dispatch('SETTINGS_DEADLINE_CHANGE', { key: this.dataset.dlKey, value: raw === '' ? null : v });
+      _renderDeadlineInputs();
+    });
+  });
+  var reset = document.getElementById('btn-dl-reset');
+  if (reset) reset.addEventListener('click', function() {
+    dispatch('SETTINGS_DEADLINE_CHANGE', { key: null });
+    _renderDeadlineInputs();
+  });
+  document.querySelectorAll('[data-goto-settings-tab]').forEach(function(a) {
+    a.addEventListener('click', function(e) { e.preventDefault(); showSettingsTab(this.dataset.gotoSettingsTab, true); });
+  });
+  _renderDeadlineInputs();
 })();
 
 // ── Standard per sakstype (varighet + buffer) ──────

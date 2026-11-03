@@ -7,11 +7,85 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.52.0] - 2026-11-03
+
+### Added
+- Mothold kan angres: «Fjern» før første brev gir en «Angre»-melding som
+  også sier hvilke mothold som fikk nytt nummer («D2 fjernet – D3 heter nå
+  D2»).
+- Når et brev er sendt, er D-numrene låst. «Fjern» merker da motholdet
+  «Ikke lenger relevant» i stedet for å slette det: det beholder nummeret,
+  vises gjennomstreket, forsvinner fra nyhets- og OH-velgerne, og
+  kravkoblingene til det fjernes. Granskingsrapporten tar det med som
+  «(ikke lenger relevant)», så numrene fortsatt stemmer med brevene.
+  «Gjenopprett» gjør motholdet vanlig igjen, men kravkoblingene gjenopprettes
+  ikke og må settes på nytt.
+- Sakssiden viser hvilken runde saken er i, under tittelen: «Runde 2 · brev
+  2026.03.02 · svar 2026.10.20 (endrede krav)», eller «venter på svar» i
+  Fristarkiv.
+- **Svar mottatt** (knappen i Fristarkiv) registrerer søkerens svar i én
+  dialog: mottaksdato, hva som kom inn (endrede krav, endret beskrivelse
+  eller kun argumenter) og din frist. Fristen foreslås fra mottaksdatoen,
+  med antall måneder fra Innstillinger → Frister. Erstatter valget mellom
+  viderebehandling og avslutning; avslutning ligger som en lenke i dialogen.
+- **Avgjør** (knappen i Viderebehandling) gir tre utfall: nytt
+  realitetsbrev (til Fristarkiv med søkers frist), godkjenning (avsluttes
+  som meddelt) eller avslag (avsluttes som avslått). Godkjenning teller ikke
+  som en ny runde.
+- «Svar og endringer» øverst i Vurdering i Viderebehandling: en sjekkliste
+  for svaret (lest, § 13-grunnlag, ny vurdering, tilleggsgransking) som
+  starter tom i hver runde.
+- Ny side under Innstillinger: **Frister**. Her endrer du fristene som
+  foreslås i dialogene: søkers frist etter 1. realitetsbrev, søkers frist
+  etter senere realitetsbrev og din egen frist for å behandle svar (1–24
+  måneder). Datoen kan fortsatt endres i dialogen, og eksisterende saker
+  endres ikke. Fristene følger med i eksport og import.
+
+### Changed
+- I Viderebehandling viser fremdriftslinjen øverst og i sticky-baren
+  sjekklisten for svaret («Svar – runde 2 · 2 / 4») i stedet for
+  førsterundesjekklisten, som ikke lenger sier noe om arbeidet som gjenstår.
+- I Viderebehandling er fasene Saken og Gransking lukket som standard, så
+  svaret og vurderingen står først. Åpner eller lukker du dem selv, huskes
+  det for seg i Viderebehandling og påvirker ikke de andre statusene.
+- Søkers frist foreslås nå til 3 måneder etter både første og senere
+  realitetsbrev (før 6 måneder).
+- Kravtabellen passer nå i vindusbredder fra 960 til 1440 px: smalere
+  kolonner, overskriften «Oppfinnelses-høyde» brytes over to linjer, og
+  Notater får resten av bredden (smal ved ca. 960 px). Kravtreet står ved
+  siden av tabellen når kravseksjonen er bred nok (≥ 900 px) og under den
+  ellers. Det følger seksjonens bredde, så å lukke sidemenyen kan få treet
+  tilbake ved siden av tabellen.
+
 ### Removed
 - Scriptet `Lag-PatentDesk-snarvei.ps1`, som lagde en Edge-snarvei med eget
   ikon, er fjernet sammen med beskrivelsen i README. Snarveien forsvant med
   jevne mellomrom fra skrivebordet; åpne `PatentDesk.html` med en vanlig
   snarvei i stedet.
+
+### Fixed
+- E-dokumenter (eldre søknader) kan ikke lenger brukes mot
+  oppfinnelseshøyden. De teller bare for nyhet, jf. patentloven § 2 tredje
+  ledd. Velgeren for oppfinnelseshøyde viser dem ikke, eksisterende
+  koblinger ryddes bort når saken åpnes eller dokumentet merkes E, og
+  granskingsrapporten kan ikke lenger vise «E,Y» eller «E,X» for
+  oppfinnelseshøyde. Som nyhetsmothold («E,X») fungerer de som før.
+- Et krav uten nyhet regnes nå alltid som uten oppfinnelseshøyde, også når
+  lagrede data (f.eks. importerte) sier noe annet. Regelen ligger nå i én
+  felles funksjon, så tabell, sammendrag, fremdrift og rapport alltid er
+  enige.
+- Sakssiden knekker ikke lenger hvis en importert historikkoppføring har
+  ugyldig «svar mottatt»-dato; den bruker da datoen for statusendringen.
+- Svarsjekklisten teller bare de fire kjente punktene, én gang hver, også
+  når lagrede eller importerte data inneholder ukjente eller dupliserte
+  punkter («50 / 4» kan ikke lenger oppstå).
+- Et krav kan ikke kobles til et bakgrunnsmothold, et mothold merket «Ikke
+  lenger relevant», eller (for oppfinnelseshøyde) et E-dokument — samme
+  regel som i velgerne. En kobling som allerede finnes kan fortsatt fjernes.
+
+### Security
+- Ugyldig «svar mottatt»-dato i importerte data kan ikke lenger bryte
+  visningen av sakssiden.
 
 ## [4.51.0] - 2026-11-02
 

@@ -22,6 +22,7 @@ const {
   'removeDocAt',
   'toggleClaimDoc',
   'ensureSakDocs',
+  'claimDocSelectable',
   'formatSearchReport',
 ], { vars: ['MAX_INVENTIVE_DOCS'] });
 

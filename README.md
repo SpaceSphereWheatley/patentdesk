@@ -52,6 +52,8 @@ kjøringstidsavhengigheter. Se [`CLAUDE.md`](CLAUDE.md) for konvensjoner og
 ```bash
 npm ci        # kun utviklingsverktøy (ESLint)
 npm run lint  # linter både innebygd JS og HTML-struktur
+npm test      # enhetstester
+node --test test/e2e/*.e2e.js  # nettlesertester (Playwright/Chromium, valgfritt)
 ```
 
 ---
@@ -110,4 +112,6 @@ runtime dependencies. See [`CLAUDE.md`](CLAUDE.md) for conventions and
 ```bash
 npm ci        # dev tooling only (ESLint)
 npm run lint  # lints both the embedded JS and the HTML structure
+npm test      # unit tests
+node --test test/e2e/*.e2e.js  # browser tests (Playwright/Chromium, optional)
 ```
