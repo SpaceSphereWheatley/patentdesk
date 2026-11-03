@@ -7,6 +7,12 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Removed
+- Scriptet `Lag-PatentDesk-snarvei.ps1`, som lagde en Edge-snarvei med eget
+  ikon, er fjernet sammen med beskrivelsen i README. Snarveien forsvant med
+  jevne mellomrom fra skrivebordet; åpne `PatentDesk.html` med en vanlig
+  snarvei i stedet.
+
 ## [4.51.0] - 2026-11-02
 
 ### Added
