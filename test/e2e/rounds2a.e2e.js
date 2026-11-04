@@ -114,7 +114,7 @@ async function openCase(width, opts) {
   await page.goto(APP_URL);
   await page.evaluate((id) => { navigateTo('sak/' + id); }, CASE_ID);
   await page.waitForTimeout(150);
-  return { page, errors, close: () => ctx.close() };
+  return { page, ctx, errors, close: () => ctx.close() };
 }
 
 const roundBtn = (page) => page.locator('#sak-page-round .btn-round');
@@ -269,11 +269,17 @@ e2e('AC11 pinning is not offered below ~1180 px (overlay only)', async () => {
 });
 
 e2e('AC11 pinned state is not persisted', async () => {
-  const { page, close } = await openCase(1320, { status: 'viderebehandling', history: HIST_V1, rounds: [R1] });
+  const { page: page1, ctx, close } = await openCase(1320, { status: 'viderebehandling', history: HIST_V1, rounds: [R1] });
+  let page = page1;
   await openDrawer(page);
   await drawer(page).locator('button[aria-pressed]').click();
   await page.waitForTimeout(50);
-  await page.reload();
+  // «Reload» = a fresh page in the same context (same localStorage). Not
+  // page.reload(): the seeding init script would run again and could wipe
+  // and reseed localStorage (same fix as objections2c.e2e.js).
+  await page.close();
+  page = await ctx.newPage();
+  await page.goto(APP_URL);
   await page.evaluate((id) => { navigateTo('sak/' + id); }, CASE_ID);
   await page.waitForTimeout(150);
   assert.equal(await drawer(page).isVisible().catch(() => false), false, 'closed after reload');

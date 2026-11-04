@@ -3069,9 +3069,9 @@ body.rd-pinned .sak-sticky-bar { right: 340px; }
 .ob-link  { color: var(--primary); text-decoration: underline; background: none; border: 0; font: inherit; padding: 0; cursor: pointer; margin-left: var(--space-2); }
 .ob-note  { font-size: var(--text-xs); color: var(--notice-warn-text); background: var(--notice-warn-bg); border-radius: var(--radius);
   padding: 4px 8px; margin: 0 0 var(--space-3); }
-.ob-row   { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 0; border-top: 1px solid var(--border); }
+.ob-row   { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px 12px; padding: 8px 0; border-top: 1px solid var(--border); }
 .ob-row:first-of-type { border-top: 0; }
-.ob-text  { flex: 1 1 260px; min-width: 0; font-size: var(--text-sm); color: var(--text); overflow-wrap: anywhere; }
+.ob-text  { flex: 1 1 0; min-width: 0; font-size: var(--text-sm); color: var(--text); overflow-wrap: anywhere; }
 .ob-text b { font-weight: var(--weight-semibold); }
 .ob-map   { color: var(--muted-text); }
 .ob-map-struck { color: var(--text-on-no); }
@@ -3086,7 +3086,7 @@ body.rd-pinned .sak-sticky-bar { right: 340px; }
 .ob-seg .ob-st-maintained[aria-pressed="true"] { background: var(--tone-no-soft); color: var(--text-on-no); }
 .ob-seg .ob-st-dropped[aria-pressed="true"]    { background: var(--border); color: var(--text); }
 .ob-struck .ob-text { color: var(--muted-text); }
-.ob-tag   { font-size: var(--text-2xs); border: 1px solid var(--border2); border-radius: var(--radius-pill); padding: 0 7px; color: var(--muted-text); }
+.ob-tag   { flex: none; white-space: nowrap; font-size: var(--text-2xs); border: 1px solid var(--border2); border-radius: var(--radius-pill); padding: 0 7px; color: var(--muted-text); }
 .ob-new   { font-size: var(--text-xs); color: var(--s-ny-text); background: var(--s-ny-bg); border: 1px solid var(--s-ny-border);
   border-radius: var(--radius-pill); padding: 1px 9px; flex: none; }
 .ob-del   { display: inline-block; width: 24px; flex: none; border: 0; background: transparent; color: var(--muted-text);
@@ -3100,10 +3100,11 @@ button.ob-del:hover { color: var(--text-on-no); }
 .ob-form-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: var(--space-3); }
 .ob-spacer { flex: 1; }
 .ob-count { font-size: var(--text-xs); color: var(--muted-text); }
-.ob-warn  { margin: calc(var(--space-2) * -1) 0 0 44px; padding: 8px 12px; background: var(--notice-warn-bg); border: 1px solid var(--badge-urgent-border);
+.ob-warn  { margin: calc(var(--space-2) * -1) 0 0 0; box-sizing: border-box; padding: 8px 12px; background: var(--notice-warn-bg); border: 1px solid var(--badge-urgent-border);
   border-radius: var(--radius); font-size: var(--text-xs); color: var(--notice-warn-text); }
 .ob-warn ul { margin: 0; padding-left: 16px; }
 .ob-warn li { margin: 2px 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .ob-row { flex-wrap: wrap; } .ob-text { flex-basis: 100%; } }
 .sak-subtitle      { display: block; font-size: var(--text-md); color: var(--text); font-weight: var(--weight-medium); margin-top: var(--space-1); }
 .sak-status-wrap   { position: relative; }
 .sak-status-chip   { display: inline-flex; align-items: center; gap: var(--space-2); font: inherit; font-size: var(--text-sm);
@@ -6068,6 +6069,13 @@ function normalizeRounds(raw) {
 // normaliseres, resten er som før.
 function isPositiveInt(v) {
   return typeof v === 'number' && Number.isInteger(v) && v >= 1;
+}
+
+// Kravnummer som verdi i en attributtselektor. Et gyldig nummer brukes som det
+// er; alt annet (data lagret før importen ble strammet inn) escapes.
+function claimSelVal(v) {
+  if (isPositiveInt(v)) return String(v);
+  return typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(String(v)) : '';
 }
 
 function normalizeImportSakDetails(sd) {
@@ -9063,6 +9071,9 @@ function _dispatch(action, payload) {
       ensureClaims(data);
       saveSakData(id, data);
       renderSakAssessment(data);
+      // «→ nå krav / → strøket» i innvendingene følger kravlista
+      var ccResCase = cases.find(function(c) { return c.id === id; });
+      if (ccResCase && activeSakId === id) renderSakResponse(ccResCase, data);
       if (payload.undoable) showUndoToast(payload.toast || 'Krav fjernet');
       break;
     }
@@ -9127,14 +9138,15 @@ function _dispatch(action, payload) {
       if (!oaObj) break;
       oaData.objections = oaList.concat([oaObj]);
       saveSakData(payload.id, oaData);
-      if (activeSakId === payload.id) renderSakResponse(oaCase, oaData);
+      if (activeSakId === payload.id) renderSakResponse(oaCase, oaData, { closeForm: true });
       break;
     }
 
     case 'OBJECTION_DELETE': {
       var odCase = cases.find(function(c) { return c.id === payload.id; });
+      if (!odCase || odCase.type === 'oppdrag' || odCase.status !== 'viderebehandling') break;
       var odData = loadSakData(payload.id);
-      if (!odCase || !odData) break;
+      if (!odData) break;
       var odOut = objectionsAfterDelete(odData, payload.objId);
       if (!odOut.objections.length) delete odOut.objections;
       if (!Object.keys(odOut.objectionStates).length) delete odOut.objectionStates;
@@ -13352,10 +13364,30 @@ function sakObjectionsHtml(cas, data) {
   '</div>';
 }
 
-function renderSakResponse(cas, data) {
+// Et åpent «+ Innvending»-skjema i blokken: { caseId, text, isNew } eller null
+function obOpenFormState(el) {
+  var form = el && el.querySelector('.ob-form');
+  if (!form || form.hidden) return null;
+  return { caseId: el.dataset.obCase || null, text: form.querySelector('.ob-input').value,
+    isNew: form.querySelector('.ob-isnew').checked };
+}
+function obRestoreForm(el, st) {
+  var form = el.querySelector('.ob-form'), add = el.querySelector('.ob-add');
+  if (!form || !add) return;
+  form.hidden = false;
+  add.hidden = true;
+  form.querySelector('.ob-input').value = st.text;
+  form.querySelector('.ob-isnew').checked = st.isNew;
+  form.querySelector('.ob-count').textContent = st.text.length + ' / ' + OBJECTION_TEXT_MAX;
+}
+
+// opts.closeForm: skjemaet lukkes (etter «Legg til»); ellers overlever et
+// åpent skjema at blokken tegnes på nytt i samme sak.
+function renderSakResponse(cas, data, opts) {
   var el = document.getElementById('sak-svar');
   if (!el) return;
-  if (!cas || cas.type === 'oppdrag' || cas.status !== 'viderebehandling') { el.innerHTML = ''; return; }
+  var keepForm = !(opts && opts.closeForm) ? obOpenFormState(el) : null;
+  if (!cas || cas.type === 'oppdrag' || cas.status !== 'viderebehandling') { el.innerHTML = ''; delete el.dataset.obCase; return; }
   var round = examinationRound(cas);
   var done = responseChecked(data, round);
   var rows = RESPONSE_CHECKLIST.map(function(item) {
@@ -13373,6 +13405,8 @@ function renderSakResponse(cas, data) {
     '<div class="sak-checklist sak-checklist-flat">' + rows + '</div>' +
     sakObjectionsHtml(cas, data) +
   '</section>';
+  if (keepForm && keepForm.caseId === cas.id) obRestoreForm(el, keepForm);
+  el.dataset.obCase = cas.id;
 }
 document.getElementById('sak-svar').addEventListener('change', function(e) {
   var box = e.target.closest('[data-svar-id]');
@@ -13775,10 +13809,10 @@ function renderSakClaimsTree(data, activeClaim) {
       var childActive = c.num === activeClaim ? ' kt-active' : '';
       var childTag = c.label ? '<span class="kt-tag-chip">' + esc(c.label) + '</span>' : '';
       var indent = 'padding-left:' + (10 + depth * 12) + 'px';
-      var row = '<div class="kt-child-row' + childActive + '" data-kt-num="' + c.num + '" style="' + indent + '">' +
+      var row = '<div class="kt-child-row' + childActive + '" data-kt-num=\"' + esc(c.num) + '\" style="' + indent + '">' +
         '<span class="kt-connector">&#9492;</span>' +
         '<div class="kt-dot ' + claimDotClass(c, data.claims) + '"></div>' +
-        '<span class="kt-lbl">' + c.num + '</span>' + childTag +
+        '<span class="kt-lbl">' + esc(c.num) + '</span>' + childTag +
       '</div>';
       return row + renderChildren(c.num, depth + 1, false);
     }).join('');
@@ -13793,10 +13827,10 @@ function renderSakClaimsTree(data, activeClaim) {
       ? '<span class="kt-group-chevron' + (isCollapsed ? '' : ' kt-open') + '">&#9658;</span>'
       : '<span class="kt-group-chevron" style="opacity:0;pointer-events:none">&#9658;</span>';
     var headerActive = root.num === activeClaim ? ' kt-active' : '';
-    var header = '<div class="kt-group-header' + headerActive + '" data-kt-num="' + root.num + '" data-kt-toggle="' + root.num + '">' +
+    var header = '<div class="kt-group-header' + headerActive + '" data-kt-num=\"' + esc(root.num) + '\" data-kt-toggle=\"' + esc(root.num) + '\">' +
       chevHtml +
       '<div class="kt-dot ' + claimDotClass(root, data.claims) + '"></div>' +
-      '<span class="kt-lbl">' + root.num + '</span>' + tagHtml +
+      '<span class="kt-lbl">' + esc(root.num) + '</span>' + tagHtml +
     '</div>';
     var childrenHtml = renderChildren(root.num, 1, isCollapsed);
     return '<div class="' + ktGroupClass(root, data.claims) + '">' + header + childrenHtml + '</div>';
@@ -13826,9 +13860,9 @@ function claimRowHtml(data, c) {
     // Nyhet-knapp
     var noveltyBtn;
     if (noveltyIsCascade) {
-      noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim="' + c.num + '" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + '>' + triLabel(true, false) + '</button>';
+      noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + '>' + triLabel(true, false) + '</button>';
     } else {
-      noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim="' + c.num + '" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + '>' + triLabel(c.novelty, false) + '</button>';
+      noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + '>' + triLabel(c.novelty, false) + '</button>';
     }
 
     // Oppfinnelseshøyde-knapp
@@ -13837,9 +13871,9 @@ function claimRowHtml(data, c) {
     if (inventiveLocked) {
       inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
     } else if (inventiveIsCascade) {
-      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim="' + c.num + '" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + '>' + triLabel(true, false) + '</button>';
+      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + '>' + triLabel(true, false) + '</button>';
     } else {
-      inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim="' + c.num + '" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + '>' + triLabel(c.inventive, false) + '</button>';
+      inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + '>' + triLabel(c.inventive, false) + '</button>';
     }
 
     // Radklasse basert på effektive verdier
@@ -13861,22 +13895,22 @@ function claimRowHtml(data, c) {
     }
 
     // Dep input
-    var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep="' + c.num + '" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
+    var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
 
     // Label cell
     var labelCell = (c.num === _sakEditingLabelNum)
-      ? '<input class="sak-tag-input" type="text" data-claim="' + c.num + '" value="' + esc(c.label || '') + '" placeholder="Etikett…" aria-label="' + esc(claimFieldAriaLabel(c.num, 'label')) + '" />'
-      : '<span class="sak-tag-display' + (!c.label ? ' sak-tag-empty' : '') + '" data-claim-label="' + c.num + '"' +
+      ? '<input class="sak-tag-input" type="text" data-claim=\"' + esc(c.num) + '\" value="' + esc(c.label || '') + '" placeholder="Etikett…" aria-label="' + esc(claimFieldAriaLabel(c.num, 'label')) + '" />'
+      : '<span class="sak-tag-display' + (!c.label ? ' sak-tag-empty' : '') + '" data-claim-label=\"' + esc(c.num) + '\"' +
         ' tabindex="0" role="button" aria-label="' + esc(claimLabelAriaLabel(c.num, c.label)) + '">' + esc(c.label || 'etikett') + '</span>';
 
-    return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + ' data-claim="' + c.num + '">' +
-      '<td class="sak-td-krav"><strong>' + c.num + '</strong></td>' +
+    return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + ' data-claim=\"' + esc(c.num) + '\">' +
+      '<td class="sak-td-krav"><strong>' + esc(c.num) + '</strong></td>' +
       '<td>' + labelCell + '</td>' +
       '<td class="sak-td-check">' + depCell + '</td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + noveltyBtn + claimDocChipHtml(data, c, 'novelty', effNovelty) + '</span></td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + inventiveBtn + claimDocChipHtml(data, c, 'inventive', effNovelty) + '</span></td>' +
-      '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim="' + c.num + '" data-field="formal"' + ariaFor('formal', c.formal, false, false) + '>' + triLabel(c.formal,   true)  + '</button></td>' +
-      '<td class="sak-td-notes"><input class="sak-claim-note" type="text" data-claim="' + c.num + '" value="' + esc(c.notes || '') + '" placeholder="Notat…" aria-label="' + esc(claimFieldAriaLabel(c.num, 'note')) + '" /></td>' +
+      '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim=\"' + esc(c.num) + '\" data-field="formal"' + ariaFor('formal', c.formal, false, false) + '>' + triLabel(c.formal,   true)  + '</button></td>' +
+      '<td class="sak-td-notes"><input class="sak-claim-note" type="text" data-claim=\"' + esc(c.num) + '\" value="' + esc(c.notes || '') + '" placeholder="Notat…" aria-label="' + esc(claimFieldAriaLabel(c.num, 'note')) + '" /></td>' +
     '</tr>' + kmSub;
 }
 
@@ -13976,7 +14010,7 @@ function renderClaimRows(data, claimNums) {
 
   claimNums.forEach(function(num) {
     var c  = data.claims.find(function(x) { return x.num === num; });
-    var tr = tbody.querySelector('tr[data-claim="' + num + '"]');
+    var tr = tbody.querySelector('tr[data-claim="' + claimSelVal(num) + '"]');
     if (!c || !tr) return;
     var tmp = document.createElement('tbody');
     tmp.innerHTML = claimRowHtml(data, c);
@@ -13989,7 +14023,7 @@ function renderClaimRows(data, claimNums) {
   });
 
   if (keep) {
-    var sel = '[data-claim="' + keep.claim + '"]' + (keep.cls ? '.' + keep.cls : '') +
+    var sel = '[data-claim="' + claimSelVal(keep.claim) + '"]' + (keep.cls ? '.' + keep.cls : '') +
               (keep.field ? '[data-field="' + keep.field + '"]' : '');
     var again = tbody.querySelector(sel);
     if (again) {
@@ -14200,7 +14234,7 @@ function claimDocChipHtml(data, c, field, effNovelty) {
   var open = _sakOpenDocPop && _sakOpenDocPop.claimNum === c.num && _sakOpenDocPop.field === field;
   var cls  = 'claim-doc-chip' + (ids.length ? '' : ' claim-doc-chip-empty');
   return '<span class="claim-doc-wrap">' +
-    '<button class="' + cls + '" data-doc-pop="' + c.num + '" data-field="' + field + '" title="Velg mothold">' +
+    '<button class="' + cls + '" data-doc-pop=\"' + esc(c.num) + '\" data-field="' + field + '" title="Velg mothold">' +
       (ids.length ? esc(ids.join('+')) : 'velg') +
     '</button>' +
     (open ? claimDocPopHtml(data, c, field, ids) : '') +
@@ -14221,7 +14255,7 @@ function claimDocPopHtml(data, c, field, ids) {
     var full = !isNovelty && !on && ids.length >= MAX_INVENTIVE_DOCS;
     return '<button class="doc-pop-opt" role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '"' +
       (full ? ' disabled' : '') +
-      ' data-doc-pick="' + esc(d.id) + '" data-claim="' + c.num + '" data-field="' + field + '">' +
+      ' data-doc-pick="' + esc(d.id) + '" data-claim=\"' + esc(c.num) + '\" data-field="' + field + '">' +
       '<span class="doc-pop-box">' + (on ? '✓' : '') + '</span>' +
       '<strong>' + esc(d.id) + '</strong><span>' + esc(d.ref || '') + '</span>' +
     '</button>';
@@ -15228,7 +15262,7 @@ function paintClaimCursor() {
     tr.classList.toggle('sak-claim-active-row', +tr.dataset.claim === _sakActiveClaimNum);
   });
   if (_sakActiveClaimNum === null) return;
-  var btn = tbody.querySelector('[data-claim="' + _sakActiveClaimNum + '"][data-field="' + _sakKeyField + '"]');
+  var btn = tbody.querySelector('[data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
   var td  = btn && btn.closest('td');
   if (td) td.classList.add('sak-claim-active-cell');
 }
@@ -15238,7 +15272,7 @@ function moveClaimCursor(delta, data) {
   if (!n) return;
   var next = (_sakActiveClaimNum || 0) + delta;
   _sakActiveClaimNum = Math.min(n, Math.max(1, next));
-  var btn = document.querySelector('#sak-claims-tbody [data-claim="' + _sakActiveClaimNum + '"][data-field="' + _sakKeyField + '"]');
+  var btn = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
   if (btn && !btn.disabled) btn.focus();
   paintClaimCursor();
   renderSakClaimsTree(data, _sakActiveClaimNum);
@@ -15275,7 +15309,7 @@ document.addEventListener('keydown', function(e) {
   }
   if (action.type === 'field') {
     _sakKeyField = action.field;
-    var b = document.querySelector('#sak-claims-tbody [data-claim="' + _sakActiveClaimNum + '"][data-field="' + _sakKeyField + '"]');
+    var b = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
     if (b && !b.disabled) b.focus();
     paintClaimCursor();
     return;
@@ -15431,7 +15465,7 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
     var stale = _kmEditingOrigin && _kmEditingOrigin.num !== num ? [_kmEditingOrigin.num] : [];
     _kmEditingOrigin = { num: num, value: kmOriginText(ctx.m), error: null };
     renderClaimRows(ctx.data, stale.concat([num]));
-    var inp = document.querySelector('#sak-claims-tbody [data-claim-origin-inp="' + num + '"]');
+    var inp = document.querySelector('#sak-claims-tbody [data-claim-origin-inp="' + claimSelVal(num) + '"]');
     if (inp) { inp.focus(); inp.select(); }
     return;
   }
@@ -15443,7 +15477,7 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
     dispatch('CLAIM_MAPPING_CHANGE', { id: sctx.id, claimNum: sctx.claim.num,
       mapping: kmNextMapping(sctx, { change: segChange }) });
     // Tabellen er tegnet på nytt; fokus tilbake til samme knapp
-    var segAgain = document.querySelector('#sak-claims-tbody [data-claim-change="' + sctx.claim.num + '"][data-change="' + segChange + '"]');
+    var segAgain = document.querySelector('#sak-claims-tbody [data-claim-change="' + claimSelVal(sctx.claim.num) + '"][data-change="' + segChange + '"]');
     if (segAgain) segAgain.focus();
     return;
   }
@@ -15454,7 +15488,7 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
     var nextP13 = pctx.m.p13 === null ? true : pctx.m.p13 === true ? false : null;
     dispatch('CLAIM_MAPPING_CHANGE', { id: pctx.id, claimNum: pctx.claim.num,
       mapping: kmNextMapping(pctx, { p13: nextP13 }) });
-    var again = document.querySelector('#sak-claims-tbody [data-claim-p13="' + pctx.claim.num + '"]');
+    var again = document.querySelector('#sak-claims-tbody [data-claim-p13="' + claimSelVal(pctx.claim.num) + '"]');
     if (again) again.focus();
   }
 });
