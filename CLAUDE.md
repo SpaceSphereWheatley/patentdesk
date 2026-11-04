@@ -23,7 +23,8 @@ the file, introduce imports, or add any external dependencies.
 - `cases[]` in localStorage — case list, used for filtering, stats, and the
   sidebar. Keyed `pt_cases`.
 - `pt_sak_{id}` in localStorage — full per-case detail data, including
-  `rounds[]` (frozen per-office-action snapshots of claim assessment and citations).
+  `rounds[]` (frozen per-office-action snapshots of claim assessment and
+  citations, plus claim mappings and objections).
 - IndexedDB — CPC classification database (`cpc_v2.json`, 253 K+ symbols).
   Only `{code, inUse}` is persisted per case; descriptions are looked up live
   from `_cpcDb` and never stored.

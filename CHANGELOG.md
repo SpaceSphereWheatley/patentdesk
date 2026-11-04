@@ -7,6 +7,34 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.54.0] - 2026-11-04
+
+### Added
+- Kravkartlegging: når svaret har «endrede krav», får hvert krav i
+  Viderebehandling en linje under seg med hvor kravet kom fra («←1+4», «Ny»),
+  Endret/Uendret, forrige runde sin vurdering som hint, og § 13 (✓ / ✗ mangler
+  grunnlag, med grunnlagstekst) for endrede og nye krav.
+- Endret og Ny starter uten vurdering. Uendret kopierer vurderingen fra forrige
+  runde. «Angre» gjenoppretter verdier som er nullstilt. Kartleggingen lagres
+  sammen med neste runde.
+- «Innvendinger fra brev N» i «Svar og endringer»: innvendinger opprettes
+  automatisk fra den frosne runden (mangler nyhet / mangler OH / formelle feil
+  per krav, gruppert), med gammelt kravnummer og hvor kravet ble av
+  («→ nå krav N» / «→ strøket»).
+- Status per innvending: Åpen, Løst, Opprettholdt eller Frafalt. Egne
+  innvendinger legges til med «+ Innvending», eventuelt som «Ny i denne runden».
+- Avgjør viser advarsler under «Avslag», for eksempel at noe ikke var tatt opp
+  i brevet, at nytt mothold ikke er sitert, at kravene er endret, at noe ikke er
+  vurdert ennå, eller at ingen grunner gjenstår. Advarslene blokkerer aldri.
+
+### Changed
+- Ingen oppgradering av dataformatet er nødvendig (skjemaversjon er fortsatt 8).
+  Belegg og frister påvirkes ikke.
+
+### Security
+- Kravnumre fra importerte filer gjøres trygge, og kravnumre escapes overalt i
+  kravtabellen.
+
 ## [4.53.0] - 2026-11-03
 
 ### Added
