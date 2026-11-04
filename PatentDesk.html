@@ -2250,7 +2250,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       color: var(--text); line-height: 1.5; }
 .km-inp-err         { border-color: var(--danger); }
 .km-err             { color: var(--text-on-no); font-size: var(--text-xs); }
-.km-prev            { color: var(--muted-text); min-width: 0; overflow: hidden; text-overflow: ellipsis;
+.km-prev            { color: var(--muted-text); font-style: italic; opacity: 0.8; min-width: 0; overflow: hidden; text-overflow: ellipsis;
                       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
                       flex: 0 1 auto; max-width: 100%; overflow-wrap: anywhere; }
 .km-chip            { font-size: var(--text-2xs); font-weight: var(--weight-semibold); border-radius: var(--radius-pill);
@@ -5638,6 +5638,10 @@ function normalizeRounds(raw) {
 
 // Saksdetaljer fra en importfil (fil, sikkerhetskopi, arbeidsfil): rundene
 // normaliseres, resten er som før.
+function isPositiveInt(v) {
+  return typeof v === 'number' && Number.isInteger(v) && v >= 1;
+}
+
 function normalizeImportSakDetails(sd) {
   if (!sd || typeof sd !== 'object' || Array.isArray(sd)) return sd;
   var out = {};
@@ -5646,10 +5650,13 @@ function normalizeImportSakDetails(sd) {
   // Nåværende krav: bare kravkoblingen normaliseres (eller fjernes); resten
   // av hvert krav er som i filen.
   if (Array.isArray(sd.claims)) {
-    out.claims = sd.claims.map(function(c) {
+    out.claims = sd.claims.map(function(c, i) {
       if (!c || typeof c !== 'object' || Array.isArray(c)) return c;
       var copy = {};
       Object.keys(c).forEach(function(k) { if (k !== '__proto__') copy[k] = c[k]; });
+      // num og dep havner i markup og oppslag, så de må være positive heltall
+      copy.num = isPositiveInt(c.num) ? c.num : (i + 1);
+      copy.dep = isPositiveInt(c.dep) ? c.dep : null;
       if (Object.prototype.hasOwnProperty.call(c, 'mapping')) {
         var m = normalizeClaimMapping(c.mapping);
         if (m) copy.mapping = m; else delete copy.mapping;
@@ -13281,24 +13288,26 @@ var KM_P13_TITLE = 'Endringen har grunnlag i søknaden som innlevert (patentlove
 // All tekst som kan komme fra brukeren går gjennom esc.
 function claimMappingRowHtml(data, c, round, m, stateCls, verdictCls) {
   var n = c.num;
+  // Nummer går alltid gjennom esc, også om de er rare etter en import
+  var nh = esc(n), rn = esc(round.n);
   var html = '<div class="km-line">';
   if (_kmEditingOrigin && _kmEditingOrigin.num === n) {
     var err = _kmEditingOrigin.error;
-    html += '<input class="km-origin-inp' + (err ? ' km-inp-err' : '') + '" type="text" maxlength="200" data-claim-origin-inp="' + n + '"' +
+    html += '<input class="km-origin-inp' + (err ? ' km-inp-err' : '') + '" type="text" maxlength="200" data-claim-origin-inp="' + nh + '"' +
       ' value="' + esc(_kmEditingOrigin.value) + '" placeholder="f.eks. 1+4 eller ny"' +
-      ' aria-label="Opphav i brev ' + round.n + ', krav ' + n + '"' + (err ? ' aria-invalid="true"' : '') + ' />' +
+      ' aria-label="Opphav i brev ' + rn + ', krav ' + nh + '"' + (err ? ' aria-invalid="true"' : '') + ' />' +
       (err ? '<span class="km-err" role="alert">' + esc(err) + '</span>' : '');
   } else if (!m) {
-    html += '<button class="km-origin km-origin-unset" data-claim-origin="' + n + '" title="Angi hvilket krav i brev ' + round.n + ' dette kom fra">← ?</button>' +
+    html += '<button class="km-origin km-origin-unset" data-claim-origin="' + nh + '" title="Angi hvilket krav i brev ' + rn + ' dette kom fra">← ?</button>' +
       '<span class="km-prev">angi opphav</span>';
   } else {
-    html += '<button class="km-origin" data-claim-origin="' + n + '" title="' + esc(claimOriginHint(c, round, data.docs || [])) + ' — klikk for å endre opphav">' + esc(claimOriginLabel(m)) + '</button>';
+    html += '<button class="km-origin" data-claim-origin="' + nh + '" title="' + esc(claimOriginHint(c, round, data.docs || [])) + ' — klikk for å endre opphav">' + esc(claimOriginLabel(m)) + '</button>';
   }
   if (m && !(_kmEditingOrigin && _kmEditingOrigin.num === n)) {
     if (m.origin.length === 1) {
-      html += '<span class="km-seg" role="group" aria-label="Endring, krav ' + n + '">' +
-        '<button type="button" data-claim-change="' + n + '" data-change="endret" aria-pressed="' + (m.change === 'endret') + '">Endret</button>' +
-        '<button type="button" data-claim-change="' + n + '" data-change="uendret" aria-pressed="' + (m.change === 'uendret') + '">Uendret</button>' +
+      html += '<span class="km-seg" role="group" aria-label="Endring, krav ' + nh + '">' +
+        '<button type="button" data-claim-change="' + nh + '" data-change="endret" aria-pressed="' + (m.change === 'endret') + '">Endret</button>' +
+        '<button type="button" data-claim-change="' + nh + '" data-change="uendret" aria-pressed="' + (m.change === 'uendret') + '">Uendret</button>' +
         '</span>';
     } else if (m.origin.length > 1) {
       html += '<span class="km-chip km-chip-endret">Endret</span>';
@@ -13308,10 +13317,10 @@ function claimMappingRowHtml(data, c, round, m, stateCls, verdictCls) {
     if (m.change !== 'uendret') {
       var p13Cls = m.p13 === true ? 'sak-tri-btn-ok' : m.p13 === false ? 'sak-tri-btn-no' : 'sak-tri-btn-null';
       var p13Txt = m.p13 === true ? '§13 ✓' : m.p13 === false ? '§13 ✗ mangler grunnlag' : '§13 —';
-      html += '<button type="button" class="sak-tri-btn ' + p13Cls + ' km-p13-btn" data-claim-p13="' + n + '" title="' + KM_P13_TITLE + '"' +
-        ' aria-label="§ 13-grunnlag, krav ' + n + ': ' + p13Txt + '">' + p13Txt + '</button>' +
-        '<input class="km-basis" type="text" maxlength="' + CLAIM_MAPPING_BASIS_MAX + '" data-claim-basis="' + n + '" value="' + esc(m.basis) + '"' +
-        ' placeholder="Grunnlag (side, linje) …" aria-label="Grunnlag § 13, krav ' + n + '" />';
+      html += '<button type="button" class="sak-tri-btn ' + p13Cls + ' km-p13-btn" data-claim-p13="' + nh + '" title="' + KM_P13_TITLE + '"' +
+        ' aria-label="§ 13-grunnlag, krav ' + nh + ': ' + p13Txt + '">' + p13Txt + '</button>' +
+        '<input class="km-basis" type="text" maxlength="' + CLAIM_MAPPING_BASIS_MAX + '" data-claim-basis="' + nh + '" value="' + esc(m.basis) + '"' +
+        ' placeholder="Grunnlag (side, linje) …" aria-label="Grunnlag § 13, krav ' + nh + '" />';
     }
   }
   html += '</div>';
@@ -14765,12 +14774,24 @@ function kmOriginText(m) {
   return m.origin.length ? m.origin.join('+') : 'ny';
 }
 
-function kmCommitOrigin(inp) {
+// Lukker opphavsfeltet uten å lagre og viser koblingen slik den var.
+function kmCancelOrigin(inp) {
+  if (inp.dataset.done) return;
+  inp.dataset.done = '1';
+  _kmEditingOrigin = null;
+  var num = parseInt(inp.dataset.claimOriginInp, 10);
+  var data = activeSakId && loadSakData(activeSakId);
+  if (data && inp.isConnected) renderClaimRows(data, [num]);
+}
+
+// onBlur: et ugyldig opphav lukker feltet uten å lagre i stedet for å vise feil.
+function kmCommitOrigin(inp, onBlur) {
   if (inp.dataset.done) return;
   var num = parseInt(inp.dataset.claimOriginInp, 10);
   var ctx = kmContext(num);
   if (!ctx) { _kmEditingOrigin = null; return; }
   var res = parseOrigin(inp.value, ctx.round.claims.length, ctx.round.n);
+  if (res && res.error && onBlur) { kmCancelOrigin(inp); return; }
   if (res && res.error) {
     // Feilen vises ved feltet; ingenting lagres, og feltet beholder fokus
     _kmEditingOrigin = { num: num, value: inp.value, error: res.error };
@@ -14798,8 +14819,10 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
   if (originBtn) {
     var num = parseInt(originBtn.dataset.claimOrigin, 10);
     var ctx = kmContext(num); if (!ctx) return;
+    // Et annet krav sitt åpne felt (og feilen der) lukkes uten å lagre
+    var stale = _kmEditingOrigin && _kmEditingOrigin.num !== num ? [_kmEditingOrigin.num] : [];
     _kmEditingOrigin = { num: num, value: kmOriginText(ctx.m), error: null };
-    renderClaimRows(ctx.data, [num]);
+    renderClaimRows(ctx.data, stale.concat([num]));
     var inp = document.querySelector('#sak-claims-tbody [data-claim-origin-inp="' + num + '"]');
     if (inp) { inp.focus(); inp.select(); }
     return;
@@ -14808,8 +14831,12 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
   if (seg) {
     var sctx = kmContext(parseInt(seg.dataset.claimChange, 10));
     if (!sctx || !sctx.m || sctx.m.change === seg.dataset.change) return;
+    var segChange = seg.dataset.change;
     dispatch('CLAIM_MAPPING_CHANGE', { id: sctx.id, claimNum: sctx.claim.num,
-      mapping: kmNextMapping(sctx, { change: seg.dataset.change }) });
+      mapping: kmNextMapping(sctx, { change: segChange }) });
+    // Tabellen er tegnet på nytt; fokus tilbake til samme knapp
+    var segAgain = document.querySelector('#sak-claims-tbody [data-claim-change="' + sctx.claim.num + '"][data-change="' + segChange + '"]');
+    if (segAgain) segAgain.focus();
     return;
   }
   var p13 = e.target.closest('[data-claim-p13]');
@@ -14829,17 +14856,13 @@ document.getElementById('sak-claims-tbody').addEventListener('keydown', function
   if (e.key === 'Enter') { e.preventDefault(); kmCommitOrigin(inp); return; }
   if (e.key === 'Escape') {
     e.preventDefault(); e.stopPropagation();
-    inp.dataset.done = '1';
-    _kmEditingOrigin = null;
-    var num = parseInt(inp.dataset.claimOriginInp, 10);
-    var data = activeSakId && loadSakData(activeSakId);
-    if (data) renderClaimRows(data, [num]);
+    kmCancelOrigin(inp);
   }
 });
 
 document.getElementById('sak-claims-tbody').addEventListener('blur', function(e) {
   var inp = e.target.closest && e.target.closest('.km-origin-inp'); if (!inp) return;
-  kmCommitOrigin(inp);
+  kmCommitOrigin(inp, true);
 }, true);
 
 document.getElementById('sak-claims-tbody').addEventListener('change', function(e) {
