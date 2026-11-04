@@ -121,7 +121,7 @@ async function openCase(opts, width) {
   }, [CASE_ID, s.cases, s.sak]);
   await page.goto(APP_URL);
   await gotoCase(page);
-  return { page, errors, dialogs, close: () => ctx.close() };
+  return { page, ctx, errors, dialogs, close: () => ctx.close() };
 }
 async function gotoCase(page) {
   await page.evaluate((id) => { navigateTo('sak/' + id); }, CASE_ID);
@@ -206,7 +206,8 @@ e2e('«Runden er lagret i ettertid» on a backfilled round', async () => {
 
 // ── AC11: state persists ───────────────────────────────────────────────────
 e2e('AC11 state buttons: default Åpen, «Løst» persists in objectionStates["2"] across reload', async () => {
-  const { page, close } = await openCase({});
+  const { page: page1, ctx, close } = await openCase({});
+  let page = page1;
   const first = rows(page).first();
   assert.equal(await first.locator('.ob-state button').count(), 4);
   assert.equal(await first.locator('.ob-state button[data-state="open"]').getAttribute('aria-pressed'), 'true');
@@ -215,7 +216,13 @@ e2e('AC11 state buttons: default Åpen, «Løst» persists in objectionStates["2
   assert.deepEqual((await stored(page)).objectionStates, { 2: { 'r1-k1-nyhet': 'resolved' } });
   assert.equal((await list(page).locator('.ob-progress').textContent()).trim(), '1 / 3 vurdert');
 
-  await page.reload();
+  // «Reload» = a fresh page in the same context (same localStorage). Not
+  // page.reload(): the seeding init script would run again, and its
+  // sessionStorage guard is not reliably visible after a reload of a file://
+  // page, so it sometimes wipes and reseeds localStorage (the old flake).
+  await page.close();
+  page = await ctx.newPage();
+  await page.goto(APP_URL);
   await gotoCase(page);
   assert.equal(await rows(page).first().locator('.ob-state button[data-state="resolved"]').getAttribute('aria-pressed'), 'true');
   assert.equal(await rows(page).nth(1).locator('.ob-state button[data-state="open"]').getAttribute('aria-pressed'), 'true');
