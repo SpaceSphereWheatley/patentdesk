@@ -3060,6 +3060,50 @@ body.rd-pinned .sak-sticky-bar { right: 340px; }
 .mh-round-new { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--s-videre-text); background: var(--s-videre-bg);
   border: 1px solid var(--s-videre-border); border-radius: var(--radius-pill); padding: 1px var(--space-3); white-space: nowrap; }
 .sak-svar-count    { font-size: var(--text-xs); color: var(--muted-text); font-weight: var(--weight-medium); text-transform: none; letter-spacing: 0; }
+/* Innvendinger i «Svar og endringer» og under «Avslag» i Avgjør */
+.ob-list  { margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--border); }
+.ob-head  { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-3); }
+.ob-title { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text); }
+.ob-progress { cursor: help; }
+.ob-empty { font-size: var(--text-sm); color: var(--muted-text); margin: 0 0 var(--space-2); }
+.ob-link  { color: var(--primary); text-decoration: underline; background: none; border: 0; font: inherit; padding: 0; cursor: pointer; margin-left: var(--space-2); }
+.ob-note  { font-size: var(--text-xs); color: var(--notice-warn-text); background: var(--notice-warn-bg); border-radius: var(--radius);
+  padding: 4px 8px; margin: 0 0 var(--space-3); }
+.ob-row   { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 0; border-top: 1px solid var(--border); }
+.ob-row:first-of-type { border-top: 0; }
+.ob-text  { flex: 1 1 260px; min-width: 0; font-size: var(--text-sm); color: var(--text); overflow-wrap: anywhere; }
+.ob-text b { font-weight: var(--weight-semibold); }
+.ob-map   { color: var(--muted-text); }
+.ob-map-struck { color: var(--text-on-no); }
+.ob-open .ob-text::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--color-warn); margin-right: 6px; }
+.ob-seg   { display: inline-flex; border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; flex: none; background: var(--surface); }
+.ob-seg button { border: 0; border-left: 1px solid var(--border); background: transparent; font: inherit; font-size: var(--text-xs);
+  padding: 3px 9px; color: var(--muted-text); cursor: pointer; }
+.ob-seg button:first-child { border-left: 0; }
+.ob-seg button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.ob-seg button[aria-pressed="true"] { background: var(--surface2); color: var(--text); }
+.ob-seg .ob-st-resolved[aria-pressed="true"]   { background: var(--tone-ok-soft); color: #047857; }
+.ob-seg .ob-st-maintained[aria-pressed="true"] { background: var(--tone-no-soft); color: var(--text-on-no); }
+.ob-seg .ob-st-dropped[aria-pressed="true"]    { background: var(--border); color: var(--text); }
+.ob-struck .ob-text { color: var(--muted-text); }
+.ob-tag   { font-size: var(--text-2xs); border: 1px solid var(--border2); border-radius: var(--radius-pill); padding: 0 7px; color: var(--muted-text); }
+.ob-new   { font-size: var(--text-xs); color: var(--s-ny-text); background: var(--s-ny-bg); border: 1px solid var(--s-ny-border);
+  border-radius: var(--radius-pill); padding: 1px 9px; flex: none; }
+.ob-del   { display: inline-block; width: 24px; flex: none; border: 0; background: transparent; color: var(--muted-text);
+  font-size: 16px; line-height: 1; cursor: pointer; padding: 2px 6px; }
+button.ob-del:hover { color: var(--text-on-no); }
+.ob-add   { background: none; border: 1px dashed var(--border2); border-radius: var(--radius); padding: 4px 12px; font: inherit;
+  font-size: var(--text-sm); color: var(--muted-text); cursor: pointer; margin-top: var(--space-3); }
+.ob-add:hover { color: var(--primary); border-color: var(--primary-dim); }
+.ob-form  { margin-top: var(--space-3); padding: var(--space-4); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); }
+.ob-form[hidden], .ob-add[hidden], .ob-warn[hidden] { display: none; }
+.ob-form-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: var(--space-3); }
+.ob-spacer { flex: 1; }
+.ob-count { font-size: var(--text-xs); color: var(--muted-text); }
+.ob-warn  { margin: calc(var(--space-2) * -1) 0 0 44px; padding: 8px 12px; background: var(--notice-warn-bg); border: 1px solid var(--badge-urgent-border);
+  border-radius: var(--radius); font-size: var(--text-xs); color: var(--notice-warn-text); }
+.ob-warn ul { margin: 0; padding-left: 16px; }
+.ob-warn li { margin: 2px 0; overflow-wrap: anywhere; }
 .sak-subtitle      { display: block; font-size: var(--text-md); color: var(--text); font-weight: var(--weight-medium); margin-top: var(--space-1); }
 .sak-status-wrap   { position: relative; }
 .sak-status-chip   { display: inline-flex; align-items: center; gap: var(--space-2); font: inherit; font-size: var(--text-sm);
@@ -4609,6 +4653,7 @@ body.rd-pinned .sak-sticky-bar { right: 340px; }
               <div class="choice-sub">Saken avsluttes som avslått</div>
             </div>
           </button>
+          <div class="ob-warn" id="videre-avslag-warn" role="note" aria-label="Merknader før avslag" hidden><ul></ul></div>
         </div>
         <button type="button" class="svar-alt" id="btn-videre-avslutt">Annet utfall …</button>
       </div>
@@ -5532,8 +5577,6 @@ function claimOriginHint(claim, round, docs) {
 }
 
 // Kravene i R(n) som ingen gyldig kobling bruker — strøket av søkeren.
-// Ikke i bruk ennå: innvendingene (2C) leser den.
-/* exported deletedClaims */
 function deletedClaims(round, claims) {
   var used = {};
   (Array.isArray(claims) ? claims : []).forEach(function(c) {
@@ -5543,6 +5586,391 @@ function deletedClaims(round, claims) {
   var nums = (round && Array.isArray(round.claims) ? round.claims : []).map(function(c) { return c && c.num; })
     .filter(function(k) { return typeof k === 'number' && !used[k]; });
   return nums.sort(function(a, b) { return a - b; });
+}
+
+// ── Innvendinger (objections) ───────────────────────
+// Avledes fra den frosne runden L (brevet søkeren har svart på) og lagres
+// aldri i runden. I pt_sak_{id} ligger bare egne innvendinger
+// (objections: [{ id, text, raisedIn }]) og vurderingen per runde
+// (objectionStates: { "<k>": { "<id>": resolved|maintained|dropped } };
+// åpen = ingen nøkkel). Rene funksjoner — se test/objections.test.js.
+var OBJECTION_STATES = ['open', 'resolved', 'maintained', 'dropped'];
+var OBJECTION_TEXT_MAX = 200;
+var OBJECTION_MAX_MANUAL = 100;
+var OBJECTION_MAX_IDS_PER_ROUND = 1000;
+var OBJECTION_DERIVED_ID_RE = /^r\d{1,3}-k\d{1,3}-(nyhet|oh|formelt)$/;
+var OBJECTION_MANUAL_ID_RE = /^m[a-z0-9]{4,24}$/;
+var OBJECTION_ROUND_KEY_RE = /^[1-9]\d{0,2}$/;
+
+function isPlainObj(v) {
+  return !!v && typeof v === 'object' && !Array.isArray(v);
+}
+
+function objectionsOf(data) {
+  return data && Array.isArray(data.objections) ? data.objections : [];
+}
+
+function objectionStatesOf(data) {
+  return data && isPlainObj(data.objectionStates) ? data.objectionStates : {};
+}
+
+function isObjectionId(id) {
+  return typeof id === 'string' && (OBJECTION_DERIVED_ID_RE.test(id) || OBJECTION_MANUAL_ID_RE.test(id));
+}
+
+// Runden innvendingene kommer fra: den med n lik antall sendte brev.
+function objectionRound(c, rounds) {
+  if (!c || c.type === 'oppdrag') return null;
+  var sent = lettersSent(c.history);
+  return visibleRounds(c, rounds).find(function(r) { return r.n === sent; }) || null;
+}
+
+function objectionHasKind(claim, kind) {
+  if (!claim) return false;
+  if (kind === 'nyhet') return claim.novelty === false;
+  if (kind === 'oh') return claim.novelty !== false && claim.inventive === false;
+  return claim.formal === true;
+}
+
+// Innvendingene i en frossen runde, med gamle (frosne) kravnumre.
+function deriveObjections(round, rounds) {
+  if (!round || typeof round !== 'object' || !Array.isArray(round.claims)) return [];
+  var list = Array.isArray(rounds) ? rounds : [];
+  var firstRaised = function(claim, kind) {
+    var first = round.n, cur = claim, curN = round.n;
+    for (;;) {
+      var prev = list.find(function(r) { return r && r.n === curN - 1; });
+      if (!prev || !Array.isArray(prev.claims)) break;
+      var m = claimMapping(cur, prev), num;
+      if (m) {
+        if (m.change !== 'uendret' || m.origin.length !== 1) break;
+        num = m.origin[0];
+      } else {
+        num = cur.num;
+      }
+      var pc = prev.claims.find(function(x) { return x && x.num === num; });
+      if (!objectionHasKind(pc, kind)) break;
+      first = prev.n; cur = pc; curN = prev.n;
+    }
+    return first;
+  };
+  var out = [];
+  round.claims.forEach(function(c) {
+    if (!c || !isPositiveInt(c.num)) return;
+    var add = function(kind, docs) {
+      out.push({ id: 'r' + round.n + '-k' + c.num + '-' + kind, round: round.n, claim: c.num, kind: kind,
+                 docs: docs, firstRaised: firstRaised(c, kind) });
+    };
+    if (c.novelty === false) {
+      add('nyhet', isRoundDocId(c.noveltyDoc) ? [c.noveltyDoc] : []);
+    } else if (c.inventive === false) {
+      var docs = [];
+      (Array.isArray(c.inventiveDocs) ? c.inventiveDocs : []).forEach(function(id) {
+        if (isRoundDocId(id) && docs.indexOf(id) === -1) docs.push(id);
+      });
+      add('oh', docs);
+    }
+    if (c.formal === true) add('formelt', []);
+  });
+  return out;
+}
+
+function cleanObjectionText(text) {
+  return sanitizeText(typeof text === 'string' ? text : '').trim();
+}
+
+function normalizeObjections(raw) {
+  if (!Array.isArray(raw)) return [];
+  var out = [], seen = {};
+  raw.forEach(function(o) {
+    if (out.length >= OBJECTION_MAX_MANUAL || !isPlainObj(o)) return;
+    if (typeof o.id !== 'string' || !OBJECTION_MANUAL_ID_RE.test(o.id) || seen[o.id]) return;
+    var text = cleanObjectionText(o.text).slice(0, OBJECTION_TEXT_MAX).trim();
+    if (!text || !isPositiveInt(o.raisedIn) || o.raisedIn > 999) return;
+    seen[o.id] = true;
+    out.push({ id: o.id, text: text, raisedIn: o.raisedIn });
+  });
+  return out;
+}
+
+function normalizeObjectionStates(raw, objections) {
+  var out = {};
+  if (!isPlainObj(raw)) return out;
+  var manual = {};
+  (Array.isArray(objections) ? objections : []).forEach(function(o) { if (o && typeof o.id === 'string') manual[o.id] = true; });
+  Object.keys(raw).forEach(function(k) {
+    if (!OBJECTION_ROUND_KEY_RE.test(k) || !isPlainObj(raw[k])) return;
+    var r = {}, n = 0;
+    Object.keys(raw[k]).forEach(function(id) {
+      if (n >= OBJECTION_MAX_IDS_PER_ROUND) return;
+      var s = raw[k][id];
+      if (s !== 'resolved' && s !== 'maintained' && s !== 'dropped') return;
+      if (!OBJECTION_DERIVED_ID_RE.test(id) && !(OBJECTION_MANUAL_ID_RE.test(id) && manual[id] === true)) return;
+      r[id] = s; n++;
+    });
+    if (n) out[k] = r;
+  });
+  return out;
+}
+
+function copyObjectionStates(states) {
+  var out = {};
+  if (!isPlainObj(states)) return out;
+  Object.keys(states).forEach(function(k) {
+    if (k !== '__proto__' && isPlainObj(states[k])) out[k] = Object.assign({}, states[k]);
+  });
+  return out;
+}
+
+// Ny vurdering for ids i runde k ('open' fjerner nøkkelen).
+function objectionStatesAfterSet(states, k, ids, state) {
+  var out = copyObjectionStates(states);
+  if (OBJECTION_STATES.indexOf(state) === -1 || !isPositiveInt(k)) return out;
+  var key = String(k);
+  var r = out[key] || {};
+  (Array.isArray(ids) ? ids : []).forEach(function(id) {
+    if (!isObjectionId(id)) return;
+    if (state === 'open') delete r[id]; else r[id] = state;
+  });
+  if (Object.keys(r).length) out[key] = r; else delete out[key];
+  return out;
+}
+
+// Ny egen innvending, eller null ved ugyldig tekst/runde.
+function makeManualObjection(text, raisedIn, existingIds, now, rand) {
+  var t = cleanObjectionText(text);
+  if (!t || t.length > OBJECTION_TEXT_MAX || !isPositiveInt(raisedIn)) return null;
+  var abc = '0123456789abcdefghijklmnopqrstuvwxyz';
+  var base = 'm' + Math.max(0, Math.floor(Number(now) || 0)).toString(36);
+  for (var i = 0; i < 4; i++) {
+    var r = Number(rand());
+    base += abc.charAt(Math.min(35, Math.max(0, Math.floor((isFinite(r) ? r : 0) * 36))));
+  }
+  var taken = Array.isArray(existingIds) ? existingIds : [];
+  var id = base, n = 0;
+  while (taken.indexOf(id) !== -1) { n++; id = base + n.toString(36); }
+  return { id: id, text: t, raisedIn: raisedIn };
+}
+
+function objectionsAfterDelete(data, objId) {
+  var out = Object.assign({}, data);
+  out.objections = objectionsOf(data).filter(function(o) { return !o || o.id !== objId; });
+  var states = copyObjectionStates(objectionStatesOf(data));
+  Object.keys(states).forEach(function(k) {
+    delete states[k][objId];
+    if (!Object.keys(states[k]).length) delete states[k];
+  });
+  out.objectionStates = states;
+  return out;
+}
+
+// Egne innvendinger som vises i runde k. Løst/frafalt i en tidligere runde
+// skjuler dem; reist i runde k er de nye og har ingen vurdering.
+function manualObjectionsShown(objections, states, k) {
+  var st = isPlainObj(states) ? states : {};
+  return (Array.isArray(objections) ? objections : []).filter(function(o) {
+    if (!o || !isPositiveInt(o.raisedIn) || o.raisedIn > k) return false;
+    for (var j = o.raisedIn; j < k; j++) {
+      var s = isPlainObj(st[j]) ? st[j][o.id] : null;
+      if (s === 'resolved' || s === 'dropped') return false;
+    }
+    return true;
+  }).map(function(o) {
+    return Object.assign({}, o, { manual: true, isNew: o.raisedIn === k });
+  });
+}
+
+function mappingComplete(round, claims) {
+  if (!round || !Array.isArray(claims) || !claims.length) return false;
+  return claims.every(function(c) { return !!claimMapping(c, round); });
+}
+
+// Hvor et gammelt krav er nå: { now: [nye nr], struck } eller null når
+// kravene ikke er endret eller ingen krav er koblet.
+function objectionTargets(oldNum, round, claims) {
+  if (!round || !round.response || !Array.isArray(round.response.changes) ||
+      round.response.changes.indexOf('claims') === -1) return null;
+  var list = Array.isArray(claims) ? claims : [];
+  var any = false, now = [];
+  list.forEach(function(c) {
+    var m = claimMapping(c, round);
+    if (!m) return;
+    any = true;
+    if (m.origin.indexOf(oldNum) !== -1 && now.indexOf(c.num) === -1) now.push(c.num);
+  });
+  if (!any) return null;
+  now.sort(function(a, b) { return a - b; });
+  var struck = mappingComplete(round, list) && deletedClaims(round, list).indexOf(oldNum) !== -1;
+  return { now: now, struck: struck };
+}
+
+function objectionStateIn(roundStates, id) {
+  var s = isPlainObj(roundStates) ? roundStates[id] : null;
+  return s === 'resolved' || s === 'maintained' || s === 'dropped' ? s : 'open';
+}
+
+// Innvendingene som vises i runde k, hver med sin vurdering.
+function shownObjections(c, data) {
+  if (!c || c.type === 'oppdrag' || c.status !== 'viderebehandling') return [];
+  var rounds = roundsOf(data);
+  var L = objectionRound(c, rounds);
+  if (!L) return [];
+  var k = examinationRound(c);
+  var all = objectionStatesOf(data);
+  var st = isPlainObj(all[k]) ? all[k] : {};
+  var derived = deriveObjections(L, visibleRounds(c, rounds)).map(function(o) {
+    return Object.assign({}, o, { state: objectionStateIn(st, o.id) });
+  });
+  var manual = manualObjectionsShown(objectionsOf(data), all, k).map(function(o) {
+    return Object.assign({}, o, { state: o.isNew ? 'open' : objectionStateIn(st, o.id) });
+  });
+  return derived.concat(manual);
+}
+
+// Rader: samme grunn, mothold, første brev og vurdering slås sammen.
+function groupObjections(list) {
+  var groups = [], byKey = {};
+  (Array.isArray(list) ? list : []).forEach(function(o) {
+    if (!o) return;
+    if (o.manual) {
+      groups.push({ manual: true, ids: [o.id], text: o.text, isNew: !!o.isNew, state: o.state || 'open',
+                    raisedIn: o.raisedIn, claims: [], docs: [] });
+      return;
+    }
+    var docs = o.docs.slice().sort(function(a, b) { return parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10); });
+    var key = [o.kind, docs.join('+'), o.firstRaised, o.state || 'open'].join('|');
+    var g = byKey[key];
+    if (!g) {
+      g = byKey[key] = { manual: false, ids: [], kind: o.kind, docs: docs, firstRaised: o.firstRaised,
+                         state: o.state || 'open', claims: [] };
+      groups.push(g);
+    }
+    g.ids.push(o.id);
+    if (g.claims.indexOf(o.claim) === -1) g.claims.push(o.claim);
+  });
+  return groups;
+}
+
+// «2–5, 7»
+function numRangesText(nums) {
+  var s = nums.slice().sort(function(a, b) { return a - b; }).filter(function(n, i, a) { return i === 0 || a[i - 1] !== n; });
+  var parts = [];
+  for (var i = 0; i < s.length; i++) {
+    var j = i;
+    while (j + 1 < s.length && s[j + 1] === s[j] + 1) j++;
+    parts.push(j > i ? s[i] + '–' + s[j] : String(s[i]));
+    i = j;
+  }
+  return parts.join(', ');
+}
+
+var OBJECTION_KIND_LABEL = { nyhet: 'Mangler nyhet', oh: 'Mangler OH', formelt: 'Formelle feil' };
+
+// Radteksten i tre deler: { head: «Brev 1 · krav 2–5», ground, map }.
+function objectionRowParts(group, L, targets) {
+  if (group.manual) return { head: '', ground: group.text, map: '' };
+  var ground = OBJECTION_KIND_LABEL[group.kind] + (group.docs.length ? ' (' + group.docs.join('+') + ')' : '');
+  if (group.firstRaised < L) ground += ' (først i brev ' + group.firstRaised + ')';
+  var t = targets || {}, now = [], struck = [];
+  group.claims.forEach(function(n) {
+    var x = t[n];
+    if (!x) return;
+    (x.now || []).forEach(function(k) { if (now.indexOf(k) === -1) now.push(k); });
+    if (x.struck) struck.push(n);
+  });
+  var map = '';
+  if (struck.length && struck.length === group.claims.length) map = ' → strøket';
+  else if (now.length || struck.length) {
+    var bits = [];
+    if (now.length) bits.push('nå krav ' + numRangesText(now));
+    if (struck.length) bits.push(numRangesText(struck) + ' strøket');
+    map = ' → ' + bits.join(' · ');
+  }
+  return { head: 'Brev ' + L + ' · krav ' + numRangesText(group.claims), ground: ground, map: map };
+}
+
+// Hele radteksten som én streng (testene; visningen bruker delene).
+/* exported objectionRowText */
+function objectionRowText(group, L, targets) {
+  var p = objectionRowParts(group, L, targets);
+  return group.manual ? p.ground : p.head + ' · ' + p.ground + p.map;
+}
+
+// «x / y vurdert» i rader; nye egne innvendinger telles ikke.
+function objectionProgress(groups) {
+  var x = 0, y = 0;
+  (Array.isArray(groups) ? groups : []).forEach(function(g) {
+    if (!g || (g.manual && g.isNew)) return;
+    y++;
+    if (g.state !== 'open') x++;
+  });
+  return { x: x, y: y };
+}
+
+var OBJECTION_WARN_LABEL = { nyhet: 'mangler nyhet', oh: 'mangler oppfinnelseshøyde', formelt: 'formelle feil' };
+
+// Merknader under «Avslag» i Avgjør: er søker hørt om det avslaget bygger
+// på? Tom liste = ingen merknader. Hindrer aldri avslaget.
+function refusalWarnings(c, data, rounds) {
+  if (!c || c.type === 'oppdrag' || c.status !== 'viderebehandling') return [];
+  var L = objectionRound(c, rounds);
+  if (!L) return ['Ingen lagret runde – kan ikke kontrollere at søker er hørt'];
+  var vr = visibleRounds(c, rounds);
+  var k = examinationRound(c);
+  var all = objectionStatesOf(data);
+  var st = isPlainObj(all[k]) ? all[k] : {};
+  var derived = deriveObjections(L, vr);
+  var claims = (data && Array.isArray(data.claims) ? data.claims : []).filter(function(x) { return x && typeof x === 'object'; });
+  var docs = data && Array.isArray(data.docs) ? data.docs : [];
+  var live = function(id) { return docs.some(function(d) { return d && d.id === id && !d.withdrawn; }); };
+  var raised = function(oldNum, kind) {
+    return derived.find(function(o) {
+      var s = objectionStateIn(st, o.id);
+      return o.claim === oldNum && o.kind === kind && (s === 'open' || s === 'maintained');
+    }) || null;
+  };
+  var out = [];
+  var changed = !!(L.response && Array.isArray(L.response.changes) && L.response.changes.indexOf('claims') !== -1);
+  var complete = changed && mappingComplete(L, claims);
+  if (changed && !complete) {
+    out.push('Kravene er endret i svaret – søker har ikke uttalt seg om kravene slik de nå lyder');
+  } else {
+    claims.forEach(function(cl) {
+      var ground = cl.novelty === false ? 'nyhet' : cl.inventive === false ? 'oh' : null;
+      var kinds = (ground ? [ground] : []).concat(cl.formal === true ? ['formelt'] : []);
+      if (!kinds.length) return;
+      var oldNum = cl.num;
+      if (complete) {
+        var m = claimMapping(cl, L);
+        if (m.change === 'endret') { out.push('Krav ' + cl.num + ' er endret – søker har ikke uttalt seg om kravet slik det nå lyder'); return; }
+        if (m.change === 'ny') { out.push('Krav ' + cl.num + ' er nytt – søker har ikke uttalt seg om kravet'); return; }
+        oldNum = m.origin[0];
+      }
+      kinds.forEach(function(kind) {
+        var obj = raised(oldNum, kind);
+        if (!obj) { out.push('Krav ' + cl.num + ': ' + OBJECTION_WARN_LABEL[kind] + ' er ikke reist i brev ' + L.n); return; }
+        if (kind === 'formelt') return;
+        var ids = kind === 'nyhet' ? [cl.noveltyDoc] : (Array.isArray(cl.inventiveDocs) ? cl.inventiveDocs : []);
+        var seen = [];
+        ids.forEach(function(id) {
+          if (!isRoundDocId(id) || seen.indexOf(id) !== -1 || !live(id)) return;
+          seen.push(id);
+          if (obj.docs.indexOf(id) !== -1) return;
+          out.push('Krav ' + cl.num + ': ' + id + ' ble ikke anført i brev ' + L.n +
+            (docFirstRound(vr, id) === k ? ' (nytt i runde ' + k + ')' : ''));
+        });
+      });
+    });
+  }
+  var manual = manualObjectionsShown(objectionsOf(data), all, k);
+  manual.forEach(function(o) { if (o.isNew) out.push('Ny innvending: ' + o.text); });
+  var groups = groupObjections(shownObjections(c, Object.assign({}, data, { rounds: rounds })));
+  var open = groups.filter(function(g) { return !(g.manual && g.isNew) && g.state === 'open'; }).length;
+  if (open) out.push(open + (open === 1 ? ' innvending er' : ' innvendinger er') + ' ikke vurdert');
+  var ground = claims.some(function(cl) { return cl.novelty === false || cl.inventive === false || cl.formal === true; }) ||
+    manual.some(function(o) { return o.raisedIn < k && objectionStateIn(st, o.id) === 'maintained'; });
+  if (!ground) out.push('Ingen gjenstående innvendinger – avslag mangler grunnlag');
+  return out;
 }
 
 function normalizeRoundClaims(list) {
@@ -5663,6 +6091,16 @@ function normalizeImportSakDetails(sd) {
       }
       return copy;
     });
+  }
+  // Innvendinger: bare når filen har dem; vurderingene mot de normaliserte
+  // egne innvendingene.
+  var hasObj = Object.prototype.hasOwnProperty.call(sd, 'objections');
+  var objs = normalizeObjections(sd.objections);
+  if (hasObj) out.objections = objs; else delete out.objections;
+  if (Object.prototype.hasOwnProperty.call(sd, 'objectionStates')) {
+    out.objectionStates = normalizeObjectionStates(sd.objectionStates, objs);
+  } else {
+    delete out.objectionStates;
   }
   return out;
 }
@@ -8654,8 +9092,54 @@ function _dispatch(action, payload) {
       if (activeSakId === payload.id) {
         if (!claimVerdictsEqual(cmOld, cmRes.claim)) renderSakAssessment(cmData);
         else if (!payload.quiet) renderClaimRows(cmData, [payload.claimNum]);
+        renderSakResponse(cmCase, cmData);
       }
       if (cmRes.lost) showUndoToast('Krav ' + payload.claimNum + ': vurderingen er endret');
+      break;
+    }
+
+    case 'OBJECTION_STATE_SET': {
+      // Vurdering av én (gruppert) innvending i runden saken er i nå
+      var osCase = cases.find(function(c) { return c.id === payload.id; });
+      if (!osCase || osCase.type === 'oppdrag' || osCase.status !== 'viderebehandling') break;
+      if (payload.round !== examinationRound(osCase) || OBJECTION_STATES.indexOf(payload.state) === -1) break;
+      var osData = loadSakData(payload.id);
+      if (!osData) break;
+      osData.objectionStates = objectionStatesAfterSet(objectionStatesOf(osData), payload.round, payload.objIds, payload.state);
+      if (!Object.keys(osData.objectionStates).length) delete osData.objectionStates;
+      saveSakData(payload.id, osData);
+      if (activeSakId === payload.id) renderSakResponse(osCase, osData);
+      break;
+    }
+
+    case 'OBJECTION_ADD': {
+      // Egen innvending: reist i runde k («Ny i denne runden») eller i brev L
+      var oaCase = cases.find(function(c) { return c.id === payload.id; });
+      if (!oaCase || oaCase.type === 'oppdrag' || oaCase.status !== 'viderebehandling') break;
+      var oaData = loadSakData(payload.id);
+      if (!oaData) break;
+      var oaRound = objectionRound(oaCase, roundsOf(oaData));
+      if (!oaRound) break;
+      var oaList = objectionsOf(oaData);
+      if (oaList.length >= OBJECTION_MAX_MANUAL) { showToast('✗ Maks ' + OBJECTION_MAX_MANUAL + ' egne innvendinger', true); break; }
+      var oaObj = makeManualObjection(payload.text, payload.isNew ? examinationRound(oaCase) : oaRound.n,
+        oaList.map(function(o) { return o && o.id; }), Date.now(), Math.random);
+      if (!oaObj) break;
+      oaData.objections = oaList.concat([oaObj]);
+      saveSakData(payload.id, oaData);
+      if (activeSakId === payload.id) renderSakResponse(oaCase, oaData);
+      break;
+    }
+
+    case 'OBJECTION_DELETE': {
+      var odCase = cases.find(function(c) { return c.id === payload.id; });
+      var odData = loadSakData(payload.id);
+      if (!odCase || !odData) break;
+      var odOut = objectionsAfterDelete(odData, payload.objId);
+      if (!odOut.objections.length) delete odOut.objections;
+      if (!Object.keys(odOut.objectionStates).length) delete odOut.objectionStates;
+      saveSakData(payload.id, odOut);
+      if (activeSakId === payload.id) renderSakResponse(odCase, odOut);
       break;
     }
 
@@ -10430,7 +10914,22 @@ function openVidereChoice(id, caseNumber) {
     caseNumber + (c ? ' · runde ' + examinationRound(c) : '');
   document.getElementById('videre-letter-sub').textContent = 'Til Fristarkiv med søkers frist (' +
     deadlines.laterLetter + (deadlines.laterLetter === 1 ? ' måned' : ' måneder') + ')';
+  renderAvslagWarnings(c);
   openBackdrop('videre-choice-backdrop');
+}
+// Merknader under «Avslag» (tekst, aldri markup). Avslag kan alltid velges.
+function renderAvslagWarnings(c) {
+  var box = document.getElementById('videre-avslag-warn');
+  var ul = box.querySelector('ul');
+  ul.textContent = '';
+  var data = c ? loadSakData(c.id) : null;
+  var lines = c ? refusalWarnings(c, data || {}, roundsOf(data)) : [];
+  lines.forEach(function(t) {
+    var li = document.createElement('li');
+    li.textContent = t;
+    ul.appendChild(li);
+  });
+  box.hidden = !lines.length;
 }
 function closeVidereChoice() { closeBackdrop('videre-choice-backdrop'); pendingVidereId = null; }
 
@@ -12793,6 +13292,66 @@ function renderRoundDrawer() {
   if (btn) btn.setAttribute('aria-expanded', 'true');
 }
 
+var OBJECTION_STATE_LABEL = { open: 'Åpen', resolved: 'Løst', maintained: 'Opprettholdt', dropped: 'Frafalt' };
+
+// Innvendingsblokken under sjekklisten i «Svar og endringer».
+function sakObjectionsHtml(cas, data) {
+  var rounds = roundsOf(data);
+  var L = objectionRound(cas, rounds);
+  var k = examinationRound(cas);
+  var sent = lettersSent(cas.history);
+  if (!L) {
+    var link = canBackfillRound(cas, visibleRounds(cas, rounds))
+      ? '<button type="button" class="ob-link" data-ob-backfill="1">Lagre nåværende vurdering som runde ' + sent + '</button>' : '';
+    return '<div class="ob-list"><div class="ob-head"><span class="ob-title">Innvendinger fra brev ' + sent + '</span></div>' +
+      '<p class="ob-empty">Ingen lagret runde for brev ' + sent + link + '</p></div>';
+  }
+  var groups = groupObjections(shownObjections(cas, data));
+  var claims = Array.isArray(data && data.claims) ? data.claims : [];
+  var targets = {};
+  groups.forEach(function(g) {
+    g.claims.forEach(function(n) { if (!(n in targets)) targets[n] = objectionTargets(n, L, claims); });
+  });
+  var prog = objectionProgress(groups);
+  var rowsHtml = groups.map(function(g) {
+    var ids = g.ids.filter(isObjectionId);
+    var p = objectionRowParts(g, L.n, targets);
+    var struck = !g.manual && p.map === ' → strøket';
+    var cls = 'ob-row' + (g.manual ? ' ob-manual' : '') + (!g.isNew && g.state === 'open' ? ' ob-open' : '') + (struck ? ' ob-struck' : '');
+    var text = g.manual ? esc(p.ground)
+      : '<b>' + esc(p.head) + '</b> · ' + esc(p.ground) +
+        (p.map ? ' <span class="ob-map' + (struck ? ' ob-map-struck' : '') + '">' + esc(p.map.replace(/^ /, '')) + '</span>' : '');
+    var ctrl = g.isNew
+      ? '<span class="ob-new">Ny – tas med i brev ' + k + '</span>'
+      : '<span class="ob-seg ob-state" role="group" aria-label="Vurdering">' + OBJECTION_STATES.map(function(s) {
+          return '<button type="button" class="ob-st ob-st-' + s + '" data-state="' + s + '" aria-pressed="' + (g.state === s ? 'true' : 'false') + '">' +
+            OBJECTION_STATE_LABEL[s] + '</button>';
+        }).join('') + '</span>';
+    var del = g.manual ? '<button type="button" class="ob-del" aria-label="Slett innvending" title="Slett innvending">×</button>' : '<span class="ob-del"></span>';
+    return '<div class="' + cls + '" data-obj-ids="' + esc(ids.join(' ')) + '">' +
+      '<span class="ob-text">' + text + '</span>' + (g.manual ? '<span class="ob-tag">Egen</span>' : '') + ctrl + del + '</div>';
+  }).join('');
+  var empty = groups.length ? '' : '<p class="ob-empty">Ingen innvendinger i brev ' + L.n + '</p>';
+  return '<div class="ob-list" data-ob-round="' + k + '">' +
+    '<div class="ob-head"><span class="ob-title">Innvendinger fra brev ' + L.n + '</span>' +
+      (prog.y ? '<span class="sak-svar-count ob-progress" title="Innvendinger som er vurdert (ikke Åpen). Nye innvendinger (Ny – tas med i brev ' + k + ') telles ikke.">' +
+        prog.x + ' / ' + prog.y + ' vurdert</span>' : '') + '</div>' +
+    (L.backfilled ? '<p class="ob-note ob-backfilled">Runden er lagret i ettertid – innvendingene kan avvike fra brevet som ble sendt.</p>' : '') +
+    empty + rowsHtml +
+    '<button type="button" class="ob-add">+ Innvending</button>' +
+    '<form class="ob-form" hidden novalidate>' +
+      '<label class="field-label" for="ob-input">Innvending</label>' +
+      '<input class="field-input ob-input" id="ob-input" type="text" maxlength="' + OBJECTION_TEXT_MAX + '" autocomplete="off" />' +
+      '<div class="ob-form-foot">' +
+        '<label class="svar-change"><input type="checkbox" class="ob-isnew" /> Ny i denne runden</label>' +
+        '<span class="ob-count">0 / ' + OBJECTION_TEXT_MAX + '</span><span class="ob-spacer"></span>' +
+        '<button type="button" class="btn-secondary ob-cancel">Avbryt</button>' +
+        '<button type="submit" class="btn-primary ob-submit">Legg til</button>' +
+      '</div>' +
+    '</form>' +
+  '</div>';
+}
+
 function renderSakResponse(cas, data) {
   var el = document.getElementById('sak-svar');
   if (!el) return;
@@ -12812,12 +13371,61 @@ function renderSakResponse(cas, data) {
       '<span class="sak-svar-count">' + done.length + ' / ' + RESPONSE_CHECKLIST.length + '</span>' +
     '</h2>' +
     '<div class="sak-checklist sak-checklist-flat">' + rows + '</div>' +
+    sakObjectionsHtml(cas, data) +
   '</section>';
 }
 document.getElementById('sak-svar').addEventListener('change', function(e) {
   var box = e.target.closest('[data-svar-id]');
   if (!box || !activeSakId) return;
   dispatch('RESPONSE_CHECK_TOGGLE', { id: activeSakId, item: box.dataset.svarId });
+});
+function obToggleForm(list, open) {
+  var form = list.querySelector('.ob-form'), add = list.querySelector('.ob-add');
+  if (!form || !add) return;
+  form.hidden = !open;
+  add.hidden = open;
+  if (open) {
+    form.reset();
+    form.querySelector('.ob-count').textContent = '0 / ' + OBJECTION_TEXT_MAX;
+    form.querySelector('.ob-input').focus();
+  } else {
+    add.focus();
+  }
+}
+document.getElementById('sak-svar').addEventListener('click', function(e) {
+  var list = e.target.closest('.ob-list');
+  if (!list || !activeSakId) return;
+  if (e.target.closest('[data-ob-backfill]')) { dispatch('ROUND_BACKFILL', { id: activeSakId }); return; }
+  if (e.target.closest('.ob-add')) { obToggleForm(list, true); return; }
+  if (e.target.closest('.ob-cancel')) { obToggleForm(list, false); return; }
+  var row = e.target.closest('.ob-row');
+  if (!row) return;
+  var ids = (row.dataset.objIds || '').split(' ').filter(isObjectionId);
+  var stBtn = e.target.closest('.ob-state button[data-state]');
+  if (stBtn && ids.length) {
+    dispatch('OBJECTION_STATE_SET', { id: activeSakId, round: parseInt(list.dataset.obRound, 10), objIds: ids, state: stBtn.dataset.state });
+    return;
+  }
+  if (e.target.closest('button.ob-del') && ids.length === 1) dispatch('OBJECTION_DELETE', { id: activeSakId, objId: ids[0] });
+});
+document.getElementById('sak-svar').addEventListener('submit', function(e) {
+  var form = e.target.closest('.ob-form');
+  if (!form) return;
+  e.preventDefault();
+  var input = form.querySelector('.ob-input');
+  if (!activeSakId || !cleanObjectionText(input.value)) { input.focus(); return; }
+  dispatch('OBJECTION_ADD', { id: activeSakId, text: input.value, isNew: form.querySelector('.ob-isnew').checked });
+});
+document.getElementById('sak-svar').addEventListener('input', function(e) {
+  if (!e.target.classList.contains('ob-input')) return;
+  var count = e.target.closest('.ob-form').querySelector('.ob-count');
+  if (count) count.textContent = e.target.value.length + ' / ' + OBJECTION_TEXT_MAX;
+});
+document.getElementById('sak-svar').addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && e.target.closest('.ob-form')) {
+    e.stopPropagation();
+    obToggleForm(e.target.closest('.ob-list'), false);
+  }
 });
 
 function renderSakChecklist(data) {
