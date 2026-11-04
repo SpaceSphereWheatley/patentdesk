@@ -2234,6 +2234,44 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 .sak-claim-active-row { background: rgba(200,169,110,0.06) !important; }
 .sak-claim-active-cell { box-shadow: inset 0 0 0 2px var(--primary-dim); border-radius: var(--radius-sm); }
+
+/* Kravkobling: underrad med opphav, endret/uendret og § 13 */
+.km-row td          { border-top: 0 !important; padding: 0 8px 8px !important; text-align: left;
+                      font-size: var(--text-xs); color: var(--muted-text); }
+.km-has-sub td      { padding-bottom: 2px; }
+.km-line            { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.km-origin          { font: inherit; font-weight: var(--weight-semibold); font-size: var(--text-xs); color: var(--text);
+                      background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
+                      padding: 1px 7px; cursor: pointer; line-height: 1.5; }
+.km-origin:hover    { border-color: var(--primary-dim); }
+.km-origin-unset    { color: var(--accent-text); border: 1px dashed var(--accent); background: var(--notice-warn-bg); }
+.km-origin-inp      { font: inherit; font-size: var(--text-xs); width: 7.5rem; max-width: 100%; padding: 1px 6px;
+                      border: 1px solid var(--primary-dim); border-radius: var(--radius); background: var(--surface);
+                      color: var(--text); line-height: 1.5; }
+.km-inp-err         { border-color: var(--danger); }
+.km-err             { color: var(--text-on-no); font-size: var(--text-xs); }
+.km-prev            { color: var(--muted-text); min-width: 0; overflow: hidden; text-overflow: ellipsis;
+                      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+                      flex: 0 1 auto; max-width: 100%; overflow-wrap: anywhere; }
+.km-chip            { font-size: var(--text-2xs); font-weight: var(--weight-semibold); border-radius: var(--radius-pill);
+                      padding: 1px 8px; border: 1px solid; }
+.km-chip-endret     { background: var(--badge-urgent-bg); color: var(--badge-urgent-text); border-color: var(--badge-urgent-border); }
+.km-seg             { display: inline-flex; border: 1px solid var(--border2); border-radius: var(--radius-pill);
+                      overflow: hidden; background: var(--surface); }
+.km-seg button      { border: 0; background: transparent; font: inherit; font-size: var(--text-2xs); padding: 1px 8px;
+                      color: var(--muted-text); cursor: pointer; }
+.km-seg button[aria-pressed="true"] { font-weight: var(--weight-semibold); }
+.km-endret .km-seg button[aria-pressed="true"]  { background: var(--badge-urgent-bg); color: var(--badge-urgent-text); }
+.km-uendret .km-seg button[aria-pressed="true"] { background: var(--tone-ok-soft); color: var(--color-ok); }
+.sak-tri-btn.km-p13-btn { margin-left: auto; font-size: var(--text-xs); padding: 2px 10px; min-width: 0; white-space: nowrap; }
+.km-basis           { flex: 1 1 130px; max-width: 100%; min-width: 0; font: inherit; font-size: var(--text-xs);
+                      padding: 2px 6px; border: 1px solid var(--border); border-radius: var(--radius);
+                      background: var(--surface); color: var(--text); }
+.km-basis::placeholder { color: var(--muted-text); opacity: 0.7; }
+.km-endret > td:first-child { box-shadow: inset 3px 0 0 var(--color-warn); }
+.km-ny > td:first-child     { box-shadow: inset 3px 0 0 var(--primary); }
+.km-unset > td:first-child  { box-shadow: inset 3px 0 0 var(--border2); }
+.km-origin-inp:focus, .km-basis:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
 .shortcuts-subhead  { font-size: var(--text-xs); font-weight: var(--weight-semibold);
                       text-transform: uppercase; letter-spacing: var(--tracking-label);
                       color: var(--muted-text); margin: var(--space-7) 0 var(--space-2); }
@@ -5297,13 +5335,214 @@ function normalizeClaim(raw, i) {
   var novelty = roundTriState(raw.novelty);
   var inventive = novelty === false ? false : roundTriState(raw.inventive);
   var dep = (typeof raw.dep === 'number' && Number.isInteger(raw.dep) && raw.dep >= 1 && raw.dep < num) ? raw.dep : null;
-  return {
+  var out = {
     num: num, novelty: novelty, inventive: inventive, formal: roundTriState(raw.formal),
     independent: raw.independent === true, dep: dep, depManual: raw.depManual === true,
     label: typeof raw.label === 'string' ? raw.label : '',
     noveltyDoc: isRoundDocId(raw.noveltyDoc) ? raw.noveltyDoc : null,
     inventiveDocs: Array.isArray(raw.inventiveDocs) ? raw.inventiveDocs.filter(isRoundDocId) : []
   };
+  // Kravkoblingen tas bare med når den er gyldig, så krav uten kobling har
+  // nøyaktig samme form som før.
+  var mapping = normalizeClaimMapping(raw.mapping);
+  if (mapping) out.mapping = mapping;
+  return out;
+}
+
+// ── Kravkobling (claim mapping) ─────────────────────
+// Valgfritt claim.mapping i pt_sak_{id}: { round, origin, change, p13, basis }.
+// round er n for runden R(n) koblingen gjelder; origin er kravnumrene i R(n)
+// kravet kom fra ([] = nytt krav). Koblingen teller bare så lenge round er
+// den runden saken nå svarer på — ved neste svar slutter den å gjelde uten at
+// noe slettes. Alle funksjonene er rene — se test/claimMapping.test.js.
+var CLAIM_MAPPING_BASIS_MAX = 200;
+var CLAIM_MAPPING_MAX_NUM = 999;
+
+function normalizeClaimMapping(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  var round = raw.round;
+  if (typeof round !== 'number' || !Number.isInteger(round) || round < 1) return null;
+  if (!Array.isArray(raw.origin)) return null;
+  var origin = [];
+  raw.origin.forEach(function(k) {
+    if (typeof k === 'number' && Number.isInteger(k) && k >= 1 && k <= CLAIM_MAPPING_MAX_NUM &&
+        origin.indexOf(k) === -1) origin.push(k);
+  });
+  origin.sort(function(a, b) { return a - b; });
+  var change = raw.change === 'uendret' || raw.change === 'endret' || raw.change === 'ny' ? raw.change : null;
+  var basis = typeof raw.basis === 'string'
+    ? sanitizeText(raw.basis).trim().slice(0, CLAIM_MAPPING_BASIS_MAX) : '';
+  return { round: round, origin: origin, change: change, p13: roundTriState(raw.p13), basis: basis };
+}
+
+// Endringen som faktisk gjelder: nytt krav er alltid «ny», sammenslåtte krav
+// er alltid endret, og ett opphav er endret med mindre «uendret» er valgt.
+function claimMappingChange(origin, change) {
+  if (!origin.length) return 'ny';
+  if (origin.length > 1) return 'endret';
+  return change === 'uendret' ? 'uendret' : 'endret';
+}
+
+// Runden kravene kobles mot: siste synlige runde, bare i Viderebehandling og
+// bare når søkeren har svart med endrede krav.
+function mappingRound(c, rounds) {
+  if (!c || c.status !== 'viderebehandling' || c.type === 'oppdrag') return null;
+  var latest = null;
+  visibleRounds(c, rounds).forEach(function(r) { if (!latest || r.n > latest.n) latest = r; });
+  if (!latest || !latest.response || !Array.isArray(latest.response.changes)) return null;
+  return latest.response.changes.indexOf('claims') !== -1 ? latest : null;
+}
+
+// Teksten i opphavsfeltet: «1+4», «2-3», «ny» eller tomt (fjerner koblingen).
+// prevCount er antall krav i R(n); roundN brukes bare i feilteksten.
+function parseOrigin(text, prevCount, roundN) {
+  var s = (typeof text === 'string' ? text : '').trim();
+  if (!s) return null;
+  if (s.length > 200) return { error: 'For lang tekst' };
+  if (/^ny$/i.test(s)) return [];
+  var bad = { error: 'Skriv kravnumre, f.eks. 1+4 eller 2-3, eller «ny»' };
+  var tokens = s.replace(/\s*[-–]\s*/g, '-').split(/[+,\s]+/).filter(function(t) { return t !== ''; });
+  if (!tokens.length) return bad;
+  var max = typeof prevCount === 'number' && prevCount > 0 ? prevCount : 0;
+  var where = roundN ? ' i brev ' + roundN : '';
+  var out = [];
+  for (var i = 0; i < tokens.length; i++) {
+    var m = /^(\d+)(?:-(\d+))?$/.exec(tokens[i]);
+    if (!m) return bad;
+    var a = parseInt(m[1], 10), b = m[2] !== undefined ? parseInt(m[2], 10) : a;
+    if (a > b) return { error: 'Ugyldig område ' + a + '-' + b };
+    if (a < 1) return { error: 'Krav ' + a + ' finnes ikke' + where };
+    if (b > max) return { error: 'Krav ' + (a > max ? a : b) + ' finnes ikke' + where };
+    for (var k = a; k <= b; k++) if (out.indexOf(k) === -1) out.push(k);
+  }
+  return out.sort(function(x, y) { return x - y; });
+}
+
+// Koblingen slik den gjelder i runden round, eller null (ingen, ugyldig,
+// gammel runde eller opphav utenfor rundens krav).
+function claimMapping(claim, round) {
+  if (!claim || !round || typeof round !== 'object') return null;
+  var m = normalizeClaimMapping(claim.mapping);
+  if (!m || m.round !== round.n) return null;
+  var count = Array.isArray(round.claims) ? round.claims.length : 0;
+  if (m.origin.some(function(k) { return k > count; })) return null;
+  m.change = claimMappingChange(m.origin, m.change);
+  return m;
+}
+
+var CLAIM_VERDICT_KEYS = ['novelty', 'inventive', 'formal', 'noveltyDoc', 'inventiveDocs'];
+
+function claimVerdictsEqual(a, b) {
+  return CLAIM_VERDICT_KEYS.every(function(k) { return JSON.stringify(a[k]) === JSON.stringify(b[k]); });
+}
+
+// Verdiene krav k hadde i runden: effektive ja/nei (arv og nyhetslåsen tatt
+// med), lagret formell, og bare mothold som fortsatt finnes og ikke er trukket.
+function roundClaimVerdicts(round, k, docs) {
+  var list = Array.isArray(round && round.claims) ? round.claims : [];
+  var src = list.find(function(x) { return x && x.num === k; });
+  if (!src) return { novelty: null, inventive: null, formal: null, noveltyDoc: null, inventiveDocs: [] };
+  var live = function(id) {
+    return (docs || []).some(function(d) { return d && d.id === id && !d.withdrawn; });
+  };
+  var novelty = roundTriState(effectiveClaimValue(list, src, 'novelty'));
+  var inventive = novelty === false ? false : roundTriState(effectiveClaimValue(list, src, 'inventive'));
+  var invDocs = [];
+  (Array.isArray(src.inventiveDocs) ? src.inventiveDocs : []).forEach(function(id) {
+    if (live(id) && invDocs.indexOf(id) === -1) invDocs.push(id);
+  });
+  return {
+    novelty: novelty, inventive: inventive, formal: roundTriState(src.formal),
+    noveltyDoc: src.noveltyDoc && live(src.noveltyDoc) ? src.noveltyDoc : null,
+    inventiveDocs: invDocs
+  };
+}
+
+// Ny kobling på ett krav. Til endret/ny fra ingen/uendret tømmes vurderingen;
+// til uendret (eller nytt opphav mens uendret) kopieres R(n)-vurderingen; ellers
+// står den. lost: noe som var satt, ble tømt eller overskrevet.
+function applyClaimChange(claim, next, round, docs) {
+  var out = Object.assign({}, claim);
+  out.inventiveDocs = Array.isArray(claim.inventiveDocs) ? claim.inventiveDocs.slice() : [];
+  var nm = normalizeClaimMapping(next);
+  if (!nm) {
+    delete out.mapping;
+    return { claim: out, lost: false };
+  }
+  var prev = claimMapping(claim, round);
+  var prevChange = prev ? prev.change : null;
+  nm.change = claimMappingChange(nm.origin, nm.change);
+  out.mapping = nm;
+  var verdicts = null;
+  if (nm.change === 'uendret') {
+    if (prevChange !== 'uendret' || prev.origin[0] !== nm.origin[0]) {
+      verdicts = roundClaimVerdicts(round, nm.origin[0], docs);
+    }
+  } else if (prevChange === null || prevChange === 'uendret') {
+    verdicts = { novelty: null, inventive: null, formal: null, noveltyDoc: null, inventiveDocs: [] };
+  }
+  var lost = false;
+  if (verdicts) {
+    CLAIM_VERDICT_KEYS.forEach(function(k) {
+      var was = claim[k];
+      var set = Array.isArray(was) ? was.length > 0 : (was !== null && was !== undefined);
+      if (set && JSON.stringify(was) !== JSON.stringify(verdicts[k])) lost = true;
+      out[k] = verdicts[k];
+    });
+  }
+  return { claim: out, lost: lost };
+}
+
+// Det examiner ser om opphavet: «R1 N✓ O✓ D1» for ett krav, «R1: 1 … · 4 …»
+// for flere. Tom for nye krav.
+function claimPrevVerdictText(m, round, docs) {
+  if (!m || !m.origin.length) return '';
+  var list = Array.isArray(round.claims) ? round.claims : [];
+  var part = function(k) {
+    var src = list.find(function(x) { return x && x.num === k; });
+    if (!src) return '– –';
+    var novelty = effectiveClaimValue(list, src, 'novelty');
+    var inventive = novelty === false ? false : effectiveClaimValue(list, src, 'inventive');
+    var ids = [];
+    [src.noveltyDoc].concat(Array.isArray(src.inventiveDocs) ? src.inventiveDocs : []).forEach(function(id) {
+      if (isRoundDocId(id) && ids.indexOf(id) === -1) ids.push(id);
+    });
+    var docTxt = ids.map(function(id) {
+      var d = (docs || []).find(function(x) { return x && x.id === id; });
+      return id + (!d || d.withdrawn ? ' (trukket)' : '');
+    }).join('+');
+    return roundMark(novelty, 'N') + ' ' + roundMark(inventive, 'O') + (docTxt ? ' ' + docTxt : '');
+  };
+  if (m.origin.length === 1) return 'R' + round.n + ' ' + part(m.origin[0]);
+  return 'R' + round.n + ': ' + m.origin.map(function(k) { return k + ' ' + part(k); }).join(' · ');
+}
+
+function claimOriginLabel(m) {
+  if (!m) return '← ?';
+  if (!m.origin.length) return 'Ny';
+  return '←' + m.origin.join('+');
+}
+
+function claimOriginHint(claim, round, docs) {
+  var m = claimMapping(claim, round);
+  if (!m) return '← ?';
+  if (!m.origin.length) return 'Ny';
+  return claimOriginLabel(m) + ' ' + (m.change === 'uendret' ? 'Uendret' : 'Endret') + ' · ' +
+    claimPrevVerdictText(m, round, docs);
+}
+
+// Kravene i R(n) som ingen gyldig kobling bruker — strøket av søkeren.
+// Ikke i bruk ennå: innvendingene (2C) leser den.
+/* exported deletedClaims */
+function deletedClaims(round, claims) {
+  var used = {};
+  (Array.isArray(claims) ? claims : []).forEach(function(c) {
+    var m = claimMapping(c, round);
+    if (m) m.origin.forEach(function(k) { used[k] = true; });
+  });
+  var nums = (round && Array.isArray(round.claims) ? round.claims : []).map(function(c) { return c && c.num; })
+    .filter(function(k) { return typeof k === 'number' && !used[k]; });
+  return nums.sort(function(a, b) { return a - b; });
 }
 
 function normalizeRoundClaims(list) {
@@ -5404,6 +5643,20 @@ function normalizeImportSakDetails(sd) {
   var out = {};
   Object.keys(sd).forEach(function(k) { if (k !== '__proto__') out[k] = sd[k]; });
   out.rounds = normalizeRounds(sd.rounds);
+  // Nåværende krav: bare kravkoblingen normaliseres (eller fjernes); resten
+  // av hvert krav er som i filen.
+  if (Array.isArray(sd.claims)) {
+    out.claims = sd.claims.map(function(c) {
+      if (!c || typeof c !== 'object' || Array.isArray(c)) return c;
+      var copy = {};
+      Object.keys(c).forEach(function(k) { if (k !== '__proto__') copy[k] = c[k]; });
+      if (Object.prototype.hasOwnProperty.call(c, 'mapping')) {
+        var m = normalizeClaimMapping(c.mapping);
+        if (m) copy.mapping = m; else delete copy.mapping;
+      }
+      return copy;
+    });
+  }
   return out;
 }
 
@@ -6217,7 +6470,7 @@ function undoInvalidatedBy(snapshot, actionType, payload) {
   return ['CLAIM_TOGGLE', 'CLAIM_SET', 'CLAIM_DOC_TOGGLE', 'CLAIM_DEP_CHANGE',
     'CLAIM_LABEL_CHANGE', 'CLAIM_NOTE_CHANGE',
     'DOC_ADD', 'DOC_REMOVE', 'DOC_RESTORE', 'DOC_FIELD_CHANGE',
-    'SAK_CLAIM_COUNT_CHANGE'].indexOf(actionType) !== -1;
+    'SAK_CLAIM_COUNT_CHANGE', 'CLAIM_MAPPING_CHANGE'].indexOf(actionType) !== -1;
 }
 
 // «Angre» for en endring på én sak: verdiene feltene i patch hadde før.
@@ -8366,6 +8619,36 @@ function _dispatch(action, payload) {
       saveSakData(id, data);
       renderSakAssessment(data);
       if (payload.undoable) showUndoToast(payload.toast || 'Krav fjernet');
+      break;
+    }
+
+    case 'CLAIM_MAPPING_CHANGE': {
+      // Kravkobling på ett krav. Tømmes eller overskrives en vurdering, kan
+      // det angres; kravlista som var, tas vare på (som ved færre krav).
+      var cmCase = cases.find(function(c) { return c.id === payload.id; });
+      var cmData = loadSakData(payload.id);
+      if (!cmCase || !cmData || !Array.isArray(cmData.claims)) break;
+      var cmRound = mappingRound(cmCase, roundsOf(cmData));
+      if (!cmRound) break;
+      var cmIdx = cmData.claims.findIndex(function(c) { return c && c.num === payload.claimNum; });
+      if (cmIdx === -1) break;
+      var cmOld = cmData.claims[cmIdx];
+      var cmRes = applyClaimChange(cmOld, payload.mapping, cmRound, cmData.docs || []);
+      if (cmRes.lost) {
+        AppState.undoSnapshot = {
+          mode: 'claims', caseId: payload.id, logIds: [], label: cmCase.caseNumber || '',
+          before: { numClaims: cmData.numClaims, claims: JSON.parse(JSON.stringify(cmData.claims)) },
+          activeCase: activeCase, medlLog: medlLog
+        };
+      }
+      cmData.claims = cmData.claims.slice();
+      cmData.claims[cmIdx] = cmRes.claim;
+      saveSakData(payload.id, cmData);
+      if (activeSakId === payload.id) {
+        if (!claimVerdictsEqual(cmOld, cmRes.claim)) renderSakAssessment(cmData);
+        else if (!payload.quiet) renderClaimRows(cmData, [payload.claimNum]);
+      }
+      if (cmRes.lost) showUndoToast('Krav ' + payload.claimNum + ': vurderingen er endret');
       break;
     }
 
@@ -11894,6 +12177,7 @@ function renderSak(id) {
   _sakActiveClaimNum  = null;
   _sakEditingLabelNum = null;
   _sakOpenDocPop      = null;
+  _kmEditingOrigin    = null;
 
   var data = loadSakData(id) || defaultSakData(0);
   ensureClaims(data);
@@ -12950,6 +13234,17 @@ function claimRowHtml(data, c) {
     if (isIndependent) rowCls = (rowCls ? rowCls + ' ' : '') + 'claim-row-independent';
     if (c.num === _sakActiveClaimNum) rowCls = (rowCls ? rowCls + ' ' : '') + 'sak-claim-active-row';
 
+    // Kravkobling: en underrad bare når saken er i en runde med endrede krav.
+    // Uten den er raden nøyaktig som før.
+    var kmRound = claimMappingRoundFor(data);
+    var kmSub = '';
+    if (kmRound) {
+      var kmMap = claimMapping(c, kmRound);
+      var kmState = kmMap ? 'km-' + kmMap.change : 'km-unset';
+      kmSub = claimMappingRowHtml(data, c, kmRound, kmMap, kmState, claimRowClass(cEff));
+      rowCls = 'km-has-sub ' + kmState + (rowCls ? ' ' + rowCls : '');
+    }
+
     // Dep input
     var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep="' + c.num + '" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
 
@@ -12967,7 +13262,60 @@ function claimRowHtml(data, c) {
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + inventiveBtn + claimDocChipHtml(data, c, 'inventive', effNovelty) + '</span></td>' +
       '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim="' + c.num + '" data-field="formal"' + ariaFor('formal', c.formal, false, false) + '>' + triLabel(c.formal,   true)  + '</button></td>' +
       '<td class="sak-td-notes"><input class="sak-claim-note" type="text" data-claim="' + c.num + '" value="' + esc(c.notes || '') + '" placeholder="Notat…" aria-label="' + esc(claimFieldAriaLabel(c.num, 'note')) + '" /></td>' +
-    '</tr>';
+    '</tr>' + kmSub;
+}
+
+// Runden kravene i den åpne saken kobles mot, eller null.
+function claimMappingRoundFor(data) {
+  if (typeof activeSakId === 'undefined' || !activeSakId || typeof cases === 'undefined') return null;
+  var c = cases.find(function(x) { return x.id === activeSakId; });
+  return c ? mappingRound(c, roundsOf(data)) : null;
+}
+
+// Kravet hvis opphavsfelt er åpent: { num, value, error } eller null
+var _kmEditingOrigin = null;
+
+var KM_P13_TITLE = 'Endringen har grunnlag i søknaden som innlevert (patentloven § 13)';
+
+// Underraden med opphav, endret/uendret, forrige vurdering og § 13.
+// All tekst som kan komme fra brukeren går gjennom esc.
+function claimMappingRowHtml(data, c, round, m, stateCls, verdictCls) {
+  var n = c.num;
+  var html = '<div class="km-line">';
+  if (_kmEditingOrigin && _kmEditingOrigin.num === n) {
+    var err = _kmEditingOrigin.error;
+    html += '<input class="km-origin-inp' + (err ? ' km-inp-err' : '') + '" type="text" maxlength="200" data-claim-origin-inp="' + n + '"' +
+      ' value="' + esc(_kmEditingOrigin.value) + '" placeholder="f.eks. 1+4 eller ny"' +
+      ' aria-label="Opphav i brev ' + round.n + ', krav ' + n + '"' + (err ? ' aria-invalid="true"' : '') + ' />' +
+      (err ? '<span class="km-err" role="alert">' + esc(err) + '</span>' : '');
+  } else if (!m) {
+    html += '<button class="km-origin km-origin-unset" data-claim-origin="' + n + '" title="Angi hvilket krav i brev ' + round.n + ' dette kom fra">← ?</button>' +
+      '<span class="km-prev">angi opphav</span>';
+  } else {
+    html += '<button class="km-origin" data-claim-origin="' + n + '" title="' + esc(claimOriginHint(c, round, data.docs || [])) + ' — klikk for å endre opphav">' + esc(claimOriginLabel(m)) + '</button>';
+  }
+  if (m && !(_kmEditingOrigin && _kmEditingOrigin.num === n)) {
+    if (m.origin.length === 1) {
+      html += '<span class="km-seg" role="group" aria-label="Endring, krav ' + n + '">' +
+        '<button type="button" data-claim-change="' + n + '" data-change="endret" aria-pressed="' + (m.change === 'endret') + '">Endret</button>' +
+        '<button type="button" data-claim-change="' + n + '" data-change="uendret" aria-pressed="' + (m.change === 'uendret') + '">Uendret</button>' +
+        '</span>';
+    } else if (m.origin.length > 1) {
+      html += '<span class="km-chip km-chip-endret">Endret</span>';
+    }
+    var prev = claimPrevVerdictText(m, round, data.docs || []);
+    if (prev) html += '<span class="km-prev" title="' + esc(prev) + '">' + esc(prev) + '</span>';
+    if (m.change !== 'uendret') {
+      var p13Cls = m.p13 === true ? 'sak-tri-btn-ok' : m.p13 === false ? 'sak-tri-btn-no' : 'sak-tri-btn-null';
+      var p13Txt = m.p13 === true ? '§13 ✓' : m.p13 === false ? '§13 ✗ mangler grunnlag' : '§13 —';
+      html += '<button type="button" class="sak-tri-btn ' + p13Cls + ' km-p13-btn" data-claim-p13="' + n + '" title="' + KM_P13_TITLE + '"' +
+        ' aria-label="§ 13-grunnlag, krav ' + n + ': ' + p13Txt + '">' + p13Txt + '</button>' +
+        '<input class="km-basis" type="text" maxlength="' + CLAIM_MAPPING_BASIS_MAX + '" data-claim-basis="' + n + '" value="' + esc(m.basis) + '"' +
+        ' placeholder="Grunnlag (side, linje) …" aria-label="Grunnlag § 13, krav ' + n + '" />';
+    }
+  }
+  html += '</div>';
+  return '<tr class="km-row ' + stateCls + (verdictCls ? ' ' + verdictCls : '') + '"><td colspan="7">' + html + '</td></tr>';
 }
 
 // Endres ett krav, arver alle krav som henger under det den nye verdien. Det er
@@ -13015,7 +13363,12 @@ function renderClaimRows(data, claimNums) {
     if (!c || !tr) return;
     var tmp = document.createElement('tbody');
     tmp.innerHTML = claimRowHtml(data, c);
-    tr.replaceWith(tmp.firstElementChild);
+    // Kravkoblingens underrad hører til raden og byttes sammen med den
+    var sub = tr.nextElementSibling;
+    if (sub && sub.classList.contains('km-row')) sub.parentNode.removeChild(sub);
+    var frag = document.createDocumentFragment();
+    while (tmp.firstChild) frag.appendChild(tmp.firstChild);
+    tr.replaceWith(frag);
   });
 
   if (keep) {
@@ -14191,7 +14544,8 @@ window.addEventListener('resize', function() { if (_roundDrawer.open) renderRoun
 
 // Kravsvurdering: tri-toggle knapper
 document.getElementById('sak-claims-tbody').addEventListener('click', function(e) {
-  var btn = e.target.closest('.sak-tri-btn'); if (!btn) return;
+  // § 13-knappen i kravkoblingen ser lik ut, men har ikke data-field
+  var btn = e.target.closest('.sak-tri-btn[data-field]'); if (!btn) return;
   if (btn.disabled) return;
   var id = activeSakId; if (!id) return;
   dispatch('CLAIM_TOGGLE', {
@@ -14385,6 +14739,117 @@ document.getElementById('sak-claims-tbody').addEventListener('change', function(
     return;
   }
   dispatch('CLAIM_DEP_CHANGE', { id: id, claimNum: claimNum, dep: val });
+});
+
+// ── Kravkobling: opphav, endret/uendret, § 13 ─────
+// Koblingen slik den gjelder nå for krav num i den åpne saken: { data, round, claim, m }
+function kmContext(num) {
+  var id = activeSakId; if (!id) return null;
+  var data = loadSakData(id);
+  var c = cases.find(function(x) { return x.id === id; });
+  if (!data || !c || !Array.isArray(data.claims)) return null;
+  var round = mappingRound(c, roundsOf(data));
+  var claim = data.claims.find(function(x) { return x && x.num === num; });
+  if (!round || !claim) return null;
+  return { id: id, data: data, round: round, claim: claim, m: claimMapping(claim, round) };
+}
+
+// Neste kobling med ett felt endret; uten gjeldende kobling starter den tom.
+function kmNextMapping(ctx, patch) {
+  var m = ctx.m || { round: ctx.round.n, origin: [], change: null, p13: null, basis: '' };
+  return Object.assign({ round: ctx.round.n, origin: m.origin, change: m.change, p13: m.p13, basis: m.basis }, patch);
+}
+
+function kmOriginText(m) {
+  if (!m) return '';
+  return m.origin.length ? m.origin.join('+') : 'ny';
+}
+
+function kmCommitOrigin(inp) {
+  if (inp.dataset.done) return;
+  var num = parseInt(inp.dataset.claimOriginInp, 10);
+  var ctx = kmContext(num);
+  if (!ctx) { _kmEditingOrigin = null; return; }
+  var res = parseOrigin(inp.value, ctx.round.claims.length, ctx.round.n);
+  if (res && res.error) {
+    // Feilen vises ved feltet; ingenting lagres, og feltet beholder fokus
+    _kmEditingOrigin = { num: num, value: inp.value, error: res.error };
+    inp.classList.add('km-inp-err');
+    inp.setAttribute('aria-invalid', 'true');
+    var errEl = inp.parentNode.querySelector('.km-err');
+    if (!errEl) {
+      errEl = document.createElement('span');
+      errEl.className = 'km-err';
+      errEl.setAttribute('role', 'alert');
+      inp.parentNode.insertBefore(errEl, inp.nextSibling);
+    }
+    errEl.textContent = res.error;
+    return;
+  }
+  inp.dataset.done = '1';
+  _kmEditingOrigin = null;
+  dispatch('CLAIM_MAPPING_CHANGE', { id: ctx.id, claimNum: num,
+    mapping: res === null ? null : kmNextMapping(ctx, { origin: res }) });
+  if (inp.isConnected) renderClaimRows(loadSakData(ctx.id) || ctx.data, [num]);
+}
+
+document.getElementById('sak-claims-tbody').addEventListener('click', function(e) {
+  var originBtn = e.target.closest('[data-claim-origin]');
+  if (originBtn) {
+    var num = parseInt(originBtn.dataset.claimOrigin, 10);
+    var ctx = kmContext(num); if (!ctx) return;
+    _kmEditingOrigin = { num: num, value: kmOriginText(ctx.m), error: null };
+    renderClaimRows(ctx.data, [num]);
+    var inp = document.querySelector('#sak-claims-tbody [data-claim-origin-inp="' + num + '"]');
+    if (inp) { inp.focus(); inp.select(); }
+    return;
+  }
+  var seg = e.target.closest('[data-claim-change]');
+  if (seg) {
+    var sctx = kmContext(parseInt(seg.dataset.claimChange, 10));
+    if (!sctx || !sctx.m || sctx.m.change === seg.dataset.change) return;
+    dispatch('CLAIM_MAPPING_CHANGE', { id: sctx.id, claimNum: sctx.claim.num,
+      mapping: kmNextMapping(sctx, { change: seg.dataset.change }) });
+    return;
+  }
+  var p13 = e.target.closest('[data-claim-p13]');
+  if (p13) {
+    var pctx = kmContext(parseInt(p13.dataset.claimP13, 10));
+    if (!pctx || !pctx.m) return;
+    var nextP13 = pctx.m.p13 === null ? true : pctx.m.p13 === true ? false : null;
+    dispatch('CLAIM_MAPPING_CHANGE', { id: pctx.id, claimNum: pctx.claim.num,
+      mapping: kmNextMapping(pctx, { p13: nextP13 }) });
+    var again = document.querySelector('#sak-claims-tbody [data-claim-p13="' + pctx.claim.num + '"]');
+    if (again) again.focus();
+  }
+});
+
+document.getElementById('sak-claims-tbody').addEventListener('keydown', function(e) {
+  var inp = e.target.closest('.km-origin-inp'); if (!inp) return;
+  if (e.key === 'Enter') { e.preventDefault(); kmCommitOrigin(inp); return; }
+  if (e.key === 'Escape') {
+    e.preventDefault(); e.stopPropagation();
+    inp.dataset.done = '1';
+    _kmEditingOrigin = null;
+    var num = parseInt(inp.dataset.claimOriginInp, 10);
+    var data = activeSakId && loadSakData(activeSakId);
+    if (data) renderClaimRows(data, [num]);
+  }
+});
+
+document.getElementById('sak-claims-tbody').addEventListener('blur', function(e) {
+  var inp = e.target.closest && e.target.closest('.km-origin-inp'); if (!inp) return;
+  kmCommitOrigin(inp);
+}, true);
+
+document.getElementById('sak-claims-tbody').addEventListener('change', function(e) {
+  var inp = e.target.closest('.km-basis'); if (!inp) return;
+  var ctx = kmContext(parseInt(inp.dataset.claimBasis, 10));
+  if (!ctx || !ctx.m) return;
+  var basis = sanitizeText(inp.value).trim().slice(0, CLAIM_MAPPING_BASIS_MAX);
+  if (basis === ctx.m.basis) return;
+  dispatch('CLAIM_MAPPING_CHANGE', { id: ctx.id, claimNum: ctx.claim.num,
+    mapping: kmNextMapping(ctx, { basis: basis }), quiet: true });
 });
 
 // Saksnotater: auto-lagre ved input
