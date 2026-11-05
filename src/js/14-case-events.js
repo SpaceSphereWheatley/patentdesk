@@ -473,7 +473,16 @@ document.addEventListener('click', function(e) {
   });
 });
 document.getElementById('sak-docs-mothold').addEventListener('keydown', function(e) {
+  var v = e.target.closest && e.target.closest('.mh-v[data-copy]');
+  if (v && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); mhCopyValue(v); return; }
   if (e.key !== 'Escape') return;
+  // Esc i et felt under nummeret: samme som «Ferdig»
+  var det = e.target.closest && e.target.closest('.mh-details');
+  if (det && e.target.matches('input')) {
+    e.stopPropagation();
+    mhToggleEdit(parseInt(det.dataset.idx, 10), true);
+    return;
+  }
   var open = e.target.closest && e.target.closest('details.mh-cited[open]');
   if (!open) return;
   e.stopPropagation();
@@ -492,10 +501,20 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
   if (del) { dispatch('DOC_REMOVE', { id: id, idx: parseInt(del.dataset.mhDel, 10) }); return; }
   var restore = e.target.closest('[data-mh-restore]');
   if (restore) { dispatch('DOC_RESTORE', { id: id, idx: parseInt(restore.dataset.mhRestore, 10) }); return; }
+  var editBtn = e.target.closest('[data-mh-edit]');
+  if (editBtn) { mhToggleEdit(parseInt(editBtn.dataset.mhEdit, 10)); return; }
+  var copyV = e.target.closest('.mh-v[data-copy]');
+  if (copyV) {
+    // Et dra for å markere tekst skal ikke kopiere hele verdien
+    var sel = window.getSelection && window.getSelection();
+    if (sel && String(sel).length) return;
+    mhCopyValue(copyV);
+    return;
+  }
   var citedOpen = e.target.closest('[data-cited-open]');
   if (citedOpen) { navigateTo('sak/' + citedOpen.dataset.citedOpen); return; }
   var ops = e.target.closest('.mh-ops');
-  if (ops) { mhOpsFetch(id, parseInt(ops.dataset.ops, 10), ops); return; }
+  if (ops) { mhOpsFetch(id, parseInt(ops.dataset.ops, 10), 'fill'); return; }
   var flag = e.target.closest('.mh-flag');
   if (flag) {
     dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(flag.dataset.idx, 10),
@@ -509,35 +528,136 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
   }
 });
 
-// Henter datoene for mothold idx og fyller de tomme feltene. Referansen tas
-// fra feltet slik det står nå, og lagres først så oppslaget og saken er enige.
-function mhOpsFetch(id, idx, btn) {
-  if (btn.getAttribute('aria-disabled') === 'true' || btn.getAttribute('aria-busy') === 'true') return;
-  var inp = btn.parentNode.querySelector('.mh-ref-inp');
+// Henter opplysningene for mothold idx fra OPS. mode 'fill' fyller bare tomme
+// felt; 'replace' bytter ut alle (etter ja i «Erstatte opplysningene?»).
+// Referansen tas fra feltet slik det står nå, og lagres først så oppslaget og
+// saken er enige.
+function mhOpsFetch(id, idx, mode) {
+  var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
+  var btn = row && row.querySelector('.mh-ops');
+  if (!btn || btn.getAttribute('aria-busy') === 'true') return;
+  if (mode === 'fill' && btn.getAttribute('aria-disabled') === 'true') return;
+  var inp = row.querySelector('.mh-ref-inp');
   var ref = inp ? inp.value.trim() : '';
   clearTimeout(_sakTypingTimer);
   dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: 'ref', value: ref });
-  btn.setAttribute('aria-busy', 'true');
+  mhSetBusy(idx, true);
   opsFetchDates(ref).then(function(dates) {
     var data = loadSakData(id) || defaultSakData(0);
     ensureSakDocs(data);
     var doc = data.docs[idx];
     // Motholdet kan ha blitt fjernet eller endret mens vi ventet
     if (!doc || doc.ref !== sanitizeText(ref)) { showToast('Motholdet er endret — oppslaget ble forkastet.'); return; }
-    var plan = opsFillPlan(doc, dates);
+    var plan = mode === 'replace' ? opsReplacePlan(dates) : opsFillPlan(doc, dates);
     Object.keys(plan.patch).forEach(function(f) {
       dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: f, value: plan.patch[f] });
     });
     if (activeSakId === id) renderSakDocs(loadSakData(id));
-    showToast(opsFillMessage(plan, dates));
+    showToast(mode === 'replace' ? '✓ Opplysningene er byttet ut med data fra OPS (' + dates.kind + ')'
+                                 : opsFillMessage(plan, dates));
   }).catch(function(err) {
     showToast(opsErrorMessage(err && err.kind));
   }).then(function() {
-    // Knappen kan være tegnet på nytt; finn den igjen før den låses opp
-    var b = document.querySelector('#sak-docs-mothold .mh-ops[data-ops="' + idx + '"]');
-    if (b) b.removeAttribute('aria-busy');
+    mhSetBusy(idx, false); // raden kan være tegnet på nytt; mhSetBusy finner den igjen
   });
 }
+
+function mhSetBusy(idx, on) {
+  var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
+  if (!row) return;
+  var b = row.querySelector('.mh-ops'), busy = row.querySelector('.mh-busy');
+  if (b) { if (on) b.setAttribute('aria-busy', 'true'); else b.removeAttribute('aria-busy'); }
+  if (busy) busy.hidden = !on;
+}
+
+// «✎ Rediger» / «✓ Ferdig». Ved «Ferdig» lagres det som står i feltet du er i
+// først, og knappen får fokus etterpå så tastaturet ikke mister plassen.
+function mhToggleEdit(idx, forceDone) {
+  var id = activeSakId; if (!id) return;
+  var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
+  var editingNow = !!(row && row.querySelector('.mh-details input'));
+  var done = forceDone || editingNow;
+  if (done) {
+    var act = document.activeElement;
+    if (act && row && row.contains(act) && act.matches('input')) {
+      clearTimeout(_sakTypingTimer);
+      act.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+  _mhEditing[idx] = !done;
+  if (row && row.contains(document.activeElement)) document.activeElement.blur();
+  var data = loadSakData(id) || defaultSakData(0);
+  ensureSakDocs(data);
+  renderSakDocs(data);
+  var b = document.querySelector('#sak-docs-mothold [data-mh-edit="' + idx + '"]');
+  if (b) b.focus();
+  if (!done) {
+    var first = document.querySelector('#sak-docs-mothold .mh-details[data-idx="' + idx + '"] input');
+    if (first) first.focus();
+  }
+}
+
+function mhCopyValue(el) {
+  var text = el.textContent;
+  var ok = function() {
+    showToast(copyToastText(text));
+    el.classList.add('mh-v-copied');
+    setTimeout(function() { el.classList.remove('mh-v-copied'); }, 700);
+  };
+  var fallback = function() {
+    // Eldre nettlesere / file:// uten utklippstavle-API: kopier via markering
+    var r = document.createRange(); r.selectNodeContents(el);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    var res = false;
+    try { res = document.execCommand('copy'); } catch (e) {}
+    s.removeAllRanges();
+    if (res) ok(); else showToast('Kunne ikke kopiere til utklippstavle.');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback);
+  else fallback();
+}
+
+// ── Automatisk oppslag når et nytt nummer føres inn ──
+// Nummeret slik det var da du gikk inn i feltet; skrivingen lagres underveis,
+// så det lagrede nummeret er alt det nye når feltet forlates.
+var _mhRefAtFocus = {};
+document.getElementById('sak-docs-mothold').addEventListener('focusin', function(e) {
+  var inp = e.target.closest('.mh-ref-inp');
+  if (inp) _mhRefAtFocus[inp.dataset.idx] = inp.value.trim();
+});
+
+function mhAfterRefCommit(id, idx, prevRef, newRef) {
+  var data = loadSakData(id) || defaultSakData(0);
+  ensureSakDocs(data);
+  var doc = data.docs[idx];
+  if (!doc || doc.withdrawn) return;
+  var action = opsAutoAction(prevRef, newRef, doc, hasOpsCreds());
+  if (action === 'fill') mhOpsFetch(id, idx, 'fill');
+  else if (action === 'ask') openMhReplace(id, idx, prevRef, newRef);
+}
+
+var _mhReplace = null; // { id, idx, ref }
+function openMhReplace(id, idx, prevRef, newRef) {
+  _mhReplace = { id: id, idx: idx, ref: newRef };
+  document.getElementById('mh-replace-text').textContent =
+    'Nummeret for D' + (idx + 1) + ' er endret fra ' + prevRef + ' til ' + newRef + '. ' +
+    'Bytte ut datoene, søker, oppfinner og tittel med data fra OPS for det nye nummeret? ' +
+    'Det OPS ikke har, blir tomt.';
+  openBackdrop('mh-replace-backdrop');
+  document.getElementById('btn-mh-replace-ok').focus();
+}
+function closeMhReplace(replace) {
+  var r = _mhReplace;
+  _mhReplace = null;
+  closeBackdrop('mh-replace-backdrop');
+  if (!replace || !r || activeSakId !== r.id) return;
+  var inp = document.querySelector('#sak-docs-mothold .mh-ref-inp[data-idx="' + r.idx + '"]');
+  if (!inp || inp.value.trim() !== r.ref) { showToast('Nummeret er endret igjen — ingenting er byttet ut.'); return; }
+  mhOpsFetch(r.id, r.idx, 'replace');
+}
+document.getElementById('btn-mh-replace-keep').addEventListener('click', function() { closeMhReplace(false); });
+document.getElementById('btn-mh-replace-ok').addEventListener('click', function() { closeMhReplace(true); });
+document.getElementById('mh-replace-backdrop').addEventListener('click', function(e) { if (e.target === this) closeMhReplace(false); });
 
 document.getElementById('sak-docs-mothold').addEventListener('input', function(e) {
   var id = activeSakId; if (!id) return;
@@ -594,19 +714,11 @@ document.getElementById('sak-docs-mothold').addEventListener('change', function(
   }
   var inp = e.target.closest('.mh-ref-inp'); if (!inp) return;
   clearTimeout(_sakTypingTimer);
-  dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(inp.dataset.idx, 10),
-    field: 'ref', value: inp.value.trim() });
-});
-
-// Granskingsrapport: kopier til utklippstavle
-document.getElementById('btn-copy-search-report').addEventListener('click', function() {
-  var id = activeSakId; if (!id) return;
-  var data = loadSakData(id) || defaultSakData(0);
-  ensureSakDocs(data);
-  if (!(data.docs || []).length) { showToast('Ingen mothold å rapportere.'); return; }
-  navigator.clipboard.writeText(formatSearchReport(data.claims || [], data.docs)).then(function() {
-    showToast('✓ Granskingsrapport kopiert');
-  }).catch(function() { showToast('Kunne ikke kopiere til utklippstavle.'); });
+  var rIdx = parseInt(inp.dataset.idx, 10), newRef = inp.value.trim();
+  var prevRef = Object.prototype.hasOwnProperty.call(_mhRefAtFocus, inp.dataset.idx) ? _mhRefAtFocus[inp.dataset.idx] : newRef;
+  _mhRefAtFocus[inp.dataset.idx] = newRef;
+  dispatch('DOC_FIELD_CHANGE', { id: id, idx: rIdx, field: 'ref', value: newRef });
+  mhAfterRefCommit(id, rIdx, prevRef, newRef);
 });
 
 // Kravsvurdering: mothold-velger

@@ -13,7 +13,6 @@ const {
   claimDocSelectable,
   claimDocCategory,
   buildSearchReport,
-  formatSearchReport,
   ensureSakDocs,
 } = loadFunctions([
   'lettersSent',
@@ -27,7 +26,6 @@ const {
   'buildSearchReport',
   'docCategoryLabel',
   'formatClaimRanges',
-  'formatSearchReport',
   'ensureSakDocs', 'capPartyText', 'sanitizeText',
 ], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN'] });
 
@@ -105,9 +103,3 @@ test('a withdrawn document gets no X/Y/A category, not even A on every claim', (
   assert.deepStrictEqual(plain(buildSearchReport(claims, docs)[1]), { docId: 'D2', X: [], Y: [], A: [] });
 });
 
-test('formatSearchReport keeps a withdrawn document and marks it', () => {
-  const docs = [doc('D1', { ref: 'WO 1' }), doc('D2', { ref: 'EP 2', withdrawn: true })];
-  const claims = [claim(1, { novelty: true, inventive: true })];
-  assert.strictEqual(formatSearchReport(claims, docs),
-    'D1  WO 1\n  A: krav 1\n\nD2  EP 2\n  (ikke lenger relevant)');
-});

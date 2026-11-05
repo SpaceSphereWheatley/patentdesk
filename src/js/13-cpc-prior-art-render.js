@@ -456,14 +456,18 @@ function renderSakDocs(data) {
     return;
   }
 
-  // Kategoriene utledes av kravsvurderingen — samme kilde som den kopierbare
-  // rapporten, så raden og «Kopier rapport» aldri kan si ulike ting.
+  // Kategoriene utledes av kravsvurderingen (buildSearchReport).
   var rows = buildSearchReport(data.claims || [], docs);
   var app  = { filingDate: data.filingDate, priorityDate: data.priorityDate };
   var docsCase = cases.find(function(c) { return c.id === activeSakId; });
   var locked = docRemoveWithdraws(docsCase);
   var docRounds = visibleRounds(docsCase, roundsOf(data));
   var cited = citationIndex();
+  // Et mothold du står og skriver i, blir stående i redigering selv om det
+  // nå har opplysninger — ellers ville feltet forsvinne under markøren.
+  var act = document.activeElement;
+  var focusRow = act && act.closest && act.closest('#sak-docs-mothold .mh-details');
+  var focusIdx = focusRow ? parseInt(focusRow.dataset.idx, 10) : -1;
 
   el.innerHTML = docs.map(function(d, i) {
     var row  = rows[i];
@@ -479,6 +483,7 @@ function renderSakDocs(data) {
       '</div>';
     }
 
+    var editing = i === focusIdx || mhIsEditing(d, _mhEditing[i]);
     var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) {
         return '<span class="mh-cat mh-cat-' + cat.toLowerCase() + '">' +
@@ -497,24 +502,79 @@ function renderSakDocs(data) {
         mhRoundBadgeHtml(docRounds, d.id) + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
+      mhEditBtnHtml(d, i, editing) +
       '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
         ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
         ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
-      '<span class="mh-dates">' +
-        mhDateHtml(d, i, 'pubDate', 'Publisert') +
-        mhDateHtml(d, i, 'effDate', 'Prioritet/inng.') +
-      '</span>' +
-      '<label class="mh-title">Tittel ' +
-        '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '"' +
-        ' title="' + esc(d.title) + '" placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
-        ' aria-label="' + esc('Tittel for ' + d.id) + '" /></label>' +
-      '<span class="mh-parties">' +
-        mhPartyHtml(d, i, 'applicants', 'Søker') +
-        mhPartyHtml(d, i, 'inventors', 'Oppfinner') +
-      '</span>' +
+      '<div class="mh-details" data-idx="' + i + '">' +
+        (editing ? mhEditHtml(d, i) : mhReadHtml(d, i)) +
+        '<span class="mh-busy" hidden>Henter fra OPS…</span>' +
+      '</div>' +
     '</div>';
   }).join('');
   el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+}
+
+// ── Motholdets opplysninger: tekst, eller felt etter «Rediger» ──
+// _mhEditing[idx]: true etter «Rediger», false etter «Ferdig», ellers ikke
+// satt. Nullstilles når en sak åpnes og når et mothold fjernes.
+var _mhEditing = {};
+
+// Et mothold uten opplysninger står i redigering til du sier «Ferdig».
+function mhIsEditing(d, explicit) {
+  if (explicit === true || explicit === false) return explicit;
+  return !docHasDetails(d);
+}
+
+function mhEditBtnHtml(d, i, editing) {
+  return '<button type="button" class="mh-edit" data-mh-edit="' + i + '" aria-pressed="' + (editing ? 'true' : 'false') + '"' +
+    ' title="' + (editing ? 'Vis opplysningene som tekst (Esc)' : 'Rediger datoer, søker, oppfinner og tittel') + '"' +
+    ' aria-label="' + esc((editing ? 'Ferdig med ' : 'Rediger ') + d.id) + '">' +
+    (editing ? '✓ Ferdig' : '✎ Rediger') + '</button>';
+}
+
+// Én verdi i lesevisningen. Klikk (eller Enter) kopierer den; en tom verdi
+// er «—» og kopierer ingenting.
+function mhReadValueHtml(value, label, cls) {
+  var c = 'mh-v' + (cls ? ' ' + cls : '');
+  if (!value) return '<span class="' + c + ' mh-v-empty">—</span>';
+  return '<span class="' + c + '" data-copy role="button" tabindex="0"' +
+    ' title="Klikk for å kopiere" aria-label="' + esc(label + ': ' + value + ' – klikk for å kopiere') + '">' + esc(value) + '</span>';
+}
+
+// Lesevisningen: datoene, så søker og oppfinner, så tittelen sist. Ingenting
+// kuttes; en lang tittel brytes.
+function mhReadHtml(d, i) {
+  var k = function(t) { return '<span class="mh-k">' + esc(t) + '</span>'; };
+  return '<div class="mh-read" data-idx="' + i + '">' +
+    k('Publisert') + mhReadValueHtml(toDisplay(d.pubDate), 'Publisert') +
+    k('Prioritet/inng.') + mhReadValueHtml(toDisplay(d.effDate), 'Prioritet/inng.') +
+    k('Søker') + mhReadValueHtml(d.applicants, 'Søker') +
+    k('Oppfinner') + mhReadValueHtml(d.inventors, 'Oppfinner') +
+    k('Tittel') + mhReadValueHtml(d.title, 'Tittel', 'mh-v-wide') +
+  '</div>';
+}
+
+// Feltene, i samme rekkefølge som teksten.
+function mhEditHtml(d, i) {
+  return '<span class="mh-dates">' +
+      mhDateHtml(d, i, 'pubDate', 'Publisert') +
+      mhDateHtml(d, i, 'effDate', 'Prioritet/inng.') +
+    '</span>' +
+    '<span class="mh-parties">' +
+      mhPartyHtml(d, i, 'applicants', 'Søker') +
+      mhPartyHtml(d, i, 'inventors', 'Oppfinner') +
+    '</span>' +
+    '<label class="mh-title">Tittel ' +
+      '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '"' +
+      ' title="' + esc(d.title) + '" placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
+      ' aria-label="' + esc('Tittel for ' + d.id) + '" /></label>';
+}
+
+// «✓ Kopiert: …» — en lang tittel kortes i meldingen (ikke i det som kopieres).
+function copyToastText(v) {
+  v = String(v || '');
+  return '✓ Kopiert: ' + (v.length > 60 ? v.slice(0, 59) + '…' : v);
 }
 
 function mhPartyHtml(d, i, field, label) {
@@ -652,7 +712,7 @@ function mhOpsBtnHtml(d, i) {
           : '';
   return '<button type="button" class="mh-ops" data-ops="' + i + '" data-doc-id="' + esc(d.id) + '"' +
     (why ? ' aria-disabled="true"' : '') +
-    ' title="' + esc(why || 'Hent datoer, tittel, søker og oppfinner fra EPO OPS (fyller bare tomme felt)') + '"' +
+    ' title="' + esc(why || 'Hent datoer, søker, oppfinner og tittel fra EPO OPS igjen (fyller bare tomme felt). Skjer av seg selv når du fører inn et nytt nummer.') + '"' +
     ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg></button>';
 }

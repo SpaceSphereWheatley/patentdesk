@@ -14,6 +14,7 @@ function renderSak(id) {
   _sakOpenDocPop      = null;
   _kmEditingOrigin    = null;
   _citedIndex         = null; // de andre sakene kan ha endret seg siden sist
+  _mhEditing          = {};
 
   var data = loadSakData(id) || defaultSakData(0);
   ensureClaims(data);

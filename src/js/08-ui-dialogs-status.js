@@ -54,7 +54,7 @@ var CLOSABLE_BACKDROPS = ['cle-backdrop','modal-backdrop','confirm-backdrop','co
    'videre-choice-backdrop','reset-backdrop','import-backdrop','tag-backdrop','frist-backdrop',
    'delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
    'history-backdrop','backup-restore-backdrop','cle-reset-backdrop','search-backdrop',
-   'shortcuts-backdrop','medl-send-backdrop','claims-reduce-backdrop'];
+   'shortcuts-backdrop','medl-send-backdrop','claims-reduce-backdrop','mh-replace-backdrop'];
 
 function closeAllBackdrops() {
   // Esc på «Fjerne krav?» betyr behold: antall krav settes tilbake i feltet
@@ -71,6 +71,7 @@ function closeAllBackdrops() {
   pendingConfirmId = pendingConfirmCallback = pendingSvar = pendingVidereId =
   pendingDeleteId = pendingTagId = pendingTagStatus = pendingTagCallback =
   pendingFristCallback = pendingMedlId = null;
+  _mhReplace = null;
 }
 
 // ── Frist-modal ────────────────────────────────────

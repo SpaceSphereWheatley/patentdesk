@@ -518,6 +518,7 @@ function _dispatch(action, payload) {
     }
 
     case 'DOC_REMOVE': {
+      _mhEditing = {}; // radene kan få nye plasser
       var data = loadSakData(payload.id) || defaultSakData(0);
       ensureSakDocs(data);
       var doc = data.docs[payload.idx];

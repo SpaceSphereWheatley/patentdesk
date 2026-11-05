@@ -245,6 +245,36 @@ function opsFillPlan(doc, dates) {
   return { patch: patch, conflicts: conflicts };
 }
 
+// Feltene under motholdets nummer, i den rekkefølgen de vises.
+var MH_DETAIL_FIELDS = ['pubDate', 'effDate', 'applicants', 'inventors', 'title'];
+
+function docHasDetails(d) {
+  return !!d && MH_DETAIL_FIELDS.some(function(f) { return !!d[f]; });
+}
+
+// Erstatt alt: brukes når nummeret er endret til et annet dokument og du har
+// sagt ja til å bytte. Det OPS ikke har, tømmes — det hørte til det gamle.
+function opsReplacePlan(dates) {
+  var patch = {};
+  MH_DETAIL_FIELDS.forEach(function(f) { patch[f] = (dates && dates[f]) || ''; });
+  return { patch: patch, conflicts: [] };
+}
+
+// Hva som skal skje når et nytt publikasjonsnummer er ført inn (Enter, Tab,
+// klikk utenfor): 'fill' slår opp og fyller tomme felt, 'ask' spør før
+// opplysningene for det gamle nummeret byttes ut, 'none' gjør ingenting.
+// doc er motholdet slik det var før nummeret ble endret.
+function opsAutoAction(prevRef, newRef, doc, hasCreds) {
+  if (!hasCreds) return 'none';
+  var np = opsPubNumber(newRef);
+  if (!np) return 'none';
+  if (normalizePubNumber(prevRef) === normalizePubNumber(newRef)) return 'none';
+  if (!docHasDetails(doc)) return 'fill';
+  var pp = opsPubNumber(prevRef);
+  if (pp && (pp.epodoc !== np.epodoc || pp.kind !== np.kind)) return 'ask';
+  return MH_DETAIL_FIELDS.some(function(f) { return !doc[f]; }) ? 'fill' : 'none';
+}
+
 function opsErrorMessage(kind) {
   switch (kind) {
     case 'nocreds':  return 'Legg inn OPS-nøklene under Innstillinger → Saksbehandling først.';
@@ -398,18 +428,6 @@ function buildSearchReport(claims, docs) {
 // kategorien slik den skrives i granskingsrapporten: «P,X».
 function docCategoryLabel(doc, cat) {
   return (doc.p ? 'P,' : '') + (doc.e ? 'E,' : '') + cat;
-}
-
-function formatSearchReport(claims, docs) {
-  var rows = buildSearchReport(claims, docs);
-  return rows.map(function(row, i) {
-    var doc  = docs[i];
-    var head = doc.id + (doc.ref ? '  ' + doc.ref : '');
-    if (doc.withdrawn) return head + '\n  (ikke lenger relevant)';
-    var body = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
-      .map(function(cat) { return '  ' + docCategoryLabel(doc, cat) + ': krav ' + formatClaimRanges(row[cat]); });
-    return head + '\n' + (body.length ? body.join('\n') : '  (ingen vurderte krav)');
-  }).join('\n\n');
 }
 
 // ── Mothold sitert i andre saker ─────────────────────
