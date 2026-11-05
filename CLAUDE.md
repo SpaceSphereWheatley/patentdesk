@@ -3,21 +3,36 @@
 ## Project overview
 
 PatentDesk is a self-contained, offline patent case management application.
-It is a **single HTML file** with all CSS and JavaScript embedded — no build
-step, no dependencies, no server. The file is opened directly in a browser.
+It ships as a **single HTML file** with all CSS and JavaScript embedded — no
+dependencies, no server. The file is opened directly in a browser. The source
+lives in `src/` and is joined into `PatentDesk.html` by `npm run build`.
 All data is stored locally via **localStorage** (case list, settings) and
 **IndexedDB** (CPC classification database).
 
-Version: always grep `APP_VERSION` from the file to confirm; never rely on
-memory or prior context.
+Version: always grep `APP_VERSION` (in `src/js/01-config-templates.js`) to
+confirm; never rely on memory or prior context.
 
 ---
 
 ## Architecture
 
 ### Single-file constraint
-The single-file design is **intentional and non-negotiable**. Do not split
-the file, introduce imports, or add any external dependencies.
+The delivered app is **one HTML file — intentional and non-negotiable**. No
+imports, modules, external dependencies or CDN links; the owner downloads
+`PatentDesk.html` from GitHub and opens it, and never runs a build.
+
+### Source layout and build
+- **Edit `src/`, never `PatentDesk.html`.** `PatentDesk.html` is generated
+  but committed, so it stays downloadable.
+- `src/index.html` — the page markup. Each line
+  `<!-- @include css/xx.css -->` is replaced by that file, byte for byte.
+- `src/css/`, `src/js/` — CSS and JS split by area, numbered in build order.
+  All JS still runs as one `<script>` with shared globals, so a file split
+  changes nothing at runtime. `src/vendor/` — embedded Chart.js; don't edit.
+- `npm run build` writes `PatentDesk.html`. Run it after every change to
+  `src/` and commit both. `npm test` fails if they're out of sync.
+- A new source file must be added as an include line in `src/index.html`
+  (the build refuses unincluded files).
 
 ### Data stores
 - `cases[]` in localStorage — case list, used for filtering, stats, and the
@@ -115,7 +130,8 @@ The main session does the work. The **owner** (the user) has the final say;
 state it; the owner can override.
 
 - **Fix** — a bug or small logic change, no UI or stored-data change.
-  Write a failing test → fix → `npm test` + `npm run lint`. No agents.
+  Write a failing test → fix in `src/` → `npm run build` → `npm test` +
+  `npm run lint`. No agents.
 - **Feature** — new or changed behaviour, possibly UI.
   1. Write a short spec: problem, scope (in/out), numbered testable
      acceptance criteria (cover each workflow state, Oppdrag, overdue,
@@ -161,10 +177,11 @@ was bumped and this file states the current value.
 ## Working conventions
 
 ### Finding your way in the file
-`PatentDesk.html` is ~20 000 lines (~1.2 MB); never read it broadly. Run
-`npm run codemap -- <word>` to list matching functions with line numbers and
-their sections (no argument prints the full map), then read only those
-ranges.
+Never read `PatentDesk.html` broadly (~1.2 MB); work in `src/`. Run
+`npm run codemap -- <word>` to list matching functions with their source
+file and line number (no argument prints the full map), then read only those
+ranges. Test errors and lint report lines in the built `PatentDesk.html`;
+find the function there and look it up in the map.
 
 ### Change discipline
 - List planned changes before implementing.
@@ -184,7 +201,7 @@ extractable pure logic is exempt, but extract pure logic into its own
 function where possible so it can be tested this way.
 
 ### Download link after each push
-After committing and pushing a change to `PatentDesk.html`, always include a
+After committing and pushing a change to the app (`src/`), always include a
 direct GitHub link to the file on the working branch:
 
 ```
@@ -200,11 +217,13 @@ asked.
 
 | File | Purpose |
 |---|---|
-| `PatentDesk.html` | The entire application |
+| `PatentDesk.html` | The entire application — built from `src/`, committed, never edited by hand |
+| `src/` | Source: `index.html` (markup + include lines), `css/`, `js/`, `vendor/` |
+| `scripts/build.js` | Joins `src/` into `PatentDesk.html` (`npm run build`) |
 | `CHANGELOG.md` | Version history (Keep a Changelog 1.1.0 format) |
 | `CLAUDE.md` | These instructions |
 | `.claude/agents/reviewer.md` | Independent reviewer agent (see Workflow) |
-| `scripts/codemap.js` | Function/section map of `PatentDesk.html` (`npm run codemap`) |
+| `scripts/codemap.js` | Function/section map of `src/` (`npm run codemap`) |
 | `test/*.test.js` | Unit tests (`npm test`) |
 | `test/e2e/*.e2e.js` | Browser layout tests, not in `npm test`; run `node --test test/e2e/*.e2e.js` (skipped if Playwright is missing) |
 | `cpc_v2.json` | CPC classification data (external, loaded into IndexedDB) |

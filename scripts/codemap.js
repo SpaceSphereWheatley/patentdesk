@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 'use strict';
-// Prints a map of PatentDesk.html: CSS sections, JS sections and
-// subsections, and top-level functions, each with its line number.
+// Prints a map of the source files in src/ (in build order): CSS sections,
+// JS sections and subsections, and top-level functions, each with its line
+// number in that file.
 //
 //   node scripts/codemap.js           full map
 //   node scripts/codemap.js claim     only functions whose name contains
@@ -11,6 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { includedFiles } = require('./build.js');
 
 const CSS_SECTION = /^\/\* ── (.+?) ─/;
 const JS_SECTION = /^\/\/ (SEKSJON \d+ · .+?)\s*$/;
@@ -46,12 +48,20 @@ function buildCodeMap(html, filter) {
       out.push(fmt(n, '    ', m[1]));
     }
   });
-  return out.join('\n') + '\n';
+  return out.length ? out.join('\n') + '\n' : '';
 }
 
-module.exports = { buildCodeMap };
+// Map of every included source file, each under a "== src/<file>" heading.
+// Files with nothing to show (e.g. no match for the filter) are left out.
+function buildSrcMap(srcDir, filter) {
+  return includedFiles(srcDir).map(rel => {
+    const body = buildCodeMap(fs.readFileSync(path.join(srcDir, rel), 'utf8'), filter);
+    return body ? '== src/' + rel + '\n' + body : '';
+  }).filter(Boolean).join('\n');
+}
+
+module.exports = { buildCodeMap, buildSrcMap };
 
 if (require.main === module) {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'PatentDesk.html'), 'utf8');
-  process.stdout.write(buildCodeMap(html, process.argv[2]));
+  process.stdout.write(buildSrcMap(path.join(__dirname, '..', 'src'), process.argv[2]));
 }

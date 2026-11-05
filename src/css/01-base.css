@@ -1,0 +1,187 @@
+/* ══════════════════════════════════════════════════
+   PatentDesk — innholdsoversikt for hele filen
+   (CSS i <style>, markup i <body>, logikk i <script>)
+
+   ── CSS (<style>) ──────────────────────────────────
+     1.  Variabler          11. Modal og skjema
+     2.  Reset              12. Valgpopup
+     3.  App-shell          13. Statistikk-side
+     4.  Navigasjon         14. Linjegraf (SVG)
+     5.  Hovedinnhold       15. Stikkord
+     6.  Knapper            16. Filter
+     7.  Statistikkort      17. Hendelseslogg
+     8.  Tabell             18. Historikk-tidslinje
+     9.  Dager-badges       19. Innstillinger
+    10.  Status-pills       20. Toast og angre
+                            21. Animasjoner
+                            22. Responsiv
+                            23. Hjem-side
+                            26. Kortlayout (sakslister)
+                            27. Sak sticky-bar
+                            28. Inline-stil-erstatninger
+
+   ── HTML (<body>) ──────────────────────────────────
+     Appens markup: SVG-sprite, app-shell/drawer,
+     sider (oversikt, sakslister, statistikk, innstillinger),
+     modaler og overlays (toast, onboarding)
+
+   ── JavaScript (<script>) ──────────────────────────
+     SEKSJON 1 · Konstanter og konfigurasjon
+     SEKSJON 2 · Domenefunksjoner
+     SEKSJON 3 · Storage-lag
+     SEKSJON 4 · Appstate
+     SEKSJON 5 · UI-komponenter
+     SEKSJON 6 · Event-håndtering
+     SEKSJON 7 · Bootstrap
+══════════════════════════════════════════════════ */
+
+/* ── 1. Variabler ─────────────────────────────────── */
+:root {
+  /* ── Lys modus (standard) ── */
+  --bg:          #f5f6f8;
+  --surface:     #ffffff;
+  --surface2:    #f9fafb;
+  --bg2:         var(--surface2);
+  --border:      #e5e7eb;
+  --border2:     #d1d5db;
+  --text:        #111827;
+  --muted:       #9ca3af; /* kun dekor: kanter, ikoner, fyll — ikke tekst */
+  --muted-text:  #687080; /* dempet tekst som skal leses (4.5:1 mot --bg) */
+  --accent:      #b08040; /* gull = identitet: logo, saksnummer, CPC, aktiv sak. Handlinger er --primary (blått). */
+  --accent-dim:  #8a6030;
+  --accent-text: #8f6430; /* gull som tekst, f.eks. saksnummer (4.5:1 mot --bg) */
+  --primary:     #2563eb;
+  --primary-dim: #1d4ed8;
+  --danger:      #dc2626;
+  --vacation-color: #059669;
+  --tag-color:   #64748b;
+  --font-head: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --radius:    6px;
+  /* Status tokens */
+  --s-ny-bg:        #e6f1fb; --s-ny-text:    #185fa5; --s-ny-border:    #b5d4f4;
+  --s-frist-bg:     #f3f4f6; --s-frist-text: #6b7280; --s-frist-border: #d1d5db;
+  --s-videre-bg:    #eef2ff; --s-videre-text:#4338ca; --s-videre-border:#c7d2fe;
+  --s-avsl-bg:      #f3f4f6; --s-avsl-text:  #6b7280; --s-avsl-border:  #d1d5db;
+  --s-oppdrag-bg:   #ecfeff; --s-oppdrag-text:#0e7490; --s-oppdrag-border:#a5f3fc;
+  /* Farge-on-primary/danger */
+  --on-primary:  #ffffff;
+  --on-danger:   #ffffff;
+  /* Urgency / badge */
+  --badge-overdue-bg: #fcebeb; --badge-overdue-text: #a32d2d; --badge-overdue-border: #f5c2c2;
+  --badge-urgent-bg:  #faeeda; --badge-urgent-text:  #854f0b; --badge-urgent-border:  #f5d5a0;
+  --badge-soon-bg:    #faeeda; --badge-soon-text:    #854f0b; --badge-soon-border:    #f5d5a0;
+  --badge-ok-bg:      #f3f4f6; --badge-ok-text:      #374151; --badge-ok-border:      #d1d5db;
+  /* Semantiske farger */
+  --color-ok:      #10b981;
+  --color-formal:  #eab308;
+  --color-warn:    #f59e0b;
+  --color-error:   #f87171;
+  --color-info:    #0891b2;
+  --color-urgent:  #fb923c;
+  /* Varsel og dempet tekst som skal leses (4.5:1 mot hvitt) */
+  --notice-warn-bg:     #fffbeb;
+  --notice-warn-text:   #78350f;
+  --dup-tag-bg:         #fef3c7;
+  --dup-tag-text:       #92400e;
+  --text-subtle:        #6b7280;
+  /* Chart/graf */
+  --chart-ny:     #63b3ed;
+  --chart-videre: #b794f4;
+  /* Tidslinje */
+  --tl-actual-due: #7F77DD; /* faktisk frist bak bufferen */
+  --tl-holiday:    #f59e0b; /* offentlige fridager */
+  --tl-bar-label: #ffffff;
+  /* Log badges */
+  --log-ny-text:    #1d4ed8;
+  --log-videre-text:#4c1d95;
+  --log-avsl-text:  #374151;
+  --log-opp-text:   #0891b2;
+  /* Belegg */
+  --belegg-low:  #22c55e;
+  --belegg-mid:  #f59e0b;
+  --belegg-high: #ef4444;
+  /* Misc */
+  --color-warning-text: #f6ad55;
+  --phase-bg:     #eef0f3;
+  --phase-border: #dfe3e8;
+  /* Semantiske flater i saksvisningen. Fargene fantes fra før, hardkodet på
+     hvert brukssted; her er de samlet ett sted. */
+  --tone-ok-strong:     rgba(16,185,129,0.18);
+  --tone-ok-soft:       rgba(16,185,129,0.10);
+  --tone-ok-faint:      rgba(16,185,129,0.07);
+  --tone-no-strong:     rgba(224,85,85,0.18);
+  --tone-no-soft:       rgba(224,85,85,0.10);
+  --tone-no-faint:      rgba(224,85,85,0.07);
+  --tone-formal-strong: rgba(234,179,8,0.18);
+  --tone-formal-soft:   rgba(234,179,8,0.14);
+  --tone-formal-faint:  rgba(234,179,8,0.09);
+  --edge-no:            rgba(224,85,85,0.35);
+  --edge-formal:        rgba(234,179,8,0.45);
+  --text-on-formal:     #8a6708;
+  --text-on-no:         #a52121;
+  --soon-nav-dark: #fcd34d;
+  --cpc-loaded:   #1D9E75;
+  --dp-sel-text:  #000000;
+  --accent-btn-text: #000000;
+
+  /* ── PatentDesk Design System — token layer ──────────
+     Additive only: systematizes the values above onto a
+     named scale (spacing/type/radius/shadow/motion) plus
+     design-system-convention aliases, without changing any
+     existing value. See PatentDesk Design System / readme.md. */
+  --on-accent:   #000000;
+  /* Spacing scale (4px base) */
+  --space-1: 4px;  --space-2: 6px;  --space-3: 8px;  --space-4: 10px; --space-5: 12px;
+  --space-6: 16px; --space-7: 20px; --space-8: 24px; --space-9: 32px; --space-10: 40px;
+  /* Type scale */
+  --text-2xs: .68rem; --text-xs: .75rem; --text-sm: .82rem; --text-base: .88rem;
+  --text-md: 1rem; --text-lg: 1.1rem; --text-xl: 1.55rem; --text-2xl: 1.85rem; --text-3xl: 2.2rem;
+  --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700;
+  --tracking-tight: -0.01em; --tracking-normal: 0.02em; --tracking-wide: 0.04em;
+  --tracking-label: 0.08em; --tracking-eyebrow: 0.1em;
+  --line-tight: 1.1; --line-snug: 1.4; --line-normal: 1.6;
+  /* Radius scale (--radius above = 6px, the default) */
+  --radius-sm: 4px; --radius-lg: 8px; --radius-xl: 10px; --radius-pill: 20px;
+  /* Shadow scale */
+  --shadow-card:     0 1px 4px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.06);
+  --shadow-dropdown: 0 8px 24px rgba(0,0,0,.35);
+  --shadow-modal:    0 24px 60px rgba(0,0,0,.5);
+  --shadow-toast:    0 8px 24px rgba(0,0,0,.4);
+  --shadow-ring:     0 0 0 2px;
+  /* Motion scale */
+  --ease-standard: cubic-bezier(.4,0,.2,1);
+  --dur-fast: .12s; --dur-base: .15s; --dur-slow: .2s;
+  --dur-instant: .1s; --dur-slower: .3s; --dur-slowest: .4s;
+  /* Design-system-convention aliases (same colors, new names) */
+  --white: #ffffff; --gray-50: #f9fafb; --gray-100: var(--bg); --gray-200: var(--border);
+  --gray-300: var(--border2); --gray-400: var(--muted); --gray-900: var(--text);
+  --status-ny-bg: var(--s-ny-bg); --status-ny-text: var(--s-ny-text); --status-ny-border: var(--s-ny-border);
+  --status-fristarkiv-bg: var(--s-frist-bg); --status-fristarkiv-text: var(--s-frist-text); --status-fristarkiv-border: var(--s-frist-border);
+  --status-viderebehandling-bg: var(--s-videre-bg); --status-viderebehandling-text: var(--s-videre-text); --status-viderebehandling-border: var(--s-videre-border);
+  --status-avsluttet-bg: var(--s-avsl-bg); --status-avsluttet-text: var(--s-avsl-text); --status-avsluttet-border: var(--s-avsl-border);
+  --status-oppdrag-bg: var(--s-oppdrag-bg); --status-oppdrag-text: var(--s-oppdrag-text); --status-oppdrag-border: var(--s-oppdrag-border);
+  --chart-track-a: var(--chart-ny); --chart-track-b: var(--chart-videre);
+  /* Forløpsspor (trk-): fire faste steg per sak */
+  --trk-done-bg:    #e2ede7; --trk-done-text:   #22573f; --trk-done-mini: #8fbea4;
+  --trk-future-bg:  #f1f2f4; --trk-future-text: #5f6672; --trk-future-mini: #dfe2e6;
+  --trk-active:     var(--primary);
+  --trk-videre:     var(--s-videre-text);
+  --trk-wait-a:     #eceff3; --trk-wait-b:      #e1e5ea; --trk-wait-text: #374151; --trk-wait-mini: #c3c9d1;
+  --trk-caution:    #b45309;
+  --trk-granted:    #15803d;
+  --trk-refused:    #b91c1c;
+  --trk-closed:     #6b7280;
+}
+
+/* ── 2. Reset ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  line-height: var(--line-normal);
+}
+

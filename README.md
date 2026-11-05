@@ -45,14 +45,17 @@ vurderingene kaskaderer fra uavhengige krav til deres avhengige.
 
 ## Utvikling
 
-Enkeltfildesignet er intensjonalt: ikke del opp filen eller legg til
-kjøringstidsavhengigheter. Se [`CLAUDE.md`](CLAUDE.md) for konvensjoner og
+Appen leveres som én fil, og det er intensjonalt: ingen
+kjøringstidsavhengigheter. Kildekoden ligger i `src/` og settes sammen til
+`PatentDesk.html` med `npm run build` — rediger `src/`, aldri
+`PatentDesk.html` direkte. Se [`CLAUDE.md`](CLAUDE.md) for konvensjoner og
 [`CHANGELOG.md`](CHANGELOG.md) for versjonshistorikk.
 
 ```bash
 npm ci        # kun utviklingsverktøy (ESLint)
 npm run lint  # linter både innebygd JS og HTML-struktur
-npm test      # enhetstester
+npm run build # bygger PatentDesk.html fra src/
+npm test      # enhetstester (feiler hvis PatentDesk.html ikke er bygget)
 node --test test/e2e/*.e2e.js  # nettlesertester (Playwright/Chromium, valgfritt)
 ```
 
@@ -105,13 +108,16 @@ independent claims to their dependents.
 
 ## Development
 
-The single-file design is intentional: do not split the file or add
-runtime dependencies. See [`CLAUDE.md`](CLAUDE.md) for conventions and
+The app ships as one file, and that is intentional: no runtime
+dependencies. The source lives in `src/` and is joined into
+`PatentDesk.html` by `npm run build` — edit `src/`, never `PatentDesk.html`
+directly. See [`CLAUDE.md`](CLAUDE.md) for conventions and
 [`CHANGELOG.md`](CHANGELOG.md) for version history.
 
 ```bash
 npm ci        # dev tooling only (ESLint)
 npm run lint  # lints both the embedded JS and the HTML structure
-npm test      # unit tests
+npm run build # builds PatentDesk.html from src/
+npm test      # unit tests (fail if PatentDesk.html isn't rebuilt)
 node --test test/e2e/*.e2e.js  # browser tests (Playwright/Chromium, optional)
 ```

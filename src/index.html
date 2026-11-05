@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PatentDesk — Sakslogg</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='15 5 80 95'%3E%3Cpolygon points='50,10 80,27 80,62 50,78 20,62 20,27' fill='%232563eb' opacity='.9'/%3E%3Cpolygon points='60,26 90,43 90,78 60,94 30,78 30,43' fill='%23b08040'/%3E%3Ctext x='60' y='80' font-family='system-ui,sans-serif' font-size='50' font-weight='500' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E" sizes="any">
+  <style>
+<!-- @include css/01-base.css -->
+<!-- @include css/02-shell-components.css -->
+<!-- @include css/03-settings-toast-responsive.css -->
+<!-- @include css/04-home-lists.css -->
+<!-- @include css/05-cards-track-medlesing.css -->
+<!-- @include css/06-case-detail.css -->
+<!-- @include css/07-timeline-rounds.css -->
+</style>
+</head>
+<body>
+<!-- ── Tabler Icons — inline SVG symbols (offline) ── -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="ti-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/>
+  </symbol>
+  <symbol id="ti-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><line x1="9" y1="9" x2="10" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/>
+  </symbol>
+  <symbol id="ti-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>
+  </symbol>
+  <symbol id="ti-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 5a5 5 0 0 1 7 0a5 5 0 0 0 7 0v9a5 5 0 0 1 -7 0a5 5 0 0 0 -7 0v-9z"/><line x1="5" y1="21" x2="5" y2="14"/>
+  </symbol>
+  <symbol id="ti-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10"/><line x1="10" y1="12" x2="14" y2="12"/>
+  </symbol>
+  <symbol id="ti-files" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 3v4a1 1 0 0 0 1 1h4"/><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2z"/><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h2"/>
+  </symbol>
+  <symbol id="ti-chart-bar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="12" width="4" height="8" rx="1"/><rect x="9" y="8" width="4" height="12" rx="1"/><rect x="15" y="4" width="4" height="16" rx="1"/><line x1="4" y1="20" x2="18" y2="20"/>
+  </symbol>
+  <symbol id="ti-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><circle cx="12" cy="12" r="3"/>
+  </symbol>
+  <symbol id="ti-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="5 12 11 18"/><polyline points="5 12 11 6"/>
+  </symbol>
+  <symbol id="ti-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 10a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/>
+    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"/>
+  </symbol>
+  <symbol id="ti-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4"/>
+    <path d="M13.5 6.5l4 4"/>
+  </symbol>
+  <symbol id="ti-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 6l-12 12"/><path d="M6 6l12 12"/>
+  </symbol>
+  <symbol id="ti-folder-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2"/>
+  </symbol>
+  <symbol id="ti-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 5l0 14"/><path d="M5 12l14 0"/>
+  </symbol>
+  <symbol id="ti-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2"/>
+  </symbol>
+  <symbol id="ti-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/>
+  </symbol>
+  <symbol id="ti-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="5 12 10 17 19 7"/>
+  </symbol>
+  <symbol id="ti-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </symbol>
+  <symbol id="ti-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 4l9 16H3z"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="12" y1="17" x2="12" y2="17.01"/>
+  </symbol>
+  <symbol id="ti-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/>
+  </symbol>
+  <symbol id="ti-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><polyline points="7 11 12 16 17 11"/><line x1="12" y1="4" x2="12" y2="16"/>
+  </symbol>
+  <symbol id="ti-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
+  </symbol>
+  <symbol id="ti-external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>
+  </symbol>
+</svg>
+
+  <input type="file" id="import-file-input" accept=".json" class="hidden-input" />
+
+  <div class="app-shell">
+
+    <!-- ══ DRAWER ══ -->
+    <nav class="drawer" id="main-drawer">
+      <div class="drawer-logo-row">
+        <a class="drawer-logo" href="#" id="logo-home-link" title="Hjem">
+          <span class="logo-mark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="15 5 80 95" width="22" height="22" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="50,10 80,27 80,62 50,78 20,62 20,27" fill="#2563eb" opacity=".9"/><polygon points="60,26 90,43 90,78 60,94 30,78 30,43" fill="#b08040"/><text x="60" y="80" font-family="system-ui,sans-serif" font-size="50" font-weight="500" fill="white" text-anchor="middle">P</text></svg></span>
+          <span class="logo-text">PatentDesk</span>
+        </a>
+        <button class="drawer-toggle-btn" id="drawer-toggle-btn" title="Skjul navigasjon">&#8249;</button>
+      </div>
+
+      <!-- Pågående sak: saken du holder på med, ett klikk unna -->
+      <div class="drawer-active" id="drawer-active" hidden>
+        <button class="drawer-active-open" id="drawer-active-open" type="button">
+          <span class="active-dot" aria-hidden="true"></span>
+          <span class="drawer-active-text">
+            <span class="drawer-active-label">Pågår</span>
+            <span class="drawer-active-cn" id="drawer-active-cn"></span>
+            <span class="drawer-active-title" id="drawer-active-title"></span>
+          </span>
+        </button>
+        <button class="drawer-active-clear" id="drawer-active-clear" type="button" title="Fjern markeringen" aria-label="Fjern pågående-markering">&times;</button>
+      </div>
+
+      <div class="drawer-nav">
+        <a class="nav-tab" data-page="hjem" data-tooltip="Hjem" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-home"/></svg>
+          <span class="nav-label">Hjem</span>
+        </a>
+        <a class="nav-tab" data-page="ny" data-tooltip="Nye saker" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg>
+          <span class="nav-label">Nye saker</span>
+        </a>
+        <a class="nav-tab" data-page="viderebehandling" data-tooltip="Viderebehandling" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg>
+          <span class="nav-label">Viderebehandling</span>
+        </a>
+        <a class="nav-tab" data-page="oppdrag" data-tooltip="Oppdrag" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-flag"/></svg>
+          <span class="nav-label">Oppdrag</span>
+        </a>
+        <a class="nav-tab" data-page="fristarkiv" data-tooltip="Fristarkiv" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-archive"/></svg>
+          <span class="nav-label">Fristarkiv</span>
+        </a>
+        <a class="nav-tab" data-page="avsluttet" data-tooltip="Alle saker" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-files"/></svg>
+          <span class="nav-label">Alle saker</span>
+        </a>
+        <a class="nav-tab" data-page="medlesing" data-tooltip="Medlesing" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg>
+          <span class="nav-label">Medlesing</span>
+        </a>
+        <div class="nav-divider"></div>
+        <a class="nav-tab" data-page="statistikk" data-tooltip="Statistikk" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-chart-bar"/></svg>
+          <span class="nav-label">Statistikk</span>
+        </a>
+        <a class="nav-tab" data-page="innstillinger" data-tooltip="Innstillinger" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-settings"/></svg>
+          <span class="nav-label">Innstillinger</span>
+        </a>
+      </div>
+
+      <div class="drawer-footer">
+        <div class="drawer-date" id="current-date"></div>
+        <a class="nipo-badge nipo-link" href="https://www.patentstyret.no" target="_blank" rel="noopener">Patentstyret</a>
+        <span class="drawer-version logo-version"></span>
+      </div>
+    </nav>
+
+    <!-- ══ RUNDESKUFF (forrige runde, skrivebeskyttet) ══ -->
+    <aside class="rd" id="round-drawer" aria-label="Tidligere runde" hidden></aside>
+
+    <!-- ══ INNHOLD ══ -->
+    <main class="main-content">
+
+      <!-- Hjem -->
+      <div id="view-hjem" style="display:none;">
+        <div id="cpc-home-notice" class="cpc-home-notice" style="display:none;"></div>
+        <section class="top-bar">
+          <h1 class="page-title">Oversikt</h1>
+          <div class="top-bar-actions">
+            <a class="btn-add-link" id="case-source-link-home" target="_blank" rel="noopener noreferrer" hidden><svg class="ti" aria-hidden="true"><use href="#ti-external-link"/></svg></a>
+            <button class="btn-add" id="btn-home-add">+ Legg til saker</button>
+          </div>
+        </section>
+
+        <!-- Hos medleser -->
+        <div id="home-medl-out" hidden></div>
+
+        <!-- Saksflyt: hvor mange saker som står på hvert steg i forløpssporet -->
+        <section class="home-pipe-wrap" aria-labelledby="home-pipe-title">
+          <h2 class="home-pipe-title" id="home-pipe-title">Saksflyt</h2>
+          <div class="home-pipe">
+            <div class="home-pipe-card home-pipe-ny home-card-clickable" id="home-card-ny" role="button" tabindex="0">
+              <span class="home-pipe-label">Nye saker</span>
+              <span class="home-pipe-value" id="home-count-ny">—</span>
+              <span class="home-pipe-sub" id="home-pipe-ny-sub">Nye saker</span>
+            </div>
+            <div class="home-pipe-card home-pipe-wait home-card-clickable" id="home-card-fristarkiv" role="button" tabindex="0">
+              <span class="home-pipe-label"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Fristarkiv</span>
+              <span class="home-pipe-value" id="home-count-fristarkiv">—</span>
+              <span class="home-pipe-sub" id="home-pipe-frist-sub">Fristarkiv</span>
+            </div>
+            <div class="home-pipe-card home-pipe-videre home-card-clickable" id="home-card-viderebehandling" role="button" tabindex="0">
+              <span class="home-pipe-label">Viderebehandling</span>
+              <span class="home-pipe-value" id="home-count-videre">—</span>
+              <span class="home-pipe-sub" id="home-pipe-videre-sub">Viderebehandling</span>
+            </div>
+            <div class="home-pipe-card home-pipe-done home-card-clickable" id="home-card-avsluttet" role="button" tabindex="0">
+              <span class="home-pipe-label" id="home-pipe-done-label">Avgjort i år</span>
+              <span class="home-pipe-value" id="home-count-decided">—</span>
+              <span class="home-pipe-bar" id="home-pipe-bar" aria-hidden="true"></span>
+              <span class="home-pipe-sub" id="home-pipe-done-sub">—</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Statskort: forfalt, oppdrag og fridag -->
+        <div class="home-stat-grid" id="home-stat-grid">
+          <div class="home-card home-card-forfalt home-card-clickable" id="home-card-forfalt" role="button" tabindex="0" aria-describedby="home-forfalt-sub">
+            <div class="home-card-label">Forfalt</div>
+            <div class="home-card-value home-card-value-forfalt" id="home-count-forfalt">—</div>
+            <div class="home-card-sub"><span id="home-forfalt-sub">ingen saker over fristen</span> · <span class="home-card-link">vis i lista</span></div>
+          </div>
+          <div class="home-card home-card-clickable" id="home-card-oppdrag" role="button" tabindex="0">
+            <div class="home-card-label">Oppdrag</div>
+            <div class="home-card-value" id="home-count-oppdrag">—</div>
+            <div class="home-card-sub">aktive oppdrag</div>
+          </div>
+          <div class="home-card home-card-belegg" id="home-card-belegg">
+            <div class="home-card-label">Belegg · <span id="belegg-horizon">neste 60 dager</span></div>
+            <div class="home-card-value" id="belegg-pct">—</div>
+            <div class="belegg-bar" id="belegg-bar" aria-hidden="true">
+              <span class="belegg-bar-fill" id="belegg-bar-fill"></span><span class="belegg-bar-over" id="belegg-bar-over"></span><span class="belegg-bar-mark" id="belegg-bar-mark" title="100 %"></span>
+            </div>
+            <div class="home-card-sub" id="belegg-sub"></div>
+          </div>
+        </div>
+
+        <!-- Neste fridag: én linje under statskortene -->
+        <div class="home-fridag-line" id="home-fridag-line" hidden>
+          <span id="home-fridag-lead"></span> · <span id="home-fridag-sub"></span>
+        </div>
+
+        <section class="home-section" id="home-frister">
+          <div class="home-dl-head">
+            <h2 class="home-section-title" id="home-frister-title" tabindex="-1">Frister <span class="home-dl-count" id="home-dl-count"></span>
+              <span class="home-dl-badge home-dl-badge-overdue" id="home-dl-badge-overdue" hidden></span>
+              <span class="home-dl-badge home-dl-badge-soon" id="home-dl-badge-soon" hidden></span></h2>
+            <div class="home-dl-filter-wrap">
+              <button type="button" class="home-dl-filter-btn" id="home-dl-filter-btn" aria-expanded="false" aria-controls="home-dl-filter">Filter ▾</button>
+              <div class="home-dl-filter" id="home-dl-filter" role="dialog" aria-label="Velg frister" hidden>
+                <table class="home-dl-grid">
+                  <thead><tr><th></th><th scope="col">Forfalt</th><th scope="col">Kommende</th></tr></thead>
+                  <tbody>
+                    <tr><th scope="row">Førstesøknad (Ny)</th>
+                      <td><input type="checkbox" data-kind="ny" data-when="overdue" aria-label="Førstesøknad, forfalt"></td>
+                      <td><input type="checkbox" data-kind="ny" data-when="upcoming" aria-label="Førstesøknad, kommende"></td></tr>
+                    <tr><th scope="row">Viderebehandling</th>
+                      <td><input type="checkbox" data-kind="viderebehandling" data-when="overdue" aria-label="Viderebehandling, forfalt"></td>
+                      <td><input type="checkbox" data-kind="viderebehandling" data-when="upcoming" aria-label="Viderebehandling, kommende"></td></tr>
+                    <tr><th scope="row">Svarfrist (Fristarkiv)</th>
+                      <td><input type="checkbox" data-kind="fristarkiv" data-when="overdue" aria-label="Svarfrist, forfalt"></td>
+                      <td><input type="checkbox" data-kind="fristarkiv" data-when="upcoming" aria-label="Svarfrist, kommende"></td></tr>
+                    <tr><th scope="row">Oppdrag</th>
+                      <td><input type="checkbox" data-kind="oppdrag" data-when="overdue" aria-label="Oppdrag, forfalt"></td>
+                      <td><input type="checkbox" data-kind="oppdrag" data-when="upcoming" aria-label="Oppdrag, kommende"></td></tr>
+                  </tbody>
+                </table>
+                <label class="home-dl-horizon">Kommende innen
+                  <select id="home-dl-horizon">
+                    <option value="14">14 dager</option>
+                    <option value="30">30 dager</option>
+                    <option value="60">60 dager</option>
+                    <option value="90">90 dager</option>
+                    <option value="0">alle</option>
+                  </select>
+                </label>
+                <button type="button" class="home-dl-reset" id="home-dl-reset">Tilbakestill</button>
+              </div>
+            </div>
+          </div>
+          <div class="home-dl-summary" id="home-dl-summary"></div>
+          <div id="home-upcoming-list" class="home-upcoming"></div>
+        </section>
+
+        <!-- Arbeidsplan: ligger fast nederst i vinduet og kan slås sammen -->
+        <section class="home-dock" id="home-dock" aria-label="Arbeidsplan">
+          <div class="home-dock-head">
+            <button type="button" class="home-dock-toggle" id="home-dock-toggle" aria-expanded="true" aria-controls="home-tl-host">
+              <span class="home-dock-chevron" aria-hidden="true">▾</span>Arbeidsplan
+            </button>
+            <span class="home-dock-summary" id="home-dock-summary" hidden></span>
+          </div>
+          <div id="home-tl-host"></div>
+        </section>
+      </div>
+
+      <!-- Saksliste -->
+      <div id="view-cases">
+        <section class="top-bar">
+          <div>
+            <h1 class="page-title" id="page-title">Nye saker</h1>
+            <span class="case-count" id="case-count"></span>
+          </div>
+          <div class="top-bar-actions">
+            <a class="btn-add-link" id="case-source-link-cases" target="_blank" rel="noopener noreferrer" hidden><svg class="ti" aria-hidden="true"><use href="#ti-external-link"/></svg></a>
+            <div class="btn-add-split" id="btn-add-split-wrap">
+              <button class="btn-add" id="btn-open-modal">+ Legg til saker</button>
+            </div>
+          </div>
+        </section>
+
+        <div id="avsluttet-filter-bar" style="display:none;">
+          <div class="filter-bar">
+            <input class="filter-input" id="tag-filter-input" type="text" placeholder="Søk på saksnummer, tittel, stikkord eller notater…" />
+            <button class="btn-filter-clear" id="btn-filter-clear" title="Tøm filter">✕</button>
+          </div>
+        </div>
+
+        <section class="table-section">
+          <div class="table-wrap">
+            <table class="case-table">
+              <thead>
+                <tr>
+                  <th data-col="caseNumber" class="sortable">Saksnr. <span class="sort-icon">⇅</span></th>
+                  <th data-col="status" class="sortable" style="display:none;">Status <span class="sort-icon">⇅</span></th>
+                  <th data-col="dueDate" class="sortable">Forfallsdato <span class="sort-icon">⇅</span></th>
+                  <th data-col="title" class="sortable">Tittel <span class="sort-icon">⇅</span></th>
+                  <th data-col="notes">Notater</th>
+                  <th data-col="tags" style="display:none;">Stikkord</th>
+                  <th data-col="daysUntil" class="sortable">Dager igjen <span class="sort-icon">⇅</span></th>
+                  <th class="th-action" id="th-action">Handling</th>
+                  <th class="th-edit">Rediger</th>
+                </tr>
+              </thead>
+              <tbody id="case-tbody"></tbody>
+            </table>
+            <div class="table-empty" id="table-empty">
+              Ingen saker her. Bruk «+ Legg til saker» for å opprette en ny.
+            </div>
+          </div>
+        </section>
+
+        <div id="cases-tl-host" style="display:none;"></div>
+
+        <div class="case-list-head" id="case-list-head" role="group" aria-label="Sorter sakene" hidden></div>
+        <div id="case-list" class="case-list" style="display:none;"></div>
+        <div class="table-empty" id="card-list-empty" style="display:none;">
+          Ingen saker her. Bruk «+ Legg til saker» for å opprette en ny.
+        </div>
+      </div>
+
+      <!-- Statistikk -->
+      <div id="view-statistikk" style="display:none;">
+        <section class="top-bar">
+          <div class="stat-topbar-inner">
+            <h1 class="page-title">Statistikk</h1>
+            <div class="year-nav">
+              <button class="btn-year" id="btn-year-prev" title="Forrige år">‹</button>
+              <span class="stat-section-title year-heading-span" id="year-heading"></span>
+              <button class="btn-year" id="btn-year-next" title="Neste år">›</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="stat-section stat-summary" aria-label="Sammendrag">
+          <div class="stat-card">
+            <div class="stat-card-head">
+              <h2 class="stat-card-title" id="stat-decided-title">Avgjort</h2>
+              <span class="stat-card-big" id="stat-decided-total">0</span>
+            </div>
+            <div class="stat-card-bar" id="stat-decided-bar" aria-hidden="true"></div>
+            <div class="stat-card-legend" id="stat-decided-legend"></div>
+          </div>
+          <div class="stat-card">
+            <h2 class="stat-card-title">Alle år</h2>
+            <div class="stat-card-totals">
+              <div><span class="stat-card-num" id="stat-all-ny">0</span><span class="stat-card-lbl">nybehandlinger</span></div>
+              <div><span class="stat-card-num" id="stat-all-videre">0</span><span class="stat-card-lbl">viderebehandlinger</span></div>
+              <div><span class="stat-card-num" id="stat-all-decided">0</span><span class="stat-card-lbl">avgjørelser</span></div>
+            </div>
+            <span class="stat-card-foot">Behandlinger fra hendelsesloggen, avgjørelser fra sakene med utfall</span>
+          </div>
+        </section>
+
+        <section class="stat-section">
+          <div class="stat-table-chart-row">
+            <div class="stat-table-col">
+              <div class="table-wrap">
+                <table class="case-table">
+                  <thead>
+                    <tr>
+                      <th>Måned</th>
+                      <th class="stat-col-num">Nybehandlinger</th>
+                      <th class="stat-col-num stat-col-new">Viderebehandlinger</th>
+                      <th class="stat-col-num stat-col-new">Avgjort</th>
+                      <th class="stat-col-num stat-col-oppdrag">Oppdrag</th>
+                    </tr>
+                  </thead>
+                  <tbody id="year-tbody"></tbody>
+                  <tfoot id="year-tfoot"></tfoot>
+                </table>
+              </div>
+            </div>
+            <div class="stat-chart-col">
+              <div class="chart-wrap" id="chart-wrap">
+                <div id="chart-canvas-wrap" class="chart-canvas-wrap">
+                  <canvas id="chart-canvas" role="img" aria-label="Kumulativ produksjon per måned">Kumulativ produksjon per måned.</canvas>
+                </div>
+                <div id="chart-legend" class="chart-legend"></div>
+                <div id="chart-anslag" class="chart-anslag"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="stat-section">
+          <h2 class="stat-section-title">Medlesere</h2>
+          <p class="medleser-stats-note">Dine saker sendt til medlesing, per medleser. Gjelder siste 12 måneder og totalt, uavhengig av året over.</p>
+          <div class="table-wrap" id="medleser-stats"></div>
+          <div class="table-empty" id="medleser-stats-empty" style="display:none;">Ingen saker sendt til medlesing ennå. Bruk «Send til medlesing…» i ⋯-menyen på en sak.</div>
+        </section>
+
+        <section class="stat-section">
+          <h2 class="stat-section-title">Hendelseslogg</h2>
+          <div id="log-tbody" class="case-list"></div>
+          <div class="table-empty" id="log-empty" style="display:none;">Ingen hendelser registrert ennå.</div>
+        </section>
+
+      </div>
+
+      <!-- Innstillinger -->
+      <div id="view-innstillinger" style="display:none;">
+        <section class="top-bar">
+          <h1 class="page-title">Innstillinger</h1>
+        </section>
+
+        <div class="settings-layout">
+          <nav class="settings-nav" aria-label="Innstillinger" role="tablist" aria-orientation="vertical">
+            <button class="settings-nav-item" id="settings-tab-arbeidsmengde" data-settings-tab="arbeidsmengde" role="tab" aria-controls="settings-pane-arbeidsmengde">Arbeidsmengde</button>
+            <button class="settings-nav-item" id="settings-tab-frister" data-settings-tab="frister" role="tab" aria-controls="settings-pane-frister">Frister</button>
+            <button class="settings-nav-item" id="settings-tab-saksbehandling" data-settings-tab="saksbehandling" role="tab" aria-controls="settings-pane-saksbehandling">Saksbehandling</button>
+            <button class="settings-nav-item" id="settings-tab-data" data-settings-tab="data" role="tab" aria-controls="settings-pane-data">Data</button>
+          </nav>
+          <div class="settings-panes">
+            <div class="settings-pane" id="settings-pane-arbeidsmengde" data-settings-pane="arbeidsmengde" role="tabpanel" aria-labelledby="settings-tab-arbeidsmengde">
+              <!-- Produksjon -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">Produksjon</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Årlig produksjonsmål</span>
+                      <span class="settings-label-sub">Stiplet linje i aktivitetsgrafen</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-production-goal"
+                             type="number" min="0" step="1" placeholder="f.eks. 70" />
+                    </div>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Belegg-horisont</span>
+                      <span class="settings-label-sub">Antall dager fremover belegg-kortet beregnes over</span>
+                    </div>
+                    <select class="s-sel" id="input-belegg-horizon">
+                      <option value="30">30 dager</option>
+                      <option value="60">60 dager</option>
+                      <option value="90">90 dager</option>
+                    </select>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Påminnelse for saker som ikke er fordelt</span>
+                      <span class="settings-label-sub">Merk saker du har meldt deg på når de har ventet så mange dager. 0 = av.</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-unassigned-reminder"
+                             type="number" min="0" max="365" step="1" placeholder="14" />
+                      <span class="settings-label-sub">dager</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Standard per sakstype -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">Standard per sakstype</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-sub"><strong>Varighet:</strong> arbeidsdager saken er arbeid før fristen. Helger, røde dager og ferie telles ikke, så arbeidet legges før dem. Brukes i tidslinjen, belegget og ferievarselet.</span>
+                      <span class="settings-label-sub"><strong>Buffer:</strong> fristen vises så mange dager tidligere. Faktisk frist lagres uendret, og hver sak kan overstyre bufferen.</span>
+                    </div>
+                  </div>
+                  <div class="tdf-table" role="table" aria-label="Standard varighet og buffer per sakstype">
+                    <div class="tdf-row tdf-head" role="row">
+                      <span role="columnheader">Sakstype</span>
+                      <span role="columnheader">Varighet</span>
+                      <span role="columnheader">Buffer</span>
+                    </div>
+                    <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">Ny (førstegangsbehandling)</span>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                        <input class="s-inp" id="input-ww-ny" data-ww-key="ny" type="number" min="1" max="365" step="1" aria-label="Varighet i arbeidsdager, Ny" />
+                        <span class="s-unit">arb.dager</span></label>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Buffer</span>
+                        <input class="s-inp" id="input-tb-ny" data-tb-key="ny" type="number" min="0" max="90" step="1" aria-label="Buffer, Ny" />
+                        <span class="s-unit">dager</span></label>
+                    </div>
+                    <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">Viderebehandling</span>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                        <input class="s-inp" id="input-ww-viderebehandling" data-ww-key="viderebehandling" type="number" min="1" max="365" step="1" aria-label="Varighet i arbeidsdager, Viderebehandling" />
+                        <span class="s-unit">arb.dager</span></label>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Buffer</span>
+                        <input class="s-inp" id="input-tb-viderebehandling" data-tb-key="viderebehandling" type="number" min="0" max="90" step="1" aria-label="Buffer, Viderebehandling" />
+                        <span class="s-unit">dager</span></label>
+                    </div>
+                    <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">Oppdrag uten egen varighet</span>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                        <input class="s-inp" id="input-ww-oppdrag" data-ww-key="oppdrag" type="number" min="1" max="365" step="1" aria-label="Varighet i arbeidsdager, oppdrag" />
+                        <span class="s-unit">arb.dager</span></label>
+                      <span class="tdf-cell tdf-na" role="cell" title="Oppdrag bruker alltid faktisk frist"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                    </div>
+                    <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">Fristarkiv</span>
+                      <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ikke arbeid"><span class="tdf-cell-lbl">Varighet</span>Milepæl</span>
+                      <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                    </div>
+                  </div>
+                  <div class="settings-row tdf-foot">
+                    <span class="settings-label-sub">Standard: Ny 10 / 0, Viderebehandling 3 / 0, Oppdrag 2 (varighet i arbeidsdager, buffer i dager)</span>
+                    <button class="s-btn" id="btn-ww-reset">Tilbakestill til standard</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Ferieperioder -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">Ferieperioder</h2>
+                <div class="settings-group">
+                  <div class="settings-row settings-row-col">
+                    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:var(--space-6);">
+                      <div class="settings-label">
+                        <span class="settings-label-title">Ferieperioder</span>
+                        <span class="settings-label-sub">Vises i tidslinjen og markerer frister som faller under ferie</span>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                        <button class="s-btn s-btn-accent" id="btn-vac-add-open">+ Legg til</button>
+                      </div>
+                    </div>
+                    <div style="width:100%;">
+                      <div id="vacation-list" class="vac-status-list"></div>
+                      <div class="vac-add-row" id="vac-add-form" style="display:none;margin-top:var(--space-3);">
+                        <input class="field-input vac-input" id="vac-from"  type="text" placeholder="Fra: åååå.mm.dd" maxlength="10" />
+                        <input class="field-input vac-input" id="vac-to"    type="text" placeholder="Til: åååå.mm.dd" maxlength="10" />
+                        <input class="field-input vac-input vac-input-label" id="vac-label" type="text" placeholder="Beskrivelse (valgfritt)" maxlength="40" />
+                        <button class="s-btn s-btn-accent" id="btn-vac-add">+ Legg til</button>
+                        <button class="s-btn" id="btn-vac-cancel" style="display:none;">Avbryt</button>
+                      </div>
+                      <span class="field-error" id="vac-error"></span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="settings-pane" id="settings-pane-frister" data-settings-pane="frister" role="tabpanel" aria-labelledby="settings-tab-frister">
+              <section class="settings-section">
+                <h2 class="settings-section-title">Frister</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-sub">Forslagene i dialogene når du sender brev eller registrerer svar. Du kan alltid endre datoen i dialogen, og eksisterende saker endres ikke. Arbeidsdager og buffer per sakstype ligger under <a href="#" data-goto-settings-tab="arbeidsmengde">Arbeidsmengde</a>.</span>
+                    </div>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Søkers frist etter 1. realitetsbrev</span>
+                      <span class="settings-label-sub">Foreslås ved «Brev sendt» fra Ny</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-dl-firstLetter" data-dl-key="firstLetter" type="number" min="1" max="24" step="1" aria-label="Søkers frist etter 1. realitetsbrev, måneder" />
+                      <span class="s-unit">mnd</span></label>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Søkers frist etter senere realitetsbrev</span>
+                      <span class="settings-label-sub">Foreslås ved «Brev sendt» fra Viderebehandling</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-dl-laterLetter" data-dl-key="laterLetter" type="number" min="1" max="24" step="1" aria-label="Søkers frist etter senere realitetsbrev, måneder" />
+                      <span class="s-unit">mnd</span></label>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Din frist for å behandle svar</span>
+                      <span class="settings-label-sub">Foreslås når søkerens svar registreres</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-dl-response" data-dl-key="response" type="number" min="1" max="24" step="1" aria-label="Din frist for å behandle svar, måneder" />
+                      <span class="s-unit">mnd</span></label>
+                  </div>
+                  <div class="settings-row tdf-foot">
+                    <span class="settings-label-sub">Standard: 3 / 3 / 3 måneder</span>
+                    <button class="s-btn" id="btn-dl-reset">Tilbakestill til standard</button>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="settings-pane" id="settings-pane-saksbehandling" data-settings-pane="saksbehandling" role="tabpanel" aria-labelledby="settings-tab-saksbehandling">
+              <!-- Medlesere -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">Medlesere</h2>
+                <div class="settings-group">
+                  <div class="settings-row settings-row-col">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Kolleger som kan medlese</span>
+                      <span class="settings-label-sub">Når du sender en sak til medlesing, foreslås den aktive medleseren med færrest medlesinger siste 12 måneder. Fjerner du noen, blir statistikken stående.</span>
+                    </div>
+                    <div id="medleser-list" class="vac-list medleser-list"></div>
+                    <div class="vac-add-row medleser-add">
+                      <input class="field-input" id="medleser-new-name" type="text" placeholder="Navn" maxlength="60" />
+                      <button class="s-btn s-btn-accent" id="btn-medleser-add">+ Legg til</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Saksmappe og sjekkliste -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">Saksmappe og sjekkliste</h2>
+                <div class="settings-group">
+                  <div class="settings-row settings-row-col">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Saksmappe-rot</span>
+                      <span class="settings-label-sub">Banen kopieres til utklippstavlen når du klikker saksnummeret</span>
+                    </div>
+                    <input class="field-input settings-path-input" id="input-doc-root"
+                           type="text"
+                           value="C:\Users\brukernavn\Dokumenter\Saksdokumenter"
+                           placeholder="C:\sti\til\Saksdokumenter" />
+                    <div class="docroot-preview" id="docroot-preview"></div>
+                    <div class="docroot-filenote">
+                      For at åpning og kopiering av dokumenter skal fungere, bør hver
+                      sak-mappe inneholde filene:
+                      <ul>
+                        <li><code>Claims.pdf</code></li>
+                        <li><code>Application.pdf</code></li>
+                        <li><code>Figures.pdf</code></li>
+                        <li><code>Description.pdf</code></li>
+                        <li><code>Abstract.pdf</code></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="settings-row settings-row-col">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Lenke til nye saker</span>
+                      <span class="settings-label-sub">Vises som en knapp ved «Legg til saker» og åpnes i ny fane. Tomt felt = ingen knapp.</span>
+                    </div>
+                    <input class="field-input settings-path-input" id="input-case-source-url"
+                           type="url" placeholder="https://…sharepoint.com/sites/…/Oppgavefordeling.aspx" />
+                    <input class="field-input settings-path-input" id="input-case-source-label"
+                           type="text" maxlength="40" placeholder="Etikett (valgfritt), f.eks. Oppgavefordeling" />
+                    <div class="docroot-preview" id="case-source-error" role="alert"></div>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Sjekkliste-mal</span>
+                      <span class="settings-label-sub" id="cle-settings-summary"></span>
+                    </div>
+                    <button class="s-btn" id="btn-cle-open">Rediger</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- CPC-database -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">CPC-database</h2>
+                <div class="settings-group">
+                  <div class="settings-row" id="settings-cpc-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">CPC-database</span>
+                      <span class="settings-label-sub" id="settings-cpc-status">Velg cpc_v2.json for å aktivere autofullfør og beskrivelser</span>
+                    </div>
+                    <button class="s-btn" id="btn-settings-cpc-load">
+                      <svg class="ti" aria-hidden="true"><use href="#ti-upload"/></svg> Velg fil
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-section">
+                <h2 class="settings-section-title">EPO OPS</h2>
+                <div class="settings-group">
+                  <div class="settings-row settings-row-col">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Nøkler til Open Patent Services <span class="field-label-sub">valgfritt</span></span>
+                      <span class="settings-label-sub">Brukes av ⤓ på motholdene for å hente publiserings- og prioritetsdato. Nøklene lagres bare i denne nettleseren og tas ikke med i eksport eller backup.</span>
+                    </div>
+                    <div class="ops-fields">
+                      <label class="field-label" for="input-ops-key">Consumer key</label>
+                      <input class="field-input" id="input-ops-key" type="password" autocomplete="off" spellcheck="false" />
+                      <label class="field-label" for="input-ops-secret">Consumer secret</label>
+                      <input class="field-input" id="input-ops-secret" type="password" autocomplete="off" spellcheck="false" />
+                    </div>
+                    <div class="ops-test-row">
+                      <button class="s-btn" id="btn-ops-test" type="button">Test tilkobling</button>
+                      <span class="settings-label-sub" id="ops-status" role="status"></span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="settings-pane" id="settings-pane-data" data-settings-pane="data" role="tabpanel" aria-labelledby="settings-tab-data">
+              <!-- Sikkerhetskopiering -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">Sikkerhetskopiering</h2>
+                <div class="settings-group">
+                  <div class="settings-row" id="backup-folder-row" style="display:none;">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Datamappe</span>
+                      <span class="settings-label-sub" id="backup-folder-sub">Data lagres kun i nettleseren</span>
+                      <span class="settings-label-sub" id="backup-folder-sub2">Velg en mappe for arbeidsfil og daglige kopier</span>
+                    </div>
+                    <button class="s-btn" id="btn-backup-folder">
+                      <svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> Velg mappe
+                    </button>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Automatisk sikkerhetskopi</span>
+                      <span class="settings-label-sub" id="backup-status-sub">Øyeblikksbilder etter hver endring (de 20 siste) + daglig kopi</span>
+                    </div>
+                    <input type="checkbox" class="settings-checkbox" id="backup-enabled-cb" title="Slå automatisk sikkerhetskopi på/av" />
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Gjenopprett fra øyeblikksbilde</span>
+                      <span class="settings-label-sub">Hent tilbake data fra en automatisk sikkerhetskopi</span>
+                    </div>
+                    <button class="s-btn" id="btn-backup-restore">Vis kopier</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Eksport og import -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">Eksport og import</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Eksporter</span>
+                      <span class="settings-label-sub">Last ned alle saker som JSON eller CSV</span>
+                    </div>
+                    <div style="display:flex;gap:var(--space-3);flex-shrink:0;">
+                      <button class="s-btn s-btn-accent" id="btn-export">
+                        <svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg> JSON
+                      </button>
+                      <button class="s-btn s-btn-accent" id="btn-export-csv">
+                        <svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg> CSV
+                      </button>
+                    </div>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Importer fra JSON</span>
+                      <span class="settings-label-sub">Gjenopprett saker fra en tidligere lagret fil</span>
+                    </div>
+                    <button class="s-btn" id="btn-import">
+                      <svg class="ti" aria-hidden="true"><use href="#ti-upload"/></svg> Velg fil
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Faresone -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">Faresone</h2>
+                <div class="settings-group settings-group-danger">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Nullstill statistikk</span>
+                      <span class="settings-label-sub">Slett alle teller- og loggdata. Sakslistene påvirkes ikke.</span>
+                    </div>
+                    <button class="s-btn s-btn-danger" id="btn-reset-stats">Nullstill</button>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Slett all data</span>
+                      <span class="settings-label-sub">Fjerner alle saker, historikk, stikkord og statistikk permanent. Kan ikke angres.</span>
+                    </div>
+                    <button class="s-btn s-btn-danger" id="btn-delete-all">Slett alt</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Om -->
+              <section class="settings-section">
+                <h2 class="settings-section-title">Om</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Om PatentDesk</span>
+                      <span class="settings-label-sub">Versjon og morsomme fakta</span>
+                    </div>
+                    <button class="s-btn" id="btn-about-open">Om appen</button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Saksdetaljer -->
+      <div id="view-sak" style="display:none;">
+
+        <!-- Sticky-bar (vises når sammendragsboksen scroller ut av syne) -->
+        <div id="sak-sticky-bar" class="sak-sticky-bar" aria-hidden="true">
+          <span class="sak-sticky-cn" id="sak-sticky-cn"></span>
+          <nav class="sak-anchors" id="sak-anchors" aria-label="Gå til seksjon">
+            <button class="sak-anchor" data-anchor="saken">Saken</button>
+            <button class="sak-anchor" data-anchor="gransking">Gransking</button>
+            <button class="sak-anchor" data-anchor="vurdering">Vurdering</button>
+          </nav>
+          <div class="sak-sticky-progress">
+            <span class="sak-sticky-label" id="sak-sticky-cl-label">Sjekkliste</span>
+            <div class="sak-sticky-track"><div class="sak-sticky-fill sak-sticky-fill-cl" id="sak-sticky-cl-bar"></div></div>
+            <span class="sak-sticky-pct" id="sak-sticky-cl-pct"></span>
+          </div>
+          <div class="sak-sticky-progress">
+            <span class="sak-sticky-label">Krav</span>
+            <div class="sak-sticky-track"><div class="sak-sticky-fill sak-sticky-fill-cr" id="sak-sticky-cr-bar"></div></div>
+            <span class="sak-sticky-pct" id="sak-sticky-cr-pct"></span>
+          </div>
+          <div id="sak-sticky-summary"></div>
+          <span class="sak-saved" id="sak-saved" aria-live="polite"></span>
+          <div class="sak-sticky-actions">
+            <div class="sak-docs-wrap">
+              <button class="btn-secondary btn-sm btn-sak-docs" id="btn-sak-docs-sticky" title="Åpne saksdokumenter" aria-label="Åpne saksdokumenter"><svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> <span class="btn-label">Dokumenter</span></button>
+            </div>
+            <button class="btn-sak-forward btn-sak-forward-sm" id="btn-sak-forward-sticky" style="display:none;"></button>
+          </div>
+        </div>
+
+        <section class="top-bar">
+          <div class="sak-top-left">
+            <button class="btn-back" id="btn-sak-back"><svg class="ti" aria-hidden="true"><use href="#ti-arrow-left"/></svg> Tilbake</button>
+            <div>
+              <div class="sak-title-row">
+                <h1 class="page-title" id="sak-page-title">Saksdetaljer</h1>
+                <div class="sak-status-wrap" id="sak-status-wrap">
+                  <button type="button" class="sak-status-chip" id="sak-status-chip" aria-haspopup="true" aria-expanded="false" aria-controls="sak-status-menu" title="Endre status"></button>
+                  <div class="sak-status-menu" id="sak-status-menu" hidden>
+                    <div class="sak-status-btn-group" id="sak-status-btns" role="group" aria-label="Status">
+                      <button class="sak-status-btn" data-status="ny"><svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg> Ny</button>
+                      <button class="sak-status-btn" data-status="viderebehandling"><svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg> Viderebehandling</button>
+                      <button class="sak-status-btn" data-status="fristarkiv"><svg class="ti" aria-hidden="true"><use href="#ti-archive"/></svg> Fristarkiv</button>
+                      <button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>
+                    </div>
+                    <div class="sak-status-hint" id="sak-status-hint"></div>
+                  </div>
+                </div>
+              </div>
+              <span class="sak-subtitle" id="sak-page-sub"></span>
+              <span class="sak-round-line" id="sak-page-round"></span>
+            </div>
+          </div>
+          <div class="sak-topbar-right">
+            <div class="sak-docs-wrap">
+              <button class="btn-secondary btn-sm btn-sak-docs" id="btn-sak-docs" title="Åpne saksdokumenter"><svg class="ti" aria-hidden="true"><use href="#ti-folder"/></svg> Dokumenter</button>
+              <div class="sak-docs-dropdown" id="sak-docs-dropdown" style="display:none;">
+                <div id="sak-docs-list"></div>
+                <div class="sak-docs-add-row">
+                  <input class="field-input sak-docs-add-input" id="sak-docs-add-input" type="text" placeholder="Filnavn (f.eks. Vedlegg.pdf)" maxlength="80" />
+                  <button class="s-btn s-btn-accent" id="btn-sak-docs-add">+ Legg til</button>
+                </div>
+                <div class="sak-docs-footer-row">
+                  <button class="sak-docs-folder" id="btn-sak-docs-folder" title="Kopier sti til sakmappen"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier mappe-sti</button>
+                  <button class="sak-docs-folder" id="btn-sak-docs-openall" title="Åpne alle PDF-dokumenter i bakgrunnsfaner"><svg class="ti" aria-hidden="true"><use href="#ti-folder-open"/></svg> Åpne alle PDF-er</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn-secondary btn-sm btn-sak-active" id="btn-sak-active" type="button" aria-pressed="false" style="display:none;"></button>
+            <button class="btn-secondary btn-sm" id="btn-sak-history" title="Vis historikk"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Historikk</button>
+            <div class="sak-more-wrap" style="position:relative;">
+              <button class="btn-secondary btn-sm btn-card-more" id="btn-sak-more" title="Flere handlinger" aria-label="Flere handlinger">⋯</button>
+            </div>
+            <button class="btn-sak-forward" id="btn-sak-forward" style="display:none;"></button>
+          </div>
+        </section>
+
+        <!-- Ikke fordelt: saken venter på fordeling -->
+        <div class="sak-unassigned" id="sak-unassigned" hidden>
+          <span class="sak-unassigned-text" id="sak-unassigned-text"></span>
+          <div class="sak-unassigned-actions">
+            <button class="btn-primary btn-sm" id="btn-sak-unassigned-confirm" type="button"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Bekreft fordelt</button>
+            <button class="btn-secondary btn-sm" id="btn-sak-unassigned-drop" type="button"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg> Fikk den ikke</button>
+          </div>
+        </div>
+        <!-- Hos medleser: saken er sendt til medlesing -->
+        <div id="sak-medl-out" hidden></div>
+
+        <!-- Fristblokk: hvem fristen tilhører avhenger av status -->
+        <div class="sak-frist" id="sak-frist" style="display:none;">
+          <span class="sak-frist-owner" id="sak-frist-owner"></span>
+          <div class="sak-frist-main">
+            <span class="sak-frist-date" id="sak-frist-date"></span>
+            <span class="sak-frist-left" id="sak-frist-left"></span>
+          </div>
+          <div class="sak-frist-meta" id="sak-frist-meta"></div>
+          <div class="sak-frist-note" id="sak-frist-note"></div>
+        </div>
+
+        <!-- Progress bar + resultatsammendrag -->
+        <section class="sak-progress-section" id="sak-summary-section">
+          <div class="sak-summary-box">
+            <div class="sak-progress-bars">
+              <div class="sak-progress-item">
+                <div class="sak-progress-label">
+                  <span id="sak-prog-checklist-label">Sjekkliste</span>
+                  <span class="sak-progress-pct" id="sak-prog-checklist-pct">0 / 0</span>
+                </div>
+                <div class="sak-progress-track">
+                  <div class="sak-progress-fill sak-progress-fill-checklist" id="sak-prog-checklist-bar" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="sak-progress-item">
+                <div class="sak-progress-label">
+                  <span>Kravsvurdering</span>
+                  <span class="sak-progress-pct" id="sak-prog-claims-pct">0 / 0</span>
+                </div>
+                <div class="sak-progress-track">
+                  <div class="sak-progress-fill sak-progress-fill-claims" id="sak-prog-claims-bar" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+            <div id="sak-result-summary" class="sak-result-summary"></div>
+          </div>
+        </section>
+        <div id="sak-summary-sentinel"></div>
+
+        <!-- ══ FASE A — Saken ══ -->
+        <section class="sak-phase" data-phase="saken" id="sak-phase-saken">
+          <button class="sak-phase-head" id="sak-phase-head-saken" aria-expanded="true" aria-controls="sak-phase-body-saken">
+            <span class="sak-phase-key">A</span>
+            <span class="sak-phase-name">Saken</span>
+            <span class="sak-phase-desc">Frist, status og metadata</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-saken">
+
+            <section class="sak-section" data-sak-section="info">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Saksinformasjon</span>
+                <span class="sak-section-title-right">
+                  <button class="btn-icon btn-icon-sm" id="btn-sak-edit-fields" title="Rediger saksopplysninger"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>
+                </span>
+              </h2>
+              <dl class="sak-info-dl">
+                <div class="sak-info-pair">
+                  <dt>Saksnummer</dt><dd id="sak-case-number"></dd>
+                </div>
+                <div class="sak-info-pair">
+                  <dt>Innleveringsdato</dt><dd id="sak-filing-date"></dd>
+                </div>
+                <div class="sak-info-pair">
+                  <dt>Prioritetsdato</dt><dd id="sak-priority-date"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-medl-field">
+                  <dt>Medlesing</dt><dd id="sak-medl"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-case-buffer-field">
+                  <dt>Buffer (dager)</dt><dd id="sak-case-buffer"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-duration-field" style="display:none;">
+                  <dt>Varighet (arbeidsdager)</dt><dd id="sak-duration"></dd>
+                </div>
+                <div class="sak-info-pair sak-info-pair-wide">
+                  <dt>Tittel</dt><dd id="sak-title"></dd>
+                </div>
+              </dl>
+
+              <div class="sak-info-block">
+                <label class="sak-info-label" for="sak-tags">Stikkord</label>
+                <div class="sak-tags-wrap" id="sak-tags-wrap">
+                  <div class="tag-pill-editor" id="sak-tags-editor">
+                    <div id="sak-tags-pills" class="tag-pill-list"></div>
+                    <input class="tag-pill-input" id="sak-tags" type="text" placeholder="Legg til stikkord…" autocomplete="off" />
+                  </div>
+                </div>
+                <input type="hidden" id="sak-tags-value" />
+                <span class="field-hint">Enter eller komma legger til</span>
+              </div>
+            </section>
+
+            <section class="sak-section" data-sak-section="notes">
+              <h2 class="sak-section-title">Notater</h2>
+              <div class="sak-notes-grid">
+                <div class="sak-note-field">
+                  <div class="sak-note-head">
+                    <label for="sak-case-notes">Notater</label>
+                    <span class="sak-note-badge sak-note-badge-vis">Synlig i oversikten</span>
+                  </div>
+                  <textarea class="field-input sak-info-input" id="sak-case-notes" rows="4" placeholder="Valgfrie notater…"></textarea>
+                </div>
+                <div class="sak-note-field">
+                  <div class="sak-note-head">
+                    <label for="sak-notes">Interne notater</label>
+                    <span class="sak-note-badge sak-note-badge-int">Kun her</span>
+                  </div>
+                  <textarea class="field-input sak-notes-area" id="sak-notes" rows="4" placeholder="Interne notater for denne saken…"></textarea>
+                </div>
+              </div>
+            </section>
+
+            <div class="sak-checklist-slot" id="sak-checklist-saken"></div>
+
+          </div>
+        </section>
+
+        <!-- ══ FASE B — Gransking ══ -->
+        <section class="sak-phase" data-phase="gransking" id="sak-phase-gransking">
+          <button class="sak-phase-head" id="sak-phase-head-gransking" aria-expanded="true" aria-controls="sak-phase-body-gransking">
+            <span class="sak-phase-key">B</span>
+            <span class="sak-phase-name">Gransking</span>
+            <span class="sak-phase-desc">Klasser og søk</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-gransking">
+
+            <section class="sak-section" data-sak-section="cpc">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">
+                  CPC-klasser
+                  <span id="cpc-load-banner" class="cpc-load-banner-inner">
+                    <span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>
+                    <button class="cpc-load-banner-btn" id="btn-cpc-load">Last inn</button>
+                  </span>
+                </span>
+                <span class="sak-section-title-right">
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes-rough" title="Kopier grovklasser (4 tegn)"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Grovklasser</button>
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes" title="Kopier alle klasser med /low"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Alle klasser</button>
+                </span>
+              </h2>
+              <input type="file" id="cpc-file-input" accept=".json" />
+              <div id="sak-classes-list" class="sak-classes-list-unified"></div>
+              <div class="sak-classes-add-row">
+                <div class="sak-class-input-wrap">
+                  <input class="field-input sak-class-input" id="sak-class-assumed-input" type="text" placeholder="f.eks. H04L 9/00" maxlength="30" autocomplete="off" />
+                  <div class="cpc-suggestions" id="cpc-suggestions" style="display:none;"></div>
+                </div>
+              </div>
+            </section>
+
+            <div class="sak-checklist-slot" id="sak-checklist-gransking"></div>
+            <div class="sak-checklist-slot" id="sak-checklist-rest"></div>
+
+          </div>
+        </section>
+
+        <!-- ══ FASE C — Vurdering ══ -->
+        <section class="sak-phase" data-phase="vurdering" id="sak-phase-vurdering">
+          <button class="sak-phase-head" id="sak-phase-head-vurdering" aria-expanded="true" aria-controls="sak-phase-body-vurdering">
+            <span class="sak-phase-key">C</span>
+            <span class="sak-phase-name">Vurdering</span>
+            <span class="sak-phase-desc">Krav, mothold og rapport</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-vurdering">
+
+            <div id="sak-svar"></div>
+
+            <section class="sak-section" data-sak-section="claims">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Kravsvurdering</span>
+                <span class="sak-section-title-right">
+                  <label class="sak-numclaims-label" for="sak-num-claims">Antall krav</label>
+                  <input class="field-input sak-numclaims-input" id="sak-num-claims" type="number" min="1" max="200" placeholder="—" />
+                </span>
+              </h2>
+              <div class="krav-wrap">
+              <div class="krav-layout">
+                <div class="table-wrap">
+                  <table class="case-table sak-claims-table">
+                    <thead>
+                      <tr>
+                        <th class="sak-th-krav">Krav</th>
+                        <th class="sak-th-tag"></th>
+                        <th class="sak-th-dep">Avh. av</th>
+                        <th class="sak-th-check" id="sak-th-novelty">Nyhet</th>
+                        <th class="sak-th-check" id="sak-th-inventive">Oppfinnelses&shy;høyde</th>
+                        <th class="sak-th-check sak-th-formal" id="sak-th-formal">Formelle feil</th>
+                        <th class="sak-th-notes">Notater</th>
+                      </tr>
+                    </thead>
+                    <tbody id="sak-claims-tbody"></tbody>
+                  </table>
+                </div>
+                <div class="kt-tree" id="sak-claims-tree"></div>
+              </div>
+              </div>
+            </section>
+
+            <section class="sak-section" data-sak-section="mothold">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Mothold og granskingsrapport</span>
+                <span class="sak-section-title-right">
+                  <span class="gr-warn" id="sak-gr-warn" style="display:none;"></span>
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-search-report" title="Kopier granskingsrapport"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier rapport</button>
+                </span>
+              </h2>
+              <div id="sak-docs-mothold" class="mh-list"></div>
+              <button class="mh-add" id="btn-mothold-add"><svg class="ti" aria-hidden="true"><use href="#ti-plus"/></svg> Legg til mothold</button>
+            </section>
+
+            <div class="sak-checklist-slot" id="sak-checklist-vurdering"></div>
+
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Medlesing -->
+      <div id="view-medlesing" style="display:none;">
+
+        <!-- Liste -->
+        <div id="medl-list-view">
+          <section class="top-bar">
+            <div>
+              <h1 class="page-title">Medlesing</h1>
+              <span class="case-count" id="medl-count"></span>
+            </div>
+            <button class="btn-add" id="btn-medl-new">+ Ny medlesing</button>
+          </section>
+
+          <div id="medl-new-form" class="medl-new-form" style="display:none;">
+            <input class="field-input" id="medl-new-casenumber" type="text" placeholder="Saksnummer" />
+            <input class="field-input" id="medl-new-saksbehandler" type="text" placeholder="Saksbehandler" />
+            <select class="s-sel" id="medl-new-type">
+              <option value="normal">Normal medvirkning</option>
+              <option value="medium_stor">Medium eller stor medvirkning</option>
+            </select>
+            <input class="field-input" id="medl-new-date" type="text" placeholder="åååå.mm.dd" maxlength="10" />
+            <button class="s-btn s-btn-accent" id="btn-medl-new-save">Opprett</button>
+            <button class="s-btn" id="btn-medl-new-cancel">Avbryt</button>
+            <span class="field-error" id="medl-new-error"></span>
+          </div>
+
+          <section class="table-section">
+            <div class="table-wrap">
+              <table class="case-table">
+                <thead>
+                  <tr>
+                    <th>Saksnummer</th>
+                    <th>Saksbehandler</th>
+                    <th>Type</th>
+                    <th>Dato</th>
+                    <th>Fremdrift</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="medl-tbody"></tbody>
+              </table>
+              <div class="table-empty" id="medl-empty">
+                Ingen medlesinger registrert. Bruk «+ Ny medlesing» for å opprette en.
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Detalj -->
+        <div id="medl-detail-view" style="display:none;">
+          <a class="medl-back" href="#" id="medl-back-link">&larr; Tilbake til medlesing</a>
+
+          <div class="medl-detail-head">
+            <div class="medl-detail-meta">
+              <div class="medl-meta-field">
+                <label>Saksnummer</label>
+                <div class="medl-meta-val" id="medl-d-casenumber"></div>
+              </div>
+              <div class="medl-meta-field">
+                <label>Saksbehandler</label>
+                <div class="medl-meta-val" id="medl-d-saksbehandler"></div>
+              </div>
+              <div class="medl-meta-field">
+                <label>Type medvirkning</label>
+                <select class="s-sel" id="medl-d-type">
+                  <option value="normal">Normal medvirkning</option>
+                  <option value="medium_stor">Medium eller stor medvirkning</option>
+                </select>
+              </div>
+              <div class="medl-meta-field">
+                <label>Dato</label>
+                <div class="medl-meta-val" id="medl-d-date"></div>
+              </div>
+            </div>
+            <div class="medl-detail-progress">
+              <span class="medl-status-pill" id="medl-d-status"></span>
+              <div class="medl-progress-num" id="medl-d-progress-num"></div>
+              <div class="medl-progress-lbl">punkter avkrysset</div>
+            </div>
+          </div>
+
+          <div id="medl-phases"></div>
+
+          <div class="medl-notat-box">
+            <label for="medl-d-notat">Notat</label>
+            <textarea id="medl-d-notat" placeholder="Kommentarer til medlesingen… (f.eks. hva som mangler)"></textarea>
+          </div>
+
+          <div class="medl-incomplete-hint" id="medl-incomplete-hint" style="display:none;">
+            Ikke alle punkter er krysset av. Noter eventuelle mangler over — medlesingen kan likevel merkes fullført.
+          </div>
+
+          <div class="medl-detail-footer">
+            <button class="s-btn" id="btn-medl-complete"></button>
+            <button class="s-btn s-btn-danger" id="btn-medl-delete">Slett medlesing</button>
+          </div>
+        </div>
+
+      </div>
+
+  </div><!-- /.app-shell -->
+
+  <!-- ══ MODALER ══ -->
+
+  <!-- Legg til / Rediger sak -->
+  <div class="modal-backdrop" id="modal-backdrop" aria-hidden="true">
+    <div class="modal modal-lg" style="display:flex;flex-direction:column;max-height:92vh;" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header" style="flex-shrink:0;">
+        <h2 class="modal-title" id="modal-title">Legg til sak</h2>
+        <button class="modal-close" id="btn-close-modal" aria-label="Lukk">✕</button>
+      </div>
+
+      <!-- Tidslinje -->
+      <div class="modal-timeline-section">
+        <div class="modal-tl-topbar">
+          <span class="modal-tl-label">Arbeidsplan — forhåndsvisning</span>
+          <div class="modal-tl-controls">
+            <div class="tl-header" style="margin-bottom:0;">
+              <button class="tl-horizon-btn active" data-modal-horizon="90">3 mnd</button>
+              <button class="tl-horizon-btn" data-modal-horizon="180">6 mnd</button>
+              <button class="tl-horizon-btn" data-modal-horizon="365">1 år</button>
+            </div>
+            <div class="tl-axis-toggle">
+              <span class="tl-axis-lbl active" id="modal-lbl-mnd">mnd</span>
+              <div class="tl-toggle-track" id="modal-axis-toggle"><div class="tl-toggle-thumb"></div></div>
+              <span class="tl-axis-lbl" id="modal-lbl-uke">uke</span>
+            </div>
+          </div>
+        </div>
+        <div class="bulk-timeline-wrap">
+          <div class="tl-scroll-wrap" id="modal-tl-scroll">
+            <div id="modal-timeline"></div>
+          </div>
+        </div>
+        <div class="bulk-legend">
+          <div class="bulk-legend-item"><span class="bulk-legend-dot-exist"></span>Eksisterende saker</div>
+          <div class="bulk-legend-item"><span class="bulk-legend-dot-new"></span>Nye (ikke lagret ennå)</div>
+        </div>
+      </div>
+
+      <!-- Faner -->
+      <div class="modal-tabs" style="flex-shrink:0;">
+        <button class="modal-tab" id="modal-tab-bulk" type="button">Flere saker</button>
+        <button class="modal-tab modal-tab-sak-on" id="modal-tab-sak" type="button">Én sak</button>
+      </div>
+
+      <!-- Fane: Én sak -->
+      <div id="modal-pane-sak" class="modal-body-scroll">
+        <input type="hidden" id="edit-id" />
+
+        <!-- Rad: saksnummer + forfallsdato (søknad) -->
+        <div class="field-row" id="modal-row-sak">
+          <div class="field-group">
+            <label class="field-label" for="f-case-number">Saksnummer</label>
+            <input class="field-input" id="f-case-number" type="text" placeholder="f.eks. NO20240012" maxlength="30" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="f-due-date">Forfallsdato</label>
+            <input class="field-input" id="f-due-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="f-case-buffer">Buffer (dager) <span class="field-label-sub">blank = standard</span></label>
+            <input class="field-input" id="f-case-buffer" type="number" min="0" max="365" placeholder="Standard" aria-describedby="f-case-buffer-hint" />
+            <span class="field-hint" id="f-case-buffer-hint" hidden>Et negativt tall utsetter saken etter fristen. Fristen flytter seg ikke, og saken er forfalt fra den.</span>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="f-filing-date">Innleveringsdato <span class="field-label-sub">valgfritt</span></label>
+            <input class="field-input" id="f-filing-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="f-priority-date">Prioritetsdato <span class="field-label-sub">valgfritt, tidligste prioritet</span></label>
+            <input class="field-input" id="f-priority-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Rad: saksnummer + forfallsdato + varighet (oppdrag) -->
+        <div class="field-row" id="modal-row-oppdrag" style="display:none;">
+          <div class="field-group">
+            <label class="field-label" for="f-case-number-op">Saksnummer</label>
+            <input class="field-input" id="f-case-number-op" type="text" placeholder="f.eks. Oppdrag A" maxlength="30" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="f-due-date-op">Forfallsdato</label>
+            <input class="field-input" id="f-due-date-op" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="f-duration">Varighet (arbeidsdager)</label>
+            <input class="field-input" id="f-duration" type="number" min="1" placeholder="f.eks. 3" />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="f-title">Tittel</label>
+          <input class="field-input" id="f-title" type="text" placeholder="Oppfinnelsens tittel" maxlength="200" />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Type / Status</label>
+          <div class="status-radio-group">
+            <label class="status-radio"><input type="radio" name="status" value="ny" /><span class="status-pill s-ny">Ny</span></label>
+            <label class="status-radio"><input type="radio" name="status" value="viderebehandling" /><span class="status-pill s-viderebehandling">Viderebehandling</span></label>
+            <label class="status-radio"><input type="radio" name="status" value="fristarkiv" /><span class="status-pill s-fristarkiv">Fristarkiv</span></label>
+            <label class="status-radio"><input type="radio" name="status" value="oppdrag" /><span class="status-pill s-oppdrag">Oppdrag</span></label>
+          </div>
+          <span class="field-hint">«Avsluttet» settes når saken lukkes.</span>
+        </div>
+
+        <!-- Ikke fordelt: bare for Ny søknader -->
+        <div class="field-group" id="modal-row-unassigned">
+          <label class="modal-unassigned">
+            <input type="checkbox" id="f-unassigned" />
+            <span>Ikke fordelt ennå
+              <small>Du har meldt deg på saken. Den vises grå og teller ikke i belegget før du bekrefter at du har fått den.</small>
+            </span>
+          </label>
+        </div>
+
+        <!-- Medlesing: bare når en søknad redigeres, uansett status -->
+        <div class="field-group" id="modal-row-medl" style="display:none;">
+          <label class="field-label" for="f-medl-reader">Medlesing <span class="field-label-sub">valgfritt, én per sak</span></label>
+          <div class="medl-edit-row">
+            <select class="field-input" id="f-medl-reader" aria-label="Medleser"></select>
+            <input class="field-input" id="f-medl-new" type="text" placeholder="Navn på ny medleser" maxlength="60" aria-label="Navn på ny medleser" style="display:none;" />
+            <input class="field-input medl-edit-date" id="f-medl-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" aria-label="Dato for medlesing" />
+          </div>
+        </div>
+
+        <div class="field-error" id="field-error"></div>
+        <div class="field-warn"  id="field-warn"></div>
+
+        <!-- Avansert: notater og stikkord -->
+        <button type="button" class="modal-adv-toggle" id="modal-adv-toggle">
+          <span class="adv-arrow">&#9654;</span>&nbsp;Notater og stikkord
+        </button>
+        <div class="modal-adv-body" id="modal-adv-body">
+          <div class="field-group">
+            <label class="field-label" for="f-notes">Notater</label>
+            <textarea class="field-input field-textarea" id="f-notes" rows="3" placeholder="Valgfrie notater…" maxlength="1000"></textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="f-modal-tags">Stikkord</label>
+            <input class="field-input" id="f-modal-tags" type="text" placeholder="f.eks. bioteknologi, avslag, krav endret" />
+            <span class="field-hint">Skill med komma</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fane: Flere saker -->
+      <div id="modal-pane-bulk" class="modal-body-scroll" style="display:none;">
+        <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+          <span style="font-size:var(--text-sm);color:var(--muted-text);">Kolonneformat:</span>
+          <span class="modal-mode-pill on" id="modal-pill-auto">Gjenkjenn automatisk</span>
+          <span class="modal-mode-pill" id="modal-pill-fast">Fast rekkefølge</span>
+        </div>
+        <div class="field-group">
+          <textarea class="field-input field-textarea" id="modal-bulk-paste" rows="5" placeholder="Lim inn rader fra Excel eller saksoversikten her…"></textarea>
+          <span class="modal-bulk-hint" id="modal-bulk-hint">Gjenkjenner saksnummer (8 siffer, evt. med P til slutt), dato (DD.MM.ÅÅÅÅ eller ÅÅÅÅ.MM.DD) og tittel automatisk. Saksoversikten med én verdi per linje kan også limes inn direkte.</span>
+        </div>
+        <div id="modal-bulk-dups" class="bulk-dup-notice" role="status" hidden></div>
+        <div id="modal-bulk-preview" class="bulk-excel-preview"></div>
+        <label class="modal-unassigned">
+          <input type="checkbox" id="f-bulk-unassigned" />
+          <span>Ikke fordelt ennå
+            <small>Alle sakene legges inn som påmeldt, men ikke fordelt.</small>
+          </span>
+        </label>
+        <div class="field-error" id="modal-bulk-error"></div>
+      </div>
+
+      <div class="modal-footer" style="flex-shrink:0;">
+        <span class="bulk-sel-count" id="modal-bulk-count" style="display:none;"></span>
+        <div style="display:flex;gap:var(--space-5);">
+          <button class="btn-secondary" id="btn-cancel">Avbryt</button>
+          <button class="btn-primary" id="btn-save">Lagre sak</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slett sak -->
+  <!-- Historikk-modal -->
+  <div class="modal-backdrop" id="history-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="history-modal-title"><svg class="ti" aria-hidden="true"><use href="#ti-clock"/></svg> Historikk — <span id="history-modal-cn"></span></h2>
+        <button class="modal-close" id="btn-history-close" aria-label="Lukk">✕</button>
+      </div>
+      <div class="modal-body" id="history-modal-body"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="confirm-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="confirm-modal-title">Slett sak</h2></div>
+      <div class="modal-body">
+        <p class="modal-text">Er du sikker på at du vil slette denne saken? Dette kan ikke angres.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-confirm-cancel">Avbryt</button>
+        <button class="btn-danger" id="btn-confirm-delete">Slett</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bekreft færre krav -->
+  <div class="modal-backdrop" id="claims-reduce-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="claims-reduce-title">
+      <div class="modal-header"><h2 class="modal-title" id="claims-reduce-title">Fjerne krav?</h2></div>
+      <div class="modal-body">
+        <p class="modal-text" id="claims-reduce-intro"></p>
+        <ul class="claims-reduce-list" id="claims-reduce-list"></ul>
+        <p class="claims-reduce-note">Etter at du har fjernet dem, kan du angre i noen sekunder.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-claims-reduce-keep">Behold krav</button>
+        <button class="btn-danger" id="btn-claims-reduce-confirm">Fjern krav</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bekreft fullføring -->
+  <div class="modal-backdrop" id="complete-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="complete-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="complete-modal-title">Bekreft handling</h2></div>
+      <div class="modal-body">
+        <p class="modal-text">Saken <strong id="complete-case-number"></strong> vil bli <span id="complete-action-desc"></span>.</p>
+        <p class="modal-text modal-text-mt">Vil du fortsette?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-complete-cancel">Avbryt</button>
+        <button class="btn-primary" id="btn-complete-confirm">Bekreft</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Handling: Fristarkiv -->
+  <div class="modal-backdrop" id="fristarkiv-choice-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="fristarkiv-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="fristarkiv-modal-title">Svar mottatt — <span id="fristarkiv-case-number"></span></h2>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label" for="f-svar-received">Mottatt</label>
+          <input class="field-input" id="f-svar-received" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <span class="field-label" id="svar-changes-label">Hva kom inn</span>
+          <div class="svar-changes" role="group" aria-labelledby="svar-changes-label">
+            <label class="svar-change"><input type="checkbox" id="f-svar-claims" value="claims" /> Endrede krav</label>
+            <label class="svar-change"><input type="checkbox" id="f-svar-description" value="description" /> Endret beskrivelse</label>
+          </div>
+          <span class="field-hint" id="svar-changes-hint">Ingen avkrysning = kun argumenter</span>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="f-svar-due">Din frist</label>
+          <input class="field-input" id="f-svar-due" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          <span class="field-hint" id="svar-due-hint"></span>
+        </div>
+        <p class="svar-error" id="svar-error" role="alert"></p>
+        <button type="button" class="svar-alt" id="btn-fristarkiv-avslutt">Avslutt saken i stedet …</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-fristarkiv-cancel">Avbryt</button>
+        <button class="btn-primary" id="btn-fristarkiv-videre">Start runde 2</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Handling: Viderebehandling -->
+  <div class="modal-backdrop" id="videre-choice-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="videre-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="videre-modal-title">Avgjør — <span id="videre-case-number"></span></h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text modal-text-mb">Hva blir utfallet av behandlingen?</p>
+        <div class="choice-list">
+          <button class="choice-btn" id="btn-videre-fristarkiv">
+            <span class="choice-icon">📄</span>
+            <div>
+              <div class="choice-label">Nytt realitetsbrev</div>
+              <div class="choice-sub" id="videre-letter-sub">Til Fristarkiv med søkers frist</div>
+            </div>
+          </button>
+          <button class="choice-btn" id="btn-videre-godkjenning">
+            <span class="choice-icon">✅</span>
+            <div>
+              <div class="choice-label">Godkjenning</div>
+              <div class="choice-sub">Saken avsluttes som meddelt. Teller ikke som ny runde.</div>
+            </div>
+          </button>
+          <button class="choice-btn choice-btn-danger" id="btn-videre-avslag">
+            <span class="choice-icon">⛔</span>
+            <div>
+              <div class="choice-label">Avslag</div>
+              <div class="choice-sub">Saken avsluttes som avslått</div>
+            </div>
+          </button>
+          <div class="ob-warn" id="videre-avslag-warn" role="note" aria-label="Merknader før avslag" hidden><ul></ul></div>
+        </div>
+        <button type="button" class="svar-alt" id="btn-videre-avslutt">Annet utfall …</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-videre-cancel">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stikkord ved avslutning -->
+  <div class="modal-backdrop" id="tag-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="tag-modal-title">Fullføring — <span id="tag-case-number"></span></h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text modal-text-mb" id="tag-modal-desc">Legg til stikkord for denne saken (valgfritt).</p>
+        <div class="field-group" id="tag-outcome-group" style="display:none;">
+          <span class="field-label" id="tag-outcome-label">Utfall</span>
+          <div class="status-radio-group" role="radiogroup" aria-labelledby="tag-outcome-label">
+            <label class="status-radio"><input type="radio" name="outcome" value="meddelt" /><span class="status-pill o-meddelt">Meddelt</span></label>
+            <label class="status-radio"><input type="radio" name="outcome" value="avslatt" /><span class="status-pill o-avslatt">Avslått</span></label>
+            <label class="status-radio"><input type="radio" name="outcome" value="henlagt" /><span class="status-pill o-henlagt">Henlagt</span></label>
+          </div>
+          <span class="field-hint">Vises i sakens forløpsspor og i saksflyten på Oversikt.</span>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="f-tags">Stikkord</label>
+          <input class="field-input" id="f-tags" type="text" placeholder="f.eks. bioteknologi, avslag, krav endret" />
+          <span class="field-hint">Skill med komma</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-tag-cancel">Avbryt</button>
+        <button class="btn-primary" id="btn-tag-confirm">Avslutt sak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ny frist -->
+  <div class="modal-backdrop" id="frist-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="frist-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="frist-modal-title">Ny frist — <span id="frist-case-number"></span></h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text modal-text-mb" id="frist-desc"></p>
+        <div class="field-group">
+          <label class="field-label" for="f-frist">Forfallsdato</label>
+          <input class="field-input" id="f-frist" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-frist-cancel">Avbryt</button>
+        <button class="btn-primary" id="btn-frist-confirm">Bekreft frist</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send til medlesing -->
+  <div class="modal-backdrop" id="medl-send-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="medl-send-title">
+      <div class="modal-header">
+        <h2 class="modal-title"><span id="medl-send-title">Send til medlesing</span> — <span id="medl-send-case"></span></h2>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label" for="medl-send-reader">Medleser</label>
+          <select class="field-input" id="medl-send-reader"></select>
+          <p class="modal-text" id="medl-send-empty" style="display:none;">Ingen aktive medlesere. Legg dem til under Innstillinger → Medlesere.</p>
+          <p class="medl-send-suggest" id="medl-send-suggest" style="display:none;"></p>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="medl-send-date">Sendt dato</label>
+          <input class="field-input" id="medl-send-date" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+          <span class="field-error" id="medl-send-error"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-medl-send-cancel">Avbryt</button>
+        <button class="btn-primary" id="btn-medl-send-confirm">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import -->
+  <div class="modal-backdrop" id="import-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="import-modal-title">Last inn saker</h2></div>
+      <div class="modal-body">
+        <p class="modal-text">Filen inneholder <strong id="import-count"></strong> saker.</p>
+        <div class="import-mode-group" role="radiogroup" aria-label="Importmodus">
+          <label class="import-mode-opt">
+            <input type="radio" name="import-mode" value="replace" checked />
+            <span class="import-mode-text"><strong>Erstatt alt</strong>
+              <span class="import-mode-desc">Sletter nåværende saker først.</span></span>
+          </label>
+          <label class="import-mode-opt">
+            <input type="radio" name="import-mode" value="merge" />
+            <span class="import-mode-text"><strong>Slå sammen</strong>
+              <span class="import-mode-desc" id="import-merge-desc">Beholder nåværende saker.</span></span>
+          </label>
+        </div>
+        <p class="modal-text modal-text-mt modal-text-warning">Tips: Lagre til fil først dersom du vil beholde gjeldende data.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-import-cancel">Avbryt</button>
+        <button class="btn-primary" id="btn-import-confirm">Last inn</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gjenopprett fra automatisk sikkerhetskopi modal -->
+  <div class="modal-backdrop" id="backup-restore-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="backup-restore-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="backup-restore-modal-title">Automatiske sikkerhetskopier</h2>
+        <button class="modal-close" id="btn-backup-restore-close" aria-label="Lukk">✕</button>
+      </div>
+      <div class="modal-body modal-body-scroll">
+        <div id="backup-snapshot-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arbeidsfilen avviker fra nettleseren ved oppstart. Ingen lukkeknapp:
+       brukeren må velge, og arbeidsfilen skrives ikke før valget er tatt. -->
+  <div class="modal-backdrop" id="workfile-conflict-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="workfile-conflict-title">
+      <div class="modal-header"><h2 class="modal-title" id="workfile-conflict-title">Arbeidsfilen er nyere</h2></div>
+      <div class="modal-body">
+        <table class="wf-compare">
+          <thead><tr><th scope="col"></th><th scope="col">Arbeidsfil</th><th scope="col">Nettleser</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Sist lagret</th><td id="wf-file-saved"></td><td id="wf-local-saved"></td></tr>
+            <tr><th scope="row">Saker</th><td id="wf-file-count"></td><td id="wf-local-count"></td></tr>
+          </tbody>
+        </table>
+        <p class="modal-text modal-text-mt" id="wf-diff-text"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-wf-keep-local">Behold nettleseren</button>
+        <button class="btn-primary" id="btn-wf-use-file">Bruk arbeidsfilen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sjekkliste-editor modal -->
+  <div class="modal-backdrop" id="cle-backdrop" aria-hidden="true">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="cle-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="cle-modal-title">Rediger sjekkliste-mal</h2>
+        <button class="modal-close" id="btn-cle-close" aria-label="Lukk">✕</button>
+      </div>
+      <div class="modal-body modal-body-scroll">
+        <div id="cle-phases" class="cle-phases cle-phases-wrap"></div>
+      </div>
+      <div class="modal-footer modal-footer-between">
+        <button class="cle-btn-reset" id="btn-cle-reset">Tilbakestill til standard</button>
+        <div class="modal-footer-gap">
+          <span class="cle-status" id="cle-status"></span>
+          <button class="btn-setting-action" id="btn-cle-cancel">Avbryt</button>
+          <button class="cle-btn-save" id="btn-cle-save">Lagre endringer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slett alt — steg 1 -->
+  <div class="modal-backdrop" id="delete-all-backdrop-1" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="delete-all-1-title">
+      <div class="modal-header"><h2 class="modal-title" id="delete-all-1-title">⚠ Slett all data?</h2></div>
+      <div class="modal-body">
+        <p class="modal-text">Dette vil slette <strong>alle saker, historikk, stikkord og statistikk</strong> permanent.</p>
+        <p class="modal-text modal-text-mt">Dette kan <strong>ikke</strong> angres. Har du tatt backup?</p>
+      </div>
+      <div class="modal-footer modal-footer-center">
+        <button class="btn-danger" id="btn-delete-all-step1">Ja, gå videre</button>
+        <button class="btn-secondary" id="btn-delete-all-cancel1">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slett alt — steg 2 -->
+  <div class="modal-backdrop" id="delete-all-backdrop-2" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="delete-all-2-title">
+      <div class="modal-header"><h2 class="modal-title" id="delete-all-2-title">⚠ Siste sjanse</h2></div>
+      <div class="modal-body">
+        <p class="modal-text">All data slettes nå permanent. Det finnes ingen vei tilbake.</p>
+        <p class="modal-text modal-text-mt modal-text-danger">Trykk «Slett alt» for å bekrefte.</p>
+      </div>
+      <div class="modal-footer modal-footer-start">
+        <button class="btn-secondary" id="btn-delete-all-cancel2">Avbryt</button>
+        <button class="btn-danger" id="btn-delete-all-final">Slett alt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nullstill statistikk -->
+  <div class="modal-backdrop" id="reset-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="reset-modal-title">Nullstill statistikk</h2></div>
+      <div class="modal-body">
+        <p class="modal-text">Dette sletter alle teller- og loggdata permanent. Sakslistene påvirkes ikke.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-reset-cancel">Avbryt</button>
+        <button class="btn-danger" id="btn-reset-confirm">Nullstill</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Om PatentDesk (Konami-kode) -->
+  <div class="modal-backdrop" id="about-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="about-modal-title">Om PatentDesk</h2>
+        <button class="modal-close" id="btn-about-close" aria-label="Lukk">✕</button>
+      </div>
+      <div class="modal-body about-body">
+        <div class="about-logo">⊞</div>
+        <div class="about-name">PatentDesk</div>
+        <div class="about-version settings-version"></div>
+        <p class="about-desc">Et verktøy for patentsaksbehandlere</p>
+        <div class="about-year">2026</div>
+        <div class="about-fact-wrap">
+          <div class="about-fact-label">Fun fact</div>
+          <div class="about-fact" id="about-fact"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tilbakestill sjekkliste-mal (bekreftelse) -->
+  <div class="modal-backdrop" id="cle-reset-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="cle-reset-modal-title">
+      <div class="modal-header"><h2 class="modal-title" id="cle-reset-modal-title">Tilbakestill sjekkliste</h2></div>
+      <div class="modal-body">
+        <p class="modal-text">Tilbakestill til standard sjekkliste? Tilpassede endringer slettes.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-cle-reset-cancel">Avbryt</button>
+        <button class="btn-danger" id="btn-cle-reset-confirm">Tilbakestill</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Globalt søk (Ctrl+K) -->
+  <div class="modal-backdrop" id="search-backdrop" aria-hidden="true">
+    <div class="modal search-modal" role="dialog" aria-modal="true" aria-label="Søk i saker">
+      <div class="search-input-wrap">
+        <input class="field-input" id="global-search-input" type="text"
+               placeholder="Søk i alle saker — saksnummer, tittel, stikkord, notater…"
+               autocomplete="off" aria-label="Søk i alle saker" />
+      </div>
+      <div class="search-results" id="global-search-results" role="listbox" aria-label="Søkeresultater"></div>
+      <div class="search-hint-bar">Esc lukker · ↑↓ velger · Enter åpner sak</div>
+    </div>
+  </div>
+
+  <!-- Tastatursnarveier (?) -->
+  <div class="modal-backdrop" id="shortcuts-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="shortcuts-modal-title">Tastatursnarveier</h2>
+        <button class="modal-close" id="btn-shortcuts-close" aria-label="Lukk">✕</button>
+      </div>
+      <div class="modal-body">
+        <table class="shortcuts-table">
+          <tr><td><kbd>Ctrl</kbd> + <kbd>K</kbd></td><td>Søk i alle saker</td></tr>
+          <tr><td><kbd>N</kbd></td><td>Ny sak</td></tr>
+          <tr><td><kbd>1</kbd></td><td>Hjem</td></tr>
+          <tr><td><kbd>2</kbd></td><td>Nye saker</td></tr>
+          <tr><td><kbd>3</kbd></td><td>Viderebehandling</td></tr>
+          <tr><td><kbd>4</kbd></td><td>Fristarkiv</td></tr>
+          <tr><td><kbd>5</kbd></td><td>Oppdrag</td></tr>
+          <tr><td><kbd>6</kbd></td><td>Alle saker</td></tr>
+          <tr><td><kbd>7</kbd></td><td>Medlesing</td></tr>
+          <tr><td><kbd>?</kbd></td><td>Denne oversikten</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Lukk dialog</td></tr>
+        </table>
+        <h3 class="shortcuts-subhead">I kravtabellen</h3>
+        <p class="shortcuts-note">Gjelder når markøren står i tabellen — tabb inn i den eller klikk en ja/nei-knapp.</p>
+        <table class="shortcuts-table">
+          <tr><td><kbd>J</kbd> / <kbd>K</kbd></td><td>Neste / forrige krav</td></tr>
+          <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Nyhet / oppfinnelseshøyde / formelle feil</td></tr>
+          <tr><td><kbd>Y</kbd> / <kbd>N</kbd> / <kbd>?</kbd></td><td>Ja / nei / ikke vurdert</td></tr>
+          <tr><td><kbd>Mellomrom</kbd></td><td>Veksle verdien</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Forlat tabellen</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js v4.4.1 (MIT) — innebygd lokalt; appen er helt frakoblet og uavhengig av CDN -->
+  <script>
+<!-- @include vendor/chart.min.js -->
+  </script>
+  <script>
+<!-- @include js/01-config-templates.js -->
+<!-- @include js/02-claim-mapping-objections.js -->
+<!-- @include js/03-datepicker-pages.js -->
+<!-- @include js/04-domain.js -->
+<!-- @include js/05-storage.js -->
+<!-- @include js/06-appstate.js -->
+<!-- @include js/07-ui-nav-lists.js -->
+<!-- @include js/08-ui-dialogs-status.js -->
+<!-- @include js/09-ui-backup-workfile.js -->
+<!-- @include js/10-ui-import-export-belegg.js -->
+<!-- @include js/11-case-helpers-ops.js -->
+<!-- @include js/12-case-render.js -->
+<!-- @include js/13-cpc-prior-art-render.js -->
+<!-- @include js/14-case-events.js -->
+<!-- @include js/15-home-timeline.js -->
+<!-- @include js/16-settings-stats.js -->
+<!-- @include js/17-cpc-search-misc.js -->
+<!-- @include js/18-events-routing-cases.js -->
+<!-- @include js/19-events-modal-home.js -->
+<!-- @include js/20-events-settings.js -->
+<!-- @include js/21-bootstrap.js -->
+  </script>
+
+  <!-- Onboarding-veiviser (første gang) -->
+  <div class="modal-backdrop" id="onboarding-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-label="Velkomstveiviser">
+      <div class="modal-header">
+        <div class="onb-dots" id="onb-dots">
+          <span class="onb-dot onb-dot-active" data-step="0"></span>
+          <span class="onb-dot" data-step="1"></span>
+          <span class="onb-dot" data-step="2"></span>
+        </div>
+        <button class="modal-close" id="btn-onb-close" aria-label="Lukk">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="onb-step onb-step-active" data-step="0">
+          <div class="onb-step-title">Velkommen til PatentDesk</div>
+          <div class="onb-step-text">Hva skal vi kalle deg?</div>
+          <input class="field-input" id="input-onb-name" type="text" placeholder="Navn" />
+        </div>
+
+        <div class="onb-step" data-step="1">
+          <div class="onb-step-title">Saksdokumenter</div>
+          <div class="onb-step-text">Hvor lagrer du saksdokumenter? Banen kopieres til utklippstavlen når du klikker saksnummeret.</div>
+          <input class="field-input settings-path-input" id="input-onb-docroot" type="text"
+                 placeholder="C:\sti\til\Saksdokumenter" />
+          <div class="docroot-preview" id="onb-docroot-preview"></div>
+          <div class="docroot-filenote">
+            For at åpning og kopiering av dokumenter skal fungere, bør hver
+            sak-mappe inneholde filene:
+            <ul>
+              <li><code>Claims.pdf</code></li>
+              <li><code>Application.pdf</code></li>
+              <li><code>Figures.pdf</code></li>
+              <li><code>Description.pdf</code></li>
+              <li><code>Abstract.pdf</code></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="onb-step" data-step="2">
+          <div class="onb-step-title">Last inn CPC-database</div>
+          <div class="onb-step-text">
+            For autofullfør av CPC-klasser trenger appen filen
+            <code>cpc_v2.json</code>.
+            Denne filen følger med applikasjonen — du finner den i samme
+            mappe som <code>PatentDesk.html</code>. Trykk «Last inn cpc.json»
+            og velg filen i dialogen som åpnes.<br><br>
+            Databasen lagres lokalt og trenger bare lastes inn én gang.
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-onb-back" style="visibility:hidden;">Tilbake</button>
+        <div style="flex:1;"></div>
+        <button class="btn-secondary" id="btn-onb-skip">Hopp over</button>
+        <button class="btn-primary" id="btn-onb-next">Neste</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="toast-announcer" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+</body>
+</html>

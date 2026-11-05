@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const { buildCodeMap } = require('../scripts/codemap.js');
+const { buildCodeMap, buildSrcMap } = require('../scripts/codemap.js');
 
 const SAMPLE = [
   '<style>',                                   // 1
@@ -49,11 +49,22 @@ test('codemap filter keeps matching functions and their headings only', () => {
   assert.doesNotMatch(out, /Variabler/);
 });
 
-test('codemap finds every SEKSJON and a known function in the real file', () => {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'PatentDesk.html'), 'utf8');
-  const out = buildCodeMap(html);
+test('src map covers every SEKSJON and lists functions by source file and line', () => {
+  const src = path.join(__dirname, '..', 'src');
+  const out = buildSrcMap(src);
   for (let n = 1; n <= 7; n++) assert.match(out, new RegExp('SEKSJON ' + n + ' ·'));
-  const line = html.split('\n').findIndex(l => /^function esc\s*\(/.test(l)) + 1;
-  assert.ok(line > 0, 'esc() not found in PatentDesk.html');
-  assert.match(out, new RegExp('^\\s*' + line + '\\s+esc$', 'm'));
+  const file = fs.readdirSync(path.join(src, 'js'))
+    .find(f => /^function esc\s*\(/m.test(fs.readFileSync(path.join(src, 'js', f), 'utf8')));
+  assert.ok(file, 'esc() not found in src/js');
+  const lines = fs.readFileSync(path.join(src, 'js', file), 'utf8').split('\n');
+  const line = lines.findIndex(l => /^function esc\s*\(/.test(l)) + 1;
+  const block = out.split('== src/js/' + file + '\n')[1].split('\n== ')[0];
+  assert.match(block, new RegExp('^\\s*' + line + '\\s+esc$', 'm'));
+});
+
+test('src map with a filter only shows files that have a match', () => {
+  const out = buildSrcMap(path.join(__dirname, '..', 'src'), 'claimmapping');
+  assert.match(out, /^== src\/js\/02-claim-mapping-objections\.js$/m);
+  assert.doesNotMatch(out, /^== src\/css\//m);
+  assert.doesNotMatch(out, /^== src\/js\/21-bootstrap\.js$/m);
 });
