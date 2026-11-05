@@ -22,12 +22,23 @@ function build(srcDir) {
   const template = fs.readFileSync(path.join(srcDir, 'index.html'), 'utf8');
   const included = new Set();
 
+  // Anything that looks like an include but isn't exactly one would be
+  // silently shipped as a comment, so refuse it.
+  template.split('\n').forEach((line, i, all) => {
+    const exact = /^<!-- @include .* -->$/.test(line) && i < all.length - 1;
+    if (line.includes('@include') && !exact) {
+      throw new Error('malformed include line ' + (i + 1) + ': ' + JSON.stringify(line));
+    }
+  });
+
   const out = template.replace(INCLUDE_LINE, (line, rel) => {
     if (!VALID_PATH.test(rel)) throw new Error('invalid include path: ' + rel);
     if (included.has(rel)) throw new Error('included twice: ' + rel);
     included.add(rel);
     const body = fs.readFileSync(path.join(srcDir, rel), 'utf8');
     if (!body.endsWith('\n')) throw new Error('must end with a newline: ' + rel);
+    if (body.includes('\uFFFD')) throw new Error('invalid UTF-8 (save the file as UTF-8): ' + rel);
+    if (body.includes('\uFEFF')) throw new Error('byte-order mark (save as UTF-8 without BOM): ' + rel);
     return body;
   });
 

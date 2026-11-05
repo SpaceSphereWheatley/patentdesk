@@ -58,3 +58,20 @@ test('build fails on a source file without a trailing newline', () => {
     'index.html': '<!-- @include js/a.js -->\n', 'js/a.js': 'a',
   })), /must end with a newline.*js\/a\.js/);
 });
+
+test('build fails on a part with invalid UTF-8 or a byte-order mark', () => {
+  const dir = tmpSrc({ 'index.html': '<!-- @include css/a.css -->\n', 'css/a.css': '' });
+  fs.writeFileSync(path.join(dir, 'css/a.css'), Buffer.from([0x61, 0xf8, 0x0a])); // Latin-1 ø
+  assert.throws(() => build(dir), /invalid UTF-8.*css\/a\.css/);
+  assert.throws(() => build(tmpSrc({
+    'index.html': '<!-- @include css/a.css -->\n', 'css/a.css': '﻿body {}\n',
+  })), /byte-order mark.*css\/a\.css/);
+});
+
+test('build fails on a malformed include line instead of shipping it', () => {
+  for (const line of ['  <!-- @include js/a.js -->\n', '<!-- @include js/a.js --> \n',
+    '<!-- @include js/a.js -->\r\n', '<!-- @include js/a.js -->']) {
+    assert.throws(() => build(tmpSrc({ 'index.html': line, 'js/a.js': 'a\n' })),
+      /malformed include line 1/, JSON.stringify(line));
+  }
+});
