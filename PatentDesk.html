@@ -2411,6 +2411,43 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       padding: 1px var(--space-2); text-overflow: ellipsis; }
 .mh-title-inp:focus { outline: none; border-color: var(--primary-dim); background: var(--surface); }
 .mh-title-inp::placeholder { color: var(--muted-text); opacity: 0.5; }
+/* Søker og oppfinner — samme uttrykk som tittelfeltet */
+.mh-parties         { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6);
+                      margin-top: calc(-1 * var(--space-2)); min-width: 0; }
+.mh-party           { flex: 1 1 14rem; display: flex; align-items: center; gap: var(--space-2); min-width: 0;
+                      font-size: var(--text-2xs); color: var(--muted-text); }
+.mh-party-inp       { flex: 1; min-width: 0; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm);
+                      color: var(--text); font-family: var(--font-body); font-size: var(--text-xs);
+                      padding: 1px var(--space-2); text-overflow: ellipsis; }
+.mh-party-inp:focus { outline: none; border-color: var(--primary-dim); background: var(--surface); }
+.mh-party-inp::placeholder { color: var(--muted-text); opacity: 0.5; }
+
+/* «også i N saker» */
+.mh-cited-slot:empty { display: none; }
+.mh-cited           { position: relative; }
+.mh-cited > summary { list-style: none; cursor: pointer; white-space: nowrap;
+                      font-size: var(--text-xs); padding: 1px var(--space-3); border-radius: var(--radius-pill);
+                      border: 1px solid var(--primary); color: var(--primary-dim); background: var(--surface); }
+.mh-cited > summary::-webkit-details-marker { display: none; }
+.mh-cited > summary::after { content: ' ▾'; }
+.mh-cited[open] > summary::after { content: ' ▴'; }
+.mh-cited > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.mh-cited-list      { position: absolute; z-index: 30; top: calc(100% + var(--space-1)); left: 0;
+                      width: max-content; min-width: 26rem; max-width: min(40rem, 90vw); max-height: 16rem; overflow: auto;
+                      margin: 0; padding: var(--space-1); list-style: none;
+                      background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
+                      box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+.mh-cited-open      { display: grid; grid-template-columns: 5.5rem minmax(8rem, 1fr) auto auto; gap: var(--space-3); align-items: center;
+                      width: 100%; text-align: left; cursor: pointer; background: none; border: none;
+                      padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm);
+                      font-family: var(--font-body); font-size: var(--text-xs); color: var(--text); }
+.mh-cited-open:hover, .mh-cited-open:focus-visible { background: var(--surface2); outline: none; }
+.mh-cited-cn        { font-variant-numeric: tabular-nums; font-weight: var(--weight-semibold); color: var(--primary-dim); }
+.mh-cited-t         { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mh-cited-st        { color: var(--muted-text); white-space: nowrap; }
+.mh-cited-what      { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mh-cited-gone      { color: var(--muted-text); font-style: italic; }
+
 .mh-bg-toggle       { font-size: var(--text-2xs); font-family: var(--font-body); white-space: nowrap;
                       padding: 2px var(--space-3); border-radius: var(--radius-pill); cursor: pointer;
                       background: var(--surface); border: 1px solid var(--border2); color: var(--muted-text);
@@ -2477,7 +2514,8 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 @media (max-width: 720px) {
   .mh-row           { grid-template-columns: 2.2rem 1fr; row-gap: var(--space-2); }
-  .mh-cats, .mh-flags, .mh-bg-toggle, .mh-dates, .mh-title { grid-column: 2; }
+  .mh-cats, .mh-flags, .mh-bg-toggle, .mh-dates, .mh-title, .mh-parties { grid-column: 2; }
+  .mh-cited-list    { min-width: 16rem; }
 }
 
 /* Kravstabell: gul rad for patenterbar med formelle feil */
@@ -6100,6 +6138,19 @@ function normalizeImportSakDetails(sd) {
       return copy;
     });
   }
+  // Mothold: søker og oppfinner er fri tekst fra filen — kuttes og gjøres til
+  // tekst her, så de aldri lagres i en form appen selv ikke ville skrevet.
+  if (Array.isArray(sd.docs)) {
+    out.docs = sd.docs.map(function(d) {
+      if (!d || typeof d !== 'object' || Array.isArray(d)) return d;
+      var copy = {};
+      Object.keys(d).forEach(function(k) { if (k !== '__proto__') copy[k] = d[k]; });
+      ['applicants', 'inventors'].forEach(function(f) {
+        if (Object.prototype.hasOwnProperty.call(d, f)) copy[f] = capPartyText(d[f]);
+      });
+      return copy;
+    });
+  }
   // Innvendinger: bare når filen har dem; vurderingene mot de normaliserte
   // egne innvendingene.
   var hasObj = Object.prototype.hasOwnProperty.call(sd, 'objections');
@@ -9252,8 +9303,10 @@ function _dispatch(action, payload) {
       var doc = data.docs[payload.idx];
       if (!doc) break;
       var isDate = payload.field === 'pubDate' || payload.field === 'effDate';
-      var isText = payload.field === 'ref' || payload.field === 'title';
-      doc[payload.field] = isText                  ? sanitizeText(payload.value)
+      var isParty = payload.field === 'applicants' || payload.field === 'inventors';
+      var isText = payload.field === 'ref' || payload.field === 'title' || isParty;
+      doc[payload.field] = isParty                 ? capPartyText(payload.value)
+                         : isText                  ? sanitizeText(payload.value)
                          : isDate                  ? String(payload.value || '')
                          : !!payload.value;
       // Bakgrunnsmothold kan ikke være X eller Y, og E-dokumenter ikke Y/X for
@@ -9264,6 +9317,8 @@ function _dispatch(action, payload) {
       // på nytt midt i redigeringen ville flyttet markøren.
       if (isDate) {
         refreshMhFlags(data);
+      } else if (payload.field === 'ref') {
+        refreshMhCited(data);
       } else if (!isText) {
         renderSakDocs(data);
         renderSakClaimsTable(data);
@@ -12473,6 +12528,35 @@ function opsTitle(bib) {
   return String((t && t.$) || '').replace(/\s+/g, ' ').trim();
 }
 
+// Søkere og oppfinnere på et mothold er fri tekst: fra OPS, fra en importert
+// fil eller skrevet selv. Kontrolltegn fjernes, mellomrom ryddes, og feltet
+// kuttes så en fil ikke kan fylle opp lagringen. Alt som ikke er tekst blir ''.
+var PARTY_MAX_LEN = 300;
+function capPartyText(s) {
+  if (typeof s !== 'string') return '';
+  return sanitizeText(s).replace(/\s+/g, ' ').trim().slice(0, PARTY_MAX_LEN);
+}
+
+// Søkerne ('applicant') eller oppfinnerne ('inventor') fra bibliografien,
+// i OPS sin rekkefølge, adskilt med «; ». Navnene tas slik de ble innlevert
+// (original); finnes ikke det formatet, brukes epodoc («ACME AS [NO]»).
+function opsParties(bib, kind) {
+  var group = bib && bib.parties && bib.parties[kind + 's'];
+  var all = opsAsArray(group && group[kind]).filter(function(x) { return x && typeof x === 'object'; });
+  var original = all.filter(function(x) { return x['@data-format'] === 'original'; });
+  var epodoc   = all.filter(function(x) { return x['@data-format'] === 'epodoc'; });
+  var pick = original.length ? original : epodoc.length ? epodoc : all;
+  var seen = {}, names = [];
+  pick.slice().sort(function(a, b) {
+    return (parseInt(a['@sequence'], 10) || 0) - (parseInt(b['@sequence'], 10) || 0);
+  }).forEach(function(x) {
+    var n = x[kind + '-name'] && x[kind + '-name'].name;
+    var name = String((n && n.$) || '').replace(/\s+/g, ' ').replace(/^[\s,;]+|[\s,;]+$/g, '');
+    if (name && !seen[name]) { seen[name] = true; names.push(name); }
+  });
+  return capPartyText(names.join('; '));
+}
+
 // Publiseringsdato, motholdets egen dato (tidligste prioritet, ellers
 // inngivelsesdatoen) og tittel fra et published-data/biblio-svar. Har nummeret flere
 // publiseringer (A1, B1 …), velges den med samme kind-kode, ellers den
@@ -12487,7 +12571,9 @@ function parseOpsBiblio(json, kind) {
       return { kind: (x && x['@kind']) || '',
                pubDate: opsDocIdDate(bib['publication-reference']),
                effDate: prios[0] || opsDocIdDate(bib['application-reference']),
-               title: opsTitle(bib) };
+               title: opsTitle(bib),
+               applicants: opsParties(bib, 'applicant'),
+               inventors: opsParties(bib, 'inventor') };
     })
     .filter(function(x) { return x.pubDate; })
     .sort(function(a, b) { return a.pubDate < b.pubDate ? -1 : a.pubDate > b.pubDate ? 1 : 0; });
@@ -12496,15 +12582,15 @@ function parseOpsBiblio(json, kind) {
 }
 
 // Hva OPS skal fylle inn: bare tomme felt. Der feltet alt har en annen dato,
-// røres det ikke, men forskjellen meldes i conflicts. En annen tittel meldes
-// ikke — den kan godt være en du har skrevet selv, f.eks. på norsk.
+// røres det ikke, men forskjellen meldes i conflicts. En annen tittel, søker
+// eller oppfinner meldes ikke — den kan godt være en du har skrevet selv.
 function opsFillPlan(doc, dates) {
   var patch = {}, conflicts = [];
-  ['pubDate', 'effDate', 'title'].forEach(function(f) {
+  ['pubDate', 'effDate', 'title', 'applicants', 'inventors'].forEach(function(f) {
     var ops = dates[f] || '', mine = (doc && doc[f]) || '';
     if (!ops) return;
     if (!mine) patch[f] = ops;
-    else if (mine !== ops && f !== 'title') conflicts.push({ field: f, mine: mine, ops: ops });
+    else if (mine !== ops && (f === 'pubDate' || f === 'effDate')) conflicts.push({ field: f, mine: mine, ops: ops });
   });
   return { patch: patch, conflicts: conflicts };
 }
@@ -12560,6 +12646,7 @@ function ensureSakDocs(data) {
     d = d || {};
     return { id: 'D' + (i + 1), ref: d.ref || '',
              pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
+             applicants: capPartyText(d.applicants), inventors: capPartyText(d.inventors),
              p: !!d.p, e: !!d.e, background: !!d.background, withdrawn: !!d.withdrawn };
   });
   var forNovelty = {}, forInventive = {};
@@ -12675,6 +12762,63 @@ function formatSearchReport(claims, docs) {
   }).join('\n\n');
 }
 
+// ── Mothold sitert i andre saker ─────────────────────
+// Nøkkelen et mothold sammenlignes på: landkode og nummer i OPS-form, uten
+// kind-kode, så «WO 2020/123456 A1» og «WO2020123456A3» er samme dokument.
+// null når referansen ikke ser ut som et publikasjonsnummer.
+function docMatchKey(ref) {
+  var pn = opsPubNumber(typeof ref === 'string' ? ref : '');
+  return pn ? pn.epodoc : null;
+}
+
+// Alle motholdene i alle saker, etter nøkkel. detailsFn(id) gir saks-
+// detaljene (pt_sak_*); hver sak leses én gang. Hver oppføring har det som
+// trengs for å vise linjen: saken, D-nummeret og kategoriene der.
+// Ren funksjon — se test/citedElsewhere.test.js.
+function buildCitationIndex(list, detailsFn) {
+  var index = {};
+  (list || []).forEach(function(c) {
+    if (!c || !c.id) return;
+    var d = detailsFn(c.id);
+    var docs = d && Array.isArray(d.docs) ? d.docs : [];
+    if (!docs.length) return;
+    var claims = Array.isArray(d.claims) ? d.claims.filter(function(x) { return x && typeof x === 'object'; }) : [];
+    var rows = null;
+    docs.forEach(function(doc, i) {
+      if (!doc || typeof doc !== 'object') return;
+      var key = docMatchKey(doc.ref);
+      if (!key) return;
+      var list2 = index[key] || (index[key] = []);
+      // Samme nummer to ganger i samme sak (A1 og B1) gir én linje
+      if (list2.some(function(e) { return e.caseId === c.id; })) return;
+      if (!rows) {
+        try { rows = buildSearchReport(claims, docs.map(function(x, j) {
+          return x && typeof x === 'object' ? x : { id: 'D' + (j + 1) };
+        })); }
+        catch (e) { rows = []; }
+      }
+      var row = rows[i] || { X: [], Y: [], A: [] };
+      var id = typeof doc.id === 'string' && /^D\d+$/.test(doc.id) ? doc.id : 'D' + (i + 1);
+      list2.push({
+        caseId: c.id, caseNumber: String(c.caseNumber || ''), title: String(c.title || ''),
+        status: String(c.status || ''), type: String(c.type || ''),
+        docId: id, withdrawn: !!doc.withdrawn,
+        cats: ['X', 'Y', 'A'].filter(function(cat) { return row[cat] && row[cat].length; })
+          .map(function(cat) { return docCategoryLabel(doc, cat); })
+      });
+    });
+  });
+  return index;
+}
+
+// De andre sakene som har samme dokument, sortert på saksnummer.
+function citedElsewhere(index, ref, selfId) {
+  var key = docMatchKey(ref);
+  if (!key || !index || !index[key]) return [];
+  return index[key].filter(function(e) { return e.caseId !== selfId; })
+    .sort(function(a, b) { return a.caseNumber < b.caseNumber ? -1 : a.caseNumber > b.caseNumber ? 1 : 0; });
+}
+
 function triLabel(val, inverted) {
   if (val === null)  return '<span class="tri-null">—</span>';
   if (!inverted) return val ? '<span class="tri-ok">✓</span>' : '<span class="tri-no">✗</span>';
@@ -12696,6 +12840,7 @@ function renderSak(id) {
   _sakEditingLabelNum = null;
   _sakOpenDocPop      = null;
   _kmEditingOrigin    = null;
+  _citedIndex         = null; // de andre sakene kan ha endret seg siden sist
 
   var data = loadSakData(id) || defaultSakData(0);
   ensureClaims(data);
@@ -14073,6 +14218,7 @@ function renderSakDocs(data) {
   var docsCase = cases.find(function(c) { return c.id === activeSakId; });
   var locked = docRemoveWithdraws(docsCase);
   var docRounds = visibleRounds(docsCase, roundsOf(data));
+  var cited = citationIndex();
 
   el.innerHTML = docs.map(function(d, i) {
     var row  = rows[i];
@@ -14102,7 +14248,8 @@ function renderSakDocs(data) {
         mhExtLinkHtml(d) +
         mhOpsBtnHtml(d, i) +
       '</span>' +
-      '<span class="mh-cats">' + mhRoundBadgeHtml(docRounds, d.id) + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
+      '<span class="mh-cats">' + '<span class="mh-cited-slot" data-idx="' + i + '">' + mhCitedHtml(citedElsewhere(cited, d.ref, activeSakId)) + '</span>' +
+        mhRoundBadgeHtml(docRounds, d.id) + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
       '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
@@ -14116,9 +14263,65 @@ function renderSakDocs(data) {
         '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '"' +
         ' title="' + esc(d.title) + '" placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
         ' aria-label="' + esc('Tittel for ' + d.id) + '" /></label>' +
+      '<span class="mh-parties">' +
+        mhPartyHtml(d, i, 'applicants', 'Søker') +
+        mhPartyHtml(d, i, 'inventors', 'Oppfinner') +
+      '</span>' +
     '</div>';
   }).join('');
   el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+}
+
+function mhPartyHtml(d, i, field, label) {
+  return '<label class="mh-party">' + esc(label) + ' ' +
+    '<input class="mh-party-inp" type="text" data-idx="' + i + '" data-field="' + field + '"' +
+    ' value="' + esc(d[field]) + '" title="' + esc(d[field]) + '" maxlength="' + PARTY_MAX_LEN + '"' +
+    ' placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
+    ' aria-label="' + esc(label + ' for ' + d.id) + '" /></label>';
+}
+
+// ── Sitert i andre saker ──
+// Indeksen bygges når en sak åpnes (renderSak nullstiller den) og gjenbrukes
+// til saken forlates: de andre sakene endrer seg ikke mens du står her, og
+// denne saken selv er aldri med i treffene.
+var _citedIndex = null; // { forId, index }
+function citationIndex() {
+  if (!_citedIndex || _citedIndex.forId !== activeSakId) {
+    _citedIndex = { forId: activeSakId, index: buildCitationIndex(cases, loadSakData) };
+  }
+  return _citedIndex.index;
+}
+
+function citedBadgeText(n) { return 'også i ' + n + (n === 1 ? ' sak' : ' saker'); }
+
+// «D2 · X, Y», «D1 · ikke lenger relevant» eller «D3 · ikke vurdert».
+function citedEntryWhat(e) {
+  return e.docId + ' · ' + (e.withdrawn ? 'ikke lenger relevant' : e.cats.length ? e.cats.join(', ') : 'ikke vurdert');
+}
+
+function mhCitedHtml(entries) {
+  if (!entries.length) return '';
+  return '<details class="mh-cited"><summary title="Dokumentet er også mothold i andre saker">' +
+    esc(citedBadgeText(entries.length)) + '</summary>' +
+    '<ul class="mh-cited-list">' + entries.map(function(e) {
+      var status = e.type === 'oppdrag' ? 'Oppdrag' : ((STATUS_CONFIG[e.status] || {}).label || e.status);
+      return '<li><button type="button" class="mh-cited-open" data-cited-open="' + esc(e.caseId) + '">' +
+        '<span class="mh-cited-cn">' + esc(e.caseNumber) + '</span>' +
+        '<span class="mh-cited-t">' + esc(e.title) + '</span>' +
+        '<span class="mh-cited-st">' + esc(status) + '</span>' +
+        '<span class="mh-cited-what' + (e.withdrawn ? ' mh-cited-gone' : '') + '">' + esc(citedEntryWhat(e)) + '</span>' +
+      '</button></li>';
+    }).join('') + '</ul></details>';
+}
+
+// Etter at et publikasjonsnummer er endret: bare merkene byttes, så feltet
+// du skriver i beholder fokus.
+function refreshMhCited(data) {
+  var cited = citationIndex();
+  (data.docs || []).forEach(function(d, i) {
+    var slot = document.querySelector('#sak-docs-mothold .mh-cited-slot[data-idx="' + i + '"]');
+    if (slot) slot.innerHTML = mhCitedHtml(citedElsewhere(cited, d.ref, activeSakId));
+  });
 }
 
 // «ny i runde N» på et mothold som ikke var med i første runde. Ingen merking
@@ -14190,8 +14393,8 @@ function mhOpsBtnHtml(d, i) {
           : '';
   return '<button type="button" class="mh-ops" data-ops="' + i + '" data-doc-id="' + esc(d.id) + '"' +
     (why ? ' aria-disabled="true"' : '') +
-    ' title="' + esc(why || 'Hent datoer fra EPO OPS (fyller bare tomme felt)') + '"' +
-    ' aria-label="Hent datoer for ' + esc(d.id) + ' fra EPO OPS">' +
+    ' title="' + esc(why || 'Hent datoer, tittel, søker og oppfinner fra EPO OPS (fyller bare tomme felt)') + '"' +
+    ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg></button>';
 }
 
@@ -14200,12 +14403,18 @@ function mhOpsBtnHtml(d, i) {
 function opsFillMessage(plan, dates) {
   var label = { pubDate: 'publisert', effDate: 'prioritet/inng.' };
   // Tittelen er for lang for meldingen — den står i feltet
+  var words = { title: 'tittel', applicants: 'søker', inventors: 'oppfinner' };
   var filled = Object.keys(plan.patch).map(function(f) {
-    return f === 'title' ? 'tittel' : label[f] + ' ' + toDisplay(plan.patch[f]);
+    return words[f] || label[f] + ' ' + toDisplay(plan.patch[f]);
   });
   var parts = [];
   parts.push(filled.length ? '✓ Hentet fra OPS (' + dates.kind + '): ' + filled.join(', ')
                            : 'Ingen tomme datofelt å fylle (OPS ' + dates.kind + ')');
+  // Bare når oppslaget faktisk lette etter navn (parseOpsBiblio setter feltene)
+  if ('applicants' in dates || 'inventors' in dates) {
+    var missing = [dates.applicants ? '' : 'søker', dates.inventors ? '' : 'oppfinner'].filter(Boolean);
+    if (missing.length) parts.push('OPS har ikke ' + missing.join(' eller '));
+  }
   plan.conflicts.forEach(function(c) {
     parts.push('OPS sier ' + label[c.field] + ' ' + toDisplay(c.ops) + ', du har ' + toDisplay(c.mine) + ' — ikke endret');
   });
@@ -15001,6 +15210,23 @@ function opsFetchDates(ref) {
 }
 
 // ── Mothold ────────────────────────────────────────
+var MH_PARTY_FIELDS = ['applicants', 'inventors'];
+
+// Lista «også i N saker» lukkes ved klikk utenfor og med Esc.
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('#sak-docs-mothold details.mh-cited[open]').forEach(function(d) {
+    if (!d.contains(e.target)) d.removeAttribute('open');
+  });
+});
+document.getElementById('sak-docs-mothold').addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  var open = e.target.closest && e.target.closest('details.mh-cited[open]');
+  if (!open) return;
+  e.stopPropagation();
+  open.removeAttribute('open');
+  var sum = open.querySelector('summary'); if (sum) sum.focus();
+});
+
 document.getElementById('btn-mothold-add').addEventListener('click', function() {
   var id = activeSakId; if (!id) return;
   dispatch('DOC_ADD', { id: id });
@@ -15012,6 +15238,8 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
   if (del) { dispatch('DOC_REMOVE', { id: id, idx: parseInt(del.dataset.mhDel, 10) }); return; }
   var restore = e.target.closest('[data-mh-restore]');
   if (restore) { dispatch('DOC_RESTORE', { id: id, idx: parseInt(restore.dataset.mhRestore, 10) }); return; }
+  var citedOpen = e.target.closest('[data-cited-open]');
+  if (citedOpen) { navigateTo('sak/' + citedOpen.dataset.citedOpen); return; }
   var ops = e.target.closest('.mh-ops');
   if (ops) { mhOpsFetch(id, parseInt(ops.dataset.ops, 10), ops); return; }
   var flag = e.target.closest('.mh-flag');
@@ -15059,6 +15287,15 @@ function mhOpsFetch(id, idx, btn) {
 
 document.getElementById('sak-docs-mothold').addEventListener('input', function(e) {
   var id = activeSakId; if (!id) return;
+  var partyInp = e.target.closest('.mh-party-inp');
+  if (partyInp && MH_PARTY_FIELDS.indexOf(partyInp.dataset.field) > -1) {
+    partyInp.title = partyInp.value;
+    var pIdx = parseInt(partyInp.dataset.idx, 10), pField = partyInp.dataset.field, pVal = partyInp.value;
+    debounceSakEdit(function() {
+      dispatch('DOC_FIELD_CHANGE', { id: id, idx: pIdx, field: pField, value: pVal });
+    });
+    return;
+  }
   var titleInp = e.target.closest('.mh-title-inp');
   if (titleInp) {
     titleInp.title = titleInp.value; // hele tittelen ved hover når den er kuttet
@@ -15085,6 +15322,13 @@ document.getElementById('sak-docs-mothold').addEventListener('change', function(
     dateInp.removeAttribute('aria-invalid');
     dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(dateInp.dataset.idx, 10),
       field: dateInp.dataset.field, value: iso });
+    return;
+  }
+  var partyInp = e.target.closest('.mh-party-inp');
+  if (partyInp && MH_PARTY_FIELDS.indexOf(partyInp.dataset.field) > -1) {
+    clearTimeout(_sakTypingTimer);
+    dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(partyInp.dataset.idx, 10),
+      field: partyInp.dataset.field, value: partyInp.value });
     return;
   }
   var titleInp = e.target.closest('.mh-title-inp');
@@ -17352,7 +17596,7 @@ function openGlobalSearch() {
 }
 
 // Rangering: saksnummer-prefiks > saksnummer > tittel > stikkord > notater
-// > saksdetaljene (motholdsnumre, CPC-klasser, saksnotater).
+// > saksdetaljene (motholdsnumre, søkere og oppfinnere, CPC-klasser, saksnotater).
 function searchCases(q) { return searchCaseList(q, cases, loadSakData); }
 
 // Treff i en saks detaljer. Publikasjonsnumre og klasser sammenlignes uten
@@ -17363,7 +17607,11 @@ function _detailsMatch(q, d) {
   var docs = Array.isArray(d.docs) ? d.docs : [];
   if (docs.some(function(x) {
     var ref = String((x && x.ref) || '');
-    return ref.toLowerCase().indexOf(q) > -1 || (qn.length >= 3 && normalizePubNumber(ref).indexOf(qn) > -1);
+    if (ref.toLowerCase().indexOf(q) > -1 || (qn.length >= 3 && normalizePubNumber(ref).indexOf(qn) > -1)) return true;
+    // Søker og oppfinner på motholdet
+    return ['applicants', 'inventors'].some(function(f) {
+      return typeof (x && x[f]) === 'string' && x[f].toLowerCase().indexOf(q) > -1;
+    });
   })) return true;
   var classes = Array.isArray(d.classes) ? d.classes : [];
   if (qn.length >= 3 && classes.some(function(x) { return normalizePubNumber((x && x.code) || '').indexOf(qn) > -1; })) return true;

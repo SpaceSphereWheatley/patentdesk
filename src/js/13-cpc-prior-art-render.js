@@ -463,6 +463,7 @@ function renderSakDocs(data) {
   var docsCase = cases.find(function(c) { return c.id === activeSakId; });
   var locked = docRemoveWithdraws(docsCase);
   var docRounds = visibleRounds(docsCase, roundsOf(data));
+  var cited = citationIndex();
 
   el.innerHTML = docs.map(function(d, i) {
     var row  = rows[i];
@@ -492,7 +493,8 @@ function renderSakDocs(data) {
         mhExtLinkHtml(d) +
         mhOpsBtnHtml(d, i) +
       '</span>' +
-      '<span class="mh-cats">' + mhRoundBadgeHtml(docRounds, d.id) + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
+      '<span class="mh-cats">' + '<span class="mh-cited-slot" data-idx="' + i + '">' + mhCitedHtml(citedElsewhere(cited, d.ref, activeSakId)) + '</span>' +
+        mhRoundBadgeHtml(docRounds, d.id) + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
       '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
@@ -506,9 +508,65 @@ function renderSakDocs(data) {
         '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '"' +
         ' title="' + esc(d.title) + '" placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
         ' aria-label="' + esc('Tittel for ' + d.id) + '" /></label>' +
+      '<span class="mh-parties">' +
+        mhPartyHtml(d, i, 'applicants', 'Søker') +
+        mhPartyHtml(d, i, 'inventors', 'Oppfinner') +
+      '</span>' +
     '</div>';
   }).join('');
   el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+}
+
+function mhPartyHtml(d, i, field, label) {
+  return '<label class="mh-party">' + esc(label) + ' ' +
+    '<input class="mh-party-inp" type="text" data-idx="' + i + '" data-field="' + field + '"' +
+    ' value="' + esc(d[field]) + '" title="' + esc(d[field]) + '" maxlength="' + PARTY_MAX_LEN + '"' +
+    ' placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
+    ' aria-label="' + esc(label + ' for ' + d.id) + '" /></label>';
+}
+
+// ── Sitert i andre saker ──
+// Indeksen bygges når en sak åpnes (renderSak nullstiller den) og gjenbrukes
+// til saken forlates: de andre sakene endrer seg ikke mens du står her, og
+// denne saken selv er aldri med i treffene.
+var _citedIndex = null; // { forId, index }
+function citationIndex() {
+  if (!_citedIndex || _citedIndex.forId !== activeSakId) {
+    _citedIndex = { forId: activeSakId, index: buildCitationIndex(cases, loadSakData) };
+  }
+  return _citedIndex.index;
+}
+
+function citedBadgeText(n) { return 'også i ' + n + (n === 1 ? ' sak' : ' saker'); }
+
+// «D2 · X, Y», «D1 · ikke lenger relevant» eller «D3 · ikke vurdert».
+function citedEntryWhat(e) {
+  return e.docId + ' · ' + (e.withdrawn ? 'ikke lenger relevant' : e.cats.length ? e.cats.join(', ') : 'ikke vurdert');
+}
+
+function mhCitedHtml(entries) {
+  if (!entries.length) return '';
+  return '<details class="mh-cited"><summary title="Dokumentet er også mothold i andre saker">' +
+    esc(citedBadgeText(entries.length)) + '</summary>' +
+    '<ul class="mh-cited-list">' + entries.map(function(e) {
+      var status = e.type === 'oppdrag' ? 'Oppdrag' : ((STATUS_CONFIG[e.status] || {}).label || e.status);
+      return '<li><button type="button" class="mh-cited-open" data-cited-open="' + esc(e.caseId) + '">' +
+        '<span class="mh-cited-cn">' + esc(e.caseNumber) + '</span>' +
+        '<span class="mh-cited-t">' + esc(e.title) + '</span>' +
+        '<span class="mh-cited-st">' + esc(status) + '</span>' +
+        '<span class="mh-cited-what' + (e.withdrawn ? ' mh-cited-gone' : '') + '">' + esc(citedEntryWhat(e)) + '</span>' +
+      '</button></li>';
+    }).join('') + '</ul></details>';
+}
+
+// Etter at et publikasjonsnummer er endret: bare merkene byttes, så feltet
+// du skriver i beholder fokus.
+function refreshMhCited(data) {
+  var cited = citationIndex();
+  (data.docs || []).forEach(function(d, i) {
+    var slot = document.querySelector('#sak-docs-mothold .mh-cited-slot[data-idx="' + i + '"]');
+    if (slot) slot.innerHTML = mhCitedHtml(citedElsewhere(cited, d.ref, activeSakId));
+  });
 }
 
 // «ny i runde N» på et mothold som ikke var med i første runde. Ingen merking
@@ -580,8 +638,8 @@ function mhOpsBtnHtml(d, i) {
           : '';
   return '<button type="button" class="mh-ops" data-ops="' + i + '" data-doc-id="' + esc(d.id) + '"' +
     (why ? ' aria-disabled="true"' : '') +
-    ' title="' + esc(why || 'Hent datoer fra EPO OPS (fyller bare tomme felt)') + '"' +
-    ' aria-label="Hent datoer for ' + esc(d.id) + ' fra EPO OPS">' +
+    ' title="' + esc(why || 'Hent datoer, tittel, søker og oppfinner fra EPO OPS (fyller bare tomme felt)') + '"' +
+    ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg></button>';
 }
 
@@ -590,12 +648,18 @@ function mhOpsBtnHtml(d, i) {
 function opsFillMessage(plan, dates) {
   var label = { pubDate: 'publisert', effDate: 'prioritet/inng.' };
   // Tittelen er for lang for meldingen — den står i feltet
+  var words = { title: 'tittel', applicants: 'søker', inventors: 'oppfinner' };
   var filled = Object.keys(plan.patch).map(function(f) {
-    return f === 'title' ? 'tittel' : label[f] + ' ' + toDisplay(plan.patch[f]);
+    return words[f] || label[f] + ' ' + toDisplay(plan.patch[f]);
   });
   var parts = [];
   parts.push(filled.length ? '✓ Hentet fra OPS (' + dates.kind + '): ' + filled.join(', ')
                            : 'Ingen tomme datofelt å fylle (OPS ' + dates.kind + ')');
+  // Bare når oppslaget faktisk lette etter navn (parseOpsBiblio setter feltene)
+  if ('applicants' in dates || 'inventors' in dates) {
+    var missing = [dates.applicants ? '' : 'søker', dates.inventors ? '' : 'oppfinner'].filter(Boolean);
+    if (missing.length) parts.push('OPS har ikke ' + missing.join(' eller '));
+  }
   plan.conflicts.forEach(function(c) {
     parts.push('OPS sier ' + label[c.field] + ' ' + toDisplay(c.ops) + ', du har ' + toDisplay(c.mine) + ' — ikke endret');
   });

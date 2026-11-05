@@ -28,8 +28,8 @@ const {
   'docCategoryLabel',
   'formatClaimRanges',
   'formatSearchReport',
-  'ensureSakDocs',
-], { vars: ['MAX_INVENTIVE_DOCS'] });
+  'ensureSakDocs', 'capPartyText', 'sanitizeText',
+], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN'] });
 
 const plain = (v) => JSON.parse(JSON.stringify(v));
 

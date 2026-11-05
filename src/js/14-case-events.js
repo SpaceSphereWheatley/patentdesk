@@ -464,6 +464,23 @@ function opsFetchDates(ref) {
 }
 
 // ── Mothold ────────────────────────────────────────
+var MH_PARTY_FIELDS = ['applicants', 'inventors'];
+
+// Lista «også i N saker» lukkes ved klikk utenfor og med Esc.
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('#sak-docs-mothold details.mh-cited[open]').forEach(function(d) {
+    if (!d.contains(e.target)) d.removeAttribute('open');
+  });
+});
+document.getElementById('sak-docs-mothold').addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  var open = e.target.closest && e.target.closest('details.mh-cited[open]');
+  if (!open) return;
+  e.stopPropagation();
+  open.removeAttribute('open');
+  var sum = open.querySelector('summary'); if (sum) sum.focus();
+});
+
 document.getElementById('btn-mothold-add').addEventListener('click', function() {
   var id = activeSakId; if (!id) return;
   dispatch('DOC_ADD', { id: id });
@@ -475,6 +492,8 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
   if (del) { dispatch('DOC_REMOVE', { id: id, idx: parseInt(del.dataset.mhDel, 10) }); return; }
   var restore = e.target.closest('[data-mh-restore]');
   if (restore) { dispatch('DOC_RESTORE', { id: id, idx: parseInt(restore.dataset.mhRestore, 10) }); return; }
+  var citedOpen = e.target.closest('[data-cited-open]');
+  if (citedOpen) { navigateTo('sak/' + citedOpen.dataset.citedOpen); return; }
   var ops = e.target.closest('.mh-ops');
   if (ops) { mhOpsFetch(id, parseInt(ops.dataset.ops, 10), ops); return; }
   var flag = e.target.closest('.mh-flag');
@@ -522,6 +541,15 @@ function mhOpsFetch(id, idx, btn) {
 
 document.getElementById('sak-docs-mothold').addEventListener('input', function(e) {
   var id = activeSakId; if (!id) return;
+  var partyInp = e.target.closest('.mh-party-inp');
+  if (partyInp && MH_PARTY_FIELDS.indexOf(partyInp.dataset.field) > -1) {
+    partyInp.title = partyInp.value;
+    var pIdx = parseInt(partyInp.dataset.idx, 10), pField = partyInp.dataset.field, pVal = partyInp.value;
+    debounceSakEdit(function() {
+      dispatch('DOC_FIELD_CHANGE', { id: id, idx: pIdx, field: pField, value: pVal });
+    });
+    return;
+  }
   var titleInp = e.target.closest('.mh-title-inp');
   if (titleInp) {
     titleInp.title = titleInp.value; // hele tittelen ved hover når den er kuttet
@@ -548,6 +576,13 @@ document.getElementById('sak-docs-mothold').addEventListener('change', function(
     dateInp.removeAttribute('aria-invalid');
     dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(dateInp.dataset.idx, 10),
       field: dateInp.dataset.field, value: iso });
+    return;
+  }
+  var partyInp = e.target.closest('.mh-party-inp');
+  if (partyInp && MH_PARTY_FIELDS.indexOf(partyInp.dataset.field) > -1) {
+    clearTimeout(_sakTypingTimer);
+    dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(partyInp.dataset.idx, 10),
+      field: partyInp.dataset.field, value: partyInp.value });
     return;
   }
   var titleInp = e.target.closest('.mh-title-inp');

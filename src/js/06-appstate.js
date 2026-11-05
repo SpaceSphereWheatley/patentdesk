@@ -565,8 +565,10 @@ function _dispatch(action, payload) {
       var doc = data.docs[payload.idx];
       if (!doc) break;
       var isDate = payload.field === 'pubDate' || payload.field === 'effDate';
-      var isText = payload.field === 'ref' || payload.field === 'title';
-      doc[payload.field] = isText                  ? sanitizeText(payload.value)
+      var isParty = payload.field === 'applicants' || payload.field === 'inventors';
+      var isText = payload.field === 'ref' || payload.field === 'title' || isParty;
+      doc[payload.field] = isParty                 ? capPartyText(payload.value)
+                         : isText                  ? sanitizeText(payload.value)
                          : isDate                  ? String(payload.value || '')
                          : !!payload.value;
       // Bakgrunnsmothold kan ikke være X eller Y, og E-dokumenter ikke Y/X for
@@ -577,6 +579,8 @@ function _dispatch(action, payload) {
       // på nytt midt i redigeringen ville flyttet markøren.
       if (isDate) {
         refreshMhFlags(data);
+      } else if (payload.field === 'ref') {
+        refreshMhCited(data);
       } else if (!isText) {
         renderSakDocs(data);
         renderSakClaimsTable(data);

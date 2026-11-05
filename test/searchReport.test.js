@@ -21,10 +21,10 @@ const {
   'docCategoryLabel',
   'removeDocAt',
   'toggleClaimDoc',
-  'ensureSakDocs',
+  'ensureSakDocs', 'capPartyText', 'sanitizeText',
   'claimDocSelectable',
   'formatSearchReport',
-], { vars: ['MAX_INVENTIVE_DOCS'] });
+], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN'] });
 
 // loadFunctions runs the extracted source in a vm context, so values built
 // inside it carry that realm's prototypes and deepStrictEqual would reject

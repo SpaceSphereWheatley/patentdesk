@@ -6,6 +6,24 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Added
+- **Søker og oppfinner på motholdene.** ⤓-knappen henter nå også søkere og
+  oppfinnere fra EPO OPS, i samme oppslag som datoene og tittelen. Navnene
+  står slik de ble innlevert, i OPS sin rekkefølge, og fyller bare tomme felt.
+  Feltene kan også fylles ut eller endres for hånd, og er med i eksport og
+  import. Mangler OPS navnene, sier meldingen det.
+- **Søket (Ctrl+K) finner saker på søker og oppfinner** på motholdene.
+- **«også i N saker» på motholdene.** Er samme dokument mothold i andre saker,
+  også avsluttede, får raden et merke. Klikk viser sakene med saksnummer,
+  tittel, status, D-nummer og kategori der (eller «ikke lenger relevant»), og
+  et klikk på en sak åpner den. Dokumentet gjenkjennes uansett skrivemåte og
+  kind-kode, så WO 2020/123456 A1 og WO2020123456A3 regnes som samme dokument.
+### Changed
+- Ingen oppgradering av dataformatet er nødvendig (skjemaversjon er fortsatt 8).
+  Eldre mothold får tomme søker- og oppfinnerfelt.
+### Security
+- Søker- og oppfinnernavn fra OPS og importerte filer gjøres til ren tekst og
+  kuttes ved 300 tegn, og escapes overalt der de vises.
 
 ## [4.54.0] - 2026-11-04
 

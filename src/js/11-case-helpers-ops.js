@@ -178,6 +178,35 @@ function opsTitle(bib) {
   return String((t && t.$) || '').replace(/\s+/g, ' ').trim();
 }
 
+// Søkere og oppfinnere på et mothold er fri tekst: fra OPS, fra en importert
+// fil eller skrevet selv. Kontrolltegn fjernes, mellomrom ryddes, og feltet
+// kuttes så en fil ikke kan fylle opp lagringen. Alt som ikke er tekst blir ''.
+var PARTY_MAX_LEN = 300;
+function capPartyText(s) {
+  if (typeof s !== 'string') return '';
+  return sanitizeText(s).replace(/\s+/g, ' ').trim().slice(0, PARTY_MAX_LEN);
+}
+
+// Søkerne ('applicant') eller oppfinnerne ('inventor') fra bibliografien,
+// i OPS sin rekkefølge, adskilt med «; ». Navnene tas slik de ble innlevert
+// (original); finnes ikke det formatet, brukes epodoc («ACME AS [NO]»).
+function opsParties(bib, kind) {
+  var group = bib && bib.parties && bib.parties[kind + 's'];
+  var all = opsAsArray(group && group[kind]).filter(function(x) { return x && typeof x === 'object'; });
+  var original = all.filter(function(x) { return x['@data-format'] === 'original'; });
+  var epodoc   = all.filter(function(x) { return x['@data-format'] === 'epodoc'; });
+  var pick = original.length ? original : epodoc.length ? epodoc : all;
+  var seen = {}, names = [];
+  pick.slice().sort(function(a, b) {
+    return (parseInt(a['@sequence'], 10) || 0) - (parseInt(b['@sequence'], 10) || 0);
+  }).forEach(function(x) {
+    var n = x[kind + '-name'] && x[kind + '-name'].name;
+    var name = String((n && n.$) || '').replace(/\s+/g, ' ').replace(/^[\s,;]+|[\s,;]+$/g, '');
+    if (name && !seen[name]) { seen[name] = true; names.push(name); }
+  });
+  return capPartyText(names.join('; '));
+}
+
 // Publiseringsdato, motholdets egen dato (tidligste prioritet, ellers
 // inngivelsesdatoen) og tittel fra et published-data/biblio-svar. Har nummeret flere
 // publiseringer (A1, B1 …), velges den med samme kind-kode, ellers den
@@ -192,7 +221,9 @@ function parseOpsBiblio(json, kind) {
       return { kind: (x && x['@kind']) || '',
                pubDate: opsDocIdDate(bib['publication-reference']),
                effDate: prios[0] || opsDocIdDate(bib['application-reference']),
-               title: opsTitle(bib) };
+               title: opsTitle(bib),
+               applicants: opsParties(bib, 'applicant'),
+               inventors: opsParties(bib, 'inventor') };
     })
     .filter(function(x) { return x.pubDate; })
     .sort(function(a, b) { return a.pubDate < b.pubDate ? -1 : a.pubDate > b.pubDate ? 1 : 0; });
@@ -201,15 +232,15 @@ function parseOpsBiblio(json, kind) {
 }
 
 // Hva OPS skal fylle inn: bare tomme felt. Der feltet alt har en annen dato,
-// røres det ikke, men forskjellen meldes i conflicts. En annen tittel meldes
-// ikke — den kan godt være en du har skrevet selv, f.eks. på norsk.
+// røres det ikke, men forskjellen meldes i conflicts. En annen tittel, søker
+// eller oppfinner meldes ikke — den kan godt være en du har skrevet selv.
 function opsFillPlan(doc, dates) {
   var patch = {}, conflicts = [];
-  ['pubDate', 'effDate', 'title'].forEach(function(f) {
+  ['pubDate', 'effDate', 'title', 'applicants', 'inventors'].forEach(function(f) {
     var ops = dates[f] || '', mine = (doc && doc[f]) || '';
     if (!ops) return;
     if (!mine) patch[f] = ops;
-    else if (mine !== ops && f !== 'title') conflicts.push({ field: f, mine: mine, ops: ops });
+    else if (mine !== ops && (f === 'pubDate' || f === 'effDate')) conflicts.push({ field: f, mine: mine, ops: ops });
   });
   return { patch: patch, conflicts: conflicts };
 }
@@ -265,6 +296,7 @@ function ensureSakDocs(data) {
     d = d || {};
     return { id: 'D' + (i + 1), ref: d.ref || '',
              pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
+             applicants: capPartyText(d.applicants), inventors: capPartyText(d.inventors),
              p: !!d.p, e: !!d.e, background: !!d.background, withdrawn: !!d.withdrawn };
   });
   var forNovelty = {}, forInventive = {};
@@ -378,6 +410,63 @@ function formatSearchReport(claims, docs) {
       .map(function(cat) { return '  ' + docCategoryLabel(doc, cat) + ': krav ' + formatClaimRanges(row[cat]); });
     return head + '\n' + (body.length ? body.join('\n') : '  (ingen vurderte krav)');
   }).join('\n\n');
+}
+
+// ── Mothold sitert i andre saker ─────────────────────
+// Nøkkelen et mothold sammenlignes på: landkode og nummer i OPS-form, uten
+// kind-kode, så «WO 2020/123456 A1» og «WO2020123456A3» er samme dokument.
+// null når referansen ikke ser ut som et publikasjonsnummer.
+function docMatchKey(ref) {
+  var pn = opsPubNumber(typeof ref === 'string' ? ref : '');
+  return pn ? pn.epodoc : null;
+}
+
+// Alle motholdene i alle saker, etter nøkkel. detailsFn(id) gir saks-
+// detaljene (pt_sak_*); hver sak leses én gang. Hver oppføring har det som
+// trengs for å vise linjen: saken, D-nummeret og kategoriene der.
+// Ren funksjon — se test/citedElsewhere.test.js.
+function buildCitationIndex(list, detailsFn) {
+  var index = {};
+  (list || []).forEach(function(c) {
+    if (!c || !c.id) return;
+    var d = detailsFn(c.id);
+    var docs = d && Array.isArray(d.docs) ? d.docs : [];
+    if (!docs.length) return;
+    var claims = Array.isArray(d.claims) ? d.claims.filter(function(x) { return x && typeof x === 'object'; }) : [];
+    var rows = null;
+    docs.forEach(function(doc, i) {
+      if (!doc || typeof doc !== 'object') return;
+      var key = docMatchKey(doc.ref);
+      if (!key) return;
+      var list2 = index[key] || (index[key] = []);
+      // Samme nummer to ganger i samme sak (A1 og B1) gir én linje
+      if (list2.some(function(e) { return e.caseId === c.id; })) return;
+      if (!rows) {
+        try { rows = buildSearchReport(claims, docs.map(function(x, j) {
+          return x && typeof x === 'object' ? x : { id: 'D' + (j + 1) };
+        })); }
+        catch (e) { rows = []; }
+      }
+      var row = rows[i] || { X: [], Y: [], A: [] };
+      var id = typeof doc.id === 'string' && /^D\d+$/.test(doc.id) ? doc.id : 'D' + (i + 1);
+      list2.push({
+        caseId: c.id, caseNumber: String(c.caseNumber || ''), title: String(c.title || ''),
+        status: String(c.status || ''), type: String(c.type || ''),
+        docId: id, withdrawn: !!doc.withdrawn,
+        cats: ['X', 'Y', 'A'].filter(function(cat) { return row[cat] && row[cat].length; })
+          .map(function(cat) { return docCategoryLabel(doc, cat); })
+      });
+    });
+  });
+  return index;
+}
+
+// De andre sakene som har samme dokument, sortert på saksnummer.
+function citedElsewhere(index, ref, selfId) {
+  var key = docMatchKey(ref);
+  if (!key || !index || !index[key]) return [];
+  return index[key].filter(function(e) { return e.caseId !== selfId; })
+    .sort(function(a, b) { return a.caseNumber < b.caseNumber ? -1 : a.caseNumber > b.caseNumber ? 1 : 0; });
 }
 
 function triLabel(val, inverted) {

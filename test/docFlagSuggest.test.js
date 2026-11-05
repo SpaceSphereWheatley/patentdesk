@@ -4,8 +4,8 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { suggestDocFlags, applicationDatesError, ensureSakDocs } = loadFunctions(
-  ['suggestDocFlags', 'applicationDatesError', 'ensureSakDocs', 'claimDocSelectable', 'toDisplay'],
-  { vars: ['MAX_INVENTIVE_DOCS'] }
+  ['suggestDocFlags', 'applicationDatesError', 'ensureSakDocs', 'capPartyText', 'sanitizeText', 'claimDocSelectable', 'toDisplay'],
+  { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN'] }
 );
 
 // Søknad med prioritet 2022-06-01, innlevert 2023-05-12

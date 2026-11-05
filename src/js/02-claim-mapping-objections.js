@@ -703,6 +703,19 @@ function normalizeImportSakDetails(sd) {
       return copy;
     });
   }
+  // Mothold: søker og oppfinner er fri tekst fra filen — kuttes og gjøres til
+  // tekst her, så de aldri lagres i en form appen selv ikke ville skrevet.
+  if (Array.isArray(sd.docs)) {
+    out.docs = sd.docs.map(function(d) {
+      if (!d || typeof d !== 'object' || Array.isArray(d)) return d;
+      var copy = {};
+      Object.keys(d).forEach(function(k) { if (k !== '__proto__') copy[k] = d[k]; });
+      ['applicants', 'inventors'].forEach(function(f) {
+        if (Object.prototype.hasOwnProperty.call(d, f)) copy[f] = capPartyText(d[f]);
+      });
+      return copy;
+    });
+  }
   // Innvendinger: bare når filen har dem; vurderingene mot de normaliserte
   // egne innvendingene.
   var hasObj = Object.prototype.hasOwnProperty.call(sd, 'objections');
