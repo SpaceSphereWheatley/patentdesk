@@ -570,7 +570,7 @@ function mhOpsFetch(id, idx, mode) {
     if (activeSakId === id) {
       var det = document.querySelector('#sak-docs-mothold .mh-details[data-idx="' + idx + '"]');
       // Fylt fra OPS og du står ikke i feltene: vis som tekst
-      if (!(det && det.contains(document.activeElement)) && _mhEditing[idx] === true) delete _mhEditing[idx];
+      if (mhLeaveAfterFill(_mhEditing[idx], !!(det && det.contains(document.activeElement)))) delete _mhEditing[idx];
       refreshMhDetails(loadSakData(id), idx);
     }
     showToast(mode === 'replace' ? '✓ Opplysningene er byttet ut med data fra OPS (' + dates.kind + ')'
@@ -593,7 +593,8 @@ var _mhOpsPending = {}, _mhOpsBusyRef = {};
 function mhFlushTypingInRow(idx) {
   var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
   var act = document.activeElement;
-  if (!row || !act || !row.contains(act) || !act.matches('input')) return;
+  // Bare feltene under nummeret: nummerfeltet lagres når du forlater det
+  if (!row || !row.contains(act) || !isMhDetailInput(act)) return;
   clearTimeout(_sakTypingTimer);
   act.dispatchEvent(new Event('change', { bubbles: true }));
 }

@@ -524,8 +524,20 @@ var _mhEditing = {};
 // eller til saken åpnes på nytt — ellers ville det hoppe til tekst ved neste
 // tegning så snart én dato er skrevet inn.
 function mhEditStateOnRender(d, explicit) {
-  if (explicit === undefined && !docHasDetails(d)) return true;
+  if (explicit === undefined && !docHasDetails(d)) return 'pinned';
   return explicit;
+}
+
+// Etter et OPS-oppslag: tilbake til tekst bare når redigeringen kom av at
+// motholdet var tomt — ikke når du selv valgte «Rediger», og ikke mens du
+// står i feltene.
+function mhLeaveAfterFill(state, focusInFields) {
+  return state === 'pinned' && !focusInFields;
+}
+
+// Et felt under nummeret (dato, søker, oppfinner, tittel) — ikke nummerfeltet.
+function isMhDetailInput(el) {
+  return !!el && el.matches('input') && !!el.closest('.mh-details');
 }
 
 // Pågående OPS-oppslag, nøkkel «saks-id|idx» (se opsBusyStart).
@@ -546,7 +558,7 @@ function refreshMhDetails(data, idx) {
   var d = data && data.docs && data.docs[idx];
   if (!el || !d) return;
   var act = document.activeElement;
-  if (act && el.contains(act)) {
+  if (act && el.contains(act) && isMhDetailInput(act)) {
     el.querySelectorAll('input').forEach(function(inp) {
       if (inp === act) return;
       var f = inp.dataset.field || (inp.classList.contains('mh-title-inp') ? 'title' : '');
@@ -558,12 +570,20 @@ function refreshMhDetails(data, idx) {
     var editing = mhIsEditing(d, _mhEditing[idx]);
     el.innerHTML = mhDetailsInnerHtml(d, idx, editing);
     el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+    // Knappen skal si det samme som visningen
+    var eb = document.querySelector('#sak-docs-mothold [data-mh-edit="' + idx + '"]');
+    if (eb) {
+      var hadFocus = eb === document.activeElement;
+      eb.outerHTML = mhEditBtnHtml(d, idx, editing);
+      if (hadFocus) { var nb = document.querySelector('#sak-docs-mothold [data-mh-edit="' + idx + '"]'); if (nb) nb.focus(); }
+    }
   }
   refreshMhFlags(data);
 }
 
 // Et mothold uten opplysninger står i redigering til du sier «Ferdig».
 function mhIsEditing(d, explicit) {
+  if (explicit === 'pinned') return true;
   if (explicit === true || explicit === false) return explicit;
   return !docHasDetails(d);
 }

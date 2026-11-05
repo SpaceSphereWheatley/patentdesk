@@ -113,9 +113,11 @@ test('opsAutoAction treats adding or dropping the kind code as the same document
 const G = loadFunctions(['mhEditStateOnRender', 'opsBusyStart', 'opsBusyEnd', 'docHasDetails'], { vars: ['MH_DETAIL_FIELDS', '_opsBusySeq'] });
 
 test('mhEditStateOnRender pins an empty document in edit mode, so a redraw cannot flip it', () => {
-  assert.strictEqual(G.mhEditStateOnRender(empty, undefined), true);
+  // 'pinned' = i redigering fordi det var tomt (ikke valgt med «Rediger»)
+  assert.strictEqual(G.mhEditStateOnRender(empty, undefined), 'pinned');
   // Har du skrevet en dato, står det fortsatt i redigering ved neste tegning
-  assert.strictEqual(G.mhEditStateOnRender({ ...empty, pubDate: '2020-01-01' }, true), true);
+  assert.strictEqual(G.mhEditStateOnRender({ ...empty, pubDate: '2020-01-01' }, 'pinned'), 'pinned');
+  assert.strictEqual(G.mhEditStateOnRender(full, true), true);
   assert.strictEqual(G.mhEditStateOnRender(full, undefined), undefined);
   assert.strictEqual(G.mhEditStateOnRender(full, false), false);
 });
@@ -131,4 +133,32 @@ test('opsBusyStart allows one lookup per document; opsBusyEnd only clears its ow
   assert.strictEqual(G.opsBusyEnd(map, 'case|0', t1), true);
   assert.strictEqual(map['case|0'], undefined);
   assert.ok(G.opsBusyStart(map, 'case|0'), 'free again after it ends');
+});
+
+// ── Runde 3 etter review ─────────────────────────────────────
+const H = loadFunctions(['mhIsEditing', 'mhLeaveAfterFill', 'isMhDetailInput', 'docHasDetails'], { vars: ['MH_DETAIL_FIELDS'] });
+
+test('mhIsEditing treats a pinned document as being edited', () => {
+  assert.strictEqual(H.mhIsEditing(full, 'pinned'), true);
+});
+
+test('after an OPS fill, only a pinned-because-empty document goes back to text', () => {
+  assert.strictEqual(H.mhLeaveAfterFill('pinned', false), true);
+  assert.strictEqual(H.mhLeaveAfterFill('pinned', true), false, 'not while you are in its fields');
+  assert.strictEqual(H.mhLeaveAfterFill(true, false), false, '«Rediger» chosen by you stays');
+  assert.strictEqual(H.mhLeaveAfterFill(undefined, false), false);
+});
+
+// Et oppslag som blir ferdig, lagrer bare feltene under nummeret — aldri
+// nummerfeltet, som kunne ha startet et oppslag på et halvskrevet nummer.
+function fakeEl(tag, inDetails, cls) {
+  return { matches: (sel) => sel === 'input' ? tag === 'input' : false,
+           closest: (sel) => sel === '.mh-details' ? (inDetails ? {} : null) : null,
+           classList: { contains: (c) => c === cls } };
+}
+test('isMhDetailInput is true only for inputs under the number, never the number field', () => {
+  assert.strictEqual(H.isMhDetailInput(fakeEl('input', true, 'mh-title-inp')), true);
+  assert.strictEqual(H.isMhDetailInput(fakeEl('input', false, 'mh-ref-inp')), false);
+  assert.strictEqual(H.isMhDetailInput(fakeEl('span', true, 'mh-v')), false);
+  assert.strictEqual(H.isMhDetailInput(null), false);
 });
