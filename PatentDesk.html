@@ -12789,8 +12789,11 @@ function buildCitationIndex(list, detailsFn) {
       var key = docMatchKey(doc.ref);
       if (!key) return;
       var list2 = index[key] || (index[key] = []);
-      // Samme nummer to ganger i samme sak (A1 og B1) gir én linje
-      if (list2.some(function(e) { return e.caseId === c.id; })) return;
+      // Samme nummer to ganger i samme sak (A1 og B1) gir én linje: den
+      // første som er i bruk, og bare en «ikke lenger relevant» hvis alle er det.
+      var prev = -1;
+      list2.forEach(function(e, k) { if (e.caseId === c.id) prev = k; });
+      if (prev > -1 && (!list2[prev].withdrawn || doc.withdrawn)) return;
       if (!rows) {
         try { rows = buildSearchReport(claims, docs.map(function(x, j) {
           return x && typeof x === 'object' ? x : { id: 'D' + (j + 1) };
@@ -12799,13 +12802,14 @@ function buildCitationIndex(list, detailsFn) {
       }
       var row = rows[i] || { X: [], Y: [], A: [] };
       var id = typeof doc.id === 'string' && /^D\d+$/.test(doc.id) ? doc.id : 'D' + (i + 1);
-      list2.push({
+      var entry = {
         caseId: c.id, caseNumber: String(c.caseNumber || ''), title: String(c.title || ''),
         status: String(c.status || ''), type: String(c.type || ''),
         docId: id, withdrawn: !!doc.withdrawn,
         cats: ['X', 'Y', 'A'].filter(function(cat) { return row[cat] && row[cat].length; })
           .map(function(cat) { return docCategoryLabel(doc, cat); })
-      });
+      };
+      if (prev > -1) list2[prev] = entry; else list2.push(entry);
     });
   });
   return index;
@@ -14287,9 +14291,23 @@ function mhPartyHtml(d, i, field, label) {
 var _citedIndex = null; // { forId, index }
 function citationIndex() {
   if (!_citedIndex || _citedIndex.forId !== activeSakId) {
-    _citedIndex = { forId: activeSakId, index: buildCitationIndex(cases, loadSakData) };
+    _citedIndex = { forId: activeSakId, index: buildCitationIndex(cases, loadSakDataQuiet) };
   }
   return _citedIndex.index;
+}
+
+// Som loadSakData, men uten varsel og uten å bevare råteksten: indeksen
+// leser alle de andre sakene, og en korrupt sak skal meldes når den åpnes,
+// ikke hver gang en annen sak åpnes.
+function loadSakDataQuiet(id) {
+  try { var raw = localStorage.getItem(sakKey(id)); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+}
+
+// Statusen slik Ctrl+K skriver den: et ferdig oppdrag er «Avsluttet oppdrag».
+function citedStatusLabel(e) {
+  if (e.type === 'oppdrag') return e.status === 'avsluttet' ? 'Avsluttet oppdrag' : 'Oppdrag';
+  return (STATUS_CONFIG[e.status] || {}).label || e.status;
 }
 
 function citedBadgeText(n) { return 'også i ' + n + (n === 1 ? ' sak' : ' saker'); }
@@ -14304,7 +14322,7 @@ function mhCitedHtml(entries) {
   return '<details class="mh-cited"><summary title="Dokumentet er også mothold i andre saker">' +
     esc(citedBadgeText(entries.length)) + '</summary>' +
     '<ul class="mh-cited-list">' + entries.map(function(e) {
-      var status = e.type === 'oppdrag' ? 'Oppdrag' : ((STATUS_CONFIG[e.status] || {}).label || e.status);
+      var status = citedStatusLabel(e);
       return '<li><button type="button" class="mh-cited-open" data-cited-open="' + esc(e.caseId) + '">' +
         '<span class="mh-cited-cn">' + esc(e.caseNumber) + '</span>' +
         '<span class="mh-cited-t">' + esc(e.title) + '</span>' +

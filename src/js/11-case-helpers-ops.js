@@ -439,8 +439,11 @@ function buildCitationIndex(list, detailsFn) {
       var key = docMatchKey(doc.ref);
       if (!key) return;
       var list2 = index[key] || (index[key] = []);
-      // Samme nummer to ganger i samme sak (A1 og B1) gir én linje
-      if (list2.some(function(e) { return e.caseId === c.id; })) return;
+      // Samme nummer to ganger i samme sak (A1 og B1) gir én linje: den
+      // første som er i bruk, og bare en «ikke lenger relevant» hvis alle er det.
+      var prev = -1;
+      list2.forEach(function(e, k) { if (e.caseId === c.id) prev = k; });
+      if (prev > -1 && (!list2[prev].withdrawn || doc.withdrawn)) return;
       if (!rows) {
         try { rows = buildSearchReport(claims, docs.map(function(x, j) {
           return x && typeof x === 'object' ? x : { id: 'D' + (j + 1) };
@@ -449,13 +452,14 @@ function buildCitationIndex(list, detailsFn) {
       }
       var row = rows[i] || { X: [], Y: [], A: [] };
       var id = typeof doc.id === 'string' && /^D\d+$/.test(doc.id) ? doc.id : 'D' + (i + 1);
-      list2.push({
+      var entry = {
         caseId: c.id, caseNumber: String(c.caseNumber || ''), title: String(c.title || ''),
         status: String(c.status || ''), type: String(c.type || ''),
         docId: id, withdrawn: !!doc.withdrawn,
         cats: ['X', 'Y', 'A'].filter(function(cat) { return row[cat] && row[cat].length; })
           .map(function(cat) { return docCategoryLabel(doc, cat); })
-      });
+      };
+      if (prev > -1) list2[prev] = entry; else list2.push(entry);
     });
   });
   return index;

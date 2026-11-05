@@ -532,9 +532,23 @@ function mhPartyHtml(d, i, field, label) {
 var _citedIndex = null; // { forId, index }
 function citationIndex() {
   if (!_citedIndex || _citedIndex.forId !== activeSakId) {
-    _citedIndex = { forId: activeSakId, index: buildCitationIndex(cases, loadSakData) };
+    _citedIndex = { forId: activeSakId, index: buildCitationIndex(cases, loadSakDataQuiet) };
   }
   return _citedIndex.index;
+}
+
+// Som loadSakData, men uten varsel og uten å bevare råteksten: indeksen
+// leser alle de andre sakene, og en korrupt sak skal meldes når den åpnes,
+// ikke hver gang en annen sak åpnes.
+function loadSakDataQuiet(id) {
+  try { var raw = localStorage.getItem(sakKey(id)); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+}
+
+// Statusen slik Ctrl+K skriver den: et ferdig oppdrag er «Avsluttet oppdrag».
+function citedStatusLabel(e) {
+  if (e.type === 'oppdrag') return e.status === 'avsluttet' ? 'Avsluttet oppdrag' : 'Oppdrag';
+  return (STATUS_CONFIG[e.status] || {}).label || e.status;
 }
 
 function citedBadgeText(n) { return 'også i ' + n + (n === 1 ? ' sak' : ' saker'); }
@@ -549,7 +563,7 @@ function mhCitedHtml(entries) {
   return '<details class="mh-cited"><summary title="Dokumentet er også mothold i andre saker">' +
     esc(citedBadgeText(entries.length)) + '</summary>' +
     '<ul class="mh-cited-list">' + entries.map(function(e) {
-      var status = e.type === 'oppdrag' ? 'Oppdrag' : ((STATUS_CONFIG[e.status] || {}).label || e.status);
+      var status = citedStatusLabel(e);
       return '<li><button type="button" class="mh-cited-open" data-cited-open="' + esc(e.caseId) + '">' +
         '<span class="mh-cited-cn">' + esc(e.caseNumber) + '</span>' +
         '<span class="mh-cited-t">' + esc(e.title) + '</span>' +

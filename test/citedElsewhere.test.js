@@ -31,6 +31,12 @@ const DETAILS = {
   fa:   assessed([{ id: 'D1', ref: 'wo 2020/123456' }]),
   vb:   assessed([{ id: 'D1', ref: 'WO 2020/123456 A1', withdrawn: true }]),
 };
+// Oppdrag og en annen Ny-sak som også har dokumentet (AC3)
+const CASES3 = CASES.concat([{ id: 'ny2', caseNumber: '20260002', title: 'Annen ny', status: 'ny' }]);
+const DETAILS3 = Object.assign({}, DETAILS, {
+  opp: assessed([{ id: 'D1', ref: 'WO 2020/123456 A1' }]),
+  ny2: assessed([{ id: 'D1', ref: 'WO 2020/123456 A2' }]),
+});
 const detailsFn = (id) => DETAILS[id] || null;
 
 // ── Nøkkelen ─────────────────────────────────────────────────
@@ -58,6 +64,26 @@ test('citedElsewhere includes closed cases and marks withdrawn documents', () =>
   assert.strictEqual(byId.old.status, 'avsluttet');
   assert.strictEqual(byId.vb.withdrawn, true);
   assert.strictEqual(byId.fa.withdrawn, false);
+});
+
+test('citedElsewhere includes Oppdrag and other Ny cases that cite the document', () => {
+  const idx = buildCitationIndex(CASES3, (id) => DETAILS3[id] || null);
+  const ids = plain(citedElsewhere(idx, 'WO 2020/123456 A1', 'self')).map((h) => h.caseId);
+  assert.ok(ids.includes('opp'), 'oppdrag listed');
+  assert.ok(ids.includes('ny2'), 'other Ny case listed');
+  assert.strictEqual(ids.length, 5);
+});
+
+test('within one case, an active row wins over a withdrawn row with the same number', () => {
+  const details = { a: assessed([{ id: 'D1', ref: 'WO 2020/123456 A1', withdrawn: true }, { id: 'D2', ref: 'EP 9 A1' },
+                                  { id: 'D3', ref: 'WO 2020/123456 A3' }]) };
+  details.a.claims[0].noveltyDoc = 'D3';
+  const idx = buildCitationIndex([{ id: 'a', caseNumber: '1', status: 'ny' }], (id) => details[id]);
+  const hits = plain(citedElsewhere(idx, 'WO2020123456', 'x'));
+  assert.strictEqual(hits.length, 1);
+  assert.strictEqual(hits[0].docId, 'D3');
+  assert.strictEqual(hits[0].withdrawn, false);
+  assert.deepStrictEqual(hits[0].cats, ['X']);
 });
 
 // ── AC2: hva hver linje viser ────────────────────────────────
@@ -127,4 +153,50 @@ test('citedEntryWhat shows the D-number with the categories, withdrawn or not as
   assert.strictEqual(citedEntryWhat({ docId: 'D2', cats: ['X', 'Y'], withdrawn: false }), 'D2 · X, Y');
   assert.strictEqual(citedEntryWhat({ docId: 'D1', cats: ['X'], withdrawn: true }), 'D1 · ikke lenger relevant');
   assert.strictEqual(citedEntryWhat({ docId: 'D3', cats: [], withdrawn: false }), 'D3 · ikke vurdert');
+});
+
+// ── Status og escaping i markupen (AC2, AC6; A·AC5) ─────────
+const R = loadFunctions(['mhCitedHtml', 'mhPartyHtml', 'citedStatusLabel', 'citedBadgeText', 'citedEntryWhat', 'esc'],
+  { vars: ['STATUS_CONFIG', 'PARTY_MAX_LEN'] });
+
+test('citedStatusLabel says when an oppdrag is closed', () => {
+  assert.strictEqual(R.citedStatusLabel({ type: 'oppdrag', status: 'avsluttet' }), 'Avsluttet oppdrag');
+  assert.strictEqual(R.citedStatusLabel({ type: 'oppdrag', status: 'ny' }), 'Oppdrag');
+  assert.strictEqual(R.citedStatusLabel({ type: 'sak', status: 'fristarkiv' }), 'Fristarkiv');
+});
+
+const EVIL = '"><img src=x onerror=alert(1)>';
+const rawTag = (html) => /<img/i.test(html);
+
+test('mhCitedHtml escapes titles, case numbers and ids from other cases', () => {
+  const html = R.mhCitedHtml([{ caseId: EVIL, caseNumber: EVIL, title: EVIL, status: 'ny', type: '',
+                                docId: 'D1', withdrawn: false, cats: ['X'] }]);
+  assert.ok(!rawTag(html), html);
+  // Alle tre forekomstene (id-attributt, saksnummer, tittel) står escapet
+  assert.strictEqual(html.split('&quot;&gt;&lt;img src=x onerror=alert(1)&gt;').length - 1, 3);
+  assert.ok(!html.includes(EVIL), 'raw value never appears');
+  assert.strictEqual(R.mhCitedHtml([]), '');
+});
+
+test('mhPartyHtml escapes the name in the value and the title attribute', () => {
+  const html = R.mhPartyHtml({ id: 'D1', applicants: EVIL }, 0, 'applicants', 'Søker');
+  assert.ok(!rawTag(html), html);
+  assert.strictEqual(html.split('&quot;&gt;&lt;img src=x onerror=alert(1)&gt;').length - 1, 2); // value og title
+  assert.ok(!html.includes(EVIL), 'raw value never appears');
+  assert.match(html, /maxlength="300"/);
+});
+
+// ── Korrupt sak: indeksen leser stille (funn 5) ──────────────
+test('loadSakDataQuiet reads details without warnings or writes, and returns null for corrupt data', () => {
+  const store = { pt_sak_ok: '{"docs":[]}', pt_sak_bad: '{not json' };
+  let writes = 0, toasts = 0;
+  const Q = loadFunctions(['loadSakDataQuiet', 'sakKey'], { vars: ['SAK_KEY_PREFIX'], globals: {
+    localStorage: { getItem: (k) => (k in store ? store[k] : null), setItem: () => { writes++; } },
+    showToast: () => { toasts++; },
+  } });
+  assert.deepStrictEqual(plain(Q.loadSakDataQuiet('ok')), { docs: [] });
+  assert.strictEqual(Q.loadSakDataQuiet('bad'), null);
+  assert.strictEqual(Q.loadSakDataQuiet('missing'), null);
+  assert.strictEqual(writes, 0);
+  assert.strictEqual(toasts, 0);
 });
