@@ -6,7 +6,8 @@
     "lint:js": "eslint PatentDesk.html",
     "lint:html": "eslint --no-eslintrc -c .eslintrc-html.json PatentDesk.html",
     "test": "node --test test/*.test.js",
-    "coverage:functions": "node test/functionCoverage.js"
+    "coverage:functions": "node test/functionCoverage.js",
+    "codemap": "node scripts/codemap.js"
   },
   "devDependencies": {
     "@html-eslint/eslint-plugin": "^0.24.1",

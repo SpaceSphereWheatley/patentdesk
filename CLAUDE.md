@@ -96,83 +96,89 @@ These two stores have distinct responsibilities. Do not conflate them.
 
 ---
 
-## Agent team workflow
+## Response style
 
-Development is done by a team of subagents defined in `.claude/agents/`. The
-main session is the **orchestrator**: it routes work between agents, passes
-each one only the inputs listed below, and brings decisions to the owner. The
-**owner** (the user) is project manager and has the final say.
+- Answer first, then only the detail needed to act on it.
+- Short bullets over paragraphs. No restating the question, no recap of what
+  the owner said, no closing summary of what was just shown.
+- End-of-task summaries: 5 lines or fewer, plus the download link (below).
+- Explain alternatives, reasoning or background only when asked, or when the
+  owner must make a decision.
+- Disagree plainly when something looks wrong; don't pad with praise.
 
-| Agent | Role | Writes | Model |
-|---|---|---|---|
-| `spec` | Intent → requirements + acceptance criteria; pushes back on scope | nothing (reports) | opus |
-| `architect` | Structural decisions before code: data, migrations, function boundaries | nothing (reports) | opus |
-| `qa` | Writes tests from the spec **before** building; reviews the diff after | `test/` only | opus |
-| `builder` | Implements until QA's tests pass | `PatentDesk.html` | opus |
-| `ux-critic` | Mockups before UI changes; reviews built screens | scratchpad mockups | sonnet |
-| `security` | Reviews XSS, imports/exports, storage, confidential data | nothing (reports) | opus |
-| `docs` | Version bump, CHANGELOG, README/CLAUDE.md sync at release | docs + `APP_VERSION` | sonnet |
+---
 
-### Tiers
-The orchestrator picks a tier (spec confirms it for Feature/Structural); the
-owner can override.
+## Workflow
+
+The main session does the work. The **owner** (the user) has the final say;
+⏸ marks a real stop where you wait for the owner's answer. Pick a tier and
+state it; the owner can override.
 
 - **Fix** — a bug or small logic change, no UI or stored-data change.
-  `qa` (test reproducing the bug) → `builder` → `qa` (review).
+  Write a failing test → fix → `npm test` + `npm run lint`. No agents.
 - **Feature** — new or changed behaviour, possibly UI.
-  `spec` → ⏸ owner approves spec → `ux-critic` mockup (if UI) → ⏸ owner
-  approves mockup → `qa` (tests) → `builder` → `qa` review + `ux-critic`
-  review (if UI) + `security` (if triggered) → ⏸ owner approves.
+  1. Write a short spec: problem, scope (in/out), numbered testable
+     acceptance criteria (cover each workflow state, Oppdrag, overdue,
+     weekends/holidays/vacation, empty data), UI impact, open questions.
+     Push back if the request conflicts with a domain rule or an earlier
+     decision in `CHANGELOG.md`, bundles separate features, or could be
+     solved smaller. ⏸ owner approves.
+  2. If UI changes: a mockup (small standalone HTML in the scratchpad using
+     the app's colours and CSS prefixes, or an ASCII sketch for small
+     changes). ⏸ owner approves.
+  3. Tests from the acceptance criteria first, then the code.
+  4. `reviewer` agent (see below). ⏸ owner approves.
 - **Structural** — new stored data, `SCHEMA_VERSION` bump, import/export
-  format, or a change across many functions.
-  As Feature, with `architect` after the spec is approved (⏸ owner approves
-  the design), and `security` always reviews.
+  format, or a change across many functions. As Feature, with a design
+  section in the spec: stored data shape, migration (old data must load
+  without loss), functions to add/change, risks. The reviewer runs on
+  **opus**.
 
-`docs` runs once per release, after the owner approves, not per change.
+### Reviewer agent
+`.claude/agents/reviewer.md` is the only agent. It gives an independent
+review of Feature and Structural changes (correctness, tests, security, UX in
+one pass).
+- Give it the approved spec and the branch — never your own reasoning or a
+  summary of the implementation.
+- It runs on sonnet by default. Pass `model: opus` for Structural changes and
+  for changes that touch rendering of user/pasted/imported text
+  (`innerHTML`, attributes), import/export/paste parsing, localStorage or
+  IndexedDB writes or migrations, or anything adding network access or
+  dynamic code.
+- On CHANGES REQUIRED: fix, then re-review. After two rounds without PASS,
+  stop and bring it to the owner. If you disagree with a finding, give the
+  owner both positions.
+- Never weaken, skip or delete a test to get green.
 
-### Security triggers
-Call `security` whenever a change touches: rendering of user-entered,
-pasted or imported text (`innerHTML`, attributes); import, export or paste
-parsing; localStorage/IndexedDB writes or migrations; or anything that adds
-network access or dynamic code.
+### Release
+Once per batch of related changes, after the owner approves: choose the
+SemVer bump, update `APP_VERSION`, and move `[Unreleased]` items into a
+dated `CHANGELOG.md` entry. If stored data changed, confirm `SCHEMA_VERSION`
+was bumped and this file states the current value.
 
-### Rules for the orchestrator
-- **Independence.** `qa`, `ux-critic` and `security` get the spec, the
-  acceptance criteria and the diff — never the builder's reasoning or
-  summary. The builder never edits tests; if a test looks wrong, it goes
-  back to `qa` and the owner.
-- **Loop limit.** If `qa` returns CHANGES REQUIRED, send the findings to
-  `builder` and re-review. After two rounds without PASS, stop and bring it
-  to the owner.
-- **Disagreements** between agents (e.g. spec vs. UX, QA vs. builder) go to
-  the owner with both positions, not resolved silently.
-- **Owner gates** (⏸) are real stops: wait for the owner's answer.
-- Keep handoffs short: each agent gets the minimum context it needs.
+---
 
 ## Working conventions
 
-### Before any UI change
-Always present a **visual mockup** (produced by `ux-critic`) and wait for
-approval before editing the file. For logic-only changes with no visual
-component, skip the mockup and proceed directly.
-
-### When the file is uploaded
-Treat the uploaded file as ground truth. Previously delivered changes may not
-be present in a re-uploaded file — re-apply as needed. Always grep
-`APP_VERSION` before starting work.
+### Finding your way in the file
+`PatentDesk.html` is ~20 000 lines (~1.2 MB); never read it broadly. Run
+`npm run codemap -- <word>` to list matching functions with line numbers and
+their sections (no argument prints the full map), then read only those
+ranges.
 
 ### Change discipline
 - List planned changes before implementing.
 - One `CHANGELOG.md` entry per version bump.
 - Do not introduce new external libraries or CDN links.
-- The file is 8 000+ lines; this is acceptable given the offline constraint.
+- Escape user-provided text rendered via `innerHTML` with `esc`.
+- Hand-written CSS with component prefixes; logic in small pure functions.
 
 ### Test first
 Every new change — bug fix, new logic, refactor of a pure function — must
-come with a test before the implementation. The `qa` agent writes these
-tests from the spec; the builder does not. Add or update a
-test in `test/*.test.js` using the `loadFunctions` harness
-(`test/extractFunctions.js`) that exercises the new/changed behavior, and run
+come with a test before the implementation. Add or update a test in
+`test/*.test.js` using the `loadFunctions` harness
+(`test/extractFunctions.js`) that exercises the new/changed behavior; stub
+dates and `isNonWorkday` so tests don't drift with the calendar. Run
 `npm test` before considering the change done. UI-only/render code with no
 extractable pure logic is exempt, but extract pure logic into its own
 function where possible so it can be tested this way.
@@ -197,7 +203,8 @@ asked.
 | `PatentDesk.html` | The entire application |
 | `CHANGELOG.md` | Version history (Keep a Changelog 1.1.0 format) |
 | `CLAUDE.md` | These instructions |
-| `.claude/agents/*.md` | Agent team definitions (see Agent team workflow) |
+| `.claude/agents/reviewer.md` | Independent reviewer agent (see Workflow) |
+| `scripts/codemap.js` | Function/section map of `PatentDesk.html` (`npm run codemap`) |
 | `test/*.test.js` | Unit tests (`npm test`) |
 | `test/e2e/*.e2e.js` | Browser layout tests, not in `npm test`; run `node --test test/e2e/*.e2e.js` (skipped if Playwright is missing) |
 | `cpc_v2.json` | CPC classification data (external, loaded into IndexedDB) |
