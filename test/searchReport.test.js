@@ -221,8 +221,6 @@ test('ensureSakDocs deduplicates and caps inventive documents', () => {
   assert.deepStrictEqual(plain(data.claims[0].inventiveDocs), ['D1', 'D2']);
 });
 
-
-
 test('empty inputs produce an empty report', () => {
   assert.deepStrictEqual(plain(buildSearchReport([], [])), []);
   assert.deepStrictEqual(plain(buildSearchReport(null, null)), []);

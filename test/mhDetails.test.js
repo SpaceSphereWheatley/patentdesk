@@ -100,3 +100,35 @@ test('opsReplacePlan replaces all five fields, clearing what OPS does not have',
     { pubDate: '2020-01-02', effDate: '', title: 'NEW', applicants: 'B AS', inventors: '' });
   assert.deepStrictEqual(plain(plan.conflicts), []);
 });
+
+// ── Runde 2 etter review ─────────────────────────────────────
+
+test('opsAutoAction treats adding or dropping the kind code as the same document', () => {
+  assert.strictEqual(F.opsAutoAction('WO 2016/169730 A1', 'WO 2016/169730', full, true), 'none');
+  assert.strictEqual(F.opsAutoAction('WO 2016/169730', 'WO 2016/169730 A1', full, true), 'none');
+  // ...men fyller hull når noe mangler
+  assert.strictEqual(F.opsAutoAction('WO 2016/169730', 'WO 2016/169730 A1', { ...full, title: '' }, true), 'fill');
+});
+
+const G = loadFunctions(['mhEditStateOnRender', 'opsBusyStart', 'opsBusyEnd', 'docHasDetails'], { vars: ['MH_DETAIL_FIELDS', '_opsBusySeq'] });
+
+test('mhEditStateOnRender pins an empty document in edit mode, so a redraw cannot flip it', () => {
+  assert.strictEqual(G.mhEditStateOnRender(empty, undefined), true);
+  // Har du skrevet en dato, står det fortsatt i redigering ved neste tegning
+  assert.strictEqual(G.mhEditStateOnRender({ ...empty, pubDate: '2020-01-01' }, true), true);
+  assert.strictEqual(G.mhEditStateOnRender(full, undefined), undefined);
+  assert.strictEqual(G.mhEditStateOnRender(full, false), false);
+});
+
+test('opsBusyStart allows one lookup per document; opsBusyEnd only clears its own', () => {
+  const map = {};
+  const t1 = G.opsBusyStart(map, 'case|0');
+  assert.ok(t1);
+  assert.strictEqual(G.opsBusyStart(map, 'case|0'), null, 'second lookup refused while the first runs');
+  assert.ok(G.opsBusyStart(map, 'case|1'), 'another document is independent');
+  assert.strictEqual(G.opsBusyEnd(map, 'case|0', 'stale'), false);
+  assert.ok(map['case|0'], 'a stale token does not clear the running lookup');
+  assert.strictEqual(G.opsBusyEnd(map, 'case|0', t1), true);
+  assert.strictEqual(map['case|0'], undefined);
+  assert.ok(G.opsBusyStart(map, 'case|0'), 'free again after it ends');
+});

@@ -9,7 +9,8 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 ### Added
 - **Søker og oppfinner på motholdene.** Hentes fra EPO OPS sammen med datoene
   og tittelen, slik navnene ble innlevert og i OPS sin rekkefølge. Kan også
-  skrives inn for hånd, og er med i eksport og import.
+  skrives inn for hånd, og er med i eksport og import. Mangler OPS navnene,
+  sier meldingen det.
 - **Oppslaget i OPS skjer av seg selv.** Når du fører inn et nytt
   publikasjonsnummer (Enter, Tab eller klikk utenfor), hentes datoer, søker,
   oppfinner og tittel med en gang. Bare tomme felt fylles. Endrer du nummeret

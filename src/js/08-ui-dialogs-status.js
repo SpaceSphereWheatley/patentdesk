@@ -59,6 +59,8 @@ var CLOSABLE_BACKDROPS = ['cle-backdrop','modal-backdrop','confirm-backdrop','co
 function closeAllBackdrops() {
   // Esc på «Fjerne krav?» betyr behold: antall krav settes tilbake i feltet
   if (_claimsReduce) closeClaimsReduce(false);
+  // Esc på «Nummeret er endret» betyr behold, og fokus går tilbake til nummeret
+  if (_mhReplace) closeMhReplace(false);
   CLOSABLE_BACKDROPS.forEach(function(id) {
     var el = document.getElementById(id);
     el.classList.remove('open');
@@ -71,7 +73,6 @@ function closeAllBackdrops() {
   pendingConfirmId = pendingConfirmCallback = pendingSvar = pendingVidereId =
   pendingDeleteId = pendingTagId = pendingTagStatus = pendingTagCallback =
   pendingFristCallback = pendingMedlId = null;
-  _mhReplace = null;
 }
 
 // ── Frist-modal ────────────────────────────────────

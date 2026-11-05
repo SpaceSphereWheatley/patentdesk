@@ -477,12 +477,13 @@ function renderSakDocs(data) {
         '<span class="mh-id">' + esc(d.id) + '</span>' +
         '<span class="mh-ref"><span class="mh-ref-struck">' + esc(d.ref || '—') + '</span></span>' +
         '<span class="mh-cats"><span class="mh-withdrawn-label">Ikke lenger relevant</span></span>' +
-        '<span class="mh-flags"></span><span></span>' +
+        '<span class="mh-flags"></span><span></span><span></span>' +
         '<button type="button" class="mh-bg-toggle mh-restore" data-mh-restore="' + i + '"' +
           ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt.">Gjenopprett</button>' +
       '</div>';
     }
 
+    _mhEditing[i] = mhEditStateOnRender(d, _mhEditing[i]);
     var editing = i === focusIdx || mhIsEditing(d, _mhEditing[i]);
     var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) {
@@ -507,8 +508,7 @@ function renderSakDocs(data) {
         ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
         ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
       '<div class="mh-details" data-idx="' + i + '">' +
-        (editing ? mhEditHtml(d, i) : mhReadHtml(d, i)) +
-        '<span class="mh-busy" hidden>Henter fra OPS…</span>' +
+        mhDetailsInnerHtml(d, i, editing) +
       '</div>' +
     '</div>';
   }).join('');
@@ -519,6 +519,48 @@ function renderSakDocs(data) {
 // _mhEditing[idx]: true etter «Rediger», false etter «Ferdig», ellers ikke
 // satt. Nullstilles når en sak åpnes og når et mothold fjernes.
 var _mhEditing = {};
+
+// Et mothold som tegnes uten opplysninger, låses i redigering til «Ferdig»
+// eller til saken åpnes på nytt — ellers ville det hoppe til tekst ved neste
+// tegning så snart én dato er skrevet inn.
+function mhEditStateOnRender(d, explicit) {
+  if (explicit === undefined && !docHasDetails(d)) return true;
+  return explicit;
+}
+
+// Pågående OPS-oppslag, nøkkel «saks-id|idx» (se opsBusyStart).
+var _mhOpsBusy = {};
+function mhOpsBusyKey(idx) { return activeSakId + '|' + idx; }
+
+function mhDetailsInnerHtml(d, i, editing) {
+  var busy = !!_mhOpsBusy[mhOpsBusyKey(i)];
+  return (editing ? mhEditHtml(d, i) : mhReadHtml(d, i)) +
+    '<span class="mh-busy"' + (busy ? '' : ' hidden') + '>Henter fra OPS…</span>';
+}
+
+// Oppdaterer opplysningene på én rad etter et oppslag, uten å tegne lista på
+// nytt: står du og skriver et annet sted, beholder du markøren og teksten.
+// Står du i et felt på denne raden, fylles bare de andre feltene.
+function refreshMhDetails(data, idx) {
+  var el = document.querySelector('#sak-docs-mothold .mh-details[data-idx="' + idx + '"]');
+  var d = data && data.docs && data.docs[idx];
+  if (!el || !d) return;
+  var act = document.activeElement;
+  if (act && el.contains(act)) {
+    el.querySelectorAll('input').forEach(function(inp) {
+      if (inp === act) return;
+      var f = inp.dataset.field || (inp.classList.contains('mh-title-inp') ? 'title' : '');
+      if (!f) return;
+      var v = (f === 'pubDate' || f === 'effDate') ? toDisplay(d[f]) : (d[f] || '');
+      inp.value = v; inp.title = v;
+    });
+  } else {
+    var editing = mhIsEditing(d, _mhEditing[idx]);
+    el.innerHTML = mhDetailsInnerHtml(d, idx, editing);
+    el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+  }
+  refreshMhFlags(data);
+}
 
 // Et mothold uten opplysninger står i redigering til du sier «Ferdig».
 function mhIsEditing(d, explicit) {
@@ -712,6 +754,7 @@ function mhOpsBtnHtml(d, i) {
           : '';
   return '<button type="button" class="mh-ops" data-ops="' + i + '" data-doc-id="' + esc(d.id) + '"' +
     (why ? ' aria-disabled="true"' : '') +
+    (_mhOpsBusy[mhOpsBusyKey(i)] ? ' aria-busy="true"' : '') +
     ' title="' + esc(why || 'Hent datoer, søker, oppfinner og tittel fra EPO OPS igjen (fyller bare tomme felt). Skjer av seg selv når du fører inn et nytt nummer.') + '"' +
     ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg></button>';

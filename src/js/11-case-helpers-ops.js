@@ -271,8 +271,25 @@ function opsAutoAction(prevRef, newRef, doc, hasCreds) {
   if (normalizePubNumber(prevRef) === normalizePubNumber(newRef)) return 'none';
   if (!docHasDetails(doc)) return 'fill';
   var pp = opsPubNumber(prevRef);
-  if (pp && (pp.epodoc !== np.epodoc || pp.kind !== np.kind)) return 'ask';
+  // Annet dokument: annet nummer, eller to ulike kind-koder (A1 → B1). Å legge
+  // til eller fjerne kind-koden er samme dokument.
+  if (pp && (pp.epodoc !== np.epodoc || (pp.kind && np.kind && pp.kind !== np.kind))) return 'ask';
   return MH_DETAIL_FIELDS.some(function(f) { return !doc[f]; }) ? 'fill' : 'none';
+}
+
+// Ett oppslag om gangen per mothold. map er { nøkkel: token }; opsBusyStart
+// gir et token, eller null når et oppslag alt pågår. opsBusyEnd frigjør bare
+// når tokenet er det som gjelder, så et gammelt svar ikke rydder for et nytt.
+var _opsBusySeq = 0;
+function opsBusyStart(map, key) {
+  if (map[key]) return null;
+  map[key] = 'ops' + (++_opsBusySeq);
+  return map[key];
+}
+function opsBusyEnd(map, key, token) {
+  if (map[key] !== token) return false;
+  delete map[key];
+  return true;
 }
 
 function opsErrorMessage(kind) {

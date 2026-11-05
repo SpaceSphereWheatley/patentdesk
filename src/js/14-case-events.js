@@ -535,31 +535,67 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
 function mhOpsFetch(id, idx, mode) {
   var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
   var btn = row && row.querySelector('.mh-ops');
-  if (!btn || btn.getAttribute('aria-busy') === 'true') return;
+  if (!btn) return;
   if (mode === 'fill' && btn.getAttribute('aria-disabled') === 'true') return;
+  var key = id + '|' + idx;
   var inp = row.querySelector('.mh-ref-inp');
   var ref = inp ? inp.value.trim() : '';
-  clearTimeout(_sakTypingTimer);
+  var token = opsBusyStart(_mhOpsBusy, key);
+  // Ett oppslag om gangen per mothold. Samme nummer en gang til gjør ingenting;
+  // ble nummeret endret mens det første pågikk, kjøres et nytt etterpå.
+  if (!token) {
+    if (mode === 'replace' || normalizePubNumber(ref) !== normalizePubNumber(_mhOpsBusyRef[key])) {
+      _mhOpsPending[key] = mode === 'replace' ? 'replace' : (_mhOpsPending[key] || 'fill');
+    }
+    return;
+  }
+  _mhOpsBusyRef[key] = ref;
+  // Ikke clearTimeout her: en ventende lagring hører til feltet du skriver i.
   dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: 'ref', value: ref });
   mhSetBusy(idx, true);
   opsFetchDates(ref).then(function(dates) {
+    if (activeSakId === id) mhFlushTypingInRow(idx); // det du skriver nå, skal regnes med
     var data = loadSakData(id) || defaultSakData(0);
     ensureSakDocs(data);
     var doc = data.docs[idx];
     // Motholdet kan ha blitt fjernet eller endret mens vi ventet
-    if (!doc || doc.ref !== sanitizeText(ref)) { showToast('Motholdet er endret — oppslaget ble forkastet.'); return; }
+    if (!doc || doc.ref !== sanitizeText(ref)) {
+      if (!_mhOpsPending[key]) showToast('Motholdet er endret — oppslaget ble forkastet.');
+      return;
+    }
     var plan = mode === 'replace' ? opsReplacePlan(dates) : opsFillPlan(doc, dates);
     Object.keys(plan.patch).forEach(function(f) {
       dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: f, value: plan.patch[f] });
     });
-    if (activeSakId === id) renderSakDocs(loadSakData(id));
+    if (activeSakId === id) {
+      var det = document.querySelector('#sak-docs-mothold .mh-details[data-idx="' + idx + '"]');
+      // Fylt fra OPS og du står ikke i feltene: vis som tekst
+      if (!(det && det.contains(document.activeElement)) && _mhEditing[idx] === true) delete _mhEditing[idx];
+      refreshMhDetails(loadSakData(id), idx);
+    }
     showToast(mode === 'replace' ? '✓ Opplysningene er byttet ut med data fra OPS (' + dates.kind + ')'
                                  : opsFillMessage(plan, dates));
   }).catch(function(err) {
     showToast(opsErrorMessage(err && err.kind));
   }).then(function() {
-    mhSetBusy(idx, false); // raden kan være tegnet på nytt; mhSetBusy finner den igjen
+    if (!opsBusyEnd(_mhOpsBusy, key, token)) return;
+    delete _mhOpsBusyRef[key];
+    if (activeSakId === id) mhSetBusy(idx, false);
+    var next = _mhOpsPending[key];
+    delete _mhOpsPending[key];
+    if (next && activeSakId === id) mhOpsFetch(id, idx, next);
   });
+}
+var _mhOpsPending = {}, _mhOpsBusyRef = {};
+
+// Lagrer det som står i feltet du skriver i på denne raden, uten å flytte
+// markøren, så et oppslag ikke fyller et felt du holder på med.
+function mhFlushTypingInRow(idx) {
+  var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
+  var act = document.activeElement;
+  if (!row || !act || !row.contains(act) || !act.matches('input')) return;
+  clearTimeout(_sakTypingTimer);
+  act.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function mhSetBusy(idx, on) {
@@ -583,6 +619,9 @@ function mhToggleEdit(idx, forceDone) {
       clearTimeout(_sakTypingTimer);
       act.dispatchEvent(new Event('change', { bubbles: true }));
     }
+    // En ugyldig dato lagres ikke — bli i feltene så den ikke forsvinner
+    var bad = row && row.querySelector('.mh-details input[aria-invalid="true"]');
+    if (bad) { bad.focus(); showToast('Datoen er ugyldig. Rett den eller tøm feltet først.', true); return; }
   }
   _mhEditing[idx] = !done;
   if (row && row.contains(document.activeElement)) document.activeElement.blur();
@@ -640,9 +679,8 @@ var _mhReplace = null; // { id, idx, ref }
 function openMhReplace(id, idx, prevRef, newRef) {
   _mhReplace = { id: id, idx: idx, ref: newRef };
   document.getElementById('mh-replace-text').textContent =
-    'Nummeret for D' + (idx + 1) + ' er endret fra ' + prevRef + ' til ' + newRef + '. ' +
-    'Bytte ut datoene, søker, oppfinner og tittel med data fra OPS for det nye nummeret? ' +
-    'Det OPS ikke har, blir tomt.';
+    'Erstatte opplysningene med data for nytt nummer? D' + (idx + 1) + ': ' + prevRef + ' → ' + newRef + '. ' +
+    'Datoer, søker, oppfinner og tittel byttes ut; det OPS ikke har, blir tomt.';
   openBackdrop('mh-replace-backdrop');
   document.getElementById('btn-mh-replace-ok').focus();
 }
@@ -650,8 +688,10 @@ function closeMhReplace(replace) {
   var r = _mhReplace;
   _mhReplace = null;
   closeBackdrop('mh-replace-backdrop');
-  if (!replace || !r || activeSakId !== r.id) return;
+  if (!r || activeSakId !== r.id) return;
   var inp = document.querySelector('#sak-docs-mothold .mh-ref-inp[data-idx="' + r.idx + '"]');
+  if (inp) inp.focus(); // tastaturet tilbake til nummeret
+  if (!replace) return;
   if (!inp || inp.value.trim() !== r.ref) { showToast('Nummeret er endret igjen — ingenting er byttet ut.'); return; }
   mhOpsFetch(r.id, r.idx, 'replace');
 }

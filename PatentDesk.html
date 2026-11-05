@@ -4641,7 +4641,7 @@ button.ob-del:hover { color: var(--text-on-no); }
   <!-- Nytt nummer på et mothold: erstatte opplysningene? -->
   <div class="modal-backdrop" id="mh-replace-backdrop" aria-hidden="true">
     <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="mh-replace-title">
-      <div class="modal-header"><h2 class="modal-title" id="mh-replace-title">Erstatte opplysningene?</h2></div>
+      <div class="modal-header"><h2 class="modal-title" id="mh-replace-title">Nummeret er endret</h2></div>
       <div class="modal-body">
         <p class="modal-text" id="mh-replace-text"></p>
       </div>
@@ -10721,6 +10721,8 @@ var CLOSABLE_BACKDROPS = ['cle-backdrop','modal-backdrop','confirm-backdrop','co
 function closeAllBackdrops() {
   // Esc på «Fjerne krav?» betyr behold: antall krav settes tilbake i feltet
   if (_claimsReduce) closeClaimsReduce(false);
+  // Esc på «Nummeret er endret» betyr behold, og fokus går tilbake til nummeret
+  if (_mhReplace) closeMhReplace(false);
   CLOSABLE_BACKDROPS.forEach(function(id) {
     var el = document.getElementById(id);
     el.classList.remove('open');
@@ -10733,7 +10735,6 @@ function closeAllBackdrops() {
   pendingConfirmId = pendingConfirmCallback = pendingSvar = pendingVidereId =
   pendingDeleteId = pendingTagId = pendingTagStatus = pendingTagCallback =
   pendingFristCallback = pendingMedlId = null;
-  _mhReplace = null;
 }
 
 // ── Frist-modal ────────────────────────────────────
@@ -12662,8 +12663,25 @@ function opsAutoAction(prevRef, newRef, doc, hasCreds) {
   if (normalizePubNumber(prevRef) === normalizePubNumber(newRef)) return 'none';
   if (!docHasDetails(doc)) return 'fill';
   var pp = opsPubNumber(prevRef);
-  if (pp && (pp.epodoc !== np.epodoc || pp.kind !== np.kind)) return 'ask';
+  // Annet dokument: annet nummer, eller to ulike kind-koder (A1 → B1). Å legge
+  // til eller fjerne kind-koden er samme dokument.
+  if (pp && (pp.epodoc !== np.epodoc || (pp.kind && np.kind && pp.kind !== np.kind))) return 'ask';
   return MH_DETAIL_FIELDS.some(function(f) { return !doc[f]; }) ? 'fill' : 'none';
+}
+
+// Ett oppslag om gangen per mothold. map er { nøkkel: token }; opsBusyStart
+// gir et token, eller null når et oppslag alt pågår. opsBusyEnd frigjør bare
+// når tokenet er det som gjelder, så et gammelt svar ikke rydder for et nytt.
+var _opsBusySeq = 0;
+function opsBusyStart(map, key) {
+  if (map[key]) return null;
+  map[key] = 'ops' + (++_opsBusySeq);
+  return map[key];
+}
+function opsBusyEnd(map, key, token) {
+  if (map[key] !== token) return false;
+  delete map[key];
+  return true;
 }
 
 function opsErrorMessage(kind) {
@@ -14296,12 +14314,13 @@ function renderSakDocs(data) {
         '<span class="mh-id">' + esc(d.id) + '</span>' +
         '<span class="mh-ref"><span class="mh-ref-struck">' + esc(d.ref || '—') + '</span></span>' +
         '<span class="mh-cats"><span class="mh-withdrawn-label">Ikke lenger relevant</span></span>' +
-        '<span class="mh-flags"></span><span></span>' +
+        '<span class="mh-flags"></span><span></span><span></span>' +
         '<button type="button" class="mh-bg-toggle mh-restore" data-mh-restore="' + i + '"' +
           ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt.">Gjenopprett</button>' +
       '</div>';
     }
 
+    _mhEditing[i] = mhEditStateOnRender(d, _mhEditing[i]);
     var editing = i === focusIdx || mhIsEditing(d, _mhEditing[i]);
     var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) {
@@ -14326,8 +14345,7 @@ function renderSakDocs(data) {
         ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
         ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
       '<div class="mh-details" data-idx="' + i + '">' +
-        (editing ? mhEditHtml(d, i) : mhReadHtml(d, i)) +
-        '<span class="mh-busy" hidden>Henter fra OPS…</span>' +
+        mhDetailsInnerHtml(d, i, editing) +
       '</div>' +
     '</div>';
   }).join('');
@@ -14338,6 +14356,48 @@ function renderSakDocs(data) {
 // _mhEditing[idx]: true etter «Rediger», false etter «Ferdig», ellers ikke
 // satt. Nullstilles når en sak åpnes og når et mothold fjernes.
 var _mhEditing = {};
+
+// Et mothold som tegnes uten opplysninger, låses i redigering til «Ferdig»
+// eller til saken åpnes på nytt — ellers ville det hoppe til tekst ved neste
+// tegning så snart én dato er skrevet inn.
+function mhEditStateOnRender(d, explicit) {
+  if (explicit === undefined && !docHasDetails(d)) return true;
+  return explicit;
+}
+
+// Pågående OPS-oppslag, nøkkel «saks-id|idx» (se opsBusyStart).
+var _mhOpsBusy = {};
+function mhOpsBusyKey(idx) { return activeSakId + '|' + idx; }
+
+function mhDetailsInnerHtml(d, i, editing) {
+  var busy = !!_mhOpsBusy[mhOpsBusyKey(i)];
+  return (editing ? mhEditHtml(d, i) : mhReadHtml(d, i)) +
+    '<span class="mh-busy"' + (busy ? '' : ' hidden') + '>Henter fra OPS…</span>';
+}
+
+// Oppdaterer opplysningene på én rad etter et oppslag, uten å tegne lista på
+// nytt: står du og skriver et annet sted, beholder du markøren og teksten.
+// Står du i et felt på denne raden, fylles bare de andre feltene.
+function refreshMhDetails(data, idx) {
+  var el = document.querySelector('#sak-docs-mothold .mh-details[data-idx="' + idx + '"]');
+  var d = data && data.docs && data.docs[idx];
+  if (!el || !d) return;
+  var act = document.activeElement;
+  if (act && el.contains(act)) {
+    el.querySelectorAll('input').forEach(function(inp) {
+      if (inp === act) return;
+      var f = inp.dataset.field || (inp.classList.contains('mh-title-inp') ? 'title' : '');
+      if (!f) return;
+      var v = (f === 'pubDate' || f === 'effDate') ? toDisplay(d[f]) : (d[f] || '');
+      inp.value = v; inp.title = v;
+    });
+  } else {
+    var editing = mhIsEditing(d, _mhEditing[idx]);
+    el.innerHTML = mhDetailsInnerHtml(d, idx, editing);
+    el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+  }
+  refreshMhFlags(data);
+}
 
 // Et mothold uten opplysninger står i redigering til du sier «Ferdig».
 function mhIsEditing(d, explicit) {
@@ -14531,6 +14591,7 @@ function mhOpsBtnHtml(d, i) {
           : '';
   return '<button type="button" class="mh-ops" data-ops="' + i + '" data-doc-id="' + esc(d.id) + '"' +
     (why ? ' aria-disabled="true"' : '') +
+    (_mhOpsBusy[mhOpsBusyKey(i)] ? ' aria-busy="true"' : '') +
     ' title="' + esc(why || 'Hent datoer, søker, oppfinner og tittel fra EPO OPS igjen (fyller bare tomme felt). Skjer av seg selv når du fører inn et nytt nummer.') + '"' +
     ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg></button>';
@@ -15419,31 +15480,67 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
 function mhOpsFetch(id, idx, mode) {
   var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
   var btn = row && row.querySelector('.mh-ops');
-  if (!btn || btn.getAttribute('aria-busy') === 'true') return;
+  if (!btn) return;
   if (mode === 'fill' && btn.getAttribute('aria-disabled') === 'true') return;
+  var key = id + '|' + idx;
   var inp = row.querySelector('.mh-ref-inp');
   var ref = inp ? inp.value.trim() : '';
-  clearTimeout(_sakTypingTimer);
+  var token = opsBusyStart(_mhOpsBusy, key);
+  // Ett oppslag om gangen per mothold. Samme nummer en gang til gjør ingenting;
+  // ble nummeret endret mens det første pågikk, kjøres et nytt etterpå.
+  if (!token) {
+    if (mode === 'replace' || normalizePubNumber(ref) !== normalizePubNumber(_mhOpsBusyRef[key])) {
+      _mhOpsPending[key] = mode === 'replace' ? 'replace' : (_mhOpsPending[key] || 'fill');
+    }
+    return;
+  }
+  _mhOpsBusyRef[key] = ref;
+  // Ikke clearTimeout her: en ventende lagring hører til feltet du skriver i.
   dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: 'ref', value: ref });
   mhSetBusy(idx, true);
   opsFetchDates(ref).then(function(dates) {
+    if (activeSakId === id) mhFlushTypingInRow(idx); // det du skriver nå, skal regnes med
     var data = loadSakData(id) || defaultSakData(0);
     ensureSakDocs(data);
     var doc = data.docs[idx];
     // Motholdet kan ha blitt fjernet eller endret mens vi ventet
-    if (!doc || doc.ref !== sanitizeText(ref)) { showToast('Motholdet er endret — oppslaget ble forkastet.'); return; }
+    if (!doc || doc.ref !== sanitizeText(ref)) {
+      if (!_mhOpsPending[key]) showToast('Motholdet er endret — oppslaget ble forkastet.');
+      return;
+    }
     var plan = mode === 'replace' ? opsReplacePlan(dates) : opsFillPlan(doc, dates);
     Object.keys(plan.patch).forEach(function(f) {
       dispatch('DOC_FIELD_CHANGE', { id: id, idx: idx, field: f, value: plan.patch[f] });
     });
-    if (activeSakId === id) renderSakDocs(loadSakData(id));
+    if (activeSakId === id) {
+      var det = document.querySelector('#sak-docs-mothold .mh-details[data-idx="' + idx + '"]');
+      // Fylt fra OPS og du står ikke i feltene: vis som tekst
+      if (!(det && det.contains(document.activeElement)) && _mhEditing[idx] === true) delete _mhEditing[idx];
+      refreshMhDetails(loadSakData(id), idx);
+    }
     showToast(mode === 'replace' ? '✓ Opplysningene er byttet ut med data fra OPS (' + dates.kind + ')'
                                  : opsFillMessage(plan, dates));
   }).catch(function(err) {
     showToast(opsErrorMessage(err && err.kind));
   }).then(function() {
-    mhSetBusy(idx, false); // raden kan være tegnet på nytt; mhSetBusy finner den igjen
+    if (!opsBusyEnd(_mhOpsBusy, key, token)) return;
+    delete _mhOpsBusyRef[key];
+    if (activeSakId === id) mhSetBusy(idx, false);
+    var next = _mhOpsPending[key];
+    delete _mhOpsPending[key];
+    if (next && activeSakId === id) mhOpsFetch(id, idx, next);
   });
+}
+var _mhOpsPending = {}, _mhOpsBusyRef = {};
+
+// Lagrer det som står i feltet du skriver i på denne raden, uten å flytte
+// markøren, så et oppslag ikke fyller et felt du holder på med.
+function mhFlushTypingInRow(idx) {
+  var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
+  var act = document.activeElement;
+  if (!row || !act || !row.contains(act) || !act.matches('input')) return;
+  clearTimeout(_sakTypingTimer);
+  act.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function mhSetBusy(idx, on) {
@@ -15467,6 +15564,9 @@ function mhToggleEdit(idx, forceDone) {
       clearTimeout(_sakTypingTimer);
       act.dispatchEvent(new Event('change', { bubbles: true }));
     }
+    // En ugyldig dato lagres ikke — bli i feltene så den ikke forsvinner
+    var bad = row && row.querySelector('.mh-details input[aria-invalid="true"]');
+    if (bad) { bad.focus(); showToast('Datoen er ugyldig. Rett den eller tøm feltet først.', true); return; }
   }
   _mhEditing[idx] = !done;
   if (row && row.contains(document.activeElement)) document.activeElement.blur();
@@ -15524,9 +15624,8 @@ var _mhReplace = null; // { id, idx, ref }
 function openMhReplace(id, idx, prevRef, newRef) {
   _mhReplace = { id: id, idx: idx, ref: newRef };
   document.getElementById('mh-replace-text').textContent =
-    'Nummeret for D' + (idx + 1) + ' er endret fra ' + prevRef + ' til ' + newRef + '. ' +
-    'Bytte ut datoene, søker, oppfinner og tittel med data fra OPS for det nye nummeret? ' +
-    'Det OPS ikke har, blir tomt.';
+    'Erstatte opplysningene med data for nytt nummer? D' + (idx + 1) + ': ' + prevRef + ' → ' + newRef + '. ' +
+    'Datoer, søker, oppfinner og tittel byttes ut; det OPS ikke har, blir tomt.';
   openBackdrop('mh-replace-backdrop');
   document.getElementById('btn-mh-replace-ok').focus();
 }
@@ -15534,8 +15633,10 @@ function closeMhReplace(replace) {
   var r = _mhReplace;
   _mhReplace = null;
   closeBackdrop('mh-replace-backdrop');
-  if (!replace || !r || activeSakId !== r.id) return;
+  if (!r || activeSakId !== r.id) return;
   var inp = document.querySelector('#sak-docs-mothold .mh-ref-inp[data-idx="' + r.idx + '"]');
+  if (inp) inp.focus(); // tastaturet tilbake til nummeret
+  if (!replace) return;
   if (!inp || inp.value.trim() !== r.ref) { showToast('Nummeret er endret igjen — ingenting er byttet ut.'); return; }
   mhOpsFetch(r.id, r.idx, 'replace');
 }
