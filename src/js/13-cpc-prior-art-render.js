@@ -516,8 +516,9 @@ function renderSakDocs(data) {
 }
 
 // ── Motholdets opplysninger: tekst, eller felt etter «Rediger» ──
-// _mhEditing[idx]: true etter «Rediger», false etter «Ferdig», ellers ikke
-// satt. Nullstilles når en sak åpnes og når et mothold fjernes.
+// _mhEditing[idx]: true etter «Rediger», false etter «Ferdig», 'pinned' når
+// motholdet ble tegnet tomt (se mhEditStateOnRender), ellers ikke satt.
+// Nullstilles når en sak åpnes og når et mothold fjernes.
 var _mhEditing = {};
 
 // Et mothold som tegnes uten opplysninger, låses i redigering til «Ferdig»
@@ -568,7 +569,11 @@ function refreshMhDetails(data, idx) {
     });
   } else {
     var editing = mhIsEditing(d, _mhEditing[idx]);
+    // Sto fokus på en verdi, får samme plass fokus igjen etter oppdateringen
+    var vals = Array.prototype.slice.call(el.querySelectorAll('.mh-v'));
+    var vPos = act && el.contains(act) ? vals.indexOf(act) : -1;
     el.innerHTML = mhDetailsInnerHtml(d, idx, editing);
+    if (vPos > -1) { var nv = el.querySelectorAll('.mh-v')[vPos]; if (nv && nv.hasAttribute('tabindex')) nv.focus(); }
     el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
     // Knappen skal si det samme som visningen
     var eb = document.querySelector('#sak-docs-mothold [data-mh-edit="' + idx + '"]');
