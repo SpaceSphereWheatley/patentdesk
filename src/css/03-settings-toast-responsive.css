@@ -1,0 +1,235 @@
+/* ── 19. Innstillinger ────────────────────────────── */
+#view-innstillinger { width: 100%; max-width: 1000px; align-self: center; }
+
+/* Venstremeny: én hovedseksjon vises om gangen med alle sine underseksjoner; menyen står stille */
+.settings-layout     { display: flex; align-items: flex-start; gap: var(--space-8); }
+.settings-nav        { position: sticky; top: var(--space-6); flex: 0 0 180px; display: flex; flex-direction: column; gap: 2px; }
+.settings-nav-item   { text-align: left; background: none; border: none; border-left: 2px solid transparent; border-radius: 0 var(--radius) var(--radius) 0; padding: var(--space-3) var(--space-4); font-family: var(--font-body); font-size: var(--text-sm); color: var(--muted-text); cursor: pointer; transition: color var(--dur-base), background var(--dur-base); }
+.settings-nav-item:hover { color: var(--text); background: var(--surface2); }
+.settings-nav-item:focus-visible { outline: 1px solid var(--primary); outline-offset: -1px; }
+.settings-nav-item.is-active { color: var(--text); background: var(--surface2); border-left-color: var(--primary); }
+.settings-panes      { flex: 1 1 auto; min-width: 0; }
+.settings-panes > .settings-pane:not(.is-active) { display: none; }
+@media (max-width: 700px) {
+  .settings-layout     { flex-direction: column; gap: var(--space-5); }
+  .settings-nav        { position: static; flex: none; width: 100%; flex-direction: row; gap: var(--space-2); border-bottom: 1px solid var(--border); }
+  .settings-nav-item   { white-space: nowrap; border-left: none; border-bottom: 2px solid transparent; border-radius: var(--radius) var(--radius) 0 0; }
+  .settings-nav-item.is-active { border-bottom-color: var(--primary); }
+}
+
+.settings-section       { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-8); }
+.settings-section-title { font-family: var(--font-head); font-size: var(--text-sm); font-weight: normal; color: var(--muted-text); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.settings-group         { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.settings-group-danger  { border-color: rgba(224,85,85,0.3); }
+.settings-group-danger .settings-row { border-bottom-color: rgba(224,85,85,0.2); }
+
+.settings-row           { display: flex; align-items: center; justify-content: space-between; gap: var(--space-8); padding: var(--space-6) var(--space-7); border-bottom: 1px solid var(--border); }
+.settings-row:last-child{ border-bottom: none; }
+/* Datamappe uten mappe: dataene finnes bare i nettleseren — vises som varsel */
+.settings-row.is-data-risk { background: var(--notice-warn-bg); box-shadow: inset 3px 0 0 var(--color-warn); }
+.settings-row.is-data-risk .settings-label-title,
+.settings-row.is-data-risk .settings-label-sub { color: var(--notice-warn-text); }
+.settings-row.is-data-risk #backup-folder-sub { font-weight: 600; }
+.settings-label         { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.settings-label-title   { font-size: var(--text-base); color: var(--text); }
+.settings-label-sub     { font-size: var(--text-xs); color: var(--muted-text); }
+.settings-checkbox      { accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+
+/* Automatisk sikkerhetskopi: liste over øyeblikksbilder */
+.bk-snap-row   { display: flex; align-items: center; gap: var(--space-5); padding: var(--space-3) var(--space-1); border-bottom: 1px solid var(--border); }
+.bk-snap-row:last-child { border-bottom: none; }
+.bk-snap-time  { font-size: var(--text-sm); color: var(--text); flex-shrink: 0; }
+.bk-snap-count { font-size: var(--text-xs); color: var(--muted-text); flex: 1; }
+.bk-snap-empty { font-size: var(--text-sm); color: var(--muted-text); padding: var(--space-5) var(--space-1); }
+
+/* Arbeidsfil: sammenligning ved oppstart og tilgangsmelding */
+.wf-compare    { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.wf-compare th,
+.wf-compare td { padding: var(--space-2) var(--space-3); text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.wf-compare thead th { font-size: var(--text-xs); color: var(--muted-text); font-weight: 600; }
+.wf-compare tbody th { color: var(--muted-text); font-weight: 400; }
+.wf-compare tr:last-child th,
+.wf-compare tr:last-child td { border-bottom: none; }
+.undo-toast.wf-perm-bar { top: var(--space-6); bottom: auto; }
+.wf-perm-bar .wf-later { background: transparent; color: var(--muted-text); border: 1px solid var(--border2); }
+
+/* Innstillinger: felles kontrollhøyde 32px */
+.s-btn, .s-inp, .s-sel {
+  height: 32px; box-sizing: border-box;
+  font-size: var(--text-sm); font-family: var(--font-body);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  background: var(--surface2); color: var(--text);
+  padding: 0 var(--space-5);
+}
+.s-btn {
+  flex-shrink: 0; cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  transition: color var(--dur-base), border-color var(--dur-base), background var(--dur-base);
+}
+.s-btn:hover   { color: var(--text); border-color: var(--muted); background: var(--surface); }
+.s-btn:disabled { opacity: .55; cursor: not-allowed; }
+/* Navnet er historisk: knappen er nå blå, som alle handlinger. */
+.s-btn-accent  { color: var(--primary); border-color: var(--primary-dim); }
+.s-btn-accent:hover  { background: rgba(37,99,235,0.08); border-color: var(--primary); }
+.s-btn-danger  { color: var(--danger); border-color: rgba(224,85,85,0.4); }
+.s-btn-danger:hover  { background: rgba(224,85,85,0.08); border-color: var(--danger); }
+.s-inp { width: 110px; text-align: right; }
+.s-inp:focus, .s-sel:focus { outline: none; border-color: var(--primary); }
+.s-unit { font-size: var(--text-sm); color: var(--muted-text); }
+
+/* Innstillinger: standard varighet og buffer per sakstype */
+.tdf-table     { border-bottom: 1px solid var(--border); }
+.tdf-row       { display: grid; grid-template-columns: 1fr 180px 180px; align-items: center; gap: var(--space-6); padding: var(--space-4) var(--space-7); border-bottom: 1px solid var(--border); }
+.tdf-row:last-child { border-bottom: none; }
+.tdf-head      { padding-top: var(--space-3); padding-bottom: var(--space-3); font-size: var(--text-xs); color: var(--muted-text); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.tdf-head span:not(:first-child) { text-align: right; padding-right: 46px; }
+.tdf-type      { font-size: var(--text-base); color: var(--text); }
+.tdf-cell      { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+.tdf-cell .s-inp { width: 80px; }
+.tdf-na        { color: var(--muted-text); font-size: var(--text-sm); padding-right: 46px; }
+.tdf-cell-lbl  { display: none; font-size: var(--text-xs); color: var(--muted-text); margin-right: auto; }
+.tdf-foot      { justify-content: space-between; }
+@media (max-width: 600px) {
+  .tdf-head    { display: none; }
+  .tdf-row     { grid-template-columns: 1fr; gap: var(--space-3); }
+  .tdf-cell-lbl { display: inline; }
+  .tdf-na      { padding-right: 0; }
+  .tdf-foot    { flex-direction: column; align-items: flex-start; gap: var(--space-4); }
+}
+
+/* Ferieliste med statuser */
+.vac-status-list { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); }
+.vac-status-row {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-1) var(--space-4); border-radius: 5px;
+  border: 1px solid var(--border); font-size: var(--text-sm);
+}
+.vac-status-row.vac-done     { background: rgba(5,150,105,0.07); border-color: rgba(5,150,105,0.2); }
+.vac-status-row.vac-active   { background: rgba(217,119,6,0.08); border-color: rgba(217,119,6,0.25); }
+.vac-status-row.vac-upcoming { background: var(--surface2); }
+.vac-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.vac-status-dot.done     { background: #059669; }
+.vac-status-dot.active   { background: #d97706; }
+.vac-status-dot.upcoming { background: var(--border2); }
+.vac-status-name { font-weight: var(--weight-semibold); flex-shrink: 0; }
+.vac-status-name.done   { color: #065f46; }
+.vac-status-name.active { color: #92400e; }
+.vac-status-dates { flex: 1; color: var(--muted-text); }
+.vac-status-dates.done   { color: #059669; }
+.vac-status-dates.active { color: #d97706; }
+.vac-status-badge {
+  font-size: var(--text-2xs); padding: 1px var(--space-2); border-radius: var(--radius-pill); flex-shrink: 0; font-weight: var(--weight-medium);
+}
+.vac-status-badge.done   { background: #dcfce7; color: #166534; }
+.vac-status-badge.active { background: #fef3c7; color: #92400e; }
+
+/* Sjekkliste-editor i innstillinger */
+.cle-phases             { display: flex; flex-direction: column; gap: var(--space-6); padding: var(--space-6) var(--space-7); }
+.cle-phase              { border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; }
+.cle-phase-header       { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5);
+                          background: var(--surface2); border-bottom: 1px solid var(--border); }
+.cle-phase-name         { flex: 1; background: transparent; border: none; color: var(--text);
+                          font-family: var(--font-body); font-size: var(--text-sm); font-weight: var(--weight-semibold);
+                          outline: none; min-width: 0; }
+.cle-phase-name:focus   { color: var(--primary); }
+.cle-items              { display: flex; flex-direction: column; }
+.cle-item               { display: flex; align-items: center; gap: var(--space-2);
+                          padding: var(--space-1) var(--space-5); border-bottom: 1px solid var(--border); }
+.cle-item:last-child    { border-bottom: none; }
+.cle-item-label         { flex: 1; background: transparent; border: none; color: var(--text);
+                          font-family: var(--font-body); font-size: var(--text-sm); outline: none; min-width: 0; }
+.cle-item-label:focus   { color: var(--primary); }
+.cle-btn-del-item       { background: none; border: none; color: var(--muted-text); font-size: var(--text-base);
+                          cursor: pointer; padding: 0.1rem var(--space-1); border-radius: 3px; line-height: 1;
+                          transition: color var(--dur-base); flex-shrink: 0; }
+.cle-btn-del-item:hover { color: var(--danger); }
+.cle-add-item-row       { display: flex; gap: var(--space-3); padding: var(--space-3) var(--space-5); background: var(--surface2); }
+.cle-add-item-input     { flex: 1; background: var(--surface); border: 1px solid var(--border2);
+                          border-radius: var(--radius); color: var(--text); font-family: var(--font-body);
+                          font-size: var(--text-sm); padding: var(--space-1) var(--space-4); outline: none; }
+.cle-add-item-input:focus { border-color: var(--primary-dim); }
+.cle-btn-add-item       { background: none; border: 1px solid var(--border2); border-radius: var(--radius);
+                          color: var(--muted-text); font-size: var(--text-xs); padding: var(--space-1) var(--space-4);
+                          cursor: pointer; white-space: nowrap; transition: color var(--dur-base), border-color var(--dur-base); }
+.cle-btn-add-item:hover { color: var(--primary); border-color: var(--primary-dim); }
+.cle-footer             { display: flex; gap: var(--space-5); align-items: center; padding: var(--space-5) var(--space-7);
+                          border-top: 1px solid var(--border); flex-wrap: wrap; }
+.cle-btn-save           { background: var(--primary-dim); border: 1px solid var(--primary); color: var(--primary);
+                          border-radius: var(--radius); font-family: var(--font-body); font-size: var(--text-sm);
+                          padding: var(--space-2) var(--space-6); cursor: pointer; transition: background var(--dur-base); }
+.cle-btn-save:hover     { background: rgba(200,169,110,0.2); }
+.cle-btn-reset          { background: none; border: 1px solid var(--border2); color: var(--muted-text);
+                          border-radius: var(--radius); font-family: var(--font-body); font-size: var(--text-sm);
+                          padding: var(--space-2) var(--space-6); cursor: pointer; transition: color var(--dur-base); }
+.cle-btn-reset:hover    { color: var(--danger); border-color: rgba(224,85,85,0.5); }
+.cle-status             { font-size: var(--text-xs); color: var(--muted-text); margin-left: auto; }
+
+/* ── 20. Toast og angre ───────────────────────────── */
+.save-toast {
+  position: fixed; bottom: calc(1.5rem + var(--toast-lift, 0px)); right: 1.5rem;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-left: 3px solid var(--color-ok); border-radius: var(--radius);
+  padding: var(--space-4) var(--space-6); font-size: var(--text-sm); color: var(--text);
+  box-shadow: var(--shadow-toast);
+  z-index: 300; animation: toastIn var(--dur-slow) ease; pointer-events: none;
+}
+.save-toast.toast-error { border-left-color: var(--color-error); }
+
+.undo-toast {
+  position: fixed; bottom: calc(1.5rem + var(--toast-lift, 0px)); left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: var(--space-4) 0.85rem var(--space-4) var(--space-6);
+  display: flex; align-items: center; gap: var(--space-5);
+  font-size: var(--text-sm); color: var(--text);
+  box-shadow: var(--shadow-dropdown);
+  z-index: 400; animation: toastIn var(--dur-slow) ease; white-space: nowrap;
+}
+.undo-toast button {
+  background: var(--primary); color: var(--on-primary); border: none;
+  border-radius: var(--radius-sm); padding: var(--space-1) var(--space-4);
+  font-family: var(--font-body); font-size: var(--text-xs);
+  cursor: pointer; transition: opacity var(--dur-base);
+}
+.undo-toast button:hover { opacity: 0.82; }
+
+/* ── 21. Animasjoner ──────────────────────────────── */
+@keyframes fadeUp  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+@keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin    { to { transform: rotate(360deg); } }
+
+/* Spinner for async handlinger (CPC-innlasting, gjenoppretting o.l.) — bruker
+   currentColor så den arver riktig farge uansett bakgrunn/kontekst. */
+.spinner {
+  display: inline-block; width: 12px; height: 12px; flex-shrink: 0;
+  border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; opacity: .75; vertical-align: -2px;
+  animation: spin .8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+}
+
+/* ── 23. Responsiv ────────────────────────────────── */
+@media (max-width: 800px) {
+  .drawer                  { width: 48px; }
+  .drawer-logo             { display: none; }
+  .nav-label               { display: none; }
+  .drawer-footer           { display: none; }
+  .nav-tab                 { justify-content: center; padding: var(--space-3) 0; margin: 1px var(--space-1); border-radius: var(--radius); }
+  .nav-tab .nav-count      { display: none; }
+  .main-content            { margin-left: 48px; padding: var(--space-8) var(--space-6) 3rem; }
+  .home-dock               { left: 48px; padding-left: var(--space-6); padding-right: var(--space-6); }
+  .field-row               { grid-template-columns: 1fr; }
+  .stat-cards              { grid-template-columns: 1fr 1fr; }
+  .drawer-logo-row         { padding: 1.4rem 0 var(--space-7); justify-content: center; }
+  .drawer-toggle-btn       { display: none; }
+  /* .drawer-prefiks: reglene for pågående sak står lenger ned i arket */
+  .drawer .drawer-active        { margin: var(--space-4) var(--space-1) 0; border-color: transparent; background: transparent; }
+  .drawer .drawer-active-open   { justify-content: center; padding: var(--space-3) 0; }
+  .drawer .drawer-active-text,
+  .drawer .drawer-active-clear  { display: none; }
+}
+
+
+

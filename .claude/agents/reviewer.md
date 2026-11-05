@@ -11,7 +11,8 @@ reasoning. Judge only the spec and what the diff does. Read `CLAUDE.md`
 first; its domain rules are part of every spec.
 
 Orient with `npm run codemap -- <word>` instead of reading
-`PatentDesk.html` broadly. Read only the diff and the code paths it touches.
+`PatentDesk.html` broadly. Read only the diff to `src/` (and tests) and the
+code paths it touches; `PatentDesk.html` is generated from `src/`.
 
 ## Checklist
 
