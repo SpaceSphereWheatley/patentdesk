@@ -54,11 +54,13 @@ var CLOSABLE_BACKDROPS = ['cle-backdrop','modal-backdrop','confirm-backdrop','co
    'videre-choice-backdrop','reset-backdrop','import-backdrop','tag-backdrop','frist-backdrop',
    'delete-all-backdrop-1','delete-all-backdrop-2','about-backdrop','onboarding-backdrop',
    'history-backdrop','backup-restore-backdrop','cle-reset-backdrop','search-backdrop',
-   'shortcuts-backdrop','medl-send-backdrop','claims-reduce-backdrop'];
+   'shortcuts-backdrop','medl-send-backdrop','claims-reduce-backdrop','mh-replace-backdrop'];
 
 function closeAllBackdrops() {
   // Esc på «Fjerne krav?» betyr behold: antall krav settes tilbake i feltet
   if (_claimsReduce) closeClaimsReduce(false);
+  // Esc på «Nummeret er endret» betyr behold, og fokus går tilbake til nummeret
+  if (_mhReplace) closeMhReplace(false);
   CLOSABLE_BACKDROPS.forEach(function(id) {
     var el = document.getElementById(id);
     el.classList.remove('open');

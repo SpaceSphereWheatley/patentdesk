@@ -21,11 +21,11 @@ const {
   'claimDocCategory',
   'buildSearchReport',
   'toggleClaimDoc',
-  'ensureSakDocs',
+  'ensureSakDocs', 'capPartyText', 'sanitizeText',
   'claimDocSelectable',
   'claimDocPopHtml',
   'esc',
-], { vars: ['MAX_INVENTIVE_DOCS'] });
+], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN'] });
 
 const plain = (v) => JSON.parse(JSON.stringify(v));
 
