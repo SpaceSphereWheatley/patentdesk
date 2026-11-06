@@ -1117,7 +1117,6 @@
                 <span class="sak-section-title-left">Mothold og granskingsrapport</span>
                 <span class="sak-section-title-right">
                   <span class="gr-warn" id="sak-gr-warn" style="display:none;"></span>
-                  <button class="btn-icon btn-icon-sm" id="btn-copy-search-report" title="Kopier granskingsrapport"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier rapport</button>
                 </span>
               </h2>
               <div id="sak-docs-mothold" class="mh-list"></div>
@@ -1447,6 +1446,20 @@
       <div class="modal-footer">
         <button class="btn-secondary" id="btn-claims-reduce-keep">Behold krav</button>
         <button class="btn-danger" id="btn-claims-reduce-confirm">Fjern krav</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nytt nummer på et mothold: erstatte opplysningene? -->
+  <div class="modal-backdrop" id="mh-replace-backdrop" aria-hidden="true">
+    <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="mh-replace-title">
+      <div class="modal-header"><h2 class="modal-title" id="mh-replace-title">Nummeret er endret</h2></div>
+      <div class="modal-body">
+        <p class="modal-text" id="mh-replace-text"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-mh-replace-keep">Behold</button>
+        <button class="btn-primary" id="btn-mh-replace-ok">Erstatt</button>
       </div>
     </div>
   </div>

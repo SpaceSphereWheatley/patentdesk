@@ -12,6 +12,38 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   `main` i GitHub og viser om en nyere versjon finnes, med lenke til nedlasting.
   Kjører kun ved klikk, sender ingen data og laster ikke ned noe automatisk.
 
+## [4.55.0] - 2026-11-06
+### Added
+- **Søker og oppfinner på motholdene.** Hentes fra EPO OPS sammen med datoene
+  og tittelen, slik navnene ble innlevert og i OPS sin rekkefølge. Kan også
+  skrives inn for hånd, og er med i eksport og import. Mangler OPS navnene,
+  sier meldingen det.
+- **Oppslaget i OPS skjer av seg selv.** Når du fører inn et nytt
+  publikasjonsnummer (Enter, Tab eller klikk utenfor), hentes datoer, søker,
+  oppfinner og tittel med en gang. Bare tomme felt fylles. Endrer du nummeret
+  på et mothold som allerede har opplysninger, spør appen om de skal byttes ut
+  med data for det nye nummeret. ⤓-knappen står igjen for å hente på nytt.
+- **Opplysningene står som tekst.** Under nummeret står publisert,
+  prioritet/inng., søker, oppfinner og tittel som vanlig tekst — tittelen
+  sist, og ingenting kuttes. Klikk på en verdi (eller Enter) for å kopiere
+  den. «✎ Rediger» gir feltene for det ene motholdet; «✓ Ferdig» eller Esc
+  går tilbake. Et mothold uten opplysninger står i redigering fra start.
+- **Søket (Ctrl+K) finner saker på søker og oppfinner** på motholdene.
+- **«også i N saker» på motholdene.** Er samme dokument mothold i andre saker,
+  også avsluttede, får raden et merke. Klikk viser sakene med saksnummer,
+  tittel, status, D-nummer og kategori der (eller «ikke lenger relevant»), og
+  et klikk på en sak åpner den. Dokumentet gjenkjennes uansett skrivemåte og
+  kind-kode, så WO 2020/123456 A1 og WO2020123456A3 regnes som samme dokument.
+### Changed
+- Ingen oppgradering av dataformatet er nødvendig (skjemaversjon er fortsatt 8).
+  Eldre mothold får tomme søker- og oppfinnerfelt.
+### Removed
+- «Kopier rapport» under Mothold og granskingsrapport. Rapporten lages et
+  annet sted; enkeltverdier kopieres nå med et klikk.
+### Security
+- Søker- og oppfinnernavn fra OPS og importerte filer gjøres til ren tekst og
+  kuttes ved 300 tegn, og escapes overalt der de vises.
+
 ## [4.54.0] - 2026-11-04
 
 ### Added

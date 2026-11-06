@@ -380,7 +380,7 @@ function openGlobalSearch() {
 }
 
 // Rangering: saksnummer-prefiks > saksnummer > tittel > stikkord > notater
-// > saksdetaljene (motholdsnumre, CPC-klasser, saksnotater).
+// > saksdetaljene (motholdsnumre, søkere og oppfinnere, CPC-klasser, saksnotater).
 function searchCases(q) { return searchCaseList(q, cases, loadSakData); }
 
 // Treff i en saks detaljer. Publikasjonsnumre og klasser sammenlignes uten
@@ -391,7 +391,11 @@ function _detailsMatch(q, d) {
   var docs = Array.isArray(d.docs) ? d.docs : [];
   if (docs.some(function(x) {
     var ref = String((x && x.ref) || '');
-    return ref.toLowerCase().indexOf(q) > -1 || (qn.length >= 3 && normalizePubNumber(ref).indexOf(qn) > -1);
+    if (ref.toLowerCase().indexOf(q) > -1 || (qn.length >= 3 && normalizePubNumber(ref).indexOf(qn) > -1)) return true;
+    // Søker og oppfinner på motholdet
+    return ['applicants', 'inventors'].some(function(f) {
+      return typeof (x && x[f]) === 'string' && x[f].toLowerCase().indexOf(q) > -1;
+    });
   })) return true;
   var classes = Array.isArray(d.classes) ? d.classes : [];
   if (qn.length >= 3 && classes.some(function(x) { return normalizePubNumber((x && x.code) || '').indexOf(qn) > -1; })) return true;

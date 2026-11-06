@@ -10,7 +10,6 @@ const {
   removeDocAt,
   toggleClaimDoc,
   ensureSakDocs,
-  formatSearchReport,
   MAX_INVENTIVE_DOCS,
 } = loadFunctions([
   'effectiveClaimValue',
@@ -21,10 +20,9 @@ const {
   'docCategoryLabel',
   'removeDocAt',
   'toggleClaimDoc',
-  'ensureSakDocs',
+  'ensureSakDocs', 'capPartyText', 'sanitizeText',
   'claimDocSelectable',
-  'formatSearchReport',
-], { vars: ['MAX_INVENTIVE_DOCS'] });
+], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN'] });
 
 // loadFunctions runs the extracted source in a vm context, so values built
 // inside it carry that realm's prototypes and deepStrictEqual would reject
@@ -223,30 +221,7 @@ test('ensureSakDocs deduplicates and caps inventive documents', () => {
   assert.deepStrictEqual(plain(data.claims[0].inventiveDocs), ['D1', 'D2']);
 });
 
-test('formatSearchReport renders the worked example as copyable text', () => {
-  const { claims, docs } = workedExample();
-  docs[0].ref = 'WO 2020/123456 A1';
-  docs[1].ref = 'EP 3 214 987 B1';
-  assert.strictEqual(formatSearchReport(claims, docs), [
-    'D1  WO 2020/123456 A1',
-    '  X: krav 1–3',
-    '  Y: krav 4',
-    '  A: krav 5',
-    '',
-    'D2  EP 3 214 987 B1',
-    '  Y: krav 4',
-    '  A: krav 1–3, 5',
-  ].join('\n'));
-});
-
-test('formatSearchReport marks a document with no assessed claims', () => {
-  const docs = [doc('D1', { ref: 'WO 1' })];
-  const claims = [claim(1)]; // unassessed
-  assert.strictEqual(formatSearchReport(claims, docs), 'D1  WO 1\n  (ingen vurderte krav)');
-});
-
 test('empty inputs produce an empty report', () => {
   assert.deepStrictEqual(plain(buildSearchReport([], [])), []);
   assert.deepStrictEqual(plain(buildSearchReport(null, null)), []);
-  assert.strictEqual(formatSearchReport([], []), '');
 });

@@ -456,13 +456,18 @@ function renderSakDocs(data) {
     return;
   }
 
-  // Kategoriene utledes av kravsvurderingen — samme kilde som den kopierbare
-  // rapporten, så raden og «Kopier rapport» aldri kan si ulike ting.
+  // Kategoriene utledes av kravsvurderingen (buildSearchReport).
   var rows = buildSearchReport(data.claims || [], docs);
   var app  = { filingDate: data.filingDate, priorityDate: data.priorityDate };
   var docsCase = cases.find(function(c) { return c.id === activeSakId; });
   var locked = docRemoveWithdraws(docsCase);
   var docRounds = visibleRounds(docsCase, roundsOf(data));
+  var cited = citationIndex();
+  // Et mothold du står og skriver i, blir stående i redigering selv om det
+  // nå har opplysninger — ellers ville feltet forsvinne under markøren.
+  var act = document.activeElement;
+  var focusRow = act && act.closest && act.closest('#sak-docs-mothold .mh-details');
+  var focusIdx = focusRow ? parseInt(focusRow.dataset.idx, 10) : -1;
 
   el.innerHTML = docs.map(function(d, i) {
     var row  = rows[i];
@@ -472,12 +477,14 @@ function renderSakDocs(data) {
         '<span class="mh-id">' + esc(d.id) + '</span>' +
         '<span class="mh-ref"><span class="mh-ref-struck">' + esc(d.ref || '—') + '</span></span>' +
         '<span class="mh-cats"><span class="mh-withdrawn-label">Ikke lenger relevant</span></span>' +
-        '<span class="mh-flags"></span><span></span>' +
+        '<span class="mh-flags"></span><span></span><span></span>' +
         '<button type="button" class="mh-bg-toggle mh-restore" data-mh-restore="' + i + '"' +
           ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt.">Gjenopprett</button>' +
       '</div>';
     }
 
+    _mhEditing[i] = mhEditStateOnRender(d, _mhEditing[i]);
+    var editing = i === focusIdx || mhIsEditing(d, _mhEditing[i]);
     var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
       .map(function(cat) {
         return '<span class="mh-cat mh-cat-' + cat.toLowerCase() + '">' +
@@ -492,23 +499,215 @@ function renderSakDocs(data) {
         mhExtLinkHtml(d) +
         mhOpsBtnHtml(d, i) +
       '</span>' +
-      '<span class="mh-cats">' + mhRoundBadgeHtml(docRounds, d.id) + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
+      '<span class="mh-cats">' + '<span class="mh-cited-slot" data-idx="' + i + '">' + mhCitedHtml(citedElsewhere(cited, d.ref, activeSakId)) + '</span>' +
+        mhRoundBadgeHtml(docRounds, d.id) + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
+      mhEditBtnHtml(d, i, editing) +
       '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
         ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
         ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
-      '<span class="mh-dates">' +
-        mhDateHtml(d, i, 'pubDate', 'Publisert') +
-        mhDateHtml(d, i, 'effDate', 'Prioritet/inng.') +
-      '</span>' +
-      '<label class="mh-title">Tittel ' +
-        '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '"' +
-        ' title="' + esc(d.title) + '" placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
-        ' aria-label="' + esc('Tittel for ' + d.id) + '" /></label>' +
+      '<div class="mh-details" data-idx="' + i + '">' +
+        mhDetailsInnerHtml(d, i, editing) +
+      '</div>' +
     '</div>';
   }).join('');
   el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+}
+
+// ── Motholdets opplysninger: tekst, eller felt etter «Rediger» ──
+// _mhEditing[idx]: true etter «Rediger», false etter «Ferdig», 'pinned' når
+// motholdet ble tegnet tomt (se mhEditStateOnRender), ellers ikke satt.
+// Nullstilles når en sak åpnes og når et mothold fjernes.
+var _mhEditing = {};
+
+// Et mothold som tegnes uten opplysninger, låses i redigering til «Ferdig»
+// eller til saken åpnes på nytt — ellers ville det hoppe til tekst ved neste
+// tegning så snart én dato er skrevet inn.
+function mhEditStateOnRender(d, explicit) {
+  if (explicit === undefined && !docHasDetails(d)) return 'pinned';
+  return explicit;
+}
+
+// Etter et OPS-oppslag: tilbake til tekst bare når redigeringen kom av at
+// motholdet var tomt — ikke når du selv valgte «Rediger», og ikke mens du
+// står i feltene.
+function mhLeaveAfterFill(state, focusInFields) {
+  return state === 'pinned' && !focusInFields;
+}
+
+// Et felt under nummeret (dato, søker, oppfinner, tittel) — ikke nummerfeltet.
+function isMhDetailInput(el) {
+  return !!el && el.matches('input') && !!el.closest('.mh-details');
+}
+
+// Pågående OPS-oppslag, nøkkel «saks-id|idx» (se opsBusyStart).
+var _mhOpsBusy = {};
+function mhOpsBusyKey(idx) { return activeSakId + '|' + idx; }
+
+function mhDetailsInnerHtml(d, i, editing) {
+  var busy = !!_mhOpsBusy[mhOpsBusyKey(i)];
+  return (editing ? mhEditHtml(d, i) : mhReadHtml(d, i)) +
+    '<span class="mh-busy"' + (busy ? '' : ' hidden') + '>Henter fra OPS…</span>';
+}
+
+// Oppdaterer opplysningene på én rad etter et oppslag, uten å tegne lista på
+// nytt: står du og skriver et annet sted, beholder du markøren og teksten.
+// Står du i et felt på denne raden, fylles bare de andre feltene.
+function refreshMhDetails(data, idx) {
+  var el = document.querySelector('#sak-docs-mothold .mh-details[data-idx="' + idx + '"]');
+  var d = data && data.docs && data.docs[idx];
+  if (!el || !d) return;
+  var act = document.activeElement;
+  if (act && el.contains(act) && isMhDetailInput(act)) {
+    el.querySelectorAll('input').forEach(function(inp) {
+      if (inp === act) return;
+      var f = inp.dataset.field || (inp.classList.contains('mh-title-inp') ? 'title' : '');
+      if (!f) return;
+      var v = (f === 'pubDate' || f === 'effDate') ? toDisplay(d[f]) : (d[f] || '');
+      inp.value = v; inp.title = v;
+    });
+  } else {
+    var editing = mhIsEditing(d, _mhEditing[idx]);
+    // Sto fokus på en verdi, får samme plass fokus igjen etter oppdateringen
+    var vals = Array.prototype.slice.call(el.querySelectorAll('.mh-v'));
+    var vPos = act && el.contains(act) ? vals.indexOf(act) : -1;
+    el.innerHTML = mhDetailsInnerHtml(d, idx, editing);
+    if (vPos > -1) { var nv = el.querySelectorAll('.mh-v')[vPos]; if (nv && nv.hasAttribute('tabindex')) nv.focus(); }
+    el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+    // Knappen skal si det samme som visningen
+    var eb = document.querySelector('#sak-docs-mothold [data-mh-edit="' + idx + '"]');
+    if (eb) {
+      var hadFocus = eb === document.activeElement;
+      eb.outerHTML = mhEditBtnHtml(d, idx, editing);
+      if (hadFocus) { var nb = document.querySelector('#sak-docs-mothold [data-mh-edit="' + idx + '"]'); if (nb) nb.focus(); }
+    }
+  }
+  refreshMhFlags(data);
+}
+
+// Et mothold uten opplysninger står i redigering til du sier «Ferdig».
+function mhIsEditing(d, explicit) {
+  if (explicit === 'pinned') return true;
+  if (explicit === true || explicit === false) return explicit;
+  return !docHasDetails(d);
+}
+
+function mhEditBtnHtml(d, i, editing) {
+  return '<button type="button" class="mh-edit" data-mh-edit="' + i + '" aria-pressed="' + (editing ? 'true' : 'false') + '"' +
+    ' title="' + (editing ? 'Vis opplysningene som tekst (Esc)' : 'Rediger datoer, søker, oppfinner og tittel') + '"' +
+    ' aria-label="' + esc((editing ? 'Ferdig med ' : 'Rediger ') + d.id) + '">' +
+    (editing ? '✓ Ferdig' : '✎ Rediger') + '</button>';
+}
+
+// Én verdi i lesevisningen. Klikk (eller Enter) kopierer den; en tom verdi
+// er «—» og kopierer ingenting.
+function mhReadValueHtml(value, label, cls) {
+  var c = 'mh-v' + (cls ? ' ' + cls : '');
+  if (!value) return '<span class="' + c + ' mh-v-empty">—</span>';
+  return '<span class="' + c + '" data-copy role="button" tabindex="0"' +
+    ' title="Klikk for å kopiere" aria-label="' + esc(label + ': ' + value + ' – klikk for å kopiere') + '">' + esc(value) + '</span>';
+}
+
+// Lesevisningen: datoene, så søker og oppfinner, så tittelen sist. Ingenting
+// kuttes; en lang tittel brytes.
+function mhReadHtml(d, i) {
+  var k = function(t) { return '<span class="mh-k">' + esc(t) + '</span>'; };
+  return '<div class="mh-read" data-idx="' + i + '">' +
+    k('Publisert') + mhReadValueHtml(toDisplay(d.pubDate), 'Publisert') +
+    k('Prioritet/inng.') + mhReadValueHtml(toDisplay(d.effDate), 'Prioritet/inng.') +
+    k('Søker') + mhReadValueHtml(d.applicants, 'Søker') +
+    k('Oppfinner') + mhReadValueHtml(d.inventors, 'Oppfinner') +
+    k('Tittel') + mhReadValueHtml(d.title, 'Tittel', 'mh-v-wide') +
+  '</div>';
+}
+
+// Feltene, i samme rekkefølge som teksten.
+function mhEditHtml(d, i) {
+  return '<span class="mh-dates">' +
+      mhDateHtml(d, i, 'pubDate', 'Publisert') +
+      mhDateHtml(d, i, 'effDate', 'Prioritet/inng.') +
+    '</span>' +
+    '<span class="mh-parties">' +
+      mhPartyHtml(d, i, 'applicants', 'Søker') +
+      mhPartyHtml(d, i, 'inventors', 'Oppfinner') +
+    '</span>' +
+    '<label class="mh-title">Tittel ' +
+      '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '"' +
+      ' title="' + esc(d.title) + '" placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
+      ' aria-label="' + esc('Tittel for ' + d.id) + '" /></label>';
+}
+
+// «✓ Kopiert: …» — en lang tittel kortes i meldingen (ikke i det som kopieres).
+function copyToastText(v) {
+  v = String(v || '');
+  return '✓ Kopiert: ' + (v.length > 60 ? v.slice(0, 59) + '…' : v);
+}
+
+function mhPartyHtml(d, i, field, label) {
+  return '<label class="mh-party">' + esc(label) + ' ' +
+    '<input class="mh-party-inp" type="text" data-idx="' + i + '" data-field="' + field + '"' +
+    ' value="' + esc(d[field]) + '" title="' + esc(d[field]) + '" maxlength="' + PARTY_MAX_LEN + '"' +
+    ' placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
+    ' aria-label="' + esc(label + ' for ' + d.id) + '" /></label>';
+}
+
+// ── Sitert i andre saker ──
+// Indeksen bygges når en sak åpnes (renderSak nullstiller den) og gjenbrukes
+// til saken forlates: de andre sakene endrer seg ikke mens du står her, og
+// denne saken selv er aldri med i treffene.
+var _citedIndex = null; // { forId, index }
+function citationIndex() {
+  if (!_citedIndex || _citedIndex.forId !== activeSakId) {
+    _citedIndex = { forId: activeSakId, index: buildCitationIndex(cases, loadSakDataQuiet) };
+  }
+  return _citedIndex.index;
+}
+
+// Som loadSakData, men uten varsel og uten å bevare råteksten: indeksen
+// leser alle de andre sakene, og en korrupt sak skal meldes når den åpnes,
+// ikke hver gang en annen sak åpnes.
+function loadSakDataQuiet(id) {
+  try { var raw = localStorage.getItem(sakKey(id)); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+}
+
+// Statusen slik Ctrl+K skriver den: et ferdig oppdrag er «Avsluttet oppdrag».
+function citedStatusLabel(e) {
+  if (e.type === 'oppdrag') return e.status === 'avsluttet' ? 'Avsluttet oppdrag' : 'Oppdrag';
+  return (STATUS_CONFIG[e.status] || {}).label || e.status;
+}
+
+function citedBadgeText(n) { return 'også i ' + n + (n === 1 ? ' sak' : ' saker'); }
+
+// «D2 · X, Y», «D1 · ikke lenger relevant» eller «D3 · ikke vurdert».
+function citedEntryWhat(e) {
+  return e.docId + ' · ' + (e.withdrawn ? 'ikke lenger relevant' : e.cats.length ? e.cats.join(', ') : 'ikke vurdert');
+}
+
+function mhCitedHtml(entries) {
+  if (!entries.length) return '';
+  return '<details class="mh-cited"><summary title="Dokumentet er også mothold i andre saker">' +
+    esc(citedBadgeText(entries.length)) + '</summary>' +
+    '<ul class="mh-cited-list">' + entries.map(function(e) {
+      var status = citedStatusLabel(e);
+      return '<li><button type="button" class="mh-cited-open" data-cited-open="' + esc(e.caseId) + '">' +
+        '<span class="mh-cited-cn">' + esc(e.caseNumber) + '</span>' +
+        '<span class="mh-cited-t">' + esc(e.title) + '</span>' +
+        '<span class="mh-cited-st">' + esc(status) + '</span>' +
+        '<span class="mh-cited-what' + (e.withdrawn ? ' mh-cited-gone' : '') + '">' + esc(citedEntryWhat(e)) + '</span>' +
+      '</button></li>';
+    }).join('') + '</ul></details>';
+}
+
+// Etter at et publikasjonsnummer er endret: bare merkene byttes, så feltet
+// du skriver i beholder fokus.
+function refreshMhCited(data) {
+  var cited = citationIndex();
+  (data.docs || []).forEach(function(d, i) {
+    var slot = document.querySelector('#sak-docs-mothold .mh-cited-slot[data-idx="' + i + '"]');
+    if (slot) slot.innerHTML = mhCitedHtml(citedElsewhere(cited, d.ref, activeSakId));
+  });
 }
 
 // «ny i runde N» på et mothold som ikke var med i første runde. Ingen merking
@@ -580,8 +779,9 @@ function mhOpsBtnHtml(d, i) {
           : '';
   return '<button type="button" class="mh-ops" data-ops="' + i + '" data-doc-id="' + esc(d.id) + '"' +
     (why ? ' aria-disabled="true"' : '') +
-    ' title="' + esc(why || 'Hent datoer fra EPO OPS (fyller bare tomme felt)') + '"' +
-    ' aria-label="Hent datoer for ' + esc(d.id) + ' fra EPO OPS">' +
+    (_mhOpsBusy[mhOpsBusyKey(i)] ? ' aria-busy="true"' : '') +
+    ' title="' + esc(why || 'Hent datoer, søker, oppfinner og tittel fra EPO OPS igjen (fyller bare tomme felt). Skjer av seg selv når du fører inn et nytt nummer.') + '"' +
+    ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg></button>';
 }
 
@@ -590,12 +790,18 @@ function mhOpsBtnHtml(d, i) {
 function opsFillMessage(plan, dates) {
   var label = { pubDate: 'publisert', effDate: 'prioritet/inng.' };
   // Tittelen er for lang for meldingen — den står i feltet
+  var words = { title: 'tittel', applicants: 'søker', inventors: 'oppfinner' };
   var filled = Object.keys(plan.patch).map(function(f) {
-    return f === 'title' ? 'tittel' : label[f] + ' ' + toDisplay(plan.patch[f]);
+    return words[f] || label[f] + ' ' + toDisplay(plan.patch[f]);
   });
   var parts = [];
   parts.push(filled.length ? '✓ Hentet fra OPS (' + dates.kind + '): ' + filled.join(', ')
                            : 'Ingen tomme datofelt å fylle (OPS ' + dates.kind + ')');
+  // Bare når oppslaget faktisk lette etter navn (parseOpsBiblio setter feltene)
+  if ('applicants' in dates || 'inventors' in dates) {
+    var missing = [dates.applicants ? '' : 'søker', dates.inventors ? '' : 'oppfinner'].filter(Boolean);
+    if (missing.length) parts.push('OPS har ikke ' + missing.join(' eller '));
+  }
   plan.conflicts.forEach(function(c) {
     parts.push('OPS sier ' + label[c.field] + ' ' + toDisplay(c.ops) + ', du har ' + toDisplay(c.mine) + ' — ikke endret');
   });
