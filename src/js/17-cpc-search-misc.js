@@ -484,6 +484,95 @@ document.getElementById('search-backdrop').addEventListener('click', function(e)
   if (e.target === this) closeBackdrop('search-backdrop');
 });
 
+// ── Se etter oppdatering ───────────────────────────
+// Leser APP_VERSION fra main på GitHub og sammenligner. Ren GET uten data ut;
+// ingenting lagres, og ingenting lastes ned automatisk.
+// NB: stien under er en offentlig kontrakt for utgitte kopier. Flyttes eller
+// omdøpes filen på main, får alle installerte kopier 404 og viser «frakoblet».
+var UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/src/js/01-config-templates.js';
+var UPDATE_DOWNLOAD_URL = 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/PatentDesk.html';
+var UPDATE_TIMEOUT_MS = 8000;
+
+function compareVersions(a, b) {
+  var pa = String(a).replace(/^v/, '').split('.').map(Number);
+  var pb = String(b).replace(/^v/, '').split('.').map(Number);
+  for (var i = 0; i < 3; i++) {
+    var d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+function parseRemoteVersion(text) {
+  if (typeof text !== 'string') return null;
+  var m = /var\s+APP_VERSION\s*=\s*'(v\d+\.\d+\.\d+)'/.exec(text);
+  return m ? m[1] : null;
+}
+
+// Returnerer { kind: 'new' | 'current' | 'error', remote? }. Kaster aldri og
+// henger aldri: forespørselen avbrytes etter timeoutMs selv uten AbortSignal.timeout.
+function runUpdateCheck(fetchFn, timeoutMs) {
+  var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+  var timer;
+  var timeout = new Promise(function(resolve) {
+    timer = setTimeout(function() {
+      if (ctrl) ctrl.abort();
+      resolve({ kind: 'error' });
+    }, timeoutMs === undefined ? UPDATE_TIMEOUT_MS : timeoutMs);
+  });
+  var request = Promise.resolve().then(function() {
+    return fetchFn(UPDATE_CHECK_URL, {
+      method: 'GET', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
+      signal: ctrl ? ctrl.signal : undefined
+    });
+  }).then(function(res) {
+    if (!res || !res.ok) return { kind: 'error' };
+    return res.text().then(function(text) {
+      var remote = parseRemoteVersion(text);
+      if (!remote) return { kind: 'error' };
+      return { kind: compareVersions(remote, APP_VERSION) > 0 ? 'new' : 'current', remote: remote };
+    });
+  }).catch(function() { return { kind: 'error' }; });
+  return Promise.race([request, timeout]).then(function(r) { clearTimeout(timer); return r; });
+}
+
+function renderUpdateStatus(el, result) {
+  el.textContent = '';
+  el.className = 'upd-status upd-' + result.kind;
+  if (result.kind === 'new') {
+    el.appendChild(document.createTextNode(result.remote + ' er tilgjengelig '));
+    var a = document.createElement('a');
+    a.href = UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.textContent = 'Last ned';
+    el.appendChild(a);
+  } else if (result.kind === 'current') {
+    el.textContent = 'Du har nyeste versjon';
+  } else {
+    el.textContent = 'Kunne ikke sjekke (frakoblet?)';
+  }
+}
+
+// Klikk-håndterer: én sjekk om gangen, knappen låses mens den pågår.
+function startUpdateCheck(btn, out, fetchFn) {
+  if (btn.disabled) return Promise.resolve(null);
+  btn.disabled = true;
+  out.className = 'upd-status'; out.textContent = 'Sjekker …';
+  return runUpdateCheck(fetchFn).then(function(result) {
+    renderUpdateStatus(out, result);
+    btn.disabled = false;
+    return result;
+  });
+}
+
+// Kobler knappen til sjekken. Gjør ingenting før knappen klikkes.
+function wireUpdateCheck(doc, fetchFn) {
+  var btn = doc.getElementById('btn-check-update');
+  var out = doc.getElementById('update-status');
+  if (!btn || !out) return;
+  btn.addEventListener('click', function() { startUpdateCheck(btn, out, fetchFn); });
+}
+wireUpdateCheck(document, function(url, opts) { return fetch(url, opts); });
+
 // ── Konsoll-melding ────────────────────────────────
 (function() {
   console.log('PatentDesk ' + APP_VERSION);

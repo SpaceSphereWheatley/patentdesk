@@ -7,6 +7,13 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.56.0] - 2026-11-06
+
+### Added
+- «Se etter oppdatering» nederst i venstremenyen: leser versjonsnummeret på
+  `main` i GitHub og viser om en nyere versjon finnes, med lenke til nedlasting.
+  Kjører kun ved klikk, sender ingen data og laster ikke ned noe automatisk.
+
 ## [4.55.0] - 2026-11-06
 ### Added
 - **Søker og oppfinner på motholdene.** Hentes fra EPO OPS sammen med datoene

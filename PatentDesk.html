@@ -240,6 +240,19 @@ body {
   padding: var(--space-1) var(--space-3); width: fit-content;
   margin: 0 auto; text-align: center;
 }
+.upd-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-family: var(--font-body); font-size: var(--text-2xs); color: var(--muted-text);
+  transition: color var(--dur-base);
+}
+.upd-btn:hover:not(:disabled) { color: var(--primary); }
+.upd-btn:disabled { cursor: default; opacity: 0.6; }
+.upd-btn .ti { width: 0.9em; height: 0.9em; }
+.upd-status { font-size: var(--text-2xs); color: var(--muted-text); line-height: 1.4; text-align: center; }
+.upd-status:empty { display: none; }
+.upd-status a { color: var(--primary); font-weight: var(--weight-medium); }
+.upd-status.upd-error { color: var(--color-error); }
 .nipo-link            { text-decoration: none; transition: color var(--dur-base), border-color var(--dur-base); }
 .nipo-link:hover      { color: var(--primary); border-color: var(--primary-dim); }
 
@@ -3355,6 +3368,11 @@ button.ob-del:hover { color: var(--text-on-no); }
         <div class="drawer-date" id="current-date"></div>
         <a class="nipo-badge nipo-link" href="https://www.patentstyret.no" target="_blank" rel="noopener">Patentstyret</a>
         <span class="drawer-version logo-version"></span>
+        <button type="button" class="upd-btn" id="btn-check-update">
+          <svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg>
+          Se etter oppdatering
+        </button>
+        <div class="upd-status" id="update-status" role="status" aria-live="polite"></div>
       </div>
     </nav>
 
@@ -5049,7 +5067,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.55.0';
+var APP_VERSION    = 'v4.56.0';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -18076,6 +18094,95 @@ document.getElementById('global-search-input').addEventListener('keydown', funct
 document.getElementById('search-backdrop').addEventListener('click', function(e) {
   if (e.target === this) closeBackdrop('search-backdrop');
 });
+
+// ── Se etter oppdatering ───────────────────────────
+// Leser APP_VERSION fra main på GitHub og sammenligner. Ren GET uten data ut;
+// ingenting lagres, og ingenting lastes ned automatisk.
+// NB: stien under er en offentlig kontrakt for utgitte kopier. Flyttes eller
+// omdøpes filen på main, får alle installerte kopier 404 og viser «frakoblet».
+var UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/src/js/01-config-templates.js';
+var UPDATE_DOWNLOAD_URL = 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/PatentDesk.html';
+var UPDATE_TIMEOUT_MS = 8000;
+
+function compareVersions(a, b) {
+  var pa = String(a).replace(/^v/, '').split('.').map(Number);
+  var pb = String(b).replace(/^v/, '').split('.').map(Number);
+  for (var i = 0; i < 3; i++) {
+    var d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+function parseRemoteVersion(text) {
+  if (typeof text !== 'string') return null;
+  var m = /var\s+APP_VERSION\s*=\s*'(v\d+\.\d+\.\d+)'/.exec(text);
+  return m ? m[1] : null;
+}
+
+// Returnerer { kind: 'new' | 'current' | 'error', remote? }. Kaster aldri og
+// henger aldri: forespørselen avbrytes etter timeoutMs selv uten AbortSignal.timeout.
+function runUpdateCheck(fetchFn, timeoutMs) {
+  var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+  var timer;
+  var timeout = new Promise(function(resolve) {
+    timer = setTimeout(function() {
+      if (ctrl) ctrl.abort();
+      resolve({ kind: 'error' });
+    }, timeoutMs === undefined ? UPDATE_TIMEOUT_MS : timeoutMs);
+  });
+  var request = Promise.resolve().then(function() {
+    return fetchFn(UPDATE_CHECK_URL, {
+      method: 'GET', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
+      signal: ctrl ? ctrl.signal : undefined
+    });
+  }).then(function(res) {
+    if (!res || !res.ok) return { kind: 'error' };
+    return res.text().then(function(text) {
+      var remote = parseRemoteVersion(text);
+      if (!remote) return { kind: 'error' };
+      return { kind: compareVersions(remote, APP_VERSION) > 0 ? 'new' : 'current', remote: remote };
+    });
+  }).catch(function() { return { kind: 'error' }; });
+  return Promise.race([request, timeout]).then(function(r) { clearTimeout(timer); return r; });
+}
+
+function renderUpdateStatus(el, result) {
+  el.textContent = '';
+  el.className = 'upd-status upd-' + result.kind;
+  if (result.kind === 'new') {
+    el.appendChild(document.createTextNode(result.remote + ' er tilgjengelig '));
+    var a = document.createElement('a');
+    a.href = UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.textContent = 'Last ned';
+    el.appendChild(a);
+  } else if (result.kind === 'current') {
+    el.textContent = 'Du har nyeste versjon';
+  } else {
+    el.textContent = 'Kunne ikke sjekke (frakoblet?)';
+  }
+}
+
+// Klikk-håndterer: én sjekk om gangen, knappen låses mens den pågår.
+function startUpdateCheck(btn, out, fetchFn) {
+  if (btn.disabled) return Promise.resolve(null);
+  btn.disabled = true;
+  out.className = 'upd-status'; out.textContent = 'Sjekker …';
+  return runUpdateCheck(fetchFn).then(function(result) {
+    renderUpdateStatus(out, result);
+    btn.disabled = false;
+    return result;
+  });
+}
+
+// Kobler knappen til sjekken. Gjør ingenting før knappen klikkes.
+function wireUpdateCheck(doc, fetchFn) {
+  var btn = doc.getElementById('btn-check-update');
+  var out = doc.getElementById('update-status');
+  if (!btn || !out) return;
+  btn.addEventListener('click', function() { startUpdateCheck(btn, out, fetchFn); });
+}
+wireUpdateCheck(document, function(url, opts) { return fetch(url, opts); });
 
 // ── Konsoll-melding ────────────────────────────────
 (function() {
