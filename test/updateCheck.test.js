@@ -14,8 +14,8 @@ const document = {
   createElement: () => makeEl(),
 };
 const sandboxGlobals = { APP_VERSION: 'v4.54.0', document, setTimeout, clearTimeout, AbortController, Promise };
-const { compareVersions, parseRemoteVersion, runUpdateCheck, renderUpdateStatus, startUpdateCheck } = loadFunctions(
-  ['compareVersions', 'parseRemoteVersion', 'runUpdateCheck', 'renderUpdateStatus', 'startUpdateCheck'],
+const { compareVersions, parseRemoteVersion, runUpdateCheck, renderUpdateStatus, startUpdateCheck, wireUpdateCheck } = loadFunctions(
+  ['compareVersions', 'parseRemoteVersion', 'runUpdateCheck', 'renderUpdateStatus', 'startUpdateCheck', 'wireUpdateCheck'],
   { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_TIMEOUT_MS'], globals: sandboxGlobals }
 );
 
@@ -118,12 +118,39 @@ test('startUpdateCheck locks the button while checking, ignores a second click, 
   assert.strictEqual(out.textContent, 'Kunne ikke sjekke (frakoblet?)');
 });
 
-test('the check touches no storage and makes no request until called', async () => {
+test('a timed-out request is aborted, not left running', async () => {
+  let signal;
+  const r = await runUpdateCheck((u, o) => { signal = o.signal; return new Promise(() => {}); }, 20);
+  assert.strictEqual(r.kind, 'error');
+  assert.strictEqual(signal.aborted, true);
+});
+
+test('the check touches no storage: a successful check still reports "new"', async () => {
   const boom = new Proxy({}, { get() { throw new Error('storage touched'); } });
-  const g = Object.assign({}, sandboxGlobals, { localStorage: boom, indexedDB: boom, fetch: () => { throw new Error('fetch at load'); } });
+  const g = Object.assign({}, sandboxGlobals, { localStorage: boom, indexedDB: boom });
   const f = loadFunctions(['compareVersions', 'parseRemoteVersion', 'runUpdateCheck', 'renderUpdateStatus', 'startUpdateCheck'],
-    { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_TIMEOUT_MS'], globals: g }); // loading must not fetch
-  const btn = { disabled: false };
-  await f.startUpdateCheck(btn, makeEl(), okFetch("var APP_VERSION = 'v4.55.0';"));
-  assert.strictEqual(btn.disabled, false);
+    { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_TIMEOUT_MS'], globals: g });
+  const btn = { disabled: false }, out = makeEl();
+  const r = await f.startUpdateCheck(btn, out, okFetch("var APP_VERSION = 'v4.55.0';"));
+  assert.strictEqual(r.kind, 'new'); // a storage access would be swallowed into 'error'
+  assert.ok(out.children[0].text.startsWith('v4.55.0 er tilgjengelig'));
+});
+
+test('wireUpdateCheck makes no request until the button is clicked', async () => {
+  let handler, fetched = 0;
+  const btn = { disabled: false, addEventListener: (ev, fn) => { assert.strictEqual(ev, 'click'); handler = fn; } };
+  const out = makeEl();
+  const doc = { getElementById: (id) => (id === 'btn-check-update' ? btn : out) };
+  wireUpdateCheck(doc, () => { fetched++; return okFetch("var APP_VERSION = 'v4.54.0';")(); });
+  assert.strictEqual(fetched, 0);
+  await Promise.resolve();
+  assert.strictEqual(fetched, 0);
+  handler();
+  await new Promise((r) => setTimeout(r, 10));
+  assert.strictEqual(fetched, 1);
+  assert.strictEqual(out.textContent, 'Du har nyeste versjon');
+});
+
+test('wireUpdateCheck is a no-op when the elements are missing', () => {
+  wireUpdateCheck({ getElementById: () => null }, () => { throw new Error('no'); });
 });

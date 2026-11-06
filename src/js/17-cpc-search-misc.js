@@ -564,14 +564,14 @@ function startUpdateCheck(btn, out, fetchFn) {
   });
 }
 
-(function() {
-  var btn = document.getElementById('btn-check-update');
-  var out = document.getElementById('update-status');
+// Kobler knappen til sjekken. Gjør ingenting før knappen klikkes.
+function wireUpdateCheck(doc, fetchFn) {
+  var btn = doc.getElementById('btn-check-update');
+  var out = doc.getElementById('update-status');
   if (!btn || !out) return;
-  btn.addEventListener('click', function() {
-    startUpdateCheck(btn, out, function(url, opts) { return fetch(url, opts); });
-  });
-})();
+  btn.addEventListener('click', function() { startUpdateCheck(btn, out, fetchFn); });
+}
+wireUpdateCheck(document, function(url, opts) { return fetch(url, opts); });
 
 // ── Konsoll-melding ────────────────────────────────
 (function() {
