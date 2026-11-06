@@ -393,9 +393,11 @@ function _detailsMatch(q, d) {
     var ref = String((x && x.ref) || '');
     if (ref.toLowerCase().indexOf(q) > -1 || (qn.length >= 3 && normalizePubNumber(ref).indexOf(qn) > -1)) return true;
     // Søker og oppfinner på motholdet
-    return ['applicants', 'inventors'].some(function(f) {
+    if (['applicants', 'inventors'].some(function(f) {
       return typeof (x && x[f]) === 'string' && x[f].toLowerCase().indexOf(q) > -1;
-    });
+    })) return true;
+    // CPC-klassene på motholdet, sammenlignet uten mellomrom
+    return qn.length >= 3 && typeof (x && x.cpc) === 'string' && normalizePubNumber(x.cpc).indexOf(qn) > -1;
   })) return true;
   var classes = Array.isArray(d.classes) ? d.classes : [];
   if (qn.length >= 3 && classes.some(function(x) { return normalizePubNumber((x && x.code) || '').indexOf(qn) > -1; })) return true;

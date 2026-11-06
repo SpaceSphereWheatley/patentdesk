@@ -326,6 +326,16 @@ function hideCpcTooltip(row) {
   });
 })();
 
+// Samme hierarki-tooltip på CPC-klassene til motholdene
+(function() {
+  var list = document.getElementById('sak-docs-mothold');
+  var item = function(e) { return e.target.closest && e.target.closest('.mh-cpc-item'); };
+  list.addEventListener('mouseover', function(e) { var it = item(e); if (it) showCpcTooltip(it, 600); });
+  list.addEventListener('mouseout',  function(e) { var it = item(e); if (it) hideCpcTooltip(it); });
+  list.addEventListener('focusin',   function(e) { var it = item(e); if (it) showCpcTooltip(it, 0); });
+  list.addEventListener('focusout',  function(e) { var it = item(e); if (it) hideCpcTooltip(it); });
+})();
+
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && _cpcOpenTip) hideCpcTooltip(null);
 });
@@ -464,7 +474,7 @@ function opsFetchDates(ref) {
 }
 
 // ── Mothold ────────────────────────────────────────
-var MH_PARTY_FIELDS = ['applicants', 'inventors'];
+var MH_PARTY_FIELDS = ['applicants', 'inventors', 'cpc'];
 
 // Lista «også i N saker» lukkes ved klikk utenfor og med Esc.
 document.addEventListener('click', function(e) {
@@ -681,7 +691,7 @@ function openMhReplace(id, idx, prevRef, newRef) {
   _mhReplace = { id: id, idx: idx, ref: newRef };
   document.getElementById('mh-replace-text').textContent =
     'Erstatte opplysningene med data for nytt nummer? D' + (idx + 1) + ': ' + prevRef + ' → ' + newRef + '. ' +
-    'Datoer, søker, oppfinner og tittel byttes ut; det OPS ikke har, blir tomt.';
+    'Datoer, søker, oppfinner, CPC og tittel byttes ut; det OPS ikke har, blir tomt.';
   openBackdrop('mh-replace-backdrop');
   document.getElementById('btn-mh-replace-ok').focus();
 }

@@ -97,29 +97,32 @@ function renderSakClasses(data) {
   }
   el.innerHTML = arr.map(function(cls, i) {
     var desc = (_cpcDb && _cpcDb[cls.code]) ? _cpcDb[cls.code].t : '';
-    var tooltipHtml = '';
-    if (_cpcDb && _cpcDb[cls.code]) {
-      var hier = _cpcHierarchy(cls.code);
-      if (hier.length > 1) {
-        var rows = hier.map(function(item) {
-          var isCurrent = item.code === cls.code;
-          var dots = '';
-          for (var d = 0; d <= item.indent; d++) dots += (d > 0 ? ' ●' : '●');
-          var sep = isCurrent ? '<div class="sak-class-tooltip-sep"></div>' : '';
-          return sep + '<div class="sak-class-tooltip-row">' +
-            '<span class="sak-class-tooltip-dots">' + dots + '</span>' +
-            '<span class="sak-class-tooltip-code">' + esc(item.code) + '</span>' +
-            '<span class="sak-class-tooltip-desc' + (isCurrent ? ' is-current' : '') + '">' + esc(item.entry.t) + '</span>' +
-          '</div>';
-        }).join('');
-        tooltipHtml = '<div class="sak-class-tooltip">' +
-          '<div class="sak-class-tooltip-title">Hierarki</div>' +
-          rows +
-        '</div>';
-      }
-    }
-    return cpcRowHtml(cls, i, desc, tooltipHtml);
+    return cpcRowHtml(cls, i, desc, cpcTooltipHtml(cls.code, 2));
   }).join('');
+}
+
+// Hierarki-tooltipen for en CPC-klasse, eller '' når databasen ikke er lastet
+// eller klassen ikke finnes. minRows: hvor mange nivåer som må til før den
+// vises (sakens klasser viser beskrivelsen i raden, så der trengs to).
+function cpcTooltipHtml(code, minRows) {
+  if (!_cpcDb || !_cpcDb[code]) return '';
+  var hier = _cpcHierarchy(code);
+  if (hier.length < (minRows || 1)) return '';
+  var rows = hier.map(function(item) {
+    var isCurrent = item.code === code;
+    var dots = '';
+    for (var d = 0; d <= item.indent; d++) dots += (d > 0 ? ' ●' : '●');
+    var sep = isCurrent && hier.length > 1 ? '<div class="sak-class-tooltip-sep"></div>' : '';
+    return sep + '<div class="sak-class-tooltip-row">' +
+      '<span class="sak-class-tooltip-dots">' + dots + '</span>' +
+      '<span class="sak-class-tooltip-code">' + esc(item.code) + '</span>' +
+      '<span class="sak-class-tooltip-desc' + (isCurrent ? ' is-current' : '') + '">' + esc(item.entry.t) + '</span>' +
+    '</div>';
+  }).join('');
+  return '<div class="sak-class-tooltip" role="tooltip">' +
+    '<div class="sak-class-tooltip-title">Hierarki</div>' +
+    rows +
+  '</div>';
 }
 
 // Raden ligger i et rutenett med fire faste kolonner. Beskrivelsen ble
@@ -618,6 +621,8 @@ function mhReadHtml(d, i) {
     k('Prioritet/inng.') + mhReadValueHtml(toDisplay(d.effDate), 'Prioritet/inng.') +
     k('Søker') + mhReadValueHtml(d.applicants, 'Søker') +
     k('Oppfinner') + mhReadValueHtml(d.inventors, 'Oppfinner') +
+    k('CPC') + (d.cpc ? '<span class="mh-v-wide mh-cpc-list">' + mhCpcHtml(d.cpc) + '</span>'
+                      : '<span class="mh-v mh-v-wide mh-v-empty">—</span>') +
     k('Tittel') + mhReadValueHtml(d.title, 'Tittel', 'mh-v-wide') +
   '</div>';
 }
@@ -632,10 +637,24 @@ function mhEditHtml(d, i) {
       mhPartyHtml(d, i, 'applicants', 'Søker') +
       mhPartyHtml(d, i, 'inventors', 'Oppfinner') +
     '</span>' +
+    '<span class="mh-parties">' +
+      mhPartyHtml(d, i, 'cpc', 'CPC', CPC_MAX_LEN, 'f.eks. G01F25/15; G01N33/0006') +
+    '</span>' +
     '<label class="mh-title">Tittel ' +
       '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '"' +
       ' title="' + esc(d.title) + '" placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
       ' aria-label="' + esc('Tittel for ' + d.id) + '" /></label>';
+}
+
+// Klassene i CPC-feltet, hver for seg: klikk kopierer én klasse, og hover
+// eller fokus viser hierarkiet fra CPC-databasen når den er lastet — som for
+// sakens egne klasser.
+function mhCpcHtml(text) {
+  return String(text || '').split(';').map(function(c) { return c.trim(); }).filter(Boolean)
+    .map(function(code) {
+      return '<span class="mh-cpc-item">' + mhReadValueHtml(code, 'CPC', 'mh-cpc') +
+        cpcTooltipHtml(code.replace(/\s+/g, ''), 1) + '</span>';
+    }).join('<span class="mh-cpc-sep" aria-hidden="true"> · </span>');
 }
 
 // «✓ Kopiert: …» — en lang tittel kortes i meldingen (ikke i det som kopieres).
@@ -644,11 +663,11 @@ function copyToastText(v) {
   return '✓ Kopiert: ' + (v.length > 60 ? v.slice(0, 59) + '…' : v);
 }
 
-function mhPartyHtml(d, i, field, label) {
+function mhPartyHtml(d, i, field, label, maxLen, placeholder) {
   return '<label class="mh-party">' + esc(label) + ' ' +
     '<input class="mh-party-inp" type="text" data-idx="' + i + '" data-field="' + field + '"' +
-    ' value="' + esc(d[field]) + '" title="' + esc(d[field]) + '" maxlength="' + PARTY_MAX_LEN + '"' +
-    ' placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
+    ' value="' + esc(d[field]) + '" title="' + esc(d[field]) + '" maxlength="' + (maxLen || PARTY_MAX_LEN) + '"' +
+    ' placeholder="' + esc(placeholder || 'hentes med ⤓, eller skriv selv') + '" autocomplete="off"' +
     ' aria-label="' + esc(label + ' for ' + d.id) + '" /></label>';
 }
 
@@ -790,7 +809,7 @@ function mhOpsBtnHtml(d, i) {
 function opsFillMessage(plan, dates) {
   var label = { pubDate: 'publisert', effDate: 'prioritet/inng.' };
   // Tittelen er for lang for meldingen — den står i feltet
-  var words = { title: 'tittel', applicants: 'søker', inventors: 'oppfinner' };
+  var words = { title: 'tittel', applicants: 'søker', inventors: 'oppfinner', cpc: 'CPC' };
   var filled = Object.keys(plan.patch).map(function(f) {
     return words[f] || label[f] + ' ' + toDisplay(plan.patch[f]);
   });

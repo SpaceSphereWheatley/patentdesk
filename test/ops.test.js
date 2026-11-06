@@ -7,8 +7,8 @@ const { loadFunctions } = require('./extractFunctions');
 
 const { opsPubNumber, opsDate, parseOpsBiblio, opsFillPlan, opsFillMessage, opsErrorMessage } = loadFunctions([
   'normalizePubNumber', 'opsPubNumber', 'opsDate', 'opsAsArray', 'opsDocIdDate',
-  'opsTitle', 'opsParties', 'capPartyText', 'sanitizeText', 'parseOpsBiblio', 'opsFillPlan', 'opsFillMessage', 'opsErrorMessage', 'toDisplay',
-], { vars: ['PARTY_MAX_LEN'] });
+  'opsTitle', 'opsParties', 'opsCpc', 'capPartyText', 'capCpcText', 'sanitizeText', 'parseOpsBiblio', 'opsFillPlan', 'opsFillMessage', 'opsErrorMessage', 'toDisplay',
+], { vars: ['PARTY_MAX_LEN', 'CPC_MAX_LEN', 'CPC_MAX_CLASSES'] });
 
 // Et ekte svar fra OPS (published-data/biblio, JSON) for WO 2016/169730 A1:
 // ett dokument, én prioritet (DE 10 2015 106 349, 2015-04-24).

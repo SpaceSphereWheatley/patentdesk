@@ -207,6 +207,35 @@ function opsParties(bib, kind) {
   return capPartyText(names.join('; '));
 }
 
+// CPC-klassene på et mothold: fri tekst, «G01F25/15; G01N33/0006». Kuttes
+// kortere enn navnene — fire klasser får godt plass.
+var CPC_MAX_LEN = 100;
+var CPC_MAX_CLASSES = 4;
+function capCpcText(s) { return capPartyText(s).slice(0, CPC_MAX_LEN); }
+
+// De første fire CPC-klassene fra bibliografien, i OPS sin rekkefølge, skrevet
+// slik CPC-databasen og sakens egne klasser skriver dem («G01F25/15»). IPC
+// og andre ordninger hoppes over.
+function opsCpc(bib) {
+  var group = bib && bib['patent-classifications'];
+  var val = function(x, k) { return String((x && x[k] && x[k].$) || '').trim(); };
+  var seen = {}, codes = [];
+  opsAsArray(group && group['patent-classification'])
+    .filter(function(x) {
+      var sch = x && x['classification-scheme'] && x['classification-scheme']['@scheme'];
+      return /^CPC/.test(String(sch || ''));
+    })
+    .sort(function(a, b) { return (parseInt(a['@sequence'], 10) || 0) - (parseInt(b['@sequence'], 10) || 0); })
+    .forEach(function(x) {
+      var head = val(x, 'section') + val(x, 'class') + val(x, 'subclass');
+      var mg = val(x, 'main-group'), sg = val(x, 'subgroup');
+      if (!/^[A-HY]\d\d[A-Z]$/.test(head) || !/^\d+$/.test(mg) || !/^\d+$/.test(sg)) return;
+      var code = head + mg + '/' + sg;
+      if (!seen[code]) { seen[code] = true; codes.push(code); }
+    });
+  return capCpcText(codes.slice(0, CPC_MAX_CLASSES).join('; '));
+}
+
 // Publiseringsdato, motholdets egen dato (tidligste prioritet, ellers
 // inngivelsesdatoen) og tittel fra et published-data/biblio-svar. Har nummeret flere
 // publiseringer (A1, B1 …), velges den med samme kind-kode, ellers den
@@ -223,7 +252,8 @@ function parseOpsBiblio(json, kind) {
                effDate: prios[0] || opsDocIdDate(bib['application-reference']),
                title: opsTitle(bib),
                applicants: opsParties(bib, 'applicant'),
-               inventors: opsParties(bib, 'inventor') };
+               inventors: opsParties(bib, 'inventor'),
+               cpc: opsCpc(bib) };
     })
     .filter(function(x) { return x.pubDate; })
     .sort(function(a, b) { return a.pubDate < b.pubDate ? -1 : a.pubDate > b.pubDate ? 1 : 0; });
@@ -236,7 +266,7 @@ function parseOpsBiblio(json, kind) {
 // eller oppfinner meldes ikke — den kan godt være en du har skrevet selv.
 function opsFillPlan(doc, dates) {
   var patch = {}, conflicts = [];
-  ['pubDate', 'effDate', 'title', 'applicants', 'inventors'].forEach(function(f) {
+  ['pubDate', 'effDate', 'title', 'applicants', 'inventors', 'cpc'].forEach(function(f) {
     var ops = dates[f] || '', mine = (doc && doc[f]) || '';
     if (!ops) return;
     if (!mine) patch[f] = ops;
@@ -246,7 +276,7 @@ function opsFillPlan(doc, dates) {
 }
 
 // Feltene under motholdets nummer, i den rekkefølgen de vises.
-var MH_DETAIL_FIELDS = ['pubDate', 'effDate', 'applicants', 'inventors', 'title'];
+var MH_DETAIL_FIELDS = ['pubDate', 'effDate', 'applicants', 'inventors', 'cpc', 'title'];
 
 function docHasDetails(d) {
   return !!d && MH_DETAIL_FIELDS.some(function(f) { return !!d[f]; });
@@ -344,6 +374,7 @@ function ensureSakDocs(data) {
     return { id: 'D' + (i + 1), ref: d.ref || '',
              pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
              applicants: capPartyText(d.applicants), inventors: capPartyText(d.inventors),
+             cpc: capCpcText(d.cpc),
              p: !!d.p, e: !!d.e, background: !!d.background, withdrawn: !!d.withdrawn };
   });
   var forNovelty = {}, forInventive = {};

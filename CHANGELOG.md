@@ -6,6 +6,17 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Added
+- **CPC-klasser på motholdene.** Oppslaget i EPO OPS (automatisk eller med ⤓)
+  henter nå også de fire første CPC-klassene i OPS sin rekkefølge, skrevet som
+  sakens egne klasser (G01F25/15). De står på en egen linje før tittelen; klikk
+  på en klasse kopierer den, og hold over (eller tab til) en klasse for å se
+  hierarkiet fra CPC-databasen, som for sakens egne klasser. Feltet kan
+  endres under «Rediger», er med i eksport og import, og Ctrl+K finner saker
+  på motholdenes klasser.
+### Changed
+- Ingen oppgradering av dataformatet er nødvendig (skjemaversjon er fortsatt 8).
+  Eldre mothold får et tomt CPC-felt.
 
 ## [4.56.0] - 2026-11-06
 

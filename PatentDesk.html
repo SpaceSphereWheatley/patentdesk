@@ -2440,6 +2440,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-v-wide          { grid-column: 2 / -1; }
 .mh-v-empty         { color: var(--muted-text); }
 .mh-v-copied, .mh-v-copied:hover { background: var(--tone-ok-strong); }
+/* CPC-klassene: hver for seg, med hierarki-tooltip som sakens egne klasser */
+.mh-cpc-list        { display: flex; flex-wrap: wrap; align-items: baseline; min-width: 0; }
+.mh-cpc-item        { position: relative; display: inline-flex; }
+.mh-cpc             { font-variant-numeric: tabular-nums; }
+.mh-cpc-sep         { color: var(--muted-text); white-space: pre; }
 .mh-busy            { font-size: var(--text-2xs); color: var(--primary-dim); }
 .mh-edit            { font-size: var(--text-2xs); font-family: var(--font-body); white-space: nowrap; cursor: pointer;
                       padding: 2px var(--space-3); border-radius: var(--radius-sm);
@@ -6195,7 +6200,7 @@ function normalizeImportSakDetails(sd) {
       return copy;
     });
   }
-  // Mothold: søker og oppfinner er fri tekst fra filen — kuttes og gjøres til
+  // Mothold: søker, oppfinner og CPC er fri tekst fra filen — kuttes og gjøres til
   // tekst her, så de aldri lagres i en form appen selv ikke ville skrevet.
   if (Array.isArray(sd.docs)) {
     out.docs = sd.docs.map(function(d) {
@@ -6205,6 +6210,7 @@ function normalizeImportSakDetails(sd) {
       ['applicants', 'inventors'].forEach(function(f) {
         if (Object.prototype.hasOwnProperty.call(d, f)) copy[f] = capPartyText(d[f]);
       });
+      if (Object.prototype.hasOwnProperty.call(d, 'cpc')) copy.cpc = capCpcText(d.cpc);
       return copy;
     });
   }
@@ -9362,8 +9368,10 @@ function _dispatch(action, payload) {
       if (!doc) break;
       var isDate = payload.field === 'pubDate' || payload.field === 'effDate';
       var isParty = payload.field === 'applicants' || payload.field === 'inventors';
-      var isText = payload.field === 'ref' || payload.field === 'title' || isParty;
-      doc[payload.field] = isParty                 ? capPartyText(payload.value)
+      var isCpc   = payload.field === 'cpc';
+      var isText = payload.field === 'ref' || payload.field === 'title' || isParty || isCpc;
+      doc[payload.field] = isCpc                   ? capCpcText(payload.value)
+                         : isParty                 ? capPartyText(payload.value)
                          : isText                  ? sanitizeText(payload.value)
                          : isDate                  ? String(payload.value || '')
                          : !!payload.value;
@@ -12617,6 +12625,35 @@ function opsParties(bib, kind) {
   return capPartyText(names.join('; '));
 }
 
+// CPC-klassene på et mothold: fri tekst, «G01F25/15; G01N33/0006». Kuttes
+// kortere enn navnene — fire klasser får godt plass.
+var CPC_MAX_LEN = 100;
+var CPC_MAX_CLASSES = 4;
+function capCpcText(s) { return capPartyText(s).slice(0, CPC_MAX_LEN); }
+
+// De første fire CPC-klassene fra bibliografien, i OPS sin rekkefølge, skrevet
+// slik CPC-databasen og sakens egne klasser skriver dem («G01F25/15»). IPC
+// og andre ordninger hoppes over.
+function opsCpc(bib) {
+  var group = bib && bib['patent-classifications'];
+  var val = function(x, k) { return String((x && x[k] && x[k].$) || '').trim(); };
+  var seen = {}, codes = [];
+  opsAsArray(group && group['patent-classification'])
+    .filter(function(x) {
+      var sch = x && x['classification-scheme'] && x['classification-scheme']['@scheme'];
+      return /^CPC/.test(String(sch || ''));
+    })
+    .sort(function(a, b) { return (parseInt(a['@sequence'], 10) || 0) - (parseInt(b['@sequence'], 10) || 0); })
+    .forEach(function(x) {
+      var head = val(x, 'section') + val(x, 'class') + val(x, 'subclass');
+      var mg = val(x, 'main-group'), sg = val(x, 'subgroup');
+      if (!/^[A-HY]\d\d[A-Z]$/.test(head) || !/^\d+$/.test(mg) || !/^\d+$/.test(sg)) return;
+      var code = head + mg + '/' + sg;
+      if (!seen[code]) { seen[code] = true; codes.push(code); }
+    });
+  return capCpcText(codes.slice(0, CPC_MAX_CLASSES).join('; '));
+}
+
 // Publiseringsdato, motholdets egen dato (tidligste prioritet, ellers
 // inngivelsesdatoen) og tittel fra et published-data/biblio-svar. Har nummeret flere
 // publiseringer (A1, B1 …), velges den med samme kind-kode, ellers den
@@ -12633,7 +12670,8 @@ function parseOpsBiblio(json, kind) {
                effDate: prios[0] || opsDocIdDate(bib['application-reference']),
                title: opsTitle(bib),
                applicants: opsParties(bib, 'applicant'),
-               inventors: opsParties(bib, 'inventor') };
+               inventors: opsParties(bib, 'inventor'),
+               cpc: opsCpc(bib) };
     })
     .filter(function(x) { return x.pubDate; })
     .sort(function(a, b) { return a.pubDate < b.pubDate ? -1 : a.pubDate > b.pubDate ? 1 : 0; });
@@ -12646,7 +12684,7 @@ function parseOpsBiblio(json, kind) {
 // eller oppfinner meldes ikke — den kan godt være en du har skrevet selv.
 function opsFillPlan(doc, dates) {
   var patch = {}, conflicts = [];
-  ['pubDate', 'effDate', 'title', 'applicants', 'inventors'].forEach(function(f) {
+  ['pubDate', 'effDate', 'title', 'applicants', 'inventors', 'cpc'].forEach(function(f) {
     var ops = dates[f] || '', mine = (doc && doc[f]) || '';
     if (!ops) return;
     if (!mine) patch[f] = ops;
@@ -12656,7 +12694,7 @@ function opsFillPlan(doc, dates) {
 }
 
 // Feltene under motholdets nummer, i den rekkefølgen de vises.
-var MH_DETAIL_FIELDS = ['pubDate', 'effDate', 'applicants', 'inventors', 'title'];
+var MH_DETAIL_FIELDS = ['pubDate', 'effDate', 'applicants', 'inventors', 'cpc', 'title'];
 
 function docHasDetails(d) {
   return !!d && MH_DETAIL_FIELDS.some(function(f) { return !!d[f]; });
@@ -12754,6 +12792,7 @@ function ensureSakDocs(data) {
     return { id: 'D' + (i + 1), ref: d.ref || '',
              pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
              applicants: capPartyText(d.applicants), inventors: capPartyText(d.inventors),
+             cpc: capCpcText(d.cpc),
              p: !!d.p, e: !!d.e, background: !!d.background, withdrawn: !!d.withdrawn };
   });
   var forNovelty = {}, forInventive = {};
@@ -13952,29 +13991,32 @@ function renderSakClasses(data) {
   }
   el.innerHTML = arr.map(function(cls, i) {
     var desc = (_cpcDb && _cpcDb[cls.code]) ? _cpcDb[cls.code].t : '';
-    var tooltipHtml = '';
-    if (_cpcDb && _cpcDb[cls.code]) {
-      var hier = _cpcHierarchy(cls.code);
-      if (hier.length > 1) {
-        var rows = hier.map(function(item) {
-          var isCurrent = item.code === cls.code;
-          var dots = '';
-          for (var d = 0; d <= item.indent; d++) dots += (d > 0 ? ' ●' : '●');
-          var sep = isCurrent ? '<div class="sak-class-tooltip-sep"></div>' : '';
-          return sep + '<div class="sak-class-tooltip-row">' +
-            '<span class="sak-class-tooltip-dots">' + dots + '</span>' +
-            '<span class="sak-class-tooltip-code">' + esc(item.code) + '</span>' +
-            '<span class="sak-class-tooltip-desc' + (isCurrent ? ' is-current' : '') + '">' + esc(item.entry.t) + '</span>' +
-          '</div>';
-        }).join('');
-        tooltipHtml = '<div class="sak-class-tooltip">' +
-          '<div class="sak-class-tooltip-title">Hierarki</div>' +
-          rows +
-        '</div>';
-      }
-    }
-    return cpcRowHtml(cls, i, desc, tooltipHtml);
+    return cpcRowHtml(cls, i, desc, cpcTooltipHtml(cls.code, 2));
   }).join('');
+}
+
+// Hierarki-tooltipen for en CPC-klasse, eller '' når databasen ikke er lastet
+// eller klassen ikke finnes. minRows: hvor mange nivåer som må til før den
+// vises (sakens klasser viser beskrivelsen i raden, så der trengs to).
+function cpcTooltipHtml(code, minRows) {
+  if (!_cpcDb || !_cpcDb[code]) return '';
+  var hier = _cpcHierarchy(code);
+  if (hier.length < (minRows || 1)) return '';
+  var rows = hier.map(function(item) {
+    var isCurrent = item.code === code;
+    var dots = '';
+    for (var d = 0; d <= item.indent; d++) dots += (d > 0 ? ' ●' : '●');
+    var sep = isCurrent && hier.length > 1 ? '<div class="sak-class-tooltip-sep"></div>' : '';
+    return sep + '<div class="sak-class-tooltip-row">' +
+      '<span class="sak-class-tooltip-dots">' + dots + '</span>' +
+      '<span class="sak-class-tooltip-code">' + esc(item.code) + '</span>' +
+      '<span class="sak-class-tooltip-desc' + (isCurrent ? ' is-current' : '') + '">' + esc(item.entry.t) + '</span>' +
+    '</div>';
+  }).join('');
+  return '<div class="sak-class-tooltip" role="tooltip">' +
+    '<div class="sak-class-tooltip-title">Hierarki</div>' +
+    rows +
+  '</div>';
 }
 
 // Raden ligger i et rutenett med fire faste kolonner. Beskrivelsen ble
@@ -14473,6 +14515,8 @@ function mhReadHtml(d, i) {
     k('Prioritet/inng.') + mhReadValueHtml(toDisplay(d.effDate), 'Prioritet/inng.') +
     k('Søker') + mhReadValueHtml(d.applicants, 'Søker') +
     k('Oppfinner') + mhReadValueHtml(d.inventors, 'Oppfinner') +
+    k('CPC') + (d.cpc ? '<span class="mh-v-wide mh-cpc-list">' + mhCpcHtml(d.cpc) + '</span>'
+                      : '<span class="mh-v mh-v-wide mh-v-empty">—</span>') +
     k('Tittel') + mhReadValueHtml(d.title, 'Tittel', 'mh-v-wide') +
   '</div>';
 }
@@ -14487,10 +14531,24 @@ function mhEditHtml(d, i) {
       mhPartyHtml(d, i, 'applicants', 'Søker') +
       mhPartyHtml(d, i, 'inventors', 'Oppfinner') +
     '</span>' +
+    '<span class="mh-parties">' +
+      mhPartyHtml(d, i, 'cpc', 'CPC', CPC_MAX_LEN, 'f.eks. G01F25/15; G01N33/0006') +
+    '</span>' +
     '<label class="mh-title">Tittel ' +
       '<input class="mh-title-inp" type="text" data-idx="' + i + '" value="' + esc(d.title) + '"' +
       ' title="' + esc(d.title) + '" placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
       ' aria-label="' + esc('Tittel for ' + d.id) + '" /></label>';
+}
+
+// Klassene i CPC-feltet, hver for seg: klikk kopierer én klasse, og hover
+// eller fokus viser hierarkiet fra CPC-databasen når den er lastet — som for
+// sakens egne klasser.
+function mhCpcHtml(text) {
+  return String(text || '').split(';').map(function(c) { return c.trim(); }).filter(Boolean)
+    .map(function(code) {
+      return '<span class="mh-cpc-item">' + mhReadValueHtml(code, 'CPC', 'mh-cpc') +
+        cpcTooltipHtml(code.replace(/\s+/g, ''), 1) + '</span>';
+    }).join('<span class="mh-cpc-sep" aria-hidden="true"> · </span>');
 }
 
 // «✓ Kopiert: …» — en lang tittel kortes i meldingen (ikke i det som kopieres).
@@ -14499,11 +14557,11 @@ function copyToastText(v) {
   return '✓ Kopiert: ' + (v.length > 60 ? v.slice(0, 59) + '…' : v);
 }
 
-function mhPartyHtml(d, i, field, label) {
+function mhPartyHtml(d, i, field, label, maxLen, placeholder) {
   return '<label class="mh-party">' + esc(label) + ' ' +
     '<input class="mh-party-inp" type="text" data-idx="' + i + '" data-field="' + field + '"' +
-    ' value="' + esc(d[field]) + '" title="' + esc(d[field]) + '" maxlength="' + PARTY_MAX_LEN + '"' +
-    ' placeholder="hentes med ⤓, eller skriv selv" autocomplete="off"' +
+    ' value="' + esc(d[field]) + '" title="' + esc(d[field]) + '" maxlength="' + (maxLen || PARTY_MAX_LEN) + '"' +
+    ' placeholder="' + esc(placeholder || 'hentes med ⤓, eller skriv selv') + '" autocomplete="off"' +
     ' aria-label="' + esc(label + ' for ' + d.id) + '" /></label>';
 }
 
@@ -14645,7 +14703,7 @@ function mhOpsBtnHtml(d, i) {
 function opsFillMessage(plan, dates) {
   var label = { pubDate: 'publisert', effDate: 'prioritet/inng.' };
   // Tittelen er for lang for meldingen — den står i feltet
-  var words = { title: 'tittel', applicants: 'søker', inventors: 'oppfinner' };
+  var words = { title: 'tittel', applicants: 'søker', inventors: 'oppfinner', cpc: 'CPC' };
   var filled = Object.keys(plan.patch).map(function(f) {
     return words[f] || label[f] + ' ' + toDisplay(plan.patch[f]);
   });
@@ -15314,6 +15372,16 @@ function hideCpcTooltip(row) {
   });
 })();
 
+// Samme hierarki-tooltip på CPC-klassene til motholdene
+(function() {
+  var list = document.getElementById('sak-docs-mothold');
+  var item = function(e) { return e.target.closest && e.target.closest('.mh-cpc-item'); };
+  list.addEventListener('mouseover', function(e) { var it = item(e); if (it) showCpcTooltip(it, 600); });
+  list.addEventListener('mouseout',  function(e) { var it = item(e); if (it) hideCpcTooltip(it); });
+  list.addEventListener('focusin',   function(e) { var it = item(e); if (it) showCpcTooltip(it, 0); });
+  list.addEventListener('focusout',  function(e) { var it = item(e); if (it) hideCpcTooltip(it); });
+})();
+
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && _cpcOpenTip) hideCpcTooltip(null);
 });
@@ -15452,7 +15520,7 @@ function opsFetchDates(ref) {
 }
 
 // ── Mothold ────────────────────────────────────────
-var MH_PARTY_FIELDS = ['applicants', 'inventors'];
+var MH_PARTY_FIELDS = ['applicants', 'inventors', 'cpc'];
 
 // Lista «også i N saker» lukkes ved klikk utenfor og med Esc.
 document.addEventListener('click', function(e) {
@@ -15669,7 +15737,7 @@ function openMhReplace(id, idx, prevRef, newRef) {
   _mhReplace = { id: id, idx: idx, ref: newRef };
   document.getElementById('mh-replace-text').textContent =
     'Erstatte opplysningene med data for nytt nummer? D' + (idx + 1) + ': ' + prevRef + ' → ' + newRef + '. ' +
-    'Datoer, søker, oppfinner og tittel byttes ut; det OPS ikke har, blir tomt.';
+    'Datoer, søker, oppfinner, CPC og tittel byttes ut; det OPS ikke har, blir tomt.';
   openBackdrop('mh-replace-backdrop');
   document.getElementById('btn-mh-replace-ok').focus();
 }
@@ -18004,9 +18072,11 @@ function _detailsMatch(q, d) {
     var ref = String((x && x.ref) || '');
     if (ref.toLowerCase().indexOf(q) > -1 || (qn.length >= 3 && normalizePubNumber(ref).indexOf(qn) > -1)) return true;
     // Søker og oppfinner på motholdet
-    return ['applicants', 'inventors'].some(function(f) {
+    if (['applicants', 'inventors'].some(function(f) {
       return typeof (x && x[f]) === 'string' && x[f].toLowerCase().indexOf(q) > -1;
-    });
+    })) return true;
+    // CPC-klassene på motholdet, sammenlignet uten mellomrom
+    return qn.length >= 3 && typeof (x && x.cpc) === 'string' && normalizePubNumber(x.cpc).indexOf(qn) > -1;
   })) return true;
   var classes = Array.isArray(d.classes) ? d.classes : [];
   if (qn.length >= 3 && classes.some(function(x) { return normalizePubNumber((x && x.code) || '').indexOf(qn) > -1; })) return true;
