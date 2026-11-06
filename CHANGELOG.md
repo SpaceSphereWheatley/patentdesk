@@ -7,6 +7,11 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Added
+- «Se etter oppdatering» nederst i venstremenyen: leser versjonsnummeret på
+  `main` i GitHub og viser om en nyere versjon finnes, med lenke til nedlasting.
+  Kjører kun ved klikk, sender ingen data og laster ikke ned noe automatisk.
+
 ## [4.54.0] - 2026-11-04
 
 ### Added

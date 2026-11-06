@@ -480,6 +480,75 @@ document.getElementById('search-backdrop').addEventListener('click', function(e)
   if (e.target === this) closeBackdrop('search-backdrop');
 });
 
+// ── Se etter oppdatering ───────────────────────────
+// Leser APP_VERSION fra main på GitHub og sammenligner. Ren GET uten data ut;
+// ingenting lagres, og ingenting lastes ned automatisk.
+var UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/src/js/01-config-templates.js';
+var UPDATE_DOWNLOAD_URL = 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/PatentDesk.html';
+
+function compareVersions(a, b) {
+  var pa = String(a).replace(/^v/, '').split('.').map(Number);
+  var pb = String(b).replace(/^v/, '').split('.').map(Number);
+  for (var i = 0; i < 3; i++) {
+    var d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+function parseRemoteVersion(text) {
+  if (typeof text !== 'string') return null;
+  var m = /var\s+APP_VERSION\s*=\s*'(v\d+\.\d+\.\d+)'/.exec(text);
+  return m ? m[1] : null;
+}
+
+// Returnerer { kind: 'new' | 'current' | 'error', remote? }. Kaster aldri.
+function runUpdateCheck(fetchFn) {
+  return Promise.resolve().then(function() { return fetchFn(UPDATE_CHECK_URL, { cache: 'no-store' }); })
+    .then(function(res) {
+      if (!res || !res.ok) return { kind: 'error' };
+      return res.text().then(function(text) {
+        var remote = parseRemoteVersion(text);
+        if (!remote) return { kind: 'error' };
+        return { kind: compareVersions(remote, APP_VERSION) > 0 ? 'new' : 'current', remote: remote };
+      });
+    })
+    .catch(function() { return { kind: 'error' }; });
+}
+
+function renderUpdateStatus(el, result) {
+  el.textContent = '';
+  el.className = 'upd-status upd-' + result.kind;
+  if (result.kind === 'new') {
+    el.appendChild(document.createTextNode(result.remote + ' er tilgjengelig '));
+    var a = document.createElement('a');
+    a.href = UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.textContent = 'Last ned';
+    el.appendChild(a);
+  } else if (result.kind === 'current') {
+    el.textContent = 'Du har nyeste versjon';
+  } else {
+    el.textContent = 'Kunne ikke sjekke (frakoblet?)';
+  }
+}
+
+(function() {
+  var btn = document.getElementById('btn-check-update');
+  var out = document.getElementById('update-status');
+  if (!btn || !out) return;
+  btn.addEventListener('click', function() {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    out.className = 'upd-status'; out.textContent = 'Sjekker …';
+    runUpdateCheck(function(url, opts) {
+      return fetch(url, { cache: opts.cache, signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined });
+    }).then(function(result) {
+      renderUpdateStatus(out, result);
+      btn.disabled = false;
+    });
+  });
+})();
+
 // ── Konsoll-melding ────────────────────────────────
 (function() {
   console.log('PatentDesk ' + APP_VERSION);
