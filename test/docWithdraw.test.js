@@ -26,8 +26,8 @@ const {
   'buildSearchReport',
   'docCategoryLabel',
   'formatClaimRanges',
-  'ensureSakDocs', 'capPartyText', 'sanitizeText',
-], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN'] });
+  'ensureSakDocs', 'capPartyText', 'capCpcText', 'sanitizeText',
+], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN', 'CPC_MAX_LEN', 'CPC_MAX_CLASSES'] });
 
 const plain = (v) => JSON.parse(JSON.stringify(v));
 

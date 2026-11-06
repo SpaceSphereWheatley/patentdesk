@@ -567,8 +567,10 @@ function _dispatch(action, payload) {
       if (!doc) break;
       var isDate = payload.field === 'pubDate' || payload.field === 'effDate';
       var isParty = payload.field === 'applicants' || payload.field === 'inventors';
-      var isText = payload.field === 'ref' || payload.field === 'title' || isParty;
-      doc[payload.field] = isParty                 ? capPartyText(payload.value)
+      var isCpc   = payload.field === 'cpc';
+      var isText = payload.field === 'ref' || payload.field === 'title' || isParty || isCpc;
+      doc[payload.field] = isCpc                   ? capCpcText(payload.value)
+                         : isParty                 ? capPartyText(payload.value)
                          : isText                  ? sanitizeText(payload.value)
                          : isDate                  ? String(payload.value || '')
                          : !!payload.value;

@@ -7,12 +7,12 @@ const { loadFunctions } = require('./extractFunctions');
 const plain = (x) => JSON.parse(JSON.stringify(x));
 
 const F = loadFunctions([
-  'docHasDetails', 'mhIsEditing', 'opsAutoAction', 'opsReplacePlan', 'mhReadHtml', 'mhReadValueHtml',
+  'docHasDetails', 'mhIsEditing', 'opsAutoAction', 'opsReplacePlan', 'mhReadHtml', 'mhCpcHtml', 'mhReadValueHtml',
   'copyToastText', 'normalizePubNumber', 'opsPubNumber', 'esc', 'toDisplay',
-], { vars: ['MH_DETAIL_FIELDS'] });
+], { vars: ['MH_DETAIL_FIELDS'], globals: { cpcTooltipHtml: () => '' } });
 
-const full = { pubDate: '2016-10-27', effDate: '2015-04-24', title: 'DEVICE', applicants: 'ACME AS', inventors: 'NORDMANN, Ola' };
-const empty = { pubDate: '', effDate: '', title: '', applicants: '', inventors: '' };
+const full = { pubDate: '2016-10-27', effDate: '2015-04-24', title: 'DEVICE', applicants: 'ACME AS', inventors: 'NORDMANN, Ola', cpc: 'G01F25/15' };
+const empty = { pubDate: '', effDate: '', title: '', applicants: '', inventors: '', cpc: '' };
 
 // ── AC4: hvilke mothold står i redigering ────────────────────
 
@@ -45,7 +45,7 @@ test('mhReadHtml shows dates, then applicant and inventors, then the title last'
 
 test('mhReadHtml marks values as copyable, and empty values as «—» without copy', () => {
   const html = F.mhReadHtml({ ...full, inventors: '' }, 2);
-  assert.strictEqual((html.match(/data-copy/g) || []).length, 4);
+  assert.strictEqual((html.match(/data-copy/g) || []).length, 5); // publisert, prioritet, søker, én CPC-klasse, tittel
   assert.match(html, /mh-v-empty[^>]*>—</);
 });
 
@@ -94,10 +94,10 @@ test('opsAutoAction fills the gaps when a first valid number is entered on a par
   assert.strictEqual(F.opsAutoAction('', 'EP 1000000 B1', full, true), 'none');
 });
 
-test('opsReplacePlan replaces all five fields, clearing what OPS does not have', () => {
+test('opsReplacePlan replaces all six fields, clearing what OPS does not have', () => {
   const plan = F.opsReplacePlan({ pubDate: '2020-01-02', effDate: '', title: 'NEW', applicants: 'B AS', inventors: '', kind: 'A1' });
   assert.deepStrictEqual(plain(plan.patch),
-    { pubDate: '2020-01-02', effDate: '', title: 'NEW', applicants: 'B AS', inventors: '' });
+    { pubDate: '2020-01-02', effDate: '', title: 'NEW', applicants: 'B AS', inventors: '', cpc: '' });
   assert.deepStrictEqual(plain(plan.conflicts), []);
 });
 

@@ -703,7 +703,7 @@ function normalizeImportSakDetails(sd) {
       return copy;
     });
   }
-  // Mothold: søker og oppfinner er fri tekst fra filen — kuttes og gjøres til
+  // Mothold: søker, oppfinner og CPC er fri tekst fra filen — kuttes og gjøres til
   // tekst her, så de aldri lagres i en form appen selv ikke ville skrevet.
   if (Array.isArray(sd.docs)) {
     out.docs = sd.docs.map(function(d) {
@@ -713,6 +713,7 @@ function normalizeImportSakDetails(sd) {
       ['applicants', 'inventors'].forEach(function(f) {
         if (Object.prototype.hasOwnProperty.call(d, f)) copy[f] = capPartyText(d[f]);
       });
+      if (Object.prototype.hasOwnProperty.call(d, 'cpc')) copy.cpc = capCpcText(d.cpc);
       return copy;
     });
   }

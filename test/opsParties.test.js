@@ -11,13 +11,13 @@ const {
   parseOpsBiblio, opsParties, opsFillPlan, opsFillMessage, capPartyText,
   ensureSakDocs, normalizeImportSakDetails, searchCaseList,
 } = loadFunctions([
-  'normalizePubNumber', 'opsDate', 'opsAsArray', 'opsDocIdDate', 'opsTitle', 'opsParties',
-  'parseOpsBiblio', 'opsFillPlan', 'opsFillMessage', 'toDisplay', 'capPartyText', 'sanitizeText',
+  'normalizePubNumber', 'opsDate', 'opsAsArray', 'opsDocIdDate', 'opsTitle', 'opsParties', 'opsCpc',
+  'parseOpsBiblio', 'opsFillPlan', 'opsFillMessage', 'toDisplay', 'capPartyText', 'capCpcText', 'sanitizeText',
   'ensureSakDocs', 'claimDocSelectable',
   'normalizeImportSakDetails', 'normalizeRounds', 'normalizeClaimMapping', 'normalizeObjections',
   'normalizeObjectionStates', 'isPositiveInt',
   'searchCaseList', '_detailsMatch',
-], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN'], globals: { parseDate: (s) => s } });
+], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN', 'CPC_MAX_LEN', 'CPC_MAX_CLASSES'], globals: { parseDate: (s) => s } });
 
 const WO_FIXTURE = JSON.parse(fs.readFileSync(
   path.join(__dirname, 'fixtures', 'ops-biblio-WO2016169730.json'), 'utf8'));

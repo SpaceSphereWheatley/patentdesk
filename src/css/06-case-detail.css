@@ -129,6 +129,11 @@
 .mh-v-wide          { grid-column: 2 / -1; }
 .mh-v-empty         { color: var(--muted-text); }
 .mh-v-copied, .mh-v-copied:hover { background: var(--tone-ok-strong); }
+/* CPC-klassene: hver for seg, med hierarki-tooltip som sakens egne klasser */
+.mh-cpc-list        { display: flex; flex-wrap: wrap; align-items: baseline; min-width: 0; }
+.mh-cpc-item        { position: relative; display: inline-flex; }
+.mh-cpc             { font-variant-numeric: tabular-nums; }
+.mh-cpc-sep         { color: var(--muted-text); white-space: pre; }
 .mh-busy            { font-size: var(--text-2xs); color: var(--primary-dim); }
 .mh-edit            { font-size: var(--text-2xs); font-family: var(--font-body); white-space: nowrap; cursor: pointer;
                       padding: 2px var(--space-3); border-radius: var(--radius-sm);
