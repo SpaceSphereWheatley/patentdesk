@@ -6,6 +6,8 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.55.0] - 2026-11-06
 ### Added
 - **Søker og oppfinner på motholdene.** Hentes fra EPO OPS sammen med datoene
   og tittelen, slik navnene ble innlevert og i OPS sin rekkefølge. Kan også
