@@ -7,6 +7,12 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.57.1] - 2026-11-09
+### Fixed
+- «Se etter oppdatering» kunne svare «Du har nyeste versjon» i flere minutter
+  etter at en ny versjon var lagt ut, fordi GitHub og proxyer på jobbnettet
+  mellomlagret versjonsfilen. Hver sjekk ber nå om en fersk kopi.
+
 ## [4.57.0] - 2026-11-09
 ### Added
 - **CPC-klasser på motholdene.** Oppslaget i EPO OPS (automatisk eller med ⤓)

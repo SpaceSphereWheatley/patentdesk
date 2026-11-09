@@ -523,7 +523,9 @@ function runUpdateCheck(fetchFn, timeoutMs) {
     }, timeoutMs === undefined ? UPDATE_TIMEOUT_MS : timeoutMs);
   });
   var request = Promise.resolve().then(function() {
-    return fetchFn(UPDATE_CHECK_URL, {
+    // ?t=<nå>: GitHubs CDN og proxyer på jobbnettet mellomlagrer filen; et
+    // unikt tillegg tvinger frem en fersk kopi (cache: 'no-store' gjelder bare nettleseren).
+    return fetchFn(UPDATE_CHECK_URL + '?t=' + Date.now(), {
       method: 'GET', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
       signal: ctrl ? ctrl.signal : undefined
     });
