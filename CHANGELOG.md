@@ -6,6 +6,9 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Fixed
+- **Skjermleser-navn på tre symbolknapper.** «Tøm filter» (✕) og årspilene (‹ ›)
+  på Statistikk har fått `aria-label`, ikke bare `title`.
 
 ## [4.61.0] - 2026-11-10
 ### Changed
