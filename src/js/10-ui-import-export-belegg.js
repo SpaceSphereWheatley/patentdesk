@@ -744,6 +744,21 @@ function depToggleAriaLabel(claimNum, isIndependent, isManual) {
     (claimNum === 1 ? '' : '. Bytt til ' + (isIndependent ? 'uselvstendig' : 'selvstendig'));
 }
 
+// Nullstill-knappen (↺) i «Avh. av»: vises bare når tilhørigheten er satt
+// manuelt, og aldri på krav 1, som alltid er selvstendig. Den har ingen egen
+// Tab-stopp — fra tastaturet nullstiller Backspace i et tomt felt.
+// Ren funksjon — se test/depReset.test.js.
+function depResetAriaLabel(claimNum) {
+  return 'Krav ' + claimNum + ' — tilbake til automatisk tilhørighet';
+}
+
+function depResetHtml(c) {
+  if (!c || !c.depManual || c.num === 1) return '';
+  return '<button type="button" class="sak-dep-reset" data-claim-dep-reset="' + esc(c.num) + '" tabindex="-1"' +
+    ' aria-label="' + esc(depResetAriaLabel(c.num)) + '"' +
+    ' title="Manuelt satt — klikk for automatisk tilhørighet">↺</button>';
+}
+
 // Visningen av etiketten er en knapp som åpner redigering. Et rent «Krav 2 —
 // etikett» ville overstyrt teksten i knappen, slik at en utfylt etikett aldri
 // ble lest opp — så verdien må være med i navnet.

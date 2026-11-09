@@ -193,8 +193,11 @@ e2e('AC1 Ny: claims table HTML identical to v4.53.0', async (t) => {
   // Kravnummeret som bryter for selvstendig/uselvstendig er en senere,
   // tilsiktet endring av raden. Det gjøres om til det gamle nummeret før
   // sammenligningen; resten skal fortsatt være likt.
+  // Det samme gjelder rammen rundt «Avh. av»-feltet (plass til ↺); ingen krav
+  // i denne saken er manuelle, så ↺ selv skal ikke finnes.
   const now = (await grab(APP_URL))
-    .replace(/<button[^>]*class="sak-num-tog[^>]*>(\d+)<\/button>/g, '<strong>$1</strong>');
+    .replace(/<button[^>]*class="sak-num-tog[^>]*>(\d+)<\/button>/g, '<strong>$1</strong>')
+    .replace(/<td class="sak-td-check sak-td-dep"><span class="sak-dep-wrap">(<input [^>]*>)<\/span><\/td>/g, '<td class="sak-td-check">$1</td>');
   const then = await grab(pathToFileURL(baseline).href);
   assert.equal(now, then);
 });

@@ -2652,7 +2652,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 /* Etikett-celle i tabellen */
 .sak-th-tag         { width: 68px; text-align: center; }
-.sak-th-dep         { width: 56px; text-align: center; }
+/* Feltet (40px) + plass til ↺ (16px), så feltet står 24px fra Nyhet.
+   Overskriften står over feltet, ikke over hele cellen. Ved 960px tas
+   plassen fra Notater (74px, «Notat…» får fortsatt plass). */
+.sak-th-dep         { width: 64px; text-align: center; }
+.sak-claims-table th.sak-th-dep { padding-right: 20px; }
 .sak-tag-display    { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 0 2px;
                       font-size: var(--text-xs); color: var(--muted-text); cursor: pointer; white-space: nowrap; }
 .sak-tag-display:hover { color: var(--text); }
@@ -2669,7 +2673,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-tag-input:focus { outline: none; border-color: var(--primary); }
 
 /* Avhengig-av select */
-.sak-dep-inp        { width: 48px; font-family: monospace; font-size: var(--text-sm); text-align: center;
+.sak-dep-inp        { width: 40px; font-family: monospace; font-size: var(--text-sm); text-align: center;
                       padding: 2px 2px; border-radius: var(--radius); background: var(--surface2);
                       border: 1px solid var(--border2); color: var(--muted-text);
                       -moz-appearance: textfield; appearance: textfield; }
@@ -2677,6 +2681,11 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-dep-inp::-webkit-inner-spin-button,
 .sak-dep-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .sak-dep-inp.dep-manual { border-color: var(--accent); color: var(--text); }
+.sak-claims-table td.sak-td-dep { text-align: left; padding-left: 4px; padding-right: 0; }
+.sak-dep-wrap       { display: inline-grid; grid-template-columns: 40px 16px; column-gap: 2px; align-items: center; }
+.sak-dep-reset      { width: 16px; height: 18px; padding: 0; margin: 0; border: none; border-radius: var(--radius);
+                      background: none; color: var(--muted-text); font-size: var(--text-sm); line-height: 1; cursor: pointer; }
+.sak-dep-reset:hover { color: var(--accent-text); background: var(--surface2); }
 .sak-dep-sel        { background: var(--surface2); border: 1px solid var(--border2);
                       color: var(--muted-text); font-family: var(--font-body); font-size: var(--text-xs);
                       padding: 2px var(--space-1); border-radius: var(--radius); width: 72px; }
@@ -5095,7 +5104,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.59.1';
+var APP_VERSION    = 'v4.59.2';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -12509,6 +12518,21 @@ function depToggleAriaLabel(claimNum, isIndependent, isManual) {
     (claimNum === 1 ? '' : '. Bytt til ' + (isIndependent ? 'uselvstendig' : 'selvstendig'));
 }
 
+// Nullstill-knappen (↺) i «Avh. av»: vises bare når tilhørigheten er satt
+// manuelt, og aldri på krav 1, som alltid er selvstendig. Den har ingen egen
+// Tab-stopp — fra tastaturet nullstiller Backspace i et tomt felt.
+// Ren funksjon — se test/depReset.test.js.
+function depResetAriaLabel(claimNum) {
+  return 'Krav ' + claimNum + ' — tilbake til automatisk tilhørighet';
+}
+
+function depResetHtml(c) {
+  if (!c || !c.depManual || c.num === 1) return '';
+  return '<button type="button" class="sak-dep-reset" data-claim-dep-reset="' + esc(c.num) + '" tabindex="-1"' +
+    ' aria-label="' + esc(depResetAriaLabel(c.num)) + '"' +
+    ' title="Manuelt satt — klikk for automatisk tilhørighet">↺</button>';
+}
+
 // Visningen av etiketten er en knapp som åpner redigering. Et rent «Krav 2 —
 // etikett» ville overstyrt teksten i knappen, slik at en utfylt etikett aldri
 // ble lest opp — så verdien må være med i navnet.
@@ -14355,7 +14379,10 @@ function claimRowHtml(data, c) {
     }
 
     // Dep input
-    var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
+    // Feltet og ↺ står i et rutenett med fast plass til knappen, så feltene
+    // står likt på manuelle og automatiske rader.
+    var depCell = '<span class="sak-dep-wrap"><input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />' +
+      depResetHtml(c) + '</span>';
 
     // Kravnummeret er selv bryteren for selvstendig/uselvstendig: fet i
     // ramme = selvstendig, dempet = uselvstendig. Krav 1 kan ikke byttes.
@@ -14374,7 +14401,7 @@ function claimRowHtml(data, c) {
     return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + ' data-claim=\"' + esc(c.num) + '\">' +
       '<td class="sak-td-krav">' + numCell + '</td>' +
       '<td>' + labelCell + '</td>' +
-      '<td class="sak-td-check">' + depCell + '</td>' +
+      '<td class="sak-td-check sak-td-dep">' + depCell + '</td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + noveltyBtn + claimDocChipHtml(data, c, 'novelty', effNovelty) + '</span></td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + inventiveBtn + claimDocChipHtml(data, c, 'inventive', effNovelty) + '</span></td>' +
       '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim=\"' + esc(c.num) + '\" data-field="formal"' + ariaFor('formal', c.formal, false, false) + '>' + triLabel(c.formal,   true)  + '</button></td>' +
@@ -16361,6 +16388,17 @@ document.getElementById('sak-claims-tbody').addEventListener('keydown', function
   if (!el) return;
   el.focus();
   if (el.select && el.tagName === 'INPUT') el.select();
+});
+
+// ── ↺: tilbake til automatisk tilhørighet ──────────
+document.getElementById('sak-claims-tbody').addEventListener('click', function(e) {
+  var btn = e.target.closest('.sak-dep-reset'); if (!btn) return;
+  var id = activeSakId; if (!id) return;
+  var claimNum = parseInt(btn.dataset.claimDepReset, 10);
+  dispatch('CLAIM_DEP_RESET', { id: id, claimNum: claimNum });
+  // Tabellen er tegnet på nytt og knappen er borte — fokus til feltet.
+  var inp = claimFieldEl(claimNum, 'dep');
+  if (inp) inp.focus();
 });
 
 // ── Kravnummeret: selvstendig ↔ uselvstendig ───────

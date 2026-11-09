@@ -1130,6 +1130,17 @@ document.getElementById('sak-claims-tbody').addEventListener('keydown', function
   if (el.select && el.tagName === 'INPUT') el.select();
 });
 
+// ── ↺: tilbake til automatisk tilhørighet ──────────
+document.getElementById('sak-claims-tbody').addEventListener('click', function(e) {
+  var btn = e.target.closest('.sak-dep-reset'); if (!btn) return;
+  var id = activeSakId; if (!id) return;
+  var claimNum = parseInt(btn.dataset.claimDepReset, 10);
+  dispatch('CLAIM_DEP_RESET', { id: id, claimNum: claimNum });
+  // Tabellen er tegnet på nytt og knappen er borte — fokus til feltet.
+  var inp = claimFieldEl(claimNum, 'dep');
+  if (inp) inp.focus();
+});
+
 // ── Kravnummeret: selvstendig ↔ uselvstendig ───────
 document.getElementById('sak-claims-tbody').addEventListener('click', function(e) {
   var btn = e.target.closest('.sak-num-tog'); if (!btn || btn.disabled) return;

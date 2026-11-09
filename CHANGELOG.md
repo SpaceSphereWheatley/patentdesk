@@ -7,6 +7,19 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.59.2] - 2026-11-09
+### Added
+- **↺ setter kravtilhørigheten tilbake til automatisk.** Når et krav er satt
+  manuelt — som uselvstendig med et tall eller som selvstendig — står en ↺ ved
+  «Avh. av»-feltet. Et klikk lar kravet igjen følge nærmeste selvstendige krav
+  over seg. Knappen har ingen egen Tab-stopp; fra tastaturet gjør Backspace i
+  et tomt felt det samme som før.
+
+### Changed
+- **Mer luft mellom «Avh. av» og Nyhet.** Feltet er smalere (tre sifre får
+  fortsatt plass) og står nå 24 px fra Nyhet-knappen. Ved 960 px tas plassen
+  fra Notater, som blir 74 px bred der.
+
 ## [4.59.1] - 2026-11-09
 ### Changed
 - **Kravnummeret viser og bytter selvstendig/uselvstendig.** S/U-knappen ved

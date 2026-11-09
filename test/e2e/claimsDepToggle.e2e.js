@@ -181,3 +181,46 @@ e2e('Enter markerer innholdet i neste felt', async () => {
   assert.deepEqual((await stored(page))[2], { dep: 2, manual: true });
   await close();
 });
+
+// ── Nullstill-knappen (↺) ───────────────────────────
+const RESET = (n) => '#sak-claims-tbody .sak-dep-reset[data-claim-dep-reset="' + n + '"]';
+
+e2e('↺ vises bare på manuelle krav, aldri på krav 1', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  assert.equal(await page.locator('#sak-claims-tbody .sak-dep-reset').count(), 0, 'ingen knapp når alt er automatisk');
+  await page.fill(DEP(4), '2');                    // manuelt uselvstendig
+  await page.press(DEP(4), 'Enter');
+  await page.click(TOG(3));                        // manuelt selvstendig
+  assert.equal(await page.locator(RESET(4)).count(), 1);
+  assert.equal(await page.locator(RESET(3)).count(), 1);
+  assert.equal(await page.locator(RESET(2)).count(), 0);
+  assert.equal(await page.locator(RESET(1)).count(), 0);
+  assert.equal(await page.isVisible(RESET(4)), true, 'knappen er synlig uten hover');
+  await close();
+});
+
+e2e('klikk på ↺ setter kravet tilbake til automatisk og gir fokus til feltet', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.click(TOG(3));                        // krav 3 selvstendig; 4 og 5 følger
+  assert.equal((await stored(page))[4].dep, 3);
+  await page.click(RESET(3));
+  const s = await stored(page);
+  assert.deepEqual(s[2], { dep: 1, manual: false });
+  assert.equal(s[4].dep, 1, 'påfølgende automatiske krav følger med');
+  assert.equal(await page.locator(RESET(3)).count(), 0, 'knappen forsvinner');
+  assert.doesNotMatch(await page.getAttribute(DEP(3), 'class'), /dep-manual/);
+  assert.equal(await focused(page), 'sak-dep-inp|3');
+  await close();
+});
+
+e2e('↺ har ingen Tab-stopp: Tab fra Avh. av går fortsatt til Nyhet', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.fill(DEP(4), '2');
+  await page.press(DEP(4), 'Enter');
+  assert.equal(await page.getAttribute(RESET(4), 'tabindex'), '-1');
+  await page.focus(DEP(4));
+  await page.keyboard.press('Tab');
+  const f = await page.evaluate(() => document.activeElement.dataset.field + '|' + document.activeElement.dataset.claim);
+  assert.equal(f, 'novelty|4');
+  await close();
+});
