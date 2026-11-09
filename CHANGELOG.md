@@ -7,6 +7,33 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.58.0] - 2026-11-09
+### Added
+- **S/U-knapp for kravtilhørighet.** Ved siden av «Avh. av» i kravtabellen
+  står en knapp som bytter mellom selvstendig (S) og uselvstendig (U). Et krav
+  som gjøres uselvstendig henges på nærmeste selvstendige krav over. Krav 1 er
+  alltid selvstendig.
+- **Enter og Tab i kravtabellen.** Enter i «Avh. av» eller Notat lagrer og går
+  til samme felt på neste krav. Tab fra «Avh. av» går videre til S/U-knappen
+  og Nyhet også når verdien ble endret; før forsvant fokus når tabellen ble
+  tegnet på nytt.
+- **Kopier mothold fra kravet over.** Mothold-velgeren for nyhet og
+  oppfinnelseshøyde har en knapp «Som krav n (D1+D2)» som erstatter valget med
+  det kravet rett over viser. Mangler kravet over nyhet, er det
+  nyhetsmotholdet som kopieres til oppfinnelseshøyde, slik det vises der.
+  Hurtigtasten **C** gjør det samme i tastaturmodus, så et langt kravsett kan
+  fylles ut med J C J C …. Bare mothold som kan velges for feltet kopieres
+  (ikke E-dokumenter til oppfinnelseshøyde, ikke tilbaketrukne).
+- Snarveioversikten (**?**) viser C og de nye tastene i Avh. av- og Notat-feltene.
+### Changed
+- **Tømt «Avh. av» nullstiller kravet.** Et tomt felt betyr ikke lenger
+  «selvstendig» — det setter kravet tilbake til automatisk tilhørighet
+  (nærmeste selvstendige krav over), og kravene under følger med igjen.
+  Selvstendig settes med S/U-knappen. Et krav som er gjort selvstendig for
+  hånd (tomt felt) nullstilles med Backspace eller Delete i feltet. Enter
+  eller Tab gjennom et felt uten endring låser ikke et automatisk krav, og et
+  ugyldig tegn i feltet tilbakestilles i stedet for å nullstille.
+
 ## [4.57.1] - 2026-11-09
 ### Fixed
 - «Se etter oppdatering» kunne svare «Du har nyeste versjon» i flere minutter

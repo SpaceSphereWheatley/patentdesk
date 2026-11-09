@@ -2527,6 +2527,12 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
                       box-shadow: var(--shadow-dropdown); padding: var(--space-3); z-index: 300;
                       min-width: 15rem; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+/* «Som krav n» — kopier valget fra kravet rett over */
+.doc-pop-copy       { width: 100%; text-align: left; cursor: pointer; font-family: var(--font-body);
+                      font-size: var(--text-sm); color: var(--primary); background: none;
+                      border: none; border-bottom: 1px solid var(--border); border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+                      padding: var(--space-2) var(--space-3); margin-bottom: var(--space-2); }
+.doc-pop-copy:hover { background: var(--surface2); }
 .doc-pop-title      { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: var(--tracking-label);
                       color: var(--muted-text); font-weight: var(--weight-semibold); padding: 0 var(--space-2) var(--space-2); }
 .doc-pop-opt        { display: flex; align-items: center; gap: var(--space-3); width: 100%;
@@ -2654,7 +2660,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-tag-input:focus { outline: none; border-color: var(--primary); }
 
 /* Avhengig-av select */
-.sak-dep-inp        { width: 48px; font-family: monospace; font-size: var(--text-sm); text-align: center;
+.sak-dep-inp        { width: 30px; font-family: monospace; font-size: var(--text-sm); text-align: center;
                       padding: 2px 2px; border-radius: var(--radius); background: var(--surface2);
                       border: 1px solid var(--border2); color: var(--muted-text);
                       -moz-appearance: textfield; appearance: textfield; }
@@ -2662,6 +2668,14 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-dep-inp::-webkit-inner-spin-button,
 .sak-dep-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .sak-dep-inp.dep-manual { border-color: var(--accent); color: var(--text); }
+/* S/U-knappen ved siden av tallfeltet: selvstendig/uselvstendig */
+.sak-dep-wrap       { white-space: nowrap; }
+.sak-dep-tog        { margin-left: 2px; width: 16px; padding: 2px 0; font-family: monospace;
+                      font-size: var(--text-xs); border-radius: var(--radius); cursor: pointer;
+                      background: var(--surface2); border: 1px solid var(--border2); color: var(--muted-text); }
+.sak-dep-tog.dep-manual { border-color: var(--accent); color: var(--text); }
+.sak-dep-tog:disabled   { cursor: default; opacity: .5; }
+.sak-dep-tog:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .sak-dep-sel        { background: var(--surface2); border: 1px solid var(--border2);
                       color: var(--muted-text); font-family: var(--font-body); font-size: var(--text-xs);
                       padding: 2px var(--space-1); border-radius: var(--radius); width: 72px; }
@@ -5043,7 +5057,14 @@ button.ob-del:hover { color: var(--text-on-no); }
           <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Nyhet / oppfinnelseshøyde / formelle feil</td></tr>
           <tr><td><kbd>Y</kbd> / <kbd>N</kbd> / <kbd>?</kbd></td><td>Ja / nei / ikke vurdert</td></tr>
           <tr><td><kbd>Mellomrom</kbd></td><td>Veksle verdien</td></tr>
+          <tr><td><kbd>C</kbd></td><td>Kopier mothold fra kravet over (nyhet / oppfinnelseshøyde)</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>Forlat tabellen</td></tr>
+        </table>
+        <h3 class="shortcuts-subhead">I feltene Avh. av og Notat</h3>
+        <table class="shortcuts-table">
+          <tr><td><kbd>Enter</kbd></td><td>Lagre og gå til samme felt på neste krav</td></tr>
+          <tr><td><kbd>Tab</kbd></td><td>Lagre og gå til høyre</td></tr>
+          <tr><td><kbd>Backspace</kbd></td><td>I tomt, manuelt Avh. av-felt: tilbake til automatisk</td></tr>
         </table>
       </div>
     </div>
@@ -5072,7 +5093,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.57.1';
+var APP_VERSION    = 'v4.58.0';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -9421,6 +9442,19 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'CLAIM_DOC_COPY': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      ensureSakDocs(data);
+      var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
+      if (!claim) break;
+      if (!canCopyClaimDocs(data.claims, claim, payload.field)) break;
+      if (!copyClaimDocsFromAbove(data.claims, payload.claimNum, payload.field, data.docs)) break;
+      if (payload.field === 'novelty') _sakOpenDocPop = null;
+      saveSakData(payload.id, data);
+      renderSakAssessmentRows(data, claimsAffectedBy(data.claims, payload.claimNum));
+      break;
+    }
+
     case 'CLAIM_NOTE_CHANGE': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
@@ -9452,6 +9486,16 @@ function _dispatch(action, payload) {
       saveSakData(payload.id, data);
       // Avhengigheten styrer cascaden, som styrer de effektive verdiene — altså
       // sammendraget, rapporten og fremdriften, ikke bare tabellraden.
+      renderSakAssessment(data);
+      break;
+    }
+
+    case 'CLAIM_DEP_RESET':
+    case 'CLAIM_DEP_TOGGLE': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      var fn = action === 'CLAIM_DEP_RESET' ? resetDep : toggleDepIndependent;
+      if (!fn(data.claims, payload.claimNum).length) break;
+      saveSakData(payload.id, data);
       renderSakAssessment(data);
       break;
     }
@@ -12362,6 +12406,57 @@ function applyDepChange(claims, claimNum, val) {
   return touched;
 }
 
+// Setter et krav tilbake til automatisk tilhørighet: det peker igjen på
+// nærmeste selvstendige krav over seg (krav 1 blir selvstendig), og kravene
+// under som ikke er satt manuelt følger med. Muterer claims og returnerer
+// kravnumrene som ble berørt. Ren funksjon — se test/claimMutations.test.js.
+function resetDep(claims, claimNum) {
+  var idx = claims.findIndex(function(c) { return c.num === claimNum; });
+  if (idx < 0) return [];
+  var touched = [claimNum];
+  claims[idx].depManual = false;
+  claims[idx].dep = nearestIndependentClaim(claims, idx);
+  for (var i = idx + 1; i < claims.length; i++) {
+    if (claims[i].depManual) break;
+    claims[i].dep = nearestIndependentClaim(claims, i);
+    touched.push(claims[i].num);
+  }
+  return touched;
+}
+
+// S/U-knappen: bytter mellom selvstendig og uselvstendig. Et uselvstendig krav
+// henges på nærmeste selvstendige krav over. Valget er manuelt. Krav 1 er
+// alltid selvstendig og kan ikke byttes.
+function toggleDepIndependent(claims, claimNum) {
+  var idx = claims.findIndex(function(c) { return c.num === claimNum; });
+  if (idx <= 0) return [];
+  var val = claims[idx].dep === null ? nearestIndependentClaim(claims, idx) : null;
+  if (val === null && claims[idx].dep === null) return [];
+  return applyDepChange(claims, claimNum, val);
+}
+
+// Tastaturnavigasjon i kravtabellens felt. Enter går til samme felt på neste
+// krav (siste krav blir stående); Tab/Shift+Tab fra tallfeltet styres
+// eksplisitt fordi tabellen tegnes på nytt når verdien lagres. null = la
+// nettleseren håndtere tasten.
+function claimFieldKeyNav(key, shiftKey, field, claimNum, numClaims) {
+  if (key === 'Enter' && !shiftKey && (field === 'dep' || field === 'note')) {
+    return { claim: Math.min(claimNum + 1, numClaims), field: field };
+  }
+  if (key === 'Tab' && field === 'dep') {
+    // Krav 1 har en deaktivert S/U-knapp, så Tab går rett til Nyhet.
+    return { claim: claimNum, field: shiftKey ? 'label' : (claimNum === 1 ? 'novelty' : 'depToggle') };
+  }
+  return null;
+}
+
+// Et manuelt selvstendig krav har allerede et tomt felt, så «tømme» det gir
+// ingen endring. Backspace/Delete i et tomt, manuelt felt nullstiller derfor
+// kravet til automatisk — også krav 1 og krav fra eldre data.
+function depKeyResets(key, value, isManual) {
+  return (key === 'Backspace' || key === 'Delete') && value === '' && isManual === true;
+}
+
 // Kravnotater ble en periode skrevet til `note` mens de ble lest fra `notes`,
 // så de forsvant ved neste tegning av kravstabellen. Teksten ligger fortsatt
 // lagret, og hentes tilbake her. Returnerer true hvis noe ble endret.
@@ -12401,6 +12496,13 @@ function claimFieldAriaLabel(claimNum, kind) {
            : kind === 'note'  ? 'notat'
            : kind === 'label' ? 'etikett' : '';
   return 'Krav ' + claimNum + (what ? ' — ' + what : '');
+}
+
+// S/U-knappen viser bare én bokstav, så navnet må si tilstand og handling.
+function depToggleAriaLabel(claimNum, isIndependent, isManual) {
+  return 'Krav ' + claimNum + ' — ' + (isIndependent ? 'selvstendig' : 'uselvstendig') +
+    (isManual ? ' (manuelt satt)' : ' (automatisk)') +
+    (claimNum === 1 ? '' : '. Bytt til ' + (isIndependent ? 'uselvstendig' : 'selvstendig'));
 }
 
 // Visningen av etiketten er en knapp som åpner redigering. Et rent «Krav 2 —
@@ -12870,6 +12972,57 @@ function toggleClaimDoc(claim, field, docId, docs) {
   if (i !== -1) claim.inventiveDocs.splice(i, 1);
   else if (claim.inventiveDocs.length < MAX_INVENTIVE_DOCS) claim.inventiveDocs.push(docId);
   return claim;
+}
+
+// Motholdene et krav viser for field — det velgeren og chipen viser, ikke
+// det som tilfeldigvis ligger lagret. Ingenting når feltet ikke er ✗. Et
+// krav uten nyhet viser nyhetsmotholdet også under oppfinnelseshøyde.
+function claimDocsShown(claims, claim, field) {
+  var effNov = effectiveClaimValue(claims, claim, 'novelty');
+  if (field === 'novelty') return effNov === false && claim.noveltyDoc ? [claim.noveltyDoc] : [];
+  if (field !== 'inventive') return [];
+  if (effNov === false) return claim.noveltyDoc ? [claim.noveltyDoc] : [];
+  if (effectiveClaimValue(claims, claim, 'inventive') !== false) return [];
+  return Array.isArray(claim.inventiveDocs) ? claim.inventiveDocs : [];
+}
+
+// Om kravets valg for field kan endres: feltet må være ✗, og oppfinnelses-
+// høyden er låst (arver nyhetsmotholdet) når kravet mangler nyhet.
+function canCopyClaimDocs(claims, claim, field) {
+  if (field !== 'novelty' && field !== 'inventive') return false;
+  var effNov = effectiveClaimValue(claims, claim, 'novelty');
+  if (field === 'inventive' && effNov === false) return false;
+  return effectiveClaimValue(claims, claim, field) === false;
+}
+
+// Motholdene som vises for field på kravet rett over (num − 1), filtrert til
+// det som kan velges for feltet. null når det ikke er noe å kopiere: krav 1,
+// ingenting vist over, eller samme valg som kravet allerede har.
+// Ren funksjon — se test/claimDocCopy.test.js.
+function claimDocCopySource(claims, claimNum, field, docs) {
+  var above = (claims || []).find(function(c) { return c && c.num === claimNum - 1; });
+  var self  = (claims || []).find(function(c) { return c && c.num === claimNum; });
+  if (!above || !self) return null;
+  var ok = {};
+  claimDocSelectable(docs, field).forEach(function(d) { ok[d.id] = true; });
+  var ids = claimDocsShown(claims, above, field).filter(function(id) { return ok[id]; });
+  if (field === 'inventive') ids = ids.slice(0, MAX_INVENTIVE_DOCS);
+  if (!ids.length) return null;
+  var cur = field === 'novelty' ? (self.noveltyDoc ? [self.noveltyDoc] : [])
+          : (Array.isArray(self.inventiveDocs) ? self.inventiveDocs : []);
+  if (cur.length === ids.length && cur.every(function(id, i) { return id === ids[i]; })) return null;
+  return ids;
+}
+
+// Erstatter kravets valg for field med valget fra kravet rett over.
+// Returnerer true hvis noe ble endret.
+function copyClaimDocsFromAbove(claims, claimNum, field, docs) {
+  var ids = claimDocCopySource(claims, claimNum, field, docs);
+  if (!ids) return false;
+  var self = claims.find(function(c) { return c && c.num === claimNum; });
+  if (field === 'novelty') self.noveltyDoc = ids[0];
+  else self.inventiveDocs = ids.slice();
+  return true;
 }
 
 // Kategorien ett mothold får for ett krav: X, Y, A — eller null når kravet
@@ -14198,7 +14351,12 @@ function claimRowHtml(data, c) {
     }
 
     // Dep input
-    var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
+    var depCell = '<span class="sak-dep-wrap"><input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />' +
+      '<button type="button" class="sak-dep-tog' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep-tog=\"' + esc(c.num) + '\"' +
+      (c.num === 1 ? ' disabled' : '') +
+      ' aria-label="' + esc(depToggleAriaLabel(c.num, isIndependent, c.depManual)) + '"' +
+      ' title="' + esc(isIndependent ? 'Selvstendig — klikk for uselvstendig' : 'Uselvstendig — klikk for selvstendig') + '">' +
+      (isIndependent ? 'S' : 'U') + '</button></span>';
 
     // Label cell
     var labelCell = (c.num === _sakEditingLabelNum)
@@ -14785,7 +14943,13 @@ function claimDocPopHtml(data, c, field, ids) {
       '<strong>' + esc(d.id) + '</strong><span>' + esc(d.ref || '') + '</span>' +
     '</button>';
   }).join('');
-  return '<span class="doc-pop">' +
+  var copyIds = claimDocCopySource(data.claims, c.num, field, data.docs);
+  var copy = copyIds
+    ? '<button class="doc-pop-copy" data-doc-copy=\"' + esc(c.num) + '\" data-field="' + field + '"' +
+        ' title="Erstatt valget med motholdene fra krav ' + esc(c.num - 1) + ' (hurtigtast C)">' +
+        '⧉ Som krav ' + esc(c.num - 1) + ' (' + esc(copyIds.join('+')) + ')</button>'
+    : '';
+  return '<span class="doc-pop">' + copy +
     '<span class="doc-pop-title">' + (isNovelty ? 'Nyheten tas av' : 'Oppfinnelseshøyden tas av') + '</span>' +
     opts +
     '<span class="doc-pop-hint">' + (isNovelty
@@ -15843,6 +16007,11 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
       field: pick.dataset.field, docId: pick.dataset.docPick });
     return;
   }
+  var copyBtn = e.target.closest('[data-doc-copy]');
+  if (copyBtn) {
+    dispatch('CLAIM_DOC_COPY', { id: id, claimNum: parseInt(copyBtn.dataset.docCopy, 10), field: copyBtn.dataset.field });
+    return;
+  }
   var chip = e.target.closest('[data-doc-pop]');
   if (chip) {
     var num = parseInt(chip.dataset.docPop, 10), field = chip.dataset.field;
@@ -15972,7 +16141,8 @@ function sakClaimCursorActive() {
   if (!tbody || !el || !tbody.contains(el)) return false;
   // Etikettvisningen svarer selv på Enter og mellomrom. Står fokus der, skal
   // ikke markøren i tillegg slå om en verdi på raden den tilfeldigvis står på.
-  return !(el.closest && el.closest('.sak-tag-display'));
+  // Det samme gjelder S/U-knappen.
+  return !(el.closest && el.closest('.sak-tag-display, .sak-dep-tog'));
 }
 
 function paintClaimCursor() {
@@ -16034,6 +16204,13 @@ document.addEventListener('keydown', function(e) {
     _sakKeyField = action.field;
     var b = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
     if (b && !b.disabled) b.focus();
+    paintClaimCursor();
+    return;
+  }
+  if (action.type === 'copyDocs') {
+    dispatch('CLAIM_DOC_COPY', { id: id, claimNum: _sakActiveClaimNum, field: _sakKeyField });
+    var cb = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
+    if (cb && !cb.disabled) cb.focus();
     paintClaimCursor();
     return;
   }
@@ -16100,19 +16277,87 @@ document.getElementById('sak-claims-tbody').addEventListener('keydown', function
 });
 
 // ── Avhengig av: change ────────────────────────────
-document.getElementById('sak-claims-tbody').addEventListener('change', function(e) {
-  var inp = e.target.closest('.sak-dep-inp'); if (!inp) return;
+// Lagrer tallfeltet hvis verdien er endret. Tomt felt nullstiller kravet til
+// automatisk tilhørighet; et tall setter den manuelt. Uendret verdi gjør
+// ingenting, så Enter/Tab gjennom et automatisk krav ikke låser det.
+function commitDepInput(inp) {
   var id = activeSakId; if (!id) return;
+  if (inp.dataset.committed) return;
+  // Et ugyldig tegn gir value === '' i et tallfelt — det er ikke en tømming.
+  if (inp.validity && inp.validity.badInput) { inp.value = inp.defaultValue; return; }
+  if (inp.value === inp.defaultValue) return;
+  inp.dataset.committed = '1';
   var claimNum = parseInt(inp.dataset.claimDep, 10);
-  var val = inp.value.trim() === '' ? null : parseInt(inp.value, 10);
+  if (inp.value.trim() === '') {
+    dispatch('CLAIM_DEP_RESET', { id: id, claimNum: claimNum });
+    return;
+  }
+  var val = parseInt(inp.value, 10);
   if (!isValidDep(claimNum, val)) {
     // Ugyldig verdi: sett feltet tilbake til det som faktisk er lagret.
-    var data = loadSakData(id) || defaultSakData(0);
-    var claim = data.claims.find(function(c) { return c.num === claimNum; });
-    inp.value = (claim && claim.dep) || '';
+    delete inp.dataset.committed;
+    inp.value = inp.defaultValue;
     return;
   }
   dispatch('CLAIM_DEP_CHANGE', { id: id, claimNum: claimNum, dep: val });
+}
+
+document.getElementById('sak-claims-tbody').addEventListener('change', function(e) {
+  var inp = e.target.closest('.sak-dep-inp'); if (!inp) return;
+  commitDepInput(inp);
+});
+
+// Elementet for et felt i kravtabellen, etter at tabellen er tegnet på nytt.
+function claimFieldEl(claimNum, field) {
+  var tb = document.getElementById('sak-claims-tbody');
+  var n  = claimSelVal(claimNum);
+  if (field === 'dep')       return tb.querySelector('.sak-dep-inp[data-claim-dep="' + n + '"]');
+  if (field === 'depToggle') return tb.querySelector('.sak-dep-tog[data-claim-dep-tog="' + n + '"]');
+  if (field === 'note')      return tb.querySelector('.sak-claim-note[data-claim="' + n + '"]');
+  if (field === 'label')     return tb.querySelector('[data-claim-label="' + n + '"]');
+  if (field === 'novelty')   return tb.querySelector('.sak-tri-btn[data-claim="' + n + '"][data-field="novelty"]');
+  return null;
+}
+
+// ── Enter/Tab i Avhengig av- og Notat-feltet ───────
+document.getElementById('sak-claims-tbody').addEventListener('keydown', function(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  var inp = e.target.closest('.sak-dep-inp, .sak-claim-note'); if (!inp) return;
+  var id = activeSakId; if (!id) return;
+  var isDep = inp.classList.contains('sak-dep-inp');
+  var claimNum = parseInt(isDep ? inp.dataset.claimDep : inp.dataset.claim, 10);
+  if (isDep && depKeyResets(e.key, inp.value, inp.classList.contains('dep-manual')) && !(inp.validity && inp.validity.badInput)) {
+    e.preventDefault();
+    dispatch('CLAIM_DEP_RESET', { id: id, claimNum: claimNum });
+    var same = claimFieldEl(claimNum, 'dep');
+    if (same) same.focus();
+    return;
+  }
+  var data = loadSakData(id) || defaultSakData(0);
+  var target = claimFieldKeyNav(e.key, e.shiftKey, isDep ? 'dep' : 'note', claimNum, data.numClaims || 0);
+  if (!target) return;
+  e.preventDefault();
+  if (isDep) {
+    commitDepInput(inp);
+  } else {
+    clearTimeout(_sakTypingTimer);
+    dispatch('CLAIM_NOTE_CHANGE', { id: id, claimNum: claimNum, note: inp.value.trim() });
+  }
+  var el = claimFieldEl(target.claim, target.field);
+  if (!el) return;
+  el.focus();
+  if (el.select && el.tagName === 'INPUT') el.select();
+});
+
+// ── S/U-knappen: selvstendig ↔ uselvstendig ────────
+document.getElementById('sak-claims-tbody').addEventListener('click', function(e) {
+  var btn = e.target.closest('.sak-dep-tog'); if (!btn || btn.disabled) return;
+  var id = activeSakId; if (!id) return;
+  var claimNum = parseInt(btn.dataset.claimDepTog, 10);
+  dispatch('CLAIM_DEP_TOGGLE', { id: id, claimNum: claimNum });
+  // Tabellen er tegnet på nytt — gi fokus tilbake til knappen.
+  var again = claimFieldEl(claimNum, 'depToggle');
+  if (again) again.focus();
 });
 
 // ── Kravkobling: opphav, endret/uendret, § 13 ─────
@@ -18002,6 +18247,7 @@ function claimKeyAction(key) {
     case 'n': case 'N': return { type: 'set', value: false };
     case '?': return { type: 'set', value: null };
     case ' ': return { type: 'toggle' };
+    case 'c': case 'C': return { type: 'copyDocs' };
     case 'Escape': return { type: 'exit' };
     default: return null;
   }

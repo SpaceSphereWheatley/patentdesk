@@ -18,7 +18,7 @@ const HTML = fs.readFileSync(path.join(__dirname, '..', 'PatentDesk.html'), 'utf
 // ── C1: claim numbers in attributes are escaped ───────────────────────────
 // The functions that build the claims table / tree / mapping cells / doc chips.
 const CLAIM_MARKUP_FNS = ['claimRowHtml', 'claimMappingRowHtml', 'renderSakClaimsTree',
-  'claimDocChipHtml', 'claimDocPopHtml'];
+  'claimDocChipHtml', 'claimDocPopHtml', 'claimDocCopySource', 'claimDocsShown'];
 
 test('C1 every data-claim* / data-kt-num attribute in the claims markup is built with esc()', () => {
   const bad = [];

@@ -307,6 +307,7 @@ function claimKeyAction(key) {
     case 'n': case 'N': return { type: 'set', value: false };
     case '?': return { type: 'set', value: null };
     case ' ': return { type: 'toggle' };
+    case 'c': case 'C': return { type: 'copyDocs' };
     case 'Escape': return { type: 'exit' };
     default: return null;
   }

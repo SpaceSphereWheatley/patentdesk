@@ -781,6 +781,11 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
       field: pick.dataset.field, docId: pick.dataset.docPick });
     return;
   }
+  var copyBtn = e.target.closest('[data-doc-copy]');
+  if (copyBtn) {
+    dispatch('CLAIM_DOC_COPY', { id: id, claimNum: parseInt(copyBtn.dataset.docCopy, 10), field: copyBtn.dataset.field });
+    return;
+  }
   var chip = e.target.closest('[data-doc-pop]');
   if (chip) {
     var num = parseInt(chip.dataset.docPop, 10), field = chip.dataset.field;
@@ -910,7 +915,8 @@ function sakClaimCursorActive() {
   if (!tbody || !el || !tbody.contains(el)) return false;
   // Etikettvisningen svarer selv på Enter og mellomrom. Står fokus der, skal
   // ikke markøren i tillegg slå om en verdi på raden den tilfeldigvis står på.
-  return !(el.closest && el.closest('.sak-tag-display'));
+  // Det samme gjelder S/U-knappen.
+  return !(el.closest && el.closest('.sak-tag-display, .sak-dep-tog'));
 }
 
 function paintClaimCursor() {
@@ -972,6 +978,13 @@ document.addEventListener('keydown', function(e) {
     _sakKeyField = action.field;
     var b = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
     if (b && !b.disabled) b.focus();
+    paintClaimCursor();
+    return;
+  }
+  if (action.type === 'copyDocs') {
+    dispatch('CLAIM_DOC_COPY', { id: id, claimNum: _sakActiveClaimNum, field: _sakKeyField });
+    var cb = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
+    if (cb && !cb.disabled) cb.focus();
     paintClaimCursor();
     return;
   }
@@ -1038,19 +1051,87 @@ document.getElementById('sak-claims-tbody').addEventListener('keydown', function
 });
 
 // ── Avhengig av: change ────────────────────────────
-document.getElementById('sak-claims-tbody').addEventListener('change', function(e) {
-  var inp = e.target.closest('.sak-dep-inp'); if (!inp) return;
+// Lagrer tallfeltet hvis verdien er endret. Tomt felt nullstiller kravet til
+// automatisk tilhørighet; et tall setter den manuelt. Uendret verdi gjør
+// ingenting, så Enter/Tab gjennom et automatisk krav ikke låser det.
+function commitDepInput(inp) {
   var id = activeSakId; if (!id) return;
+  if (inp.dataset.committed) return;
+  // Et ugyldig tegn gir value === '' i et tallfelt — det er ikke en tømming.
+  if (inp.validity && inp.validity.badInput) { inp.value = inp.defaultValue; return; }
+  if (inp.value === inp.defaultValue) return;
+  inp.dataset.committed = '1';
   var claimNum = parseInt(inp.dataset.claimDep, 10);
-  var val = inp.value.trim() === '' ? null : parseInt(inp.value, 10);
+  if (inp.value.trim() === '') {
+    dispatch('CLAIM_DEP_RESET', { id: id, claimNum: claimNum });
+    return;
+  }
+  var val = parseInt(inp.value, 10);
   if (!isValidDep(claimNum, val)) {
     // Ugyldig verdi: sett feltet tilbake til det som faktisk er lagret.
-    var data = loadSakData(id) || defaultSakData(0);
-    var claim = data.claims.find(function(c) { return c.num === claimNum; });
-    inp.value = (claim && claim.dep) || '';
+    delete inp.dataset.committed;
+    inp.value = inp.defaultValue;
     return;
   }
   dispatch('CLAIM_DEP_CHANGE', { id: id, claimNum: claimNum, dep: val });
+}
+
+document.getElementById('sak-claims-tbody').addEventListener('change', function(e) {
+  var inp = e.target.closest('.sak-dep-inp'); if (!inp) return;
+  commitDepInput(inp);
+});
+
+// Elementet for et felt i kravtabellen, etter at tabellen er tegnet på nytt.
+function claimFieldEl(claimNum, field) {
+  var tb = document.getElementById('sak-claims-tbody');
+  var n  = claimSelVal(claimNum);
+  if (field === 'dep')       return tb.querySelector('.sak-dep-inp[data-claim-dep="' + n + '"]');
+  if (field === 'depToggle') return tb.querySelector('.sak-dep-tog[data-claim-dep-tog="' + n + '"]');
+  if (field === 'note')      return tb.querySelector('.sak-claim-note[data-claim="' + n + '"]');
+  if (field === 'label')     return tb.querySelector('[data-claim-label="' + n + '"]');
+  if (field === 'novelty')   return tb.querySelector('.sak-tri-btn[data-claim="' + n + '"][data-field="novelty"]');
+  return null;
+}
+
+// ── Enter/Tab i Avhengig av- og Notat-feltet ───────
+document.getElementById('sak-claims-tbody').addEventListener('keydown', function(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  var inp = e.target.closest('.sak-dep-inp, .sak-claim-note'); if (!inp) return;
+  var id = activeSakId; if (!id) return;
+  var isDep = inp.classList.contains('sak-dep-inp');
+  var claimNum = parseInt(isDep ? inp.dataset.claimDep : inp.dataset.claim, 10);
+  if (isDep && depKeyResets(e.key, inp.value, inp.classList.contains('dep-manual')) && !(inp.validity && inp.validity.badInput)) {
+    e.preventDefault();
+    dispatch('CLAIM_DEP_RESET', { id: id, claimNum: claimNum });
+    var same = claimFieldEl(claimNum, 'dep');
+    if (same) same.focus();
+    return;
+  }
+  var data = loadSakData(id) || defaultSakData(0);
+  var target = claimFieldKeyNav(e.key, e.shiftKey, isDep ? 'dep' : 'note', claimNum, data.numClaims || 0);
+  if (!target) return;
+  e.preventDefault();
+  if (isDep) {
+    commitDepInput(inp);
+  } else {
+    clearTimeout(_sakTypingTimer);
+    dispatch('CLAIM_NOTE_CHANGE', { id: id, claimNum: claimNum, note: inp.value.trim() });
+  }
+  var el = claimFieldEl(target.claim, target.field);
+  if (!el) return;
+  el.focus();
+  if (el.select && el.tagName === 'INPUT') el.select();
+});
+
+// ── S/U-knappen: selvstendig ↔ uselvstendig ────────
+document.getElementById('sak-claims-tbody').addEventListener('click', function(e) {
+  var btn = e.target.closest('.sak-dep-tog'); if (!btn || btn.disabled) return;
+  var id = activeSakId; if (!id) return;
+  var claimNum = parseInt(btn.dataset.claimDepTog, 10);
+  dispatch('CLAIM_DEP_TOGGLE', { id: id, claimNum: claimNum });
+  // Tabellen er tegnet på nytt — gi fokus tilbake til knappen.
+  var again = claimFieldEl(claimNum, 'depToggle');
+  if (again) again.focus();
 });
 
 // ── Kravkobling: opphav, endret/uendret, § 13 ─────

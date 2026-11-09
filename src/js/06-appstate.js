@@ -604,6 +604,19 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'CLAIM_DOC_COPY': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      ensureSakDocs(data);
+      var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
+      if (!claim) break;
+      if (!canCopyClaimDocs(data.claims, claim, payload.field)) break;
+      if (!copyClaimDocsFromAbove(data.claims, payload.claimNum, payload.field, data.docs)) break;
+      if (payload.field === 'novelty') _sakOpenDocPop = null;
+      saveSakData(payload.id, data);
+      renderSakAssessmentRows(data, claimsAffectedBy(data.claims, payload.claimNum));
+      break;
+    }
+
     case 'CLAIM_NOTE_CHANGE': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
@@ -635,6 +648,16 @@ function _dispatch(action, payload) {
       saveSakData(payload.id, data);
       // Avhengigheten styrer cascaden, som styrer de effektive verdiene — altså
       // sammendraget, rapporten og fremdriften, ikke bare tabellraden.
+      renderSakAssessment(data);
+      break;
+    }
+
+    case 'CLAIM_DEP_RESET':
+    case 'CLAIM_DEP_TOGGLE': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      var fn = action === 'CLAIM_DEP_RESET' ? resetDep : toggleDepIndependent;
+      if (!fn(data.claims, payload.claimNum).length) break;
+      saveSakData(payload.id, data);
       renderSakAssessment(data);
       break;
     }

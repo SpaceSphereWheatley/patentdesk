@@ -288,7 +288,12 @@ function claimRowHtml(data, c) {
     }
 
     // Dep input
-    var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
+    var depCell = '<span class="sak-dep-wrap"><input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />' +
+      '<button type="button" class="sak-dep-tog' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep-tog=\"' + esc(c.num) + '\"' +
+      (c.num === 1 ? ' disabled' : '') +
+      ' aria-label="' + esc(depToggleAriaLabel(c.num, isIndependent, c.depManual)) + '"' +
+      ' title="' + esc(isIndependent ? 'Selvstendig — klikk for uselvstendig' : 'Uselvstendig — klikk for selvstendig') + '">' +
+      (isIndependent ? 'S' : 'U') + '</button></span>';
 
     // Label cell
     var labelCell = (c.num === _sakEditingLabelNum)
@@ -875,7 +880,13 @@ function claimDocPopHtml(data, c, field, ids) {
       '<strong>' + esc(d.id) + '</strong><span>' + esc(d.ref || '') + '</span>' +
     '</button>';
   }).join('');
-  return '<span class="doc-pop">' +
+  var copyIds = claimDocCopySource(data.claims, c.num, field, data.docs);
+  var copy = copyIds
+    ? '<button class="doc-pop-copy" data-doc-copy=\"' + esc(c.num) + '\" data-field="' + field + '"' +
+        ' title="Erstatt valget med motholdene fra krav ' + esc(c.num - 1) + ' (hurtigtast C)">' +
+        '⧉ Som krav ' + esc(c.num - 1) + ' (' + esc(copyIds.join('+')) + ')</button>'
+    : '';
+  return '<span class="doc-pop">' + copy +
     '<span class="doc-pop-title">' + (isNovelty ? 'Nyheten tas av' : 'Oppfinnelseshøyden tas av') + '</span>' +
     opts +
     '<span class="doc-pop-hint">' + (isNovelty
