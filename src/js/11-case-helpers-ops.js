@@ -438,9 +438,30 @@ function toggleClaimDoc(claim, field, docId, docs) {
   return claim;
 }
 
-// Motholdene for field på kravet rett over (num − 1), filtrert til det som
-// kan velges for feltet. null når det ikke er noe å kopiere: krav 1, tomt
-// valg over, eller samme valg som kravet allerede har.
+// Motholdene et krav viser for field — det velgeren og chipen viser, ikke
+// det som tilfeldigvis ligger lagret. Ingenting når feltet ikke er ✗. Et
+// krav uten nyhet viser nyhetsmotholdet også under oppfinnelseshøyde.
+function claimDocsShown(claims, claim, field) {
+  var effNov = effectiveClaimValue(claims, claim, 'novelty');
+  if (field === 'novelty') return effNov === false && claim.noveltyDoc ? [claim.noveltyDoc] : [];
+  if (field !== 'inventive') return [];
+  if (effNov === false) return claim.noveltyDoc ? [claim.noveltyDoc] : [];
+  if (effectiveClaimValue(claims, claim, 'inventive') !== false) return [];
+  return Array.isArray(claim.inventiveDocs) ? claim.inventiveDocs : [];
+}
+
+// Om kravets valg for field kan endres: feltet må være ✗, og oppfinnelses-
+// høyden er låst (arver nyhetsmotholdet) når kravet mangler nyhet.
+function canCopyClaimDocs(claims, claim, field) {
+  if (field !== 'novelty' && field !== 'inventive') return false;
+  var effNov = effectiveClaimValue(claims, claim, 'novelty');
+  if (field === 'inventive' && effNov === false) return false;
+  return effectiveClaimValue(claims, claim, field) === false;
+}
+
+// Motholdene som vises for field på kravet rett over (num − 1), filtrert til
+// det som kan velges for feltet. null når det ikke er noe å kopiere: krav 1,
+// ingenting vist over, eller samme valg som kravet allerede har.
 // Ren funksjon — se test/claimDocCopy.test.js.
 function claimDocCopySource(claims, claimNum, field, docs) {
   var above = (claims || []).find(function(c) { return c && c.num === claimNum - 1; });
@@ -448,9 +469,7 @@ function claimDocCopySource(claims, claimNum, field, docs) {
   if (!above || !self) return null;
   var ok = {};
   claimDocSelectable(docs, field).forEach(function(d) { ok[d.id] = true; });
-  var src = field === 'novelty' ? (above.noveltyDoc ? [above.noveltyDoc] : [])
-          : (Array.isArray(above.inventiveDocs) ? above.inventiveDocs : []);
-  var ids = src.filter(function(id) { return ok[id]; });
+  var ids = claimDocsShown(claims, above, field).filter(function(id) { return ok[id]; });
   if (field === 'inventive') ids = ids.slice(0, MAX_INVENTIVE_DOCS);
   if (!ids.length) return null;
   var cur = field === 'novelty' ? (self.noveltyDoc ? [self.noveltyDoc] : [])

@@ -608,12 +608,8 @@ function _dispatch(action, payload) {
       var data = loadSakData(payload.id) || defaultSakData(0);
       ensureSakDocs(data);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
-      if (!claim || (payload.field !== 'novelty' && payload.field !== 'inventive')) break;
-      // Samme vilkår som for velgeren: feltet må være ✗, og oppfinnelseshøyden
-      // er låst (arver nyhetsmotholdet) når kravet mangler nyhet.
-      var effNov = effectiveClaimValue(data.claims, claim, 'novelty');
-      if (payload.field === 'inventive' && effNov === false) break;
-      if (effectiveClaimValue(data.claims, claim, payload.field) !== false) break;
+      if (!claim) break;
+      if (!canCopyClaimDocs(data.claims, claim, payload.field)) break;
       if (!copyClaimDocsFromAbove(data.claims, payload.claimNum, payload.field, data.docs)) break;
       if (payload.field === 'novelty') _sakOpenDocPop = null;
       saveSakData(payload.id, data);
