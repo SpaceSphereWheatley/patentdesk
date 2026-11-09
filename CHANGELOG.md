@@ -6,6 +6,8 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.58.0] - 2026-11-09
 ### Added
 - **S/U-knapp for kravtilhørighet.** Ved siden av «Avh. av» i kravtabellen
   står en knapp som bytter mellom selvstendig (S) og uselvstendig (U). Et krav
