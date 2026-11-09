@@ -18429,12 +18429,15 @@ document.getElementById('search-backdrop').addEventListener('click', function(e)
 
 // ── Se etter oppdatering ───────────────────────────
 // Leser APP_VERSION fra main på GitHub og sammenligner. Ren GET uten data ut;
-// ingenting lagres, og ingenting lastes ned automatisk.
-// NB: stien under er en offentlig kontrakt for utgitte kopier. Flyttes eller
-// omdøpes filen på main, får alle installerte kopier 404 og viser «frakoblet».
+// ingenting lagres, og ingenting lastes ned automatisk. «Last ned» henter
+// PatentDesk.html fra main og lagrer den via nettleseren — bare ved klikk.
+// NB: stiene under er en offentlig kontrakt for utgitte kopier. Flyttes eller
+// omdøpes filene på main, får alle installerte kopier 404 og viser «frakoblet».
 var UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/src/js/01-config-templates.js';
+var UPDATE_FILE_URL = 'https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/PatentDesk.html';
 var UPDATE_DOWNLOAD_URL = 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/PatentDesk.html';
 var UPDATE_TIMEOUT_MS = 8000;
+var UPDATE_DOWNLOAD_TIMEOUT_MS = 30000;
 
 function compareVersions(a, b) {
   var pa = String(a).replace(/^v/, '').split('.').map(Number);
@@ -18452,43 +18455,113 @@ function parseRemoteVersion(text) {
   return m ? m[1] : null;
 }
 
-// Returnerer { kind: 'new' | 'current' | 'error', remote? }. Kaster aldri og
-// henger aldri: forespørselen avbrytes etter timeoutMs selv uten AbortSignal.timeout.
-function runUpdateCheck(fetchFn, timeoutMs) {
+// Henter url som tekst. Returnerer teksten, eller null ved HTTP-feil,
+// nettverksfeil eller timeout. Kaster aldri og henger aldri: forespørselen
+// avbrytes etter timeoutMs selv uten AbortSignal.timeout.
+function fetchTextWithTimeout(fetchFn, url, timeoutMs) {
   var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
   var timer;
   var timeout = new Promise(function(resolve) {
     timer = setTimeout(function() {
       if (ctrl) ctrl.abort();
-      resolve({ kind: 'error' });
-    }, timeoutMs === undefined ? UPDATE_TIMEOUT_MS : timeoutMs);
+      resolve(null);
+    }, timeoutMs);
   });
   var request = Promise.resolve().then(function() {
     // ?t=<nå>: GitHubs CDN og proxyer på jobbnettet mellomlagrer filen; et
     // unikt tillegg tvinger frem en fersk kopi (cache: 'no-store' gjelder bare nettleseren).
-    return fetchFn(UPDATE_CHECK_URL + '?t=' + Date.now(), {
+    return fetchFn(url + '?t=' + Date.now(), {
       method: 'GET', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
       signal: ctrl ? ctrl.signal : undefined
     });
   }).then(function(res) {
-    if (!res || !res.ok) return { kind: 'error' };
-    return res.text().then(function(text) {
+    if (!res || !res.ok) return null;
+    return res.text();
+  }).catch(function() { return null; });
+  return Promise.race([request, timeout]).then(function(r) { clearTimeout(timer); return r; });
+}
+
+// Returnerer { kind: 'new' | 'current' | 'error', remote? }.
+function runUpdateCheck(fetchFn, timeoutMs) {
+  return fetchTextWithTimeout(fetchFn, UPDATE_CHECK_URL, timeoutMs === undefined ? UPDATE_TIMEOUT_MS : timeoutMs)
+    .then(function(text) {
       var remote = parseRemoteVersion(text);
       if (!remote) return { kind: 'error' };
       return { kind: compareVersions(remote, APP_VERSION) > 0 ? 'new' : 'current', remote: remote };
     });
-  }).catch(function() { return { kind: 'error' }; });
-  return Promise.race([request, timeout]).then(function(r) { clearTimeout(timer); return r; });
 }
 
-function renderUpdateStatus(el, result) {
+// Den nedlastede filen må være PatentDesk — en HTML-side med akkurat den
+// versjonen som ble varslet — før den lagres.
+function isPatentDeskFile(text, expectedVersion) {
+  if (typeof text !== 'string') return false;
+  if (!/^\s*<!DOCTYPE html>/i.test(text)) return false;
+  return parseRemoteVersion(text) === expectedVersion;
+}
+
+// Returnerer { ok: true, text } eller { ok: false }.
+function runUpdateDownload(fetchFn, expectedVersion, timeoutMs) {
+  return fetchTextWithTimeout(fetchFn, UPDATE_FILE_URL, timeoutMs === undefined ? UPDATE_DOWNLOAD_TIMEOUT_MS : timeoutMs)
+    .then(function(text) {
+      return isPatentDeskFile(text, expectedVersion) ? { ok: true, text: text } : { ok: false };
+    });
+}
+
+// Lagrer teksten som PatentDesk.html i nedlastingsmappen via nettleseren.
+function saveAppFile(text) {
+  var url = URL.createObjectURL(new Blob([text], { type: 'text/html;charset=utf-8' }));
+  var a = document.createElement('a');
+  a.href = url; a.download = 'PatentDesk.html'; a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+}
+
+function githubLink() {
+  var a = document.createElement('a');
+  a.href = UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  return a;
+}
+
+// Laster ned den varslede versjonen. Lenken ligger i out og forsvinner mens
+// nedlastingen pågår, så et nytt klikk er ikke mulig. Feil lagrer ingenting
+// og gir en lenke til GitHub-siden. Returnerer true ved lagring.
+function startUpdateDownload(out, fetchFn, expectedVersion) {
+  out.className = 'upd-status'; out.textContent = 'Laster ned …';
+  return runUpdateDownload(fetchFn, expectedVersion).then(function(r) {
+    if (r.ok) {
+      try { saveAppFile(r.text); } catch (e) { r = { ok: false }; }
+    }
+    out.textContent = '';
+    if (r.ok) {
+      out.className = 'upd-status upd-new';
+      out.textContent = 'Lastet ned ' + expectedVersion + ' — åpne PatentDesk.html fra nedlastingsmappen';
+      return true;
+    }
+    out.className = 'upd-status upd-error';
+    out.appendChild(document.createTextNode('Nedlasting feilet. '));
+    var a = githubLink();
+    a.textContent = 'Åpne på GitHub';
+    out.appendChild(a);
+    return false;
+  });
+}
+
+function renderUpdateStatus(el, result, fetchFn) {
   el.textContent = '';
   el.className = 'upd-status upd-' + result.kind;
   if (result.kind === 'new') {
     el.appendChild(document.createTextNode(result.remote + ' er tilgjengelig '));
-    var a = document.createElement('a');
-    a.href = UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    // Lenken peker fortsatt på GitHub-siden (Ctrl/⌘-klikk, midtklikk og
+    // «Åpne i ny fane» virker som før); et vanlig klikk laster ned direkte.
+    var a = githubLink();
     a.textContent = 'Last ned';
+    a.onclick = function(e) {
+      if (!fetchFn || e.ctrlKey || e.metaKey || e.shiftKey || (e.button !== undefined && e.button !== 0)) return;
+      e.preventDefault();
+      startUpdateDownload(el, fetchFn, result.remote);
+    };
     el.appendChild(a);
   } else if (result.kind === 'current') {
     el.textContent = 'Du har nyeste versjon';
@@ -18503,7 +18576,7 @@ function startUpdateCheck(btn, out, fetchFn) {
   btn.disabled = true;
   out.className = 'upd-status'; out.textContent = 'Sjekker …';
   return runUpdateCheck(fetchFn).then(function(result) {
-    renderUpdateStatus(out, result);
+    renderUpdateStatus(out, result, fetchFn);
     btn.disabled = false;
     return result;
   });

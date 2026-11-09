@@ -6,6 +6,12 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Changed
+- **«Last ned» henter ny versjon direkte.** Når «Se etter oppdatering» finner
+  en nyere versjon, laster et klikk på «Last ned» nå `PatentDesk.html` rett
+  ned til nedlastingsmappen i stedet for å åpne GitHub. Filen sjekkes først:
+  den må være PatentDesk med den varslede versjonen, ellers lagres ingenting og
+  du får en lenke til GitHub-siden. Ctrl/⌘-klikk åpner fortsatt GitHub.
 
 ## [4.58.0] - 2026-11-09
 ### Added

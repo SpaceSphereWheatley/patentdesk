@@ -15,7 +15,7 @@ const document = {
 };
 const sandboxGlobals = { APP_VERSION: 'v4.54.0', document, setTimeout, clearTimeout, AbortController, Promise };
 const { compareVersions, parseRemoteVersion, runUpdateCheck, renderUpdateStatus, startUpdateCheck, wireUpdateCheck } = loadFunctions(
-  ['compareVersions', 'parseRemoteVersion', 'runUpdateCheck', 'renderUpdateStatus', 'startUpdateCheck', 'wireUpdateCheck'],
+  ['compareVersions', 'parseRemoteVersion', 'fetchTextWithTimeout', 'runUpdateCheck', 'renderUpdateStatus', 'startUpdateCheck', 'wireUpdateCheck', 'githubLink'],
   { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_TIMEOUT_MS'], globals: sandboxGlobals }
 );
 
@@ -136,7 +136,7 @@ test('a timed-out request is aborted, not left running', async () => {
 test('the check touches no storage: a successful check still reports "new"', async () => {
   const boom = new Proxy({}, { get() { throw new Error('storage touched'); } });
   const g = Object.assign({}, sandboxGlobals, { localStorage: boom, indexedDB: boom });
-  const f = loadFunctions(['compareVersions', 'parseRemoteVersion', 'runUpdateCheck', 'renderUpdateStatus', 'startUpdateCheck'],
+  const f = loadFunctions(['compareVersions', 'parseRemoteVersion', 'fetchTextWithTimeout', 'runUpdateCheck', 'renderUpdateStatus', 'startUpdateCheck', 'githubLink'],
     { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_TIMEOUT_MS'], globals: g });
   const btn = { disabled: false }, out = makeEl();
   const r = await f.startUpdateCheck(btn, out, okFetch("var APP_VERSION = 'v4.55.0';"));
@@ -161,4 +161,114 @@ test('wireUpdateCheck makes no request until the button is clicked', async () =>
 
 test('wireUpdateCheck is a no-op when the elements are missing', () => {
   wireUpdateCheck({ getElementById: () => null }, () => { throw new Error('no'); });
+});
+
+// ── Direkte nedlasting av ny versjon ───────────────
+
+const APP_HTML = (v) => "<!DOCTYPE html>\n<html lang=\"no\">\n<head><title>PatentDesk</title></head><script>\nvar APP_VERSION    = '" + v + "';\n</script></html>";
+
+function dlSandbox(extra) {
+  const saved = [];
+  const clicks = [];
+  const g = Object.assign({}, sandboxGlobals, {
+    Blob: function(parts, opts) { this.parts = parts; this.type = opts && opts.type; },
+    URL: { createObjectURL: (b) => { saved.push(b); return 'blob:x'; }, revokeObjectURL: () => {} },
+  }, extra || {});
+  g.document = Object.assign({}, document, {
+    createElement: () => { const el = makeEl(); el.click = () => clicks.push({ href: el.href, download: el.download }); el.style = {}; return el; },
+    body: { appendChild: () => {}, removeChild: () => {} },
+  });
+  const f = loadFunctions(
+    ['compareVersions', 'parseRemoteVersion', 'fetchTextWithTimeout', 'runUpdateCheck', 'isPatentDeskFile',
+     'runUpdateDownload', 'saveAppFile', 'startUpdateDownload', 'renderUpdateStatus', 'startUpdateCheck', 'githubLink'],
+    { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_FILE_URL', 'UPDATE_TIMEOUT_MS', 'UPDATE_DOWNLOAD_TIMEOUT_MS'], globals: g });
+  return { f, saved, clicks };
+}
+
+test('isPatentDeskFile: godtar bare PatentDesk-HTML med varslet versjon', () => {
+  const { f } = dlSandbox();
+  assert.strictEqual(f.isPatentDeskFile(APP_HTML('v4.59.0'), 'v4.59.0'), true);
+  assert.strictEqual(f.isPatentDeskFile(APP_HTML('v4.58.0'), 'v4.59.0'), false, 'feil versjon');
+  assert.strictEqual(f.isPatentDeskFile("var APP_VERSION = 'v4.59.0';", 'v4.59.0'), false, 'ikke HTML');
+  assert.strictEqual(f.isPatentDeskFile('<!DOCTYPE html><html></html>', 'v4.59.0'), false, 'ingen versjon');
+  assert.strictEqual(f.isPatentDeskFile(null, 'v4.59.0'), false);
+});
+
+test('runUpdateDownload: henter PatentDesk.html fra main som ren GET forbi mellomlagring', async () => {
+  const { f } = dlSandbox();
+  let seen;
+  const r = await f.runUpdateDownload((url, opts) => { seen = { url, opts }; return okFetch(APP_HTML('v4.59.0'))(); }, 'v4.59.0');
+  assert.strictEqual(r.ok, true);
+  assert.match(seen.url, /^https:\/\/raw\.githubusercontent\.com\/SpaceSphereWheatley\/patentdesk\/main\/PatentDesk\.html\?t=\d+$/);
+  assert.strictEqual(seen.opts.method, 'GET');
+  assert.ok(!('body' in seen.opts));
+  assert.strictEqual(seen.opts.credentials, 'omit');
+  assert.strictEqual(seen.opts.referrerPolicy, 'no-referrer');
+});
+
+test('runUpdateDownload: feil innhold, HTTP-feil, nettverksfeil og timeout gir ok: false', async () => {
+  const { f } = dlSandbox();
+  assert.strictEqual((await f.runUpdateDownload(okFetch('garbage'), 'v4.59.0')).ok, false);
+  assert.strictEqual((await f.runUpdateDownload(okFetch(APP_HTML('v4.58.0')), 'v4.59.0')).ok, false);
+  assert.strictEqual((await f.runUpdateDownload(okFetch('x', 404), 'v4.59.0')).ok, false);
+  assert.strictEqual((await f.runUpdateDownload(() => Promise.reject(new Error('offline')), 'v4.59.0')).ok, false);
+  assert.strictEqual((await f.runUpdateDownload(() => new Promise(() => {}), 'v4.59.0', 20)).ok, false);
+});
+
+test('saveAppFile: lagrer som PatentDesk.html med typen text/html', () => {
+  const { f, saved, clicks } = dlSandbox();
+  f.saveAppFile(APP_HTML('v4.59.0'));
+  assert.strictEqual(saved.length, 1);
+  assert.strictEqual(saved[0].type, 'text/html;charset=utf-8');
+  assert.strictEqual(saved[0].parts[0], APP_HTML('v4.59.0'));
+  assert.deepStrictEqual(clicks, [{ href: 'blob:x', download: 'PatentDesk.html' }]);
+});
+
+test('startUpdateDownload: viser fremdrift, lagrer og sier hvor filen ligger', async () => {
+  const { f, clicks } = dlSandbox();
+  const out = makeEl();
+  const p = f.startUpdateDownload(out, okFetch(APP_HTML('v4.59.0')), 'v4.59.0');
+  assert.strictEqual(out.textContent, 'Laster ned …');
+  const r = await p;
+  assert.strictEqual(r, true);
+  assert.strictEqual(clicks.length, 1);
+  assert.match(out.textContent, /Lastet ned/);
+});
+
+test('startUpdateDownload: feil lagrer ingenting og faller tilbake til GitHub-lenken', async () => {
+  const { f, clicks } = dlSandbox();
+  const out = makeEl();
+  assert.strictEqual(await f.startUpdateDownload(out, okFetch('garbage'), 'v4.59.0'), false);
+  assert.strictEqual(clicks.length, 0);
+  assert.strictEqual(out.className, 'upd-status upd-error');
+  assert.strictEqual(out.children[0].text, 'Nedlasting feilet. ');
+  assert.strictEqual(out.children[1].href, 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/PatentDesk.html');
+  assert.strictEqual(out.children[1].textContent, 'Åpne på GitHub');
+});
+
+test('renderUpdateStatus: klikk på «Last ned» laster ned direkte i stedet for å åpne GitHub', async () => {
+  const { f, clicks } = dlSandbox();
+  const out = makeEl();
+  let fetched = 0;
+  f.renderUpdateStatus(out, { kind: 'new', remote: 'v4.59.0' }, () => { fetched++; return okFetch(APP_HTML('v4.59.0'))(); });
+  const a = out.children[1];
+  assert.strictEqual(fetched, 0, 'ingenting hentes før klikk');
+  let prevented = false;
+  a.onclick({ preventDefault: () => { prevented = true; }, ctrlKey: false, metaKey: false, shiftKey: false, button: 0 });
+  assert.strictEqual(prevented, true);
+  await new Promise((r) => setTimeout(r, 10));
+  assert.strictEqual(fetched, 1);
+  assert.strictEqual(clicks.length, 1);
+});
+
+test('renderUpdateStatus: Ctrl/⌘-klikk og midtklikk åpner fortsatt GitHub-siden', () => {
+  const { f } = dlSandbox();
+  const out = makeEl();
+  f.renderUpdateStatus(out, { kind: 'new', remote: 'v4.59.0' }, () => { throw new Error('no fetch'); });
+  const a = out.children[1];
+  for (const ev of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { button: 1 }]) {
+    let prevented = false;
+    a.onclick(Object.assign({ preventDefault: () => { prevented = true; }, ctrlKey: false, metaKey: false, shiftKey: false, button: 0 }, ev));
+    assert.strictEqual(prevented, false);
+  }
 });
