@@ -6,6 +6,8 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.59.1] - 2026-11-09
 ### Changed
 - **Kravnummeret viser og bytter selvstendig/uselvstendig.** S/U-knappen ved
   «Avh. av» er fjernet. Selvstendige krav har fet nummer i en ramme,

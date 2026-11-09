@@ -3,7 +3,7 @@
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.59.0';
+var APP_VERSION    = 'v4.59.1';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
