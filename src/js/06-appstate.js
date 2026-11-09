@@ -611,7 +611,9 @@ function _dispatch(action, payload) {
       if (!claim) break;
       if (!canCopyClaimDocs(data.claims, claim, payload.field)) break;
       if (!copyClaimDocsFromAbove(data.claims, payload.claimNum, payload.field, data.docs)) break;
-      if (payload.field === 'novelty') _sakOpenDocPop = null;
+      // Kopien er et ferdig valg — velgeren lukkes for begge felt, så det
+      // ikke trengs et ekstra klikk for å komme videre.
+      _sakOpenDocPop = null;
       saveSakData(payload.id, data);
       renderSakAssessmentRows(data, claimsAffectedBy(data.claims, payload.claimNum));
       break;
