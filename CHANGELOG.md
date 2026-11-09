@@ -6,6 +6,8 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.60.0] - 2026-11-09
 ### Added
 - **Eget navn på saksdokumenter.** Blyanten i dokumentlisten har nå to felt:
   **Navn**, som bare vises i PatentDesk (f.eks. «WO - ISA»), og **Filnavn**,
