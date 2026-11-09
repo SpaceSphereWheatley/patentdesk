@@ -13,7 +13,8 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   listene; som før er tidslinjen åpen til du lukker den. En skjult tidslinje
   tegnes ikke.
 - **Tom tilstand i aktivitetsgrafen.** Uten nybehandlinger i året og uten
-  prognose viser Statistikk en kort beskjed i stedet for en flat linje.
+  prognose viser Statistikk en kort beskjed med årstallet i stedet for en flat
+  linje.
 
 ### Changed
 - CPC-varselet på Hjem har fått luft under seg, så det ikke ligger tett mot

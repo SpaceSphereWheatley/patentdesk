@@ -268,7 +268,10 @@ function renderChart(MONTHS_YEAR, byMonth) {
   var hasForecast = forecastTotal > cumNy;
   var chartEmpty = chartIsEmpty(nyRaw, hasForecast);
   var emptyEl = document.getElementById('chart-empty');
-  if (emptyEl) emptyEl.hidden = !chartEmpty;
+  if (emptyEl) {
+    emptyEl.textContent = 'Ingen nybehandlinger registrert i ' + statYear + '.';
+    emptyEl.hidden = !chartEmpty;
+  }
   var canvasWrap = document.getElementById('chart-canvas-wrap');
   if (canvasWrap) canvasWrap.hidden = chartEmpty;
 

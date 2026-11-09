@@ -3713,7 +3713,7 @@ button.ob-del:hover { color: var(--text-on-no); }
             </div>
             <div class="stat-chart-col">
               <div class="chart-wrap" id="chart-wrap">
-                <p class="chart-empty" id="chart-empty" hidden>Ingen nybehandlinger registrert i dette året ennå.</p>
+                <p class="chart-empty" id="chart-empty" hidden>Ingen nybehandlinger registrert.</p>
                 <div id="chart-canvas-wrap" class="chart-canvas-wrap">
                   <canvas id="chart-canvas" role="img" aria-label="Kumulativ produksjon per måned">Kumulativ produksjon per måned.</canvas>
                 </div>
@@ -18080,7 +18080,10 @@ function renderChart(MONTHS_YEAR, byMonth) {
   var hasForecast = forecastTotal > cumNy;
   var chartEmpty = chartIsEmpty(nyRaw, hasForecast);
   var emptyEl = document.getElementById('chart-empty');
-  if (emptyEl) emptyEl.hidden = !chartEmpty;
+  if (emptyEl) {
+    emptyEl.textContent = 'Ingen nybehandlinger registrert i ' + statYear + '.';
+    emptyEl.hidden = !chartEmpty;
+  }
   var canvasWrap = document.getElementById('chart-canvas-wrap');
   if (canvasWrap) canvasWrap.hidden = chartEmpty;
 

@@ -104,3 +104,27 @@ e2e('AC6: zero cases: toggle works, no errors', async () => {
   assert.deepEqual(errors, []);
   await close();
 });
+
+e2e('AC4: no redraw while collapsed', async () => {
+  const { page, close } = await openApp(CASES);
+  await go(page, 'ny');
+  await page.locator('#cases-tl-toggle').click();
+  const before = await page.evaluate(() => document.getElementById('cases-tl-host').innerHTML);
+  await page.evaluate(() => render());
+  assert.equal(await page.evaluate(() => document.getElementById('cases-tl-host').innerHTML), before);
+  await close();
+});
+
+e2e('AC7: stats chart shows the empty message only without data, naming the year', async () => {
+  const empty = await openApp([]);
+  await go(empty.page, 'statistikk');
+  assert.equal(await empty.page.locator('#chart-empty').isVisible(), true);
+  assert.match(await empty.page.locator('#chart-empty').textContent(), /i 2026\.$/);
+  assert.equal(await empty.page.locator('#chart-canvas-wrap').isVisible(), false);
+  await empty.close();
+  const some = await openApp(CASES);
+  await go(some.page, 'statistikk');
+  assert.equal(await some.page.locator('#chart-canvas-wrap').isVisible(), true);
+  assert.equal(await some.page.locator('#chart-empty').isVisible(), false);
+  await some.close();
+});
