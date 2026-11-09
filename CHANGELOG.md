@@ -7,6 +7,11 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 ### Changed
+- **Kravnummeret viser og bytter selvstendig/uselvstendig.** S/U-knappen ved
+  «Avh. av» er fjernet. Selvstendige krav har fet nummer i en ramme,
+  uselvstendige et dempet nummer. Klikk på nummeret — eller **S** i
+  tastaturmodus — bytter. Krav 1 er alltid selvstendig. Tab fra «Avh. av» går
+  rett til Nyhet.
 - **«Som krav n» lukker mothold-velgeren.** Etter kopiering fra kravet over
   lukkes velgeren også under oppfinnelseshøyde, ikke bare under nyhet — ett
   klikk mindre per krav.

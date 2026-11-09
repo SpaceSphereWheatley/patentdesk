@@ -49,3 +49,8 @@ test('claimKeyAction: alt annet gir null, så tasten går videre som normalt', (
     assert.strictEqual(claimKeyAction(k), null, 'tasten ' + JSON.stringify(k));
   });
 });
+
+test('claimKeyAction: s bytter selvstendig/uselvstendig', () => {
+  assert.deepStrictEqual(Object.assign({}, claimKeyAction('s')), { type: 'toggleDep' });
+  assert.deepStrictEqual(Object.assign({}, claimKeyAction('S')), { type: 'toggleDep' });
+});

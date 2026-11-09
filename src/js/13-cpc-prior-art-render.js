@@ -288,12 +288,15 @@ function claimRowHtml(data, c) {
     }
 
     // Dep input
-    var depCell = '<span class="sak-dep-wrap"><input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />' +
-      '<button type="button" class="sak-dep-tog' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep-tog=\"' + esc(c.num) + '\"' +
+    var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
+
+    // Kravnummeret er selv bryteren for selvstendig/uselvstendig: fet i
+    // ramme = selvstendig, dempet = uselvstendig. Krav 1 kan ikke byttes.
+    var numCell = '<button type="button" class="sak-num-tog' + (isIndependent ? ' is-indep' : '') + '" data-claim-dep-tog=\"' + esc(c.num) + '\"' +
       (c.num === 1 ? ' disabled' : '') +
       ' aria-label="' + esc(depToggleAriaLabel(c.num, isIndependent, c.depManual)) + '"' +
-      ' title="' + esc(isIndependent ? 'Selvstendig — klikk for uselvstendig' : 'Uselvstendig — klikk for selvstendig') + '">' +
-      (isIndependent ? 'S' : 'U') + '</button></span>';
+      ' title="' + esc(c.num === 1 ? 'Selvstendig' : isIndependent ? 'Selvstendig — klikk (eller S) for uselvstendig' : 'Uselvstendig — klikk (eller S) for selvstendig') + '">' +
+      esc(c.num) + '</button>';
 
     // Label cell
     var labelCell = (c.num === _sakEditingLabelNum)
@@ -302,7 +305,7 @@ function claimRowHtml(data, c) {
         ' tabindex="0" role="button" aria-label="' + esc(claimLabelAriaLabel(c.num, c.label)) + '">' + esc(c.label || 'etikett') + '</span>';
 
     return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + ' data-claim=\"' + esc(c.num) + '\">' +
-      '<td class="sak-td-krav"><strong>' + esc(c.num) + '</strong></td>' +
+      '<td class="sak-td-krav">' + numCell + '</td>' +
       '<td>' + labelCell + '</td>' +
       '<td class="sak-td-check">' + depCell + '</td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + noveltyBtn + claimDocChipHtml(data, c, 'novelty', effNovelty) + '</span></td>' +

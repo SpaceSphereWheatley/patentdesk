@@ -33,7 +33,8 @@ function e2e(name, fn) {
 }
 
 const DEP  = (n) => '#sak-claims-tbody .sak-dep-inp[data-claim-dep="' + n + '"]';
-const TOG  = (n) => '#sak-claims-tbody .sak-dep-tog[data-claim-dep-tog="' + n + '"]';
+const TOG  = (n) => '#sak-claims-tbody .sak-num-tog[data-claim-dep-tog="' + n + '"]';
+const TRI  = (n, f) => '#sak-claims-tbody .sak-tri-btn[data-claim="' + n + '"][data-field="' + f + '"]';
 const NOTE = (n) => '#sak-claims-tbody .sak-claim-note[data-claim="' + n + '"]';
 
 function stored(page) {
@@ -60,23 +61,41 @@ e2e('tømt felt nullstiller et manuelt krav til automatisk', async () => {
   await close();
 });
 
-e2e('S/U-knappen bytter, gjør kravet manuelt og beholder fokus', async () => {
+e2e('kravnummeret bytter selvstendig/uselvstendig, gjør kravet manuelt og beholder fokus', async () => {
   const { page, close } = await h.openCase(browser, 1400);
-  assert.equal(await page.textContent(TOG(4)), 'U');
+  assert.equal(await page.locator('#sak-claims-tbody .sak-dep-tog').count(), 0, 'S/U-knappen er borte');
+  assert.equal((await page.textContent(TOG(4))).trim(), '4');
+  assert.equal(await page.getAttribute(TOG(4), 'class'), 'sak-num-tog');
   await page.click(TOG(4));
   const s = await stored(page);
   assert.deepEqual(s[3], { dep: null, manual: true });
   assert.equal(s[4].dep, 4, 'krav 5 følger det nye selvstendige kravet');
-  assert.equal(await page.textContent(TOG(4)), 'S');
-  assert.equal(await focused(page), 'sak-dep-tog dep-manual|4');
+  assert.equal(await page.getAttribute(TOG(4), 'class'), 'sak-num-tog is-indep');
+  assert.equal(await focused(page), 'sak-num-tog is-indep|4');
   await page.keyboard.press('Space');
   assert.deepEqual((await stored(page))[3], { dep: 1, manual: true });
   await close();
 });
 
-e2e('krav 1 har deaktivert S/U-knapp', async () => {
+e2e('krav 1 kan ikke byttes og vises som selvstendig', async () => {
   const { page, close } = await h.openCase(browser, 1400);
   assert.equal(await page.isDisabled(TOG(1)), true);
+  assert.match(await page.getAttribute(TOG(1), 'class'), /is-indep/);
+  await close();
+});
+
+e2e('S i tastaturmodus bytter kravet markøren står på', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.focus(TRI(4, 'novelty'));
+  await page.keyboard.press('s');
+  assert.deepEqual((await stored(page))[3], { dep: null, manual: true });
+  const f = await page.evaluate(() => document.activeElement.dataset.field + '|' + document.activeElement.dataset.claim);
+  assert.equal(f, 'novelty|4', 'fokus blir på samme felt');
+  await page.keyboard.press('S');
+  assert.deepEqual((await stored(page))[3], { dep: 1, manual: true });
+  await page.focus(TRI(1, 'novelty'));
+  await page.keyboard.press('s');
+  assert.deepEqual((await stored(page))[0], { dep: null, manual: false }, 'krav 1 endres ikke');
   await close();
 });
 
@@ -94,11 +113,9 @@ e2e('Enter i tallfeltet går til neste krav uten å låse automatiske krav', asy
   await close();
 });
 
-e2e('Tab etter endring går til S/U-knappen, så videre til Nyhet', async () => {
+e2e('Tab etter endring går rett til Nyhet', async () => {
   const { page, close } = await h.openCase(browser, 1400);
   await page.fill(DEP(3), '2');
-  await page.keyboard.press('Tab');
-  assert.equal(await focused(page), 'sak-dep-tog dep-manual|3');
   await page.keyboard.press('Tab');
   const f = await page.evaluate(() => document.activeElement.dataset.field + '|' + document.activeElement.dataset.claim);
   assert.equal(f, 'novelty|3');

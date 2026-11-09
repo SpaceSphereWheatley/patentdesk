@@ -190,10 +190,11 @@ e2e('AC1 Ny: claims table HTML identical to v4.53.0', async (t) => {
     await s.close();
     return h;
   };
-  // S/U-knappen ved «Avh. av» (v4.58) er en senere, tilsiktet endring av
-  // raden. Den fjernes før sammenligningen; resten skal fortsatt være likt.
+  // Kravnummeret som bryter for selvstendig/uselvstendig er en senere,
+  // tilsiktet endring av raden. Det gjøres om til det gamle nummeret før
+  // sammenligningen; resten skal fortsatt være likt.
   const now = (await grab(APP_URL))
-    .replace(/<span class="sak-dep-wrap">(<input[^>]*>)<button[^>]*class="sak-dep-tog[^>]*>[SU]<\/button><\/span>/g, '$1');
+    .replace(/<button[^>]*class="sak-num-tog[^>]*>(\d+)<\/button>/g, '<strong>$1</strong>');
   const then = await grab(pathToFileURL(baseline).href);
   assert.equal(now, then);
 });
