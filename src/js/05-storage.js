@@ -255,6 +255,22 @@ function _fileResolvedName(name) {
 function _fileDisplayName(name) {
   return _fileResolvedName(name).replace(/\.pdf$/i, '');
 }
+// Visningsnavnet (label) er bare det som står i listen. Lenken, «Kopier sti»
+// og «Åpne alle» bruker alltid filnavnet (name). Ren — se test/fileLabel.test.js.
+var FILE_LABEL_MAX = 80;
+function fileListLabel(f) {
+  var label = (f && typeof f.label === 'string') ? f.label.trim() : '';
+  return label || _fileDisplayName(f && f.name);
+}
+// Ny filpost etter redigering. Tomt filnavn beholder det gamle; tomt
+// visningsnavn fjerner feltet, så filnavnet vises igjen.
+function applyFileEdit(file, name, label) {
+  var n = sanitizeText(String(name == null ? '' : name)).trim().slice(0, FILE_LABEL_MAX);
+  var l = sanitizeText(String(label == null ? '' : label)).trim().slice(0, FILE_LABEL_MAX);
+  var out = { name: n || file.name };
+  if (l) out.label = l;
+  return out;
+}
 function _fileExt(name) {
   var m = _fileResolvedName(name).match(/\.([a-zA-Z0-9]+)$/);
   return m ? m[1].toLowerCase() : '';

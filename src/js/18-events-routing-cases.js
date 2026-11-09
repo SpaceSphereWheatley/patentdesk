@@ -385,21 +385,35 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
       if (!ctx3) return;
       var row = renameBtn.closest('.sak-docs-dropdown-row');
       var openBtnEl = row.querySelector('.sak-docs-open');
-      var input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'sak-docs-rename-input';
-      input.maxLength = 80;
-      input.value = ctx3.file.name;
-      openBtnEl.replaceWith(input);
-      input.focus();
-      input.select();
+      // To felt: visningsnavn (bare i listen) og filnavn (lenken).
+      var mkInput = function(cls, value, placeholder, label) {
+        var el = document.createElement('input');
+        el.type = 'text';
+        el.className = 'sak-docs-rename-input ' + cls;
+        el.maxLength = FILE_LABEL_MAX;
+        el.value = value;
+        el.placeholder = placeholder;
+        el.setAttribute('aria-label', label);
+        return el;
+      };
+      var labelInput = mkInput('sak-docs-label-input', ctx3.file.label || '', _fileDisplayName(ctx3.file.name), 'Navn i PatentDesk');
+      var input = mkInput('sak-docs-name-input', ctx3.file.name, 'Filnavn', 'Filnavn');
+      labelInput.title = 'Navn i PatentDesk (tomt = filnavnet)';
+      input.title = 'Filnavn i saksmappen';
+      var edit = document.createElement('div');
+      edit.className = 'sak-docs-edit';
+      edit.appendChild(labelInput);
+      edit.appendChild(input);
+      openBtnEl.replaceWith(edit);
+      labelInput.focus();
+      labelInput.select();
       var done = false;
       var commit = function() {
         if (done) return;
         done = true;
-        var name = input.value.trim();
-        if (name && name !== ctx3.file.name) {
-          dispatch('FILE_RENAME', { id: activeSakId, idx: idx, name: name });
+        var next = applyFileEdit(ctx3.file, input.value, labelInput.value);
+        if (next.name !== ctx3.file.name || (next.label || '') !== (ctx3.file.label || '')) {
+          dispatch('FILE_RENAME', { id: activeSakId, idx: idx, name: input.value, label: labelInput.value });
         } else {
           renderSakFileList(ctx3.data);
         }
@@ -409,11 +423,16 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
         done = true;
         renderSakFileList(ctx3.data);
       };
-      input.addEventListener('keydown', function(ev) {
-        if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
-        else if (ev.key === 'Escape') { ev.preventDefault(); cancel(); }
+      [labelInput, input].forEach(function(el) {
+        el.addEventListener('keydown', function(ev) {
+          if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+          else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); cancel(); }
+        });
+        // Lagre når fokus forlater begge feltene, ikke ved bytte mellom dem.
+        el.addEventListener('blur', function() {
+          setTimeout(function() { if (!edit.contains(document.activeElement)) commit(); }, 0);
+        });
       });
-      input.addEventListener('blur', commit);
       return;
     }
   });

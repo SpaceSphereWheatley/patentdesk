@@ -2702,11 +2702,12 @@ tr:hover .sak-tag-display.sak-tag-empty,
 
 /* ── 27b. Sak docs dropdown ───────────────────────── */
 .sak-docs-dropdown {
-  position: absolute; top: calc(100% + 6px); right: 0;
+  position: absolute; top: calc(100% + 6px); left: 0;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); min-width: 200px; z-index: 50;
+  border-radius: var(--radius); width: 380px; max-width: calc(100vw - 2 * var(--space-4)); z-index: 50;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;
 }
+.sak-sticky-actions .sak-docs-dropdown { left: auto; right: 0; }
 .sak-docs-dropdown-row {
   display: flex; align-items: stretch;
   border-bottom: 1px solid var(--border);
@@ -2734,6 +2735,11 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-docs-rename-input { flex: 1; min-width: 0; font-size: var(--text-sm); color: var(--text);
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: var(--space-1) var(--space-3); margin: var(--space-1) 0 var(--space-1) var(--space-4); }
+.sak-docs-open-label { min-width: 0; overflow-wrap: anywhere; }
+.sak-docs-edit { display: flex; flex: 1; min-width: 0; gap: var(--space-2); margin-right: var(--space-2); }
+.sak-docs-edit .sak-docs-rename-input { width: 0; margin-right: 0; }
+.sak-docs-edit .sak-docs-label-input { flex: 2; }
+.sak-docs-edit .sak-docs-name-input { flex: 3; margin-left: 0; color: var(--muted-text); }
 .sak-docs-add-row { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--border); }
 .sak-docs-add-input { flex: 1; min-width: 0; font-size: var(--text-sm); }
@@ -7704,6 +7710,22 @@ function _fileResolvedName(name) {
 function _fileDisplayName(name) {
   return _fileResolvedName(name).replace(/\.pdf$/i, '');
 }
+// Visningsnavnet (label) er bare det som står i listen. Lenken, «Kopier sti»
+// og «Åpne alle» bruker alltid filnavnet (name). Ren — se test/fileLabel.test.js.
+var FILE_LABEL_MAX = 80;
+function fileListLabel(f) {
+  var label = (f && typeof f.label === 'string') ? f.label.trim() : '';
+  return label || _fileDisplayName(f && f.name);
+}
+// Ny filpost etter redigering. Tomt filnavn beholder det gamle; tomt
+// visningsnavn fjerner feltet, så filnavnet vises igjen.
+function applyFileEdit(file, name, label) {
+  var n = sanitizeText(String(name == null ? '' : name)).trim().slice(0, FILE_LABEL_MAX);
+  var l = sanitizeText(String(label == null ? '' : label)).trim().slice(0, FILE_LABEL_MAX);
+  var out = { name: n || file.name };
+  if (l) out.label = l;
+  return out;
+}
 function _fileExt(name) {
   var m = _fileResolvedName(name).match(/\.([a-zA-Z0-9]+)$/);
   return m ? m[1].toLowerCase() : '';
@@ -9603,7 +9625,7 @@ function _dispatch(action, payload) {
       var fData = loadSakData(payload.id) || defaultSakData(0);
       var fCas  = cases.find(function(c) { return c.id === payload.id; });
       ensureSakFiles(fData, fCas);
-      if (fData.files[payload.idx]) fData.files[payload.idx].name = sanitizeText(payload.name);
+      if (fData.files[payload.idx]) fData.files[payload.idx] = applyFileEdit(fData.files[payload.idx], payload.name, payload.label);
       saveSakData(payload.id, fData);
       renderSakFileList(fData);
       showToast('✓ Navn endret');
@@ -13523,6 +13545,16 @@ function renderSakAssessmentRows(data, claimNums) {
   updateSakProgress(data);
 }
 
+// Én rad i dokumentlisten. Ren — se test/fileLabel.test.js.
+function sakFileRowHtml(f, i, fileUrl) {
+  return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
+    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span></a>' +
+    '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
+    '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
+    '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
+  '</div>';
+}
+
 function renderSakFileList(data) {
   var list = document.getElementById('sak-docs-list');
   if (!list) return;
@@ -13537,12 +13569,7 @@ function renderSakFileList(data) {
     var fileUrl = cas
       ? _docFileUrl(root, cas.caseNumber, f.name, window.location)
       : '#';
-    return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
-      '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span>' + esc(_fileDisplayName(f.name)) + '</a>' +
-      '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
-      '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
-      '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
-    '</div>';
+    return sakFileRowHtml(f, i, fileUrl);
   }).join('');
 }
 
@@ -19079,21 +19106,35 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
       if (!ctx3) return;
       var row = renameBtn.closest('.sak-docs-dropdown-row');
       var openBtnEl = row.querySelector('.sak-docs-open');
-      var input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'sak-docs-rename-input';
-      input.maxLength = 80;
-      input.value = ctx3.file.name;
-      openBtnEl.replaceWith(input);
-      input.focus();
-      input.select();
+      // To felt: visningsnavn (bare i listen) og filnavn (lenken).
+      var mkInput = function(cls, value, placeholder, label) {
+        var el = document.createElement('input');
+        el.type = 'text';
+        el.className = 'sak-docs-rename-input ' + cls;
+        el.maxLength = FILE_LABEL_MAX;
+        el.value = value;
+        el.placeholder = placeholder;
+        el.setAttribute('aria-label', label);
+        return el;
+      };
+      var labelInput = mkInput('sak-docs-label-input', ctx3.file.label || '', _fileDisplayName(ctx3.file.name), 'Navn i PatentDesk');
+      var input = mkInput('sak-docs-name-input', ctx3.file.name, 'Filnavn', 'Filnavn');
+      labelInput.title = 'Navn i PatentDesk (tomt = filnavnet)';
+      input.title = 'Filnavn i saksmappen';
+      var edit = document.createElement('div');
+      edit.className = 'sak-docs-edit';
+      edit.appendChild(labelInput);
+      edit.appendChild(input);
+      openBtnEl.replaceWith(edit);
+      labelInput.focus();
+      labelInput.select();
       var done = false;
       var commit = function() {
         if (done) return;
         done = true;
-        var name = input.value.trim();
-        if (name && name !== ctx3.file.name) {
-          dispatch('FILE_RENAME', { id: activeSakId, idx: idx, name: name });
+        var next = applyFileEdit(ctx3.file, input.value, labelInput.value);
+        if (next.name !== ctx3.file.name || (next.label || '') !== (ctx3.file.label || '')) {
+          dispatch('FILE_RENAME', { id: activeSakId, idx: idx, name: input.value, label: labelInput.value });
         } else {
           renderSakFileList(ctx3.data);
         }
@@ -19103,11 +19144,16 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
         done = true;
         renderSakFileList(ctx3.data);
       };
-      input.addEventListener('keydown', function(ev) {
-        if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
-        else if (ev.key === 'Escape') { ev.preventDefault(); cancel(); }
+      [labelInput, input].forEach(function(el) {
+        el.addEventListener('keydown', function(ev) {
+          if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+          else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); cancel(); }
+        });
+        // Lagre når fokus forlater begge feltene, ikke ved bytte mellom dem.
+        el.addEventListener('blur', function() {
+          setTimeout(function() { if (!edit.contains(document.activeElement)) commit(); }, 0);
+        });
       });
-      input.addEventListener('blur', commit);
       return;
     }
   });

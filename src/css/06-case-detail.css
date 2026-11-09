@@ -380,11 +380,12 @@ tr:hover .sak-tag-display.sak-tag-empty,
 
 /* ── 27b. Sak docs dropdown ───────────────────────── */
 .sak-docs-dropdown {
-  position: absolute; top: calc(100% + 6px); right: 0;
+  position: absolute; top: calc(100% + 6px); left: 0;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); min-width: 200px; z-index: 50;
+  border-radius: var(--radius); width: 380px; max-width: calc(100vw - 2 * var(--space-4)); z-index: 50;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;
 }
+.sak-sticky-actions .sak-docs-dropdown { left: auto; right: 0; }
 .sak-docs-dropdown-row {
   display: flex; align-items: stretch;
   border-bottom: 1px solid var(--border);
@@ -412,6 +413,11 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-docs-rename-input { flex: 1; min-width: 0; font-size: var(--text-sm); color: var(--text);
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: var(--space-1) var(--space-3); margin: var(--space-1) 0 var(--space-1) var(--space-4); }
+.sak-docs-open-label { min-width: 0; overflow-wrap: anywhere; }
+.sak-docs-edit { display: flex; flex: 1; min-width: 0; gap: var(--space-2); margin-right: var(--space-2); }
+.sak-docs-edit .sak-docs-rename-input { width: 0; margin-right: 0; }
+.sak-docs-edit .sak-docs-label-input { flex: 2; }
+.sak-docs-edit .sak-docs-name-input { flex: 3; margin-left: 0; color: var(--muted-text); }
 .sak-docs-add-row { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--border); }
 .sak-docs-add-input { flex: 1; min-width: 0; font-size: var(--text-sm); }
