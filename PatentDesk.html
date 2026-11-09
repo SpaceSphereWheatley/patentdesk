@@ -2196,7 +2196,16 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
    td-padding + input-ramme (1px) + input-padding. */
 .sak-claims-table th.sak-th-notes { text-align: left;
                                     padding-left: calc(var(--space-2) + 1px + var(--space-2)); }
-.sak-td-krav        { text-align: center; font-size: var(--text-base); cursor: pointer; user-select: none; }
+.sak-td-krav        { text-align: center; font-size: var(--text-base); user-select: none; }
+/* Kravnummeret er bryteren for selvstendig/uselvstendig */
+.sak-num-tog        { min-width: 24px; padding: 0 5px; margin: 0; font: inherit; line-height: inherit; cursor: pointer;
+                      background: none; border: none; border-radius: var(--radius);
+                      color: var(--muted-text); font-weight: 400; }
+/* Rammen er en innvendig skygge, så radhøyde og kolonnebredde er uendret */
+.sak-num-tog.is-indep { color: var(--text); font-weight: 700; box-shadow: inset 0 0 0 1px var(--accent); }
+.sak-num-tog:hover:not(:disabled) { background: var(--surface2); }
+.sak-num-tog:disabled { cursor: default; }
+.sak-num-tog:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .claim-row-independent td { border-top: 2px solid var(--accent) !important; }
 .sak-td-check       { text-align: center; padding: var(--space-2) var(--space-3); }
 .sak-td-notes       { text-align: center; }
@@ -2660,7 +2669,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-tag-input:focus { outline: none; border-color: var(--primary); }
 
 /* Avhengig-av select */
-.sak-dep-inp        { width: 30px; font-family: monospace; font-size: var(--text-sm); text-align: center;
+.sak-dep-inp        { width: 48px; font-family: monospace; font-size: var(--text-sm); text-align: center;
                       padding: 2px 2px; border-radius: var(--radius); background: var(--surface2);
                       border: 1px solid var(--border2); color: var(--muted-text);
                       -moz-appearance: textfield; appearance: textfield; }
@@ -2668,14 +2677,6 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-dep-inp::-webkit-inner-spin-button,
 .sak-dep-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .sak-dep-inp.dep-manual { border-color: var(--accent); color: var(--text); }
-/* S/U-knappen ved siden av tallfeltet: selvstendig/uselvstendig */
-.sak-dep-wrap       { white-space: nowrap; }
-.sak-dep-tog        { margin-left: 2px; width: 16px; padding: 2px 0; font-family: monospace;
-                      font-size: var(--text-xs); border-radius: var(--radius); cursor: pointer;
-                      background: var(--surface2); border: 1px solid var(--border2); color: var(--muted-text); }
-.sak-dep-tog.dep-manual { border-color: var(--accent); color: var(--text); }
-.sak-dep-tog:disabled   { cursor: default; opacity: .5; }
-.sak-dep-tog:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .sak-dep-sel        { background: var(--surface2); border: 1px solid var(--border2);
                       color: var(--muted-text); font-family: var(--font-body); font-size: var(--text-xs);
                       padding: 2px var(--space-1); border-radius: var(--radius); width: 72px; }
@@ -5058,6 +5059,7 @@ button.ob-del:hover { color: var(--text-on-no); }
           <tr><td><kbd>Y</kbd> / <kbd>N</kbd> / <kbd>?</kbd></td><td>Ja / nei / ikke vurdert</td></tr>
           <tr><td><kbd>Mellomrom</kbd></td><td>Veksle verdien</td></tr>
           <tr><td><kbd>C</kbd></td><td>Kopier mothold fra kravet over (nyhet / oppfinnelseshøyde)</td></tr>
+          <tr><td><kbd>S</kbd></td><td>Bytt selvstendig / uselvstendig (også klikk på kravnummeret)</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>Forlat tabellen</td></tr>
         </table>
         <h3 class="shortcuts-subhead">I feltene Avh. av og Notat</h3>
@@ -5093,7 +5095,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.59.0';
+var APP_VERSION    = 'v4.59.1';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -9449,7 +9451,9 @@ function _dispatch(action, payload) {
       if (!claim) break;
       if (!canCopyClaimDocs(data.claims, claim, payload.field)) break;
       if (!copyClaimDocsFromAbove(data.claims, payload.claimNum, payload.field, data.docs)) break;
-      if (payload.field === 'novelty') _sakOpenDocPop = null;
+      // Kopien er et ferdig valg — velgeren lukkes for begge felt, så det
+      // ikke trengs et ekstra klikk for å komme videre.
+      _sakOpenDocPop = null;
       saveSakData(payload.id, data);
       renderSakAssessmentRows(data, claimsAffectedBy(data.claims, payload.claimNum));
       break;
@@ -12444,8 +12448,7 @@ function claimFieldKeyNav(key, shiftKey, field, claimNum, numClaims) {
     return { claim: Math.min(claimNum + 1, numClaims), field: field };
   }
   if (key === 'Tab' && field === 'dep') {
-    // Krav 1 har en deaktivert S/U-knapp, så Tab går rett til Nyhet.
-    return { claim: claimNum, field: shiftKey ? 'label' : (claimNum === 1 ? 'novelty' : 'depToggle') };
+    return { claim: claimNum, field: shiftKey ? 'label' : 'novelty' };
   }
   return null;
 }
@@ -12498,7 +12501,8 @@ function claimFieldAriaLabel(claimNum, kind) {
   return 'Krav ' + claimNum + (what ? ' — ' + what : '');
 }
 
-// S/U-knappen viser bare én bokstav, så navnet må si tilstand og handling.
+// Kravnummeret er bryteren for selvstendig/uselvstendig, så navnet må si
+// tilstand og handling.
 function depToggleAriaLabel(claimNum, isIndependent, isManual) {
   return 'Krav ' + claimNum + ' — ' + (isIndependent ? 'selvstendig' : 'uselvstendig') +
     (isManual ? ' (manuelt satt)' : ' (automatisk)') +
@@ -14351,12 +14355,15 @@ function claimRowHtml(data, c) {
     }
 
     // Dep input
-    var depCell = '<span class="sak-dep-wrap"><input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />' +
-      '<button type="button" class="sak-dep-tog' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep-tog=\"' + esc(c.num) + '\"' +
+    var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
+
+    // Kravnummeret er selv bryteren for selvstendig/uselvstendig: fet i
+    // ramme = selvstendig, dempet = uselvstendig. Krav 1 kan ikke byttes.
+    var numCell = '<button type="button" class="sak-num-tog' + (isIndependent ? ' is-indep' : '') + '" data-claim-dep-tog=\"' + esc(c.num) + '\"' +
       (c.num === 1 ? ' disabled' : '') +
       ' aria-label="' + esc(depToggleAriaLabel(c.num, isIndependent, c.depManual)) + '"' +
-      ' title="' + esc(isIndependent ? 'Selvstendig — klikk for uselvstendig' : 'Uselvstendig — klikk for selvstendig') + '">' +
-      (isIndependent ? 'S' : 'U') + '</button></span>';
+      ' title="' + esc(c.num === 1 ? 'Selvstendig' : isIndependent ? 'Selvstendig — klikk (eller S) for uselvstendig' : 'Uselvstendig — klikk (eller S) for selvstendig') + '">' +
+      esc(c.num) + '</button>';
 
     // Label cell
     var labelCell = (c.num === _sakEditingLabelNum)
@@ -14365,7 +14372,7 @@ function claimRowHtml(data, c) {
         ' tabindex="0" role="button" aria-label="' + esc(claimLabelAriaLabel(c.num, c.label)) + '">' + esc(c.label || 'etikett') + '</span>';
 
     return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + ' data-claim=\"' + esc(c.num) + '\">' +
-      '<td class="sak-td-krav"><strong>' + esc(c.num) + '</strong></td>' +
+      '<td class="sak-td-krav">' + numCell + '</td>' +
       '<td>' + labelCell + '</td>' +
       '<td class="sak-td-check">' + depCell + '</td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + noveltyBtn + claimDocChipHtml(data, c, 'novelty', effNovelty) + '</span></td>' +
@@ -16141,8 +16148,8 @@ function sakClaimCursorActive() {
   if (!tbody || !el || !tbody.contains(el)) return false;
   // Etikettvisningen svarer selv på Enter og mellomrom. Står fokus der, skal
   // ikke markøren i tillegg slå om en verdi på raden den tilfeldigvis står på.
-  // Det samme gjelder S/U-knappen.
-  return !(el.closest && el.closest('.sak-tag-display, .sak-dep-tog'));
+  // Det samme gjelder kravnummeret (selvstendig/uselvstendig).
+  return !(el.closest && el.closest('.sak-tag-display, .sak-num-tog'));
 }
 
 function paintClaimCursor() {
@@ -16204,6 +16211,13 @@ document.addEventListener('keydown', function(e) {
     _sakKeyField = action.field;
     var b = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
     if (b && !b.disabled) b.focus();
+    paintClaimCursor();
+    return;
+  }
+  if (action.type === 'toggleDep') {
+    dispatch('CLAIM_DEP_TOGGLE', { id: id, claimNum: _sakActiveClaimNum });
+    var tb = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
+    if (tb && !tb.disabled) tb.focus();
     paintClaimCursor();
     return;
   }
@@ -16312,7 +16326,7 @@ function claimFieldEl(claimNum, field) {
   var tb = document.getElementById('sak-claims-tbody');
   var n  = claimSelVal(claimNum);
   if (field === 'dep')       return tb.querySelector('.sak-dep-inp[data-claim-dep="' + n + '"]');
-  if (field === 'depToggle') return tb.querySelector('.sak-dep-tog[data-claim-dep-tog="' + n + '"]');
+  if (field === 'depToggle') return tb.querySelector('.sak-num-tog[data-claim-dep-tog="' + n + '"]');
   if (field === 'note')      return tb.querySelector('.sak-claim-note[data-claim="' + n + '"]');
   if (field === 'label')     return tb.querySelector('[data-claim-label="' + n + '"]');
   if (field === 'novelty')   return tb.querySelector('.sak-tri-btn[data-claim="' + n + '"][data-field="novelty"]');
@@ -16349,9 +16363,9 @@ document.getElementById('sak-claims-tbody').addEventListener('keydown', function
   if (el.select && el.tagName === 'INPUT') el.select();
 });
 
-// ── S/U-knappen: selvstendig ↔ uselvstendig ────────
+// ── Kravnummeret: selvstendig ↔ uselvstendig ───────
 document.getElementById('sak-claims-tbody').addEventListener('click', function(e) {
-  var btn = e.target.closest('.sak-dep-tog'); if (!btn || btn.disabled) return;
+  var btn = e.target.closest('.sak-num-tog'); if (!btn || btn.disabled) return;
   var id = activeSakId; if (!id) return;
   var claimNum = parseInt(btn.dataset.claimDepTog, 10);
   dispatch('CLAIM_DEP_TOGGLE', { id: id, claimNum: claimNum });
@@ -18248,6 +18262,7 @@ function claimKeyAction(key) {
     case '?': return { type: 'set', value: null };
     case ' ': return { type: 'toggle' };
     case 'c': case 'C': return { type: 'copyDocs' };
+    case 's': case 'S': return { type: 'toggleDep' };
     case 'Escape': return { type: 'exit' };
     default: return null;
   }

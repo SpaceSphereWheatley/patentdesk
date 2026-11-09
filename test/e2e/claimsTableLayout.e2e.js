@@ -361,7 +361,7 @@ e2e('C8 @960: 200 claims -> "200" fits in Krav and dep "199" fits in Avh. av', a
     const bad = await page.evaluate(() => {
       const out = [];
       const tr = document.querySelector('#sak-claims-tbody tr[data-claim="200"]');
-      const tdK = tr.querySelector('td.sak-td-krav'), strong = tdK.querySelector('strong');
+      const tdK = tr.querySelector('td.sak-td-krav'), strong = tdK.querySelector('.sak-num-tog');
       const a = strong.getBoundingClientRect(), b = tdK.getBoundingClientRect();
       if (a.left < b.left - 0.5 || a.right > b.right + 0.5 || tdK.scrollWidth > tdK.clientWidth + 0.5) out.push('"200" spills Krav cell');
       const dep = tr.querySelector('[data-claim-dep="200"]');

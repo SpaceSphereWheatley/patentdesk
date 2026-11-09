@@ -56,7 +56,9 @@ e2e('knappen «Som krav n» i velgeren erstatter valget med kravet over', async 
   assert.equal((await btn.textContent()).trim(), '⧉ Som krav 3 (D2)');
   await btn.click();
   assert.deepEqual((await docsOf(page, 4)).inv, ['D2']);
-  assert.equal(await page.locator('#sak-claims-tbody .doc-pop-copy').count(), 0, 'knappen forsvinner når valget er likt');
+  assert.equal(await page.locator('#sak-claims-tbody .doc-pop').count(), 0, 'velgeren lukkes etter kopiering');
+  await page.click(CHIP(4, 'inventive'));
+  assert.equal(await page.locator('#sak-claims-tbody .doc-pop-copy').count(), 0, 'knappen vises ikke når valget er likt');
   await close();
 });
 

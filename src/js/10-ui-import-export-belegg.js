@@ -683,8 +683,7 @@ function claimFieldKeyNav(key, shiftKey, field, claimNum, numClaims) {
     return { claim: Math.min(claimNum + 1, numClaims), field: field };
   }
   if (key === 'Tab' && field === 'dep') {
-    // Krav 1 har en deaktivert S/U-knapp, så Tab går rett til Nyhet.
-    return { claim: claimNum, field: shiftKey ? 'label' : (claimNum === 1 ? 'novelty' : 'depToggle') };
+    return { claim: claimNum, field: shiftKey ? 'label' : 'novelty' };
   }
   return null;
 }
@@ -737,7 +736,8 @@ function claimFieldAriaLabel(claimNum, kind) {
   return 'Krav ' + claimNum + (what ? ' — ' + what : '');
 }
 
-// S/U-knappen viser bare én bokstav, så navnet må si tilstand og handling.
+// Kravnummeret er bryteren for selvstendig/uselvstendig, så navnet må si
+// tilstand og handling.
 function depToggleAriaLabel(claimNum, isIndependent, isManual) {
   return 'Krav ' + claimNum + ' — ' + (isIndependent ? 'selvstendig' : 'uselvstendig') +
     (isManual ? ' (manuelt satt)' : ' (automatisk)') +

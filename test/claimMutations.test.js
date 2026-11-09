@@ -267,8 +267,8 @@ test('claimFieldKeyNav: Enter på siste krav blir stående', () => {
   assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Enter', false, 'dep', 5, 5)), { claim: 5, field: 'dep' });
 });
 
-test('claimFieldKeyNav: Tab fra tallfeltet går til S/U-knappen, Shift+Tab til etiketten', () => {
-  assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Tab', false, 'dep', 3, 5)), { claim: 3, field: 'depToggle' });
+test('claimFieldKeyNav: Tab fra tallfeltet går til Nyhet, Shift+Tab til etiketten', () => {
+  assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Tab', false, 'dep', 3, 5)), { claim: 3, field: 'novelty' });
   assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Tab', true, 'dep', 3, 5)), { claim: 3, field: 'label' });
 });
 
@@ -278,7 +278,7 @@ test('claimFieldKeyNav: andre taster og Tab i notatfeltet overlates til nettlese
   assert.strictEqual(claimFieldKeyNav('Enter', true, 'dep', 3, 5), null);
 });
 
-test('claimFieldKeyNav: Tab fra krav 1 hopper over den deaktiverte S/U-knappen til Nyhet', () => {
+test('claimFieldKeyNav: Tab fra krav 1 går også til Nyhet', () => {
   assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Tab', false, 'dep', 1, 5)), { claim: 1, field: 'novelty' });
 });
 
