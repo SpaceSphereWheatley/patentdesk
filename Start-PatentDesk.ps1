@@ -29,13 +29,10 @@ try {
 
 Start-Process "msedge.exe" $url
 
-# Typer som kan vises i nettleseren. Alt annet sendes som nedlasting, slik at
+# Bare PDF-er vises i nettleseren. Alt annet sendes som nedlasting, slik at
 # f.eks. en HTML-fil i dokumentmappen aldri kjøres som en del av PatentDesk.
 $docTypes = @{
     '.pdf' = 'application/pdf'
-    '.png' = 'image/png'; '.jpg' = 'image/jpeg'; '.jpeg' = 'image/jpeg'
-    '.gif' = 'image/gif'; '.bmp' = 'image/bmp'
-    '.txt' = 'text/plain; charset=utf-8'
 }
 $appTypes = @{
     '.html' = 'text/html; charset=utf-8'
@@ -94,15 +91,14 @@ while ($listener.IsListening) {
     }
     $response = $context.Response
     try {
-        # Hver del dekodes for seg, så %2F og %5C i et filnavn ikke blir skilletegn.
+        # Hver del dekodes for seg. Et saksnummer eller filnavn med / eller \
+        # (fil i en undermappe) deles opp i mapper; Resolve-Inside holder
+        # resultatet inne i roten.
         $segments = @($context.Request.Url.AbsolutePath.TrimStart('/').Split('/') |
-            Where-Object { $_ -ne '' } |
-            ForEach-Object { [System.Uri]::UnescapeDataString($_) })
-        foreach ($s in $segments) { if ($s -match '[\\/]') { $segments = $null; break } }
+            ForEach-Object { [System.Uri]::UnescapeDataString($_) -split '[\\/]' } |
+            Where-Object { $_ -ne '' })
 
-        if ($null -eq $segments) {
-            Send-Message $response 403 'Ugyldig adresse' 'Adressen inneholder ulovlige tegn.'
-        } elseif ($segments.Count -ge 1 -and $segments[0] -eq 'docs') {
+        if ($segments.Count -ge 1 -and $segments[0] -eq 'docs') {
             $rest = @($segments | Select-Object -Skip 1)
             if (-not $docRoot) {
                 Send-Message $response 404 'Dokumentmappen er ikke satt' `

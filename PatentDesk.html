@@ -7647,8 +7647,7 @@ function _docRootJoin(root, caseNumber, file) {
 // Åpnet via den lokale serveren (Start-PatentDesk.ps1)? Da stopper nettleseren
 // file:///-lenker, og dokumentene hentes i stedet fra serverens /docs/-adresse.
 function _docServedLocally(loc) {
-  return !!loc && /^https?:$/.test(loc.protocol) &&
-    (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1');
+  return !!loc && /^https?:$/.test(loc.protocol) && loc.hostname === 'localhost';
 }
 // Lenke til et saksdokument. loc er window.location (utelatt = file:///-lenke).
 function _docFileUrl(root, caseNumber, name, loc) {

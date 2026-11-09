@@ -34,11 +34,11 @@ test('_docFileUrl: on localhost links to the local server /docs route', () => {
   );
 });
 
-test('_docFileUrl: 127.0.0.1 counts as the local server too', () => {
+test('_docFileUrl: 127.0.0.1 is not the local server (it only answers on localhost)', () => {
   const loc = { protocol: 'http:', hostname: '127.0.0.1', origin: 'http://127.0.0.1:8080' };
   assert.strictEqual(
     _docFileUrl('C:\\Saker', 'NO1', 'a.pdf', loc),
-    'http://127.0.0.1:8080/docs/NO1/a.pdf'
+    'file:///C:/Saker/NO1/a.pdf'
   );
 });
 
@@ -65,4 +65,6 @@ test('Start-PatentDesk.ps1 confines /docs to $docRoot and serves PDFs inline', (
   assert.match(ps1, /GetFullPath/);
   assert.match(ps1, /StartsWith\(/);
   assert.match(ps1, /application\/pdf/);
+  // / and \ inside a decoded part become folders (a file in a subfolder), not a 403
+  assert.match(ps1, /UnescapeDataString\(\$_\) -split '\[\\\\\/\]'/);
 });
