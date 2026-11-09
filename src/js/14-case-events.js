@@ -10,7 +10,6 @@ function updateCaseField(id, patch) {
   var updated = cases.find(function(c) { return c.id === id; });
   if (updated) {
     document.getElementById('sak-page-title').textContent = updated.caseNumber;
-    document.getElementById('sak-page-sub').textContent = sakSubtitle(updated);
     document.getElementById('sak-sticky-cn').textContent = updated.caseNumber;
     renderSakMeta(updated);
     document.title = updated.caseNumber + (updated.title ? ' — ' + updated.title : '') + ' — PatentDesk';
@@ -1292,16 +1291,14 @@ document.getElementById('sak-notes').addEventListener('input', function() {
 });
 
 
-// Notater: ett felt om gangen — «Synlig i oversikten» eller «Intern». Begge
-// feltene ligger i DOM-en og lagres som før; bare visningen byttes.
+// Notater: velgeren bytter synlig felt (setNotesView i 12-case-render.js).
 document.querySelectorAll('.sak-seg-btn[data-notes]').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    var which = btn.dataset.notes;
-    document.querySelector('.sak-notes-grid').dataset.notesShow = which;
-    document.querySelectorAll('.sak-seg-btn[data-notes]').forEach(function(b) {
-      var on = b.dataset.notes === which;
-      b.classList.toggle('is-on', on);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-  });
+  btn.addEventListener('click', function() { setNotesView(btn.dataset.notes); });
+});
+document.getElementById('sak-case-notes').addEventListener('input', syncNotesDots);
+document.getElementById('sak-notes').addEventListener('input', syncNotesDots);
+
+// Tomt krav-antall: knappen i tomtilstanden flytter fokus til «Antall krav».
+document.getElementById('btn-claims-empty-set').addEventListener('click', function() {
+  document.getElementById('sak-num-claims').focus();
 });

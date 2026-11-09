@@ -18,6 +18,10 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   en velger; en prikk viser at det andre feltet har tekst. Begge lagres som før.
 - **Metalinje i sakshodet.** Tittel, innlevering, prioritet, buffer og
   medlesing står på én linje under saksnummeret (varighet for oppdrag).
+  Saksinformasjon-kortet viser nå bare stikkord og «Rediger sak», så
+  opplysningene ikke står to ganger.
+- **Tom kravtabell erstattes av en tomtilstand.** Uten krav vises en kort
+  beskjed og en knapp som flytter fokus til «Antall krav».
 - **Kompaktere sammendrag.** Sjekkliste og kravvurdering står side om side, og
   radavstanden i resultatoversikten er mindre, så kravtabellen er synlig uten å
   rulle ved 900 px høyde.

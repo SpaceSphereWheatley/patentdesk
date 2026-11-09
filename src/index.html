@@ -876,7 +876,6 @@
                   </div>
                 </div>
               </div>
-              <span class="sak-subtitle" id="sak-page-sub" hidden></span>
               <div class="sak-meta-line" id="sak-meta-line"></div>
               <span class="sak-round-line" id="sak-page-round"></span>
             </div>
@@ -975,6 +974,10 @@
                   <input class="field-input sak-numclaims-input" id="sak-num-claims" type="number" min="1" max="200" placeholder="—" />
                 </span>
               </h2>
+              <div class="sak-claims-empty" id="sak-claims-empty" hidden>
+                <p>Ingen krav er lagt inn ennå.</p>
+                <button type="button" class="btn-secondary btn-sm" id="btn-claims-empty-set">Angi antall krav</button>
+              </div>
               <div class="krav-wrap">
               <div class="krav-layout">
                 <div class="table-wrap">
@@ -1071,7 +1074,7 @@
                   <button class="btn-icon btn-icon-sm" id="btn-sak-edit-fields" title="Rediger saksopplysninger"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>
                 </span>
               </h2>
-              <dl class="sak-info-dl">
+              <dl class="sak-info-dl" hidden>
                 <div class="sak-info-pair">
                   <dt>Saksnummer</dt><dd id="sak-case-number"></dd>
                 </div>

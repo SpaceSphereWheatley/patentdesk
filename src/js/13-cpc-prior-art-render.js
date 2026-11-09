@@ -387,10 +387,20 @@ function claimsAffectedBy(claims, claimNum) {
   return out.sort(function(a, b) { return a - b; });
 }
 
+// Uten krav er det ingenting å vise i tabellen: tomtilstanden tar over.
+function claimsTableShown(data) {
+  return !!(data && data.numClaims && data.numClaims >= 1);
+}
+
 function renderSakClaimsTable(data) {
   var tbody = document.getElementById('sak-claims-tbody');
-  if (!data.numClaims || data.numClaims < 1) {
-    tbody.innerHTML = '<tr><td colspan="7" class="table-empty table-empty-center">Angi antall krav i seksjonshodet for å generere tabellen.</td></tr>';
+  var shown = claimsTableShown(data);
+  var wrap = document.querySelector('#view-sak .krav-wrap');
+  var empty = document.getElementById('sak-claims-empty');
+  if (wrap) wrap.hidden = !shown;
+  if (empty) empty.hidden = shown;
+  if (!shown) {
+    tbody.innerHTML = '';
     renderSakClaimsTree(data, null);
     return;
   }

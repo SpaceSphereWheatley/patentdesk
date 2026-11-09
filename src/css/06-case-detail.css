@@ -602,4 +602,9 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-notes-grid[data-notes-show] { grid-template-columns: 1fr; }
 .sak-notes-grid[data-notes-show="vis"] [data-notes-pane="int"],
 .sak-notes-grid[data-notes-show="int"] [data-notes-pane="vis"] { display: none; }
-.sak-subtitle[hidden] { display: none; }
+.sak-info-dl[hidden]  { display: none; } /* Opplysningene står i metalinjen i sakshodet */
+.sak-fold-h           { margin: 0; font: inherit; }
+.sak-claims-empty     { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4);
+                        padding: var(--space-6) 0; color: var(--muted-text); }
+.sak-claims-empty[hidden] { display: none; }
+.sak-claims-empty p   { margin: 0; }
