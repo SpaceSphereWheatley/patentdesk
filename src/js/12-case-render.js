@@ -359,6 +359,16 @@ function renderSakAssessmentRows(data, claimNums) {
   updateSakProgress(data);
 }
 
+// Én rad i dokumentlisten. Ren — se test/fileLabel.test.js.
+function sakFileRowHtml(f, i, fileUrl) {
+  return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
+    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span></a>' +
+    '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
+    '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
+    '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
+  '</div>';
+}
+
 function renderSakFileList(data) {
   var list = document.getElementById('sak-docs-list');
   if (!list) return;
@@ -373,12 +383,7 @@ function renderSakFileList(data) {
     var fileUrl = cas
       ? _docFileUrl(root, cas.caseNumber, f.name, window.location)
       : '#';
-    return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
-      '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span>' + esc(_fileDisplayName(f.name)) + '</a>' +
-      '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
-      '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
-      '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
-    '</div>';
+    return sakFileRowHtml(f, i, fileUrl);
   }).join('');
 }
 

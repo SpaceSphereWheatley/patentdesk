@@ -752,7 +752,7 @@ function _dispatch(action, payload) {
       var fData = loadSakData(payload.id) || defaultSakData(0);
       var fCas  = cases.find(function(c) { return c.id === payload.id; });
       ensureSakFiles(fData, fCas);
-      if (fData.files[payload.idx]) fData.files[payload.idx].name = sanitizeText(payload.name);
+      if (fData.files[payload.idx]) fData.files[payload.idx] = applyFileEdit(fData.files[payload.idx], payload.name, payload.label);
       saveSakData(payload.id, fData);
       renderSakFileList(fData);
       showToast('✓ Navn endret');

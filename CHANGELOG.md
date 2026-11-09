@@ -7,6 +7,18 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.60.0] - 2026-11-09
+### Added
+- **Eget navn på saksdokumenter.** Blyanten i dokumentlisten har nå to felt:
+  **Navn**, som bare vises i PatentDesk (f.eks. «WO - ISA»), og **Filnavn**,
+  som lenken åpner. Filnavnet vises når du holder musen over dokumentet.
+  Tomt navn gir filnavnet tilbake. Lenker, «Kopier sti» og «Åpne alle
+  PDF-er» bruker fortsatt filnavnet.
+
+### Changed
+- Dokumentlisten er bredere (380 px), så lange navn og redigeringsfeltene får
+  plass.
+
 ## [4.59.3] - 2026-11-09
 ### Fixed
 - **Markørrammen i kravtabellen slipper når du klikker utenfor.** Rammen rundt

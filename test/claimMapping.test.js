@@ -669,6 +669,11 @@ function sakData(claims, rounds) {
   return { numClaims: claims.length, filingDate: '', priorityDate: '', checklist: {}, classes: [], docs: DOCS(), claims, rounds: rounds || [] };
 }
 
+test('normalizeImportSakDetails beholder visningsnavn på saksdokumenter (files[].label)', () => {
+  const out = M.normalizeImportSakDetails({ claims: [], rounds: [], files: [{ name: 'Lang ISA 237.pdf', label: ' WO - ISA ' }, { name: 'Claims.pdf' }] });
+  eq(out.files, [{ name: 'Lang ISA 237.pdf', label: 'WO - ISA' }, { name: 'Claims.pdf' }]);
+});
+
 test('AC13 normalizeImportSakDetails normalises mappings on live claims, nothing else', () => {
   const raw = JSON.parse(JSON.stringify(sakData([
     claim(1, { notes: 'beholdes', extra2A: 'x', mapping: Object.assign(map(1, [4, 1, 1000, 'x'], { change: 'feil', basis: 'y'.repeat(250) }), { evil: 1 }) }),
