@@ -6,6 +6,8 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.61.0] - 2026-11-10
 ### Changed
 - **Saksvisningen: Vurdering først.** Rekkefølgen er nå Vurdering (krav og
   mothold), Gransking, Saken — det du jobber mest med står øverst. Fasene er
