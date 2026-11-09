@@ -349,7 +349,12 @@
           </div>
         </section>
 
-        <div id="cases-tl-host" style="display:none;"></div>
+        <section class="cases-tl-dock" id="cases-tl-dock" aria-label="Arbeidsplan" hidden>
+          <button type="button" class="home-dock-toggle" id="cases-tl-toggle" aria-expanded="true" aria-controls="cases-tl-host">
+            <span class="home-dock-chevron" aria-hidden="true">▾</span>Arbeidsplan
+          </button>
+          <div id="cases-tl-host"></div>
+        </section>
 
         <div class="case-list-head" id="case-list-head" role="group" aria-label="Sorter sakene" hidden></div>
         <div id="case-list" class="case-list" style="display:none;"></div>
@@ -412,6 +417,7 @@
             </div>
             <div class="stat-chart-col">
               <div class="chart-wrap" id="chart-wrap">
+                <p class="chart-empty" id="chart-empty" hidden>Ingen nybehandlinger registrert i dette året ennå.</p>
                 <div id="chart-canvas-wrap" class="chart-canvas-wrap">
                   <canvas id="chart-canvas" role="img" aria-label="Kumulativ produksjon per måned">Kumulativ produksjon per måned.</canvas>
                 </div>

@@ -6,6 +6,19 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Added
+- **Arbeidsplan kan slås sammen på sakslistene.** Over tidslinjen på Ny,
+  Viderebehandling, Fristarkiv og Oppdrag står nå «▾ Arbeidsplan», som på Hjem.
+  Et klikk skjuler tidslinjen så lista får plassen. Valget huskes på tvers av
+  listene; som før er tidslinjen åpen til du lukker den. En skjult tidslinje
+  tegnes ikke.
+- **Tom tilstand i aktivitetsgrafen.** Uten nybehandlinger i året og uten
+  prognose viser Statistikk en kort beskjed i stedet for en flat linje.
+
+### Changed
+- CPC-varselet på Hjem har fått luft under seg, så det ikke ligger tett mot
+  «Oversikt».
+
 ### Fixed
 - **Skjermleser-navn på tre symbolknapper.** «Tøm filter» (✕) og årspilene (‹ ›)
   på Statistikk har fått `aria-label`, ikke bare `title`.

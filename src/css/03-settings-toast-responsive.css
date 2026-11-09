@@ -233,3 +233,10 @@
 
 
 
+
+/* Arbeidsplan på sakslistene: samme toggle som Hjem, ingen fast plassering */
+.cases-tl-dock { margin-top: var(--space-4); }
+.cases-tl-dock[hidden] { display: none; }
+.cases-tl-dock.is-collapsed #cases-tl-host { display: none; }
+.chart-empty { margin: 0; padding: var(--space-8) var(--space-6); text-align: center; color: var(--muted-text); font-size: var(--text-sm); }
+.chart-empty[hidden], .chart-canvas-wrap[hidden] { display: none; }

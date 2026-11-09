@@ -1111,6 +1111,13 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 
 
 
+
+/* Arbeidsplan på sakslistene: samme toggle som Hjem, ingen fast plassering */
+.cases-tl-dock { margin-top: var(--space-4); }
+.cases-tl-dock[hidden] { display: none; }
+.cases-tl-dock.is-collapsed #cases-tl-host { display: none; }
+.chart-empty { margin: 0; padding: var(--space-8) var(--space-6); text-align: center; color: var(--muted-text); font-size: var(--text-sm); }
+.chart-empty[hidden], .chart-canvas-wrap[hidden] { display: none; }
 /* ── Hjem-side ────────────────────────────────────── */
 .drawer-logo:hover { opacity: 0.8; }
 
@@ -2327,7 +2334,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 /* CPC-klasser: unified list */
 .sak-classes-list-unified { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-5); min-height: 1.5rem; }
 .cpc-home-notice { display:flex; align-items:center; gap: var(--space-4); padding: var(--space-3) var(--space-5);
-  background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); font-size: var(--text-sm); color:var(--muted-text); }
+  background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); font-size: var(--text-sm); color:var(--muted-text); margin-bottom: var(--space-6); }
 .cpc-home-notice button { margin-left: auto; }
 .cpc-home-notice .cpc-notice-dismiss { margin-left: calc(-1 * var(--space-2)); display: inline-flex; padding: 4px; border: none; border-radius: var(--radius);
   background: none; color: var(--muted-text); cursor: pointer; }
@@ -3638,7 +3645,12 @@ button.ob-del:hover { color: var(--text-on-no); }
           </div>
         </section>
 
-        <div id="cases-tl-host" style="display:none;"></div>
+        <section class="cases-tl-dock" id="cases-tl-dock" aria-label="Arbeidsplan" hidden>
+          <button type="button" class="home-dock-toggle" id="cases-tl-toggle" aria-expanded="true" aria-controls="cases-tl-host">
+            <span class="home-dock-chevron" aria-hidden="true">▾</span>Arbeidsplan
+          </button>
+          <div id="cases-tl-host"></div>
+        </section>
 
         <div class="case-list-head" id="case-list-head" role="group" aria-label="Sorter sakene" hidden></div>
         <div id="case-list" class="case-list" style="display:none;"></div>
@@ -3701,6 +3713,7 @@ button.ob-del:hover { color: var(--text-on-no); }
             </div>
             <div class="stat-chart-col">
               <div class="chart-wrap" id="chart-wrap">
+                <p class="chart-empty" id="chart-empty" hidden>Ingen nybehandlinger registrert i dette året ennå.</p>
                 <div id="chart-canvas-wrap" class="chart-canvas-wrap">
                   <canvas id="chart-canvas" role="img" aria-label="Kumulativ produksjon per måned">Kumulativ produksjon per måned.</canvas>
                 </div>
@@ -10707,18 +10720,21 @@ function render() {
 
   var isOversikt = !!cfg.showAll;
 
-  // Tidslinje: vis på alle sakssider unntatt avsluttet og oversikt (alle saker)
+  // Tidslinje: vis på alle sakssider unntatt avsluttet og oversikt (alle saker).
+  // Er den slått sammen, tegnes den ikke — den har ingen bredde å regne fra.
+  var tlDock = document.getElementById('cases-tl-dock');
   var tlHost = document.getElementById('cases-tl-host');
   var showTl = activePage !== 'avsluttet' && !isOversikt;
-  if (tlHost) tlHost.style.display = showTl ? '' : 'none';
+  if (tlDock) tlDock.hidden = !showTl;
   if (showTl) {
+    applyCasesTlCollapsed();
     if (_tlLastCasesPage !== activePage && _tlPageDefaults[activePage]) {
       _tlConfig['cases-timeline'].typeFilter = _tlPageDefaults[activePage].slice();
       _tlLastCasesPage = activePage;
       var casesTlWrap = tlHost.querySelector('.home-timeline-wrap');
       if (casesTlWrap && casesTlWrap._syncVisual) casesTlWrap._syncVisual();
     }
-    renderTimeline({ target: 'cases-timeline' });
+    if (!casesTlCollapsed()) renderTimeline({ target: 'cases-timeline' });
   }
 
   // Oversikt (Alle saker) → tabell; øvrige → kortliste
@@ -16858,6 +16874,29 @@ function homeListBadges(rows) {
 var HOME_DOCK_KEY = 'pt_home_dock_collapsed';
 function loadHomeDockCollapsed() { return _lsGet(HOME_DOCK_KEY) === '1'; }
 
+// Arbeidsplan på sakslistene: samme valg som Hjem, men egen nøkkel — og huskes
+// på tvers av listene (Ny, Viderebehandling, Fristarkiv, Oppdrag). Åpen som standard.
+var CASES_TL_KEY = 'pt_cases_tl_collapsed';
+function casesTlCollapsed() { return _lsGet(CASES_TL_KEY) === '1'; }
+function setCasesTlCollapsed(collapsed) { _lsSet(CASES_TL_KEY, collapsed ? '1' : '0'); }
+
+function applyCasesTlCollapsed() {
+  var collapsed = casesTlCollapsed();
+  var dock = document.getElementById('cases-tl-dock');
+  var btn  = document.getElementById('cases-tl-toggle');
+  if (!dock || !btn) return;
+  dock.classList.toggle('is-collapsed', collapsed);
+  btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  btn.querySelector('.home-dock-chevron').textContent = collapsed ? '▸' : '▾';
+}
+
+document.getElementById('cases-tl-toggle').addEventListener('click', function() {
+  setCasesTlCollapsed(!casesTlCollapsed());
+  applyCasesTlCollapsed();
+  // En skjult tidslinje har ingen bredde å regne utsnittet fra; tegn den på nytt
+  if (!casesTlCollapsed()) renderTimeline({ target: 'cases-timeline' });
+});
+
 // Varslene nederst løftes over Arbeidsplan-feltet mens Hjem er åpen, og Hjem
 // får like mye luft nederst, så feltet ikke dekker de siste radene.
 function syncToastLift() {
@@ -17991,6 +18030,12 @@ function renderStatSummary(decisions) {
   document.getElementById('stat-all-decided').textContent = all.decided;
 }
 
+// Ingen nybehandlinger i året og ingen prognose: grafen ville bare vist en flat linje.
+function chartIsEmpty(nyRaw, hasForecast) {
+  var total = (nyRaw || []).reduce(function(a, b) { return a + b; }, 0);
+  return total === 0 && !hasForecast;
+}
+
 function renderChart(MONTHS_YEAR, byMonth) {
   var now      = new Date();
   var curYear  = now.getFullYear();
@@ -18033,6 +18078,11 @@ function renderChart(MONTHS_YEAR, byMonth) {
   }
   var forecastTotal = cumForecast;
   var hasForecast = forecastTotal > cumNy;
+  var chartEmpty = chartIsEmpty(nyRaw, hasForecast);
+  var emptyEl = document.getElementById('chart-empty');
+  if (emptyEl) emptyEl.hidden = !chartEmpty;
+  var canvasWrap = document.getElementById('chart-canvas-wrap');
+  if (canvasWrap) canvasWrap.hidden = chartEmpty;
 
   // Anslagsverdi: tidslinje hvis den har noe, ellers lineær
   var anslagVerdi = hasForecast ? forecastTotal : projected;

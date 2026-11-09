@@ -526,18 +526,21 @@ function render() {
 
   var isOversikt = !!cfg.showAll;
 
-  // Tidslinje: vis på alle sakssider unntatt avsluttet og oversikt (alle saker)
+  // Tidslinje: vis på alle sakssider unntatt avsluttet og oversikt (alle saker).
+  // Er den slått sammen, tegnes den ikke — den har ingen bredde å regne fra.
+  var tlDock = document.getElementById('cases-tl-dock');
   var tlHost = document.getElementById('cases-tl-host');
   var showTl = activePage !== 'avsluttet' && !isOversikt;
-  if (tlHost) tlHost.style.display = showTl ? '' : 'none';
+  if (tlDock) tlDock.hidden = !showTl;
   if (showTl) {
+    applyCasesTlCollapsed();
     if (_tlLastCasesPage !== activePage && _tlPageDefaults[activePage]) {
       _tlConfig['cases-timeline'].typeFilter = _tlPageDefaults[activePage].slice();
       _tlLastCasesPage = activePage;
       var casesTlWrap = tlHost.querySelector('.home-timeline-wrap');
       if (casesTlWrap && casesTlWrap._syncVisual) casesTlWrap._syncVisual();
     }
-    renderTimeline({ target: 'cases-timeline' });
+    if (!casesTlCollapsed()) renderTimeline({ target: 'cases-timeline' });
   }
 
   // Oversikt (Alle saker) → tabell; øvrige → kortliste

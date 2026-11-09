@@ -59,6 +59,29 @@ function homeListBadges(rows) {
 var HOME_DOCK_KEY = 'pt_home_dock_collapsed';
 function loadHomeDockCollapsed() { return _lsGet(HOME_DOCK_KEY) === '1'; }
 
+// Arbeidsplan på sakslistene: samme valg som Hjem, men egen nøkkel — og huskes
+// på tvers av listene (Ny, Viderebehandling, Fristarkiv, Oppdrag). Åpen som standard.
+var CASES_TL_KEY = 'pt_cases_tl_collapsed';
+function casesTlCollapsed() { return _lsGet(CASES_TL_KEY) === '1'; }
+function setCasesTlCollapsed(collapsed) { _lsSet(CASES_TL_KEY, collapsed ? '1' : '0'); }
+
+function applyCasesTlCollapsed() {
+  var collapsed = casesTlCollapsed();
+  var dock = document.getElementById('cases-tl-dock');
+  var btn  = document.getElementById('cases-tl-toggle');
+  if (!dock || !btn) return;
+  dock.classList.toggle('is-collapsed', collapsed);
+  btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  btn.querySelector('.home-dock-chevron').textContent = collapsed ? '▸' : '▾';
+}
+
+document.getElementById('cases-tl-toggle').addEventListener('click', function() {
+  setCasesTlCollapsed(!casesTlCollapsed());
+  applyCasesTlCollapsed();
+  // En skjult tidslinje har ingen bredde å regne utsnittet fra; tegn den på nytt
+  if (!casesTlCollapsed()) renderTimeline({ target: 'cases-timeline' });
+});
+
 // Varslene nederst løftes over Arbeidsplan-feltet mens Hjem er åpen, og Hjem
 // får like mye luft nederst, så feltet ikke dekker de siste radene.
 function syncToastLift() {
