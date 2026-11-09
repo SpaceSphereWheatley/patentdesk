@@ -131,8 +131,19 @@ while ($listener.IsListening) {
         $raw = $context.Request.RawUrl
         $query = if ($raw.IndexOf('?') -ge 0) { $raw.Substring($raw.IndexOf('?') + 1) } else { '' }
 
-        if ($segments.Count -eq 1 -and $segments[0] -eq 'docs') {
+        # Sec-Fetch-Site: same-origin = lenke i PatentDesk, none = adressefeltet.
+        # Alt annet (en annen nettside som peker hit) avvises før filsystemet
+        # røres, så ingen side kan få maskinen til å koble seg til en fremmed
+        # nettverksmappe og sende påloggingen din dit.
+        $fetchSite = $context.Request.Headers['Sec-Fetch-Site']
+        $fromPatentDesk = $fetchSite -eq 'same-origin' -or $fetchSite -eq 'none'
+
+        if ($segments.Count -eq 1 -and $segments[0] -eq 'docs' -and -not $fromPatentDesk) {
+            Send-Message $response 403 'Ingen tilgang' 'Dokumenter kan bare åpnes fra PatentDesk.'
+        } elseif ($segments.Count -eq 1 -and $segments[0] -eq 'docs') {
             $root = Get-QueryValue $query 'root'
+            # En hel stasjon (S:\) kommer som S: - gjør den til en full sti.
+            if ($root -match '^[A-Za-z]:$') { $root += '\' }
             $caseParts = Split-PathParts (Get-QueryValue $query 'case')
             $fileParts = Split-PathParts (Get-QueryValue $query 'file')
             # Roten må være en full sti: C:\… eller \\server\delt\…

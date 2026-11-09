@@ -57,6 +57,20 @@ test('_docFileUrl: the document root from the settings is normalized before send
   );
 });
 
+test('_docFileUrl: a whole drive as document root is sent as the bare drive', () => {
+  assert.strictEqual(
+    _docFileUrl('S:\\', 'NO1', 'a.pdf', LOCALHOST),
+    'http://localhost:8080/docs?root=S%3A&case=NO1&file=a.pdf'
+  );
+});
+
+test('_docFileUrl: a file in a subfolder of the case keeps its separator encoded', () => {
+  assert.strictEqual(
+    _docFileUrl('C:\\Saker', 'NO1', 'Svar/a.pdf', LOCALHOST),
+    'http://localhost:8080/docs?root=C%3A%5CSaker&case=NO1&file=Svar%2Fa.pdf'
+  );
+});
+
 test('_docFileUrl: a non-local http origin does not use the /docs route', () => {
   const loc = { protocol: 'https:', hostname: 'example.com', origin: 'https://example.com' };
   assert.strictEqual(
@@ -77,6 +91,15 @@ test('Start-PatentDesk.ps1 takes the root from the link and confines files to ro
   const docTypes = ps1.slice(ps1.indexOf('$docTypes = @{'), ps1.indexOf('}', ps1.indexOf('$docTypes = @{')));
   assert.match(docTypes, /'\.pdf'/);
   assert.doesNotMatch(docTypes, /'\.(html?|svg|js|exe)'/, 'no executable types among the documents');
+  // a bare drive (S:) is a valid root and is made absolute (S:\) before use
+  assert.match(ps1, /\^\[A-Za-z\]:\$/);
+});
+
+test('Start-PatentDesk.ps1 only serves /docs to PatentDesk itself or the address bar', () => {
+  const ps1 = fs.readFileSync(path.join(__dirname, '..', 'Start-PatentDesk.ps1'), 'utf8');
+  assert.match(ps1, /Sec-Fetch-Site/);
+  const check = ps1.indexOf('Sec-Fetch-Site');
+  assert.ok(check > -1 && check < ps1.indexOf('Resolve-Inside $root'), 'origin is checked before any file system access');
 });
 
 test('Start-PatentDesk.ps1 stops an already running server before starting', () => {
