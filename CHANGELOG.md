@@ -6,6 +6,8 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.59.2] - 2026-11-09
 ### Added
 - **↺ setter kravtilhørigheten tilbake til automatisk.** Når et krav er satt
   manuelt — som uselvstendig med et tall eller som selvstendig — står en ↺ ved
