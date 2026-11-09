@@ -114,3 +114,53 @@ e2e('Enter i notatfeltet lagrer og går til notatet på neste krav', async () =>
   assert.equal(notes, 'hei');
   await close();
 });
+
+e2e('Backspace i et tomt, manuelt selvstendig felt nullstiller til automatisk', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.click(TOG(3));                        // krav 3 → selvstendig, manuelt
+  assert.deepEqual((await stored(page))[2], { dep: null, manual: true });
+  await page.focus(DEP(3));
+  await page.keyboard.press('Backspace');
+  assert.deepEqual((await stored(page))[2], { dep: 1, manual: false });
+  assert.equal(await focused(page), 'sak-dep-inp|3');
+  await close();
+});
+
+e2e('ugyldig tegn i et manuelt felt tilbakestilles i stedet for å nullstille', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.fill(DEP(4), '2');
+  await page.press(DEP(4), 'Enter');
+  await page.focus(DEP(4));
+  await page.keyboard.press('End');
+  await page.keyboard.type('e');
+  await page.keyboard.press('Enter');
+  assert.deepEqual((await stored(page))[3], { dep: 2, manual: true });
+  await close();
+});
+
+e2e('Tab fra krav 1 går til Nyhet', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.focus(DEP(1));
+  await page.keyboard.press('Tab');
+  const f = await page.evaluate(() => document.activeElement.dataset.field + '|' + document.activeElement.dataset.claim);
+  assert.equal(f, 'novelty|1');
+  await close();
+});
+
+e2e('Shift+Tab etter endring går til etiketten i samme rad', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.fill(DEP(3), '2');
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await focused(page), 'sak-tag-display sak-tag-empty|3');
+  await close();
+});
+
+e2e('Enter markerer innholdet i neste felt', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.focus(DEP(2));
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('2');                   // erstatter markert «1»
+  await page.keyboard.press('Enter');
+  assert.deepEqual((await stored(page))[2], { dep: 2, manual: true });
+  await close();
+});

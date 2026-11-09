@@ -199,8 +199,8 @@ test('ensureClaims: nye krav peker på nærmeste selvstendige krav, ikke kravet 
 
 // ── Nullstille og bytte kravtilhørighet ────────────
 
-const { resetDep, toggleDepIndependent, claimFieldKeyNav } = loadFunctions(
-  ['resetDep', 'toggleDepIndependent', 'claimFieldKeyNav', 'applyDepChange', 'nearestIndependentClaim']
+const { resetDep, toggleDepIndependent, claimFieldKeyNav, depKeyResets } = loadFunctions(
+  ['resetDep', 'toggleDepIndependent', 'claimFieldKeyNav', 'depKeyResets', 'applyDepChange', 'nearestIndependentClaim']
 );
 
 test('resetDep: et manuelt krav blir automatisk og peker på nærmeste selvstendige krav', () => {
@@ -276,4 +276,19 @@ test('claimFieldKeyNav: andre taster og Tab i notatfeltet overlates til nettlese
   assert.strictEqual(claimFieldKeyNav('a', false, 'dep', 3, 5), null);
   assert.strictEqual(claimFieldKeyNav('Tab', false, 'note', 3, 5), null);
   assert.strictEqual(claimFieldKeyNav('Enter', true, 'dep', 3, 5), null);
+});
+
+test('claimFieldKeyNav: Tab fra krav 1 hopper over den deaktiverte S/U-knappen til Nyhet', () => {
+  assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Tab', false, 'dep', 1, 5)), { claim: 1, field: 'novelty' });
+});
+
+test('depKeyResets: Backspace/Delete i et tomt, manuelt felt nullstiller', () => {
+  assert.strictEqual(depKeyResets('Backspace', '', true), true);
+  assert.strictEqual(depKeyResets('Delete', '', true), true);
+});
+
+test('depKeyResets: ikke når feltet har innhold, er automatisk, eller ved andre taster', () => {
+  assert.strictEqual(depKeyResets('Backspace', '2', true), false);
+  assert.strictEqual(depKeyResets('Backspace', '', false), false);
+  assert.strictEqual(depKeyResets('Tab', '', true), false);
 });

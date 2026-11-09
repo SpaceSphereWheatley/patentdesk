@@ -683,9 +683,17 @@ function claimFieldKeyNav(key, shiftKey, field, claimNum, numClaims) {
     return { claim: Math.min(claimNum + 1, numClaims), field: field };
   }
   if (key === 'Tab' && field === 'dep') {
-    return { claim: claimNum, field: shiftKey ? 'label' : 'depToggle' };
+    // Krav 1 har en deaktivert S/U-knapp, så Tab går rett til Nyhet.
+    return { claim: claimNum, field: shiftKey ? 'label' : (claimNum === 1 ? 'novelty' : 'depToggle') };
   }
   return null;
+}
+
+// Et manuelt selvstendig krav har allerede et tomt felt, så «tømme» det gir
+// ingen endring. Backspace/Delete i et tomt, manuelt felt nullstiller derfor
+// kravet til automatisk — også krav 1 og krav fra eldre data.
+function depKeyResets(key, value, isManual) {
+  return (key === 'Backspace' || key === 'Delete') && value === '' && isManual === true;
 }
 
 // Kravnotater ble en periode skrevet til `note` mens de ble lest fra `notes`,

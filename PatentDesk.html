@@ -12418,9 +12418,17 @@ function claimFieldKeyNav(key, shiftKey, field, claimNum, numClaims) {
     return { claim: Math.min(claimNum + 1, numClaims), field: field };
   }
   if (key === 'Tab' && field === 'dep') {
-    return { claim: claimNum, field: shiftKey ? 'label' : 'depToggle' };
+    // Krav 1 har en deaktivert S/U-knapp, så Tab går rett til Nyhet.
+    return { claim: claimNum, field: shiftKey ? 'label' : (claimNum === 1 ? 'novelty' : 'depToggle') };
   }
   return null;
+}
+
+// Et manuelt selvstendig krav har allerede et tomt felt, så «tømme» det gir
+// ingen endring. Backspace/Delete i et tomt, manuelt felt nullstiller derfor
+// kravet til automatisk — også krav 1 og krav fra eldre data.
+function depKeyResets(key, value, isManual) {
+  return (key === 'Backspace' || key === 'Delete') && value === '' && isManual === true;
 }
 
 // Kravnotater ble en periode skrevet til `note` mens de ble lest fra `notes`,
@@ -16179,7 +16187,10 @@ document.getElementById('sak-claims-tbody').addEventListener('keydown', function
 // ingenting, så Enter/Tab gjennom et automatisk krav ikke låser det.
 function commitDepInput(inp) {
   var id = activeSakId; if (!id) return;
-  if (inp.dataset.committed || inp.value === inp.defaultValue) return;
+  if (inp.dataset.committed) return;
+  // Et ugyldig tegn gir value === '' i et tallfelt — det er ikke en tømming.
+  if (inp.validity && inp.validity.badInput) { inp.value = inp.defaultValue; return; }
+  if (inp.value === inp.defaultValue) return;
   inp.dataset.committed = '1';
   var claimNum = parseInt(inp.dataset.claimDep, 10);
   if (inp.value.trim() === '') {
@@ -16209,6 +16220,7 @@ function claimFieldEl(claimNum, field) {
   if (field === 'depToggle') return tb.querySelector('.sak-dep-tog[data-claim-dep-tog="' + n + '"]');
   if (field === 'note')      return tb.querySelector('.sak-claim-note[data-claim="' + n + '"]');
   if (field === 'label')     return tb.querySelector('[data-claim-label="' + n + '"]');
+  if (field === 'novelty')   return tb.querySelector('.sak-tri-btn[data-claim="' + n + '"][data-field="novelty"]');
   return null;
 }
 
@@ -16219,6 +16231,13 @@ document.getElementById('sak-claims-tbody').addEventListener('keydown', function
   var id = activeSakId; if (!id) return;
   var isDep = inp.classList.contains('sak-dep-inp');
   var claimNum = parseInt(isDep ? inp.dataset.claimDep : inp.dataset.claim, 10);
+  if (isDep && depKeyResets(e.key, inp.value, inp.classList.contains('dep-manual')) && !(inp.validity && inp.validity.badInput)) {
+    e.preventDefault();
+    dispatch('CLAIM_DEP_RESET', { id: id, claimNum: claimNum });
+    var same = claimFieldEl(claimNum, 'dep');
+    if (same) same.focus();
+    return;
+  }
   var data = loadSakData(id) || defaultSakData(0);
   var target = claimFieldKeyNav(e.key, e.shiftKey, isDep ? 'dep' : 'note', claimNum, data.numClaims || 0);
   if (!target) return;
