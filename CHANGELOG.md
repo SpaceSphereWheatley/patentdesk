@@ -6,6 +6,8 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.57.0] - 2026-11-09
 ### Added
 - **CPC-klasser på motholdene.** Oppslaget i EPO OPS (automatisk eller med ⤓)
   henter nå også de fire første CPC-klassene i OPS sin rekkefølge, skrevet som
