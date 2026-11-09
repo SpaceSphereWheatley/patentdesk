@@ -227,18 +227,24 @@ test('saveAppFile: lagrer som PatentDesk.html med typen text/html', () => {
 test('startUpdateDownload: viser fremdrift, lagrer og sier hvor filen ligger', async () => {
   const { f, clicks } = dlSandbox();
   const out = makeEl();
-  const p = f.startUpdateDownload(out, okFetch(APP_HTML('v4.59.0')), 'v4.59.0');
+  const btn = { disabled: false };
+  const p = f.startUpdateDownload(out, okFetch(APP_HTML('v4.59.0')), 'v4.59.0', btn);
   assert.strictEqual(out.textContent, 'Laster ned …');
+  assert.strictEqual(out.children.length, 0, 'lenken er borte mens nedlastingen pågår');
+  assert.strictEqual(btn.disabled, true, '«Se etter oppdatering» er låst under nedlastingen');
   const r = await p;
   assert.strictEqual(r, true);
+  assert.strictEqual(btn.disabled, false);
   assert.strictEqual(clicks.length, 1);
-  assert.match(out.textContent, /Lastet ned/);
+  assert.strictEqual(out.textContent, 'Lastet ned v4.59.0 — åpne den nyeste PatentDesk-filen i nedlastingsmappen');
 });
 
 test('startUpdateDownload: feil lagrer ingenting og faller tilbake til GitHub-lenken', async () => {
   const { f, clicks } = dlSandbox();
   const out = makeEl();
-  assert.strictEqual(await f.startUpdateDownload(out, okFetch('garbage'), 'v4.59.0'), false);
+  const btn = { disabled: false };
+  assert.strictEqual(await f.startUpdateDownload(out, okFetch('garbage'), 'v4.59.0', btn), false);
+  assert.strictEqual(btn.disabled, false, 'knappen låses opp også etter feil');
   assert.strictEqual(clicks.length, 0);
   assert.strictEqual(out.className, 'upd-status upd-error');
   assert.strictEqual(out.children[0].text, 'Nedlasting feilet. ');
@@ -271,4 +277,24 @@ test('renderUpdateStatus: Ctrl/⌘-klikk og midtklikk åpner fortsatt GitHub-sid
     a.onclick(Object.assign({ preventDefault: () => { prevented = true; }, ctrlKey: false, metaKey: false, shiftKey: false, button: 0 }, ev));
     assert.strictEqual(prevented, false);
   }
+});
+
+test('mens en nedlasting pågår, kan ikke en ny sjekk starte en ny nedlasting', async () => {
+  const { f } = dlSandbox();
+  const btn = { disabled: false }, out = makeEl();
+  let release, checks = 0;
+  const fetchFn = (url) => {
+    if (url.includes('01-config-templates.js')) { checks++; return okFetch("var APP_VERSION = 'v4.59.0';")(); }
+    return new Promise((r) => { release = () => r({ ok: true, text: () => Promise.resolve(APP_HTML('v4.59.0')) }); });
+  };
+  await f.startUpdateCheck(btn, out, fetchFn);
+  const a = out.children[1];
+  a.onclick({ preventDefault: () => {}, ctrlKey: false, metaKey: false, shiftKey: false, button: 0 });
+  await Promise.resolve();
+  assert.strictEqual(btn.disabled, true);
+  assert.strictEqual(await f.startUpdateCheck(btn, out, fetchFn), null, 'ny sjekk ignoreres');
+  assert.strictEqual(checks, 1);
+  release();
+  await new Promise((r) => setTimeout(r, 10));
+  assert.strictEqual(btn.disabled, false);
 });

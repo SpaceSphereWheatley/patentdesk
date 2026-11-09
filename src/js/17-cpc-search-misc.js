@@ -585,18 +585,23 @@ function githubLink() {
 }
 
 // Laster ned den varslede versjonen. Lenken ligger i out og forsvinner mens
-// nedlastingen pågår, så et nytt klikk er ikke mulig. Feil lagrer ingenting
-// og gir en lenke til GitHub-siden. Returnerer true ved lagring.
-function startUpdateDownload(out, fetchFn, expectedVersion) {
+// nedlastingen pågår, og «Se etter oppdatering» (btn) er låst så en ny sjekk
+// ikke kan gi en ny lenke. Feil lagrer ingenting og gir en lenke til
+// GitHub-siden. Returnerer true ved lagring.
+function startUpdateDownload(out, fetchFn, expectedVersion, btn) {
   out.className = 'upd-status'; out.textContent = 'Laster ned …';
+  if (btn) btn.disabled = true;
   return runUpdateDownload(fetchFn, expectedVersion).then(function(r) {
+    if (btn) btn.disabled = false;
     if (r.ok) {
       try { saveAppFile(r.text); } catch (e) { r = { ok: false }; }
     }
     out.textContent = '';
     if (r.ok) {
       out.className = 'upd-status upd-new';
-      out.textContent = 'Lastet ned ' + expectedVersion + ' — åpne PatentDesk.html fra nedlastingsmappen';
+      // Ligger det en eldre PatentDesk.html der fra før, kaller nettleseren
+      // den nye «PatentDesk (1).html» — derfor ikke et bestemt filnavn her.
+      out.textContent = 'Lastet ned ' + expectedVersion + ' — åpne den nyeste PatentDesk-filen i nedlastingsmappen';
       return true;
     }
     out.className = 'upd-status upd-error';
@@ -608,7 +613,7 @@ function startUpdateDownload(out, fetchFn, expectedVersion) {
   });
 }
 
-function renderUpdateStatus(el, result, fetchFn) {
+function renderUpdateStatus(el, result, fetchFn, btn) {
   el.textContent = '';
   el.className = 'upd-status upd-' + result.kind;
   if (result.kind === 'new') {
@@ -620,7 +625,7 @@ function renderUpdateStatus(el, result, fetchFn) {
     a.onclick = function(e) {
       if (!fetchFn || e.ctrlKey || e.metaKey || e.shiftKey || (e.button !== undefined && e.button !== 0)) return;
       e.preventDefault();
-      startUpdateDownload(el, fetchFn, result.remote);
+      startUpdateDownload(el, fetchFn, result.remote, btn);
     };
     el.appendChild(a);
   } else if (result.kind === 'current') {
@@ -636,7 +641,7 @@ function startUpdateCheck(btn, out, fetchFn) {
   btn.disabled = true;
   out.className = 'upd-status'; out.textContent = 'Sjekker …';
   return runUpdateCheck(fetchFn).then(function(result) {
-    renderUpdateStatus(out, result, fetchFn);
+    renderUpdateStatus(out, result, fetchFn, btn);
     btn.disabled = false;
     return result;
   });
