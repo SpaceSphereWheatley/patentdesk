@@ -343,7 +343,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-tag-input:focus { outline: none; border-color: var(--primary); }
 
 /* Avhengig-av select */
-.sak-dep-inp        { width: 48px; font-family: monospace; font-size: var(--text-sm); text-align: center;
+.sak-dep-inp        { width: 30px; font-family: monospace; font-size: var(--text-sm); text-align: center;
                       padding: 2px 2px; border-radius: var(--radius); background: var(--surface2);
                       border: 1px solid var(--border2); color: var(--muted-text);
                       -moz-appearance: textfield; appearance: textfield; }
@@ -351,6 +351,14 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-dep-inp::-webkit-inner-spin-button,
 .sak-dep-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .sak-dep-inp.dep-manual { border-color: var(--accent); color: var(--text); }
+/* S/U-knappen ved siden av tallfeltet: selvstendig/uselvstendig */
+.sak-dep-wrap       { white-space: nowrap; }
+.sak-dep-tog        { margin-left: 2px; width: 16px; padding: 2px 0; font-family: monospace;
+                      font-size: var(--text-xs); border-radius: var(--radius); cursor: pointer;
+                      background: var(--surface2); border: 1px solid var(--border2); color: var(--muted-text); }
+.sak-dep-tog.dep-manual { border-color: var(--accent); color: var(--text); }
+.sak-dep-tog:disabled   { cursor: default; opacity: .5; }
+.sak-dep-tog:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .sak-dep-sel        { background: var(--surface2); border: 1px solid var(--border2);
                       color: var(--muted-text); font-family: var(--font-body); font-size: var(--text-xs);
                       padding: 2px var(--space-1); border-radius: var(--radius); width: 72px; }

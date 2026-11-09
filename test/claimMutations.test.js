@@ -196,3 +196,84 @@ test('ensureClaims: nye krav peker på nærmeste selvstendige krav, ikke kravet 
   ensureClaims(d);
   assert.deepStrictEqual(d.claims.map((c) => c.dep), [null, null, 1, 2, 2]);
 });
+
+// ── Nullstille og bytte kravtilhørighet ────────────
+
+const { resetDep, toggleDepIndependent, claimFieldKeyNav } = loadFunctions(
+  ['resetDep', 'toggleDepIndependent', 'claimFieldKeyNav', 'applyDepChange', 'nearestIndependentClaim']
+);
+
+test('resetDep: et manuelt krav blir automatisk og peker på nærmeste selvstendige krav', () => {
+  const cs = claims([{}, { dep: 1 }, { dep: null, depManual: true }, { dep: 3 }]);
+  resetDep(cs, 3);
+  assert.strictEqual(cs[2].depManual, false);
+  assert.strictEqual(cs[2].dep, 1);
+});
+
+test('resetDep: kravene under følger med på nytt', () => {
+  const cs = claims([{}, { dep: 1 }, { dep: null, depManual: true }, { dep: 3 }, { dep: 3 }]);
+  assert.deepStrictEqual(Array.from(resetDep(cs, 3)), [3, 4, 5]);
+  assert.deepStrictEqual(cs.map((c) => c.dep), [null, 1, 1, 1, 1]);
+});
+
+test('resetDep: kaskaden stopper ved neste manuelle krav', () => {
+  const cs = claims([{}, { dep: null, depManual: true }, { dep: 2 }, { dep: null, depManual: true }, { dep: 4 }]);
+  resetDep(cs, 2);
+  assert.deepStrictEqual(cs.map((c) => c.dep), [null, 1, 1, null, 4]);
+  assert.strictEqual(cs[3].depManual, true);
+});
+
+test('resetDep: krav 1 blir automatisk selvstendig', () => {
+  const cs = claims([{ depManual: true }, { dep: 1 }]);
+  resetDep(cs, 1);
+  assert.strictEqual(cs[0].dep, null);
+  assert.strictEqual(cs[0].depManual, false);
+});
+
+test('resetDep: ukjent kravnummer endrer ingenting', () => {
+  const cs = claims([{}, { dep: 1 }]);
+  assert.deepStrictEqual(Array.from(resetDep(cs, 9)), []);
+});
+
+test('toggleDepIndependent: uselvstendig → selvstendig, manuelt, med kaskade', () => {
+  const cs = claims([{}, { dep: 1 }, { dep: 1 }]);
+  toggleDepIndependent(cs, 2);
+  assert.strictEqual(cs[1].dep, null);
+  assert.strictEqual(cs[1].depManual, true);
+  assert.strictEqual(cs[2].dep, 2);
+});
+
+test('toggleDepIndependent: selvstendig → uselvstendig peker på nærmeste selvstendige krav over, manuelt', () => {
+  const cs = claims([{}, { dep: 1 }, { dep: null, depManual: true }, { dep: 3 }]);
+  toggleDepIndependent(cs, 3);
+  assert.strictEqual(cs[2].dep, 1);
+  assert.strictEqual(cs[2].depManual, true);
+  assert.strictEqual(cs[3].dep, 1);
+});
+
+test('toggleDepIndependent: krav 1 kan ikke byttes', () => {
+  const cs = claims([{}, { dep: 1 }]);
+  assert.deepStrictEqual(Array.from(toggleDepIndependent(cs, 1)), []);
+  assert.strictEqual(cs[0].dep, null);
+  assert.strictEqual(cs[0].depManual, false);
+});
+
+test('claimFieldKeyNav: Enter går til samme felt på neste krav', () => {
+  assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Enter', false, 'dep', 2, 5)), { claim: 3, field: 'dep' });
+  assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Enter', false, 'note', 4, 5)), { claim: 5, field: 'note' });
+});
+
+test('claimFieldKeyNav: Enter på siste krav blir stående', () => {
+  assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Enter', false, 'dep', 5, 5)), { claim: 5, field: 'dep' });
+});
+
+test('claimFieldKeyNav: Tab fra tallfeltet går til S/U-knappen, Shift+Tab til etiketten', () => {
+  assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Tab', false, 'dep', 3, 5)), { claim: 3, field: 'depToggle' });
+  assert.deepStrictEqual(Object.assign({}, claimFieldKeyNav('Tab', true, 'dep', 3, 5)), { claim: 3, field: 'label' });
+});
+
+test('claimFieldKeyNav: andre taster og Tab i notatfeltet overlates til nettleseren', () => {
+  assert.strictEqual(claimFieldKeyNav('a', false, 'dep', 3, 5), null);
+  assert.strictEqual(claimFieldKeyNav('Tab', false, 'note', 3, 5), null);
+  assert.strictEqual(claimFieldKeyNav('Enter', true, 'dep', 3, 5), null);
+});

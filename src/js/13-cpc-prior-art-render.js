@@ -288,7 +288,12 @@ function claimRowHtml(data, c) {
     }
 
     // Dep input
-    var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
+    var depCell = '<span class="sak-dep-wrap"><input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />' +
+      '<button type="button" class="sak-dep-tog' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep-tog=\"' + esc(c.num) + '\"' +
+      (c.num === 1 ? ' disabled' : '') +
+      ' aria-label="' + esc(depToggleAriaLabel(c.num, isIndependent, c.depManual)) + '"' +
+      ' title="' + esc(isIndependent ? 'Selvstendig — klikk for uselvstendig' : 'Uselvstendig — klikk for selvstendig') + '">' +
+      (isIndependent ? 'S' : 'U') + '</button></span>';
 
     // Label cell
     var labelCell = (c.num === _sakEditingLabelNum)

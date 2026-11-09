@@ -639,6 +639,16 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'CLAIM_DEP_RESET':
+    case 'CLAIM_DEP_TOGGLE': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      var fn = action === 'CLAIM_DEP_RESET' ? resetDep : toggleDepIndependent;
+      if (!fn(data.claims, payload.claimNum).length) break;
+      saveSakData(payload.id, data);
+      renderSakAssessment(data);
+      break;
+    }
+
     case 'CLAIM_LABEL_CHANGE': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });

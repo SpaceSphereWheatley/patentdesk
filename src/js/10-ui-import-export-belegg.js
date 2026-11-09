@@ -645,6 +645,49 @@ function applyDepChange(claims, claimNum, val) {
   return touched;
 }
 
+// Setter et krav tilbake til automatisk tilhørighet: det peker igjen på
+// nærmeste selvstendige krav over seg (krav 1 blir selvstendig), og kravene
+// under som ikke er satt manuelt følger med. Muterer claims og returnerer
+// kravnumrene som ble berørt. Ren funksjon — se test/claimMutations.test.js.
+function resetDep(claims, claimNum) {
+  var idx = claims.findIndex(function(c) { return c.num === claimNum; });
+  if (idx < 0) return [];
+  var touched = [claimNum];
+  claims[idx].depManual = false;
+  claims[idx].dep = nearestIndependentClaim(claims, idx);
+  for (var i = idx + 1; i < claims.length; i++) {
+    if (claims[i].depManual) break;
+    claims[i].dep = nearestIndependentClaim(claims, i);
+    touched.push(claims[i].num);
+  }
+  return touched;
+}
+
+// S/U-knappen: bytter mellom selvstendig og uselvstendig. Et uselvstendig krav
+// henges på nærmeste selvstendige krav over. Valget er manuelt. Krav 1 er
+// alltid selvstendig og kan ikke byttes.
+function toggleDepIndependent(claims, claimNum) {
+  var idx = claims.findIndex(function(c) { return c.num === claimNum; });
+  if (idx <= 0) return [];
+  var val = claims[idx].dep === null ? nearestIndependentClaim(claims, idx) : null;
+  if (val === null && claims[idx].dep === null) return [];
+  return applyDepChange(claims, claimNum, val);
+}
+
+// Tastaturnavigasjon i kravtabellens felt. Enter går til samme felt på neste
+// krav (siste krav blir stående); Tab/Shift+Tab fra tallfeltet styres
+// eksplisitt fordi tabellen tegnes på nytt når verdien lagres. null = la
+// nettleseren håndtere tasten.
+function claimFieldKeyNav(key, shiftKey, field, claimNum, numClaims) {
+  if (key === 'Enter' && !shiftKey && (field === 'dep' || field === 'note')) {
+    return { claim: Math.min(claimNum + 1, numClaims), field: field };
+  }
+  if (key === 'Tab' && field === 'dep') {
+    return { claim: claimNum, field: shiftKey ? 'label' : 'depToggle' };
+  }
+  return null;
+}
+
 // Kravnotater ble en periode skrevet til `note` mens de ble lest fra `notes`,
 // så de forsvant ved neste tegning av kravstabellen. Teksten ligger fortsatt
 // lagret, og hentes tilbake her. Returnerer true hvis noe ble endret.
@@ -684,6 +727,13 @@ function claimFieldAriaLabel(claimNum, kind) {
            : kind === 'note'  ? 'notat'
            : kind === 'label' ? 'etikett' : '';
   return 'Krav ' + claimNum + (what ? ' — ' + what : '');
+}
+
+// S/U-knappen viser bare én bokstav, så navnet må si tilstand og handling.
+function depToggleAriaLabel(claimNum, isIndependent, isManual) {
+  return 'Krav ' + claimNum + ' — ' + (isIndependent ? 'selvstendig' : 'uselvstendig') +
+    (isManual ? ' (manuelt satt)' : ' (automatisk)') +
+    (claimNum === 1 ? '' : '. Bytt til ' + (isIndependent ? 'uselvstendig' : 'selvstendig'));
 }
 
 // Visningen av etiketten er en knapp som åpner redigering. Et rent «Krav 2 —
