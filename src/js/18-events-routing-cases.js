@@ -447,7 +447,7 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     var pdfs = files.filter(function(f) { return _fileIsPdf(f.name); });
     if (!pdfs.length) { showToast('Ingen PDF-dokumenter å åpne.'); return; }
     pdfs.forEach(function(f) {
-      var fileUrl = 'file:///' + _docRootJoin(root, cas.caseNumber, _fileResolvedName(f.name)).replace(/\\/g, '/');
+      var fileUrl = _docFileUrl(root, cas.caseNumber, f.name, window.location);
       window.open(fileUrl, '_blank');
     });
     dd.style.display = 'none';

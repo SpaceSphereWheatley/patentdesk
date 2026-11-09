@@ -371,7 +371,7 @@ function renderSakFileList(data) {
   var root = loadDocRoot();
   list.innerHTML = files.map(function(f, i) {
     var fileUrl = cas
-      ? 'file:///' + _docRootJoin(root, cas.caseNumber, _fileResolvedName(f.name)).replace(/\\/g, '/')
+      ? _docFileUrl(root, cas.caseNumber, f.name, window.location)
       : '#';
     return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
       '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span>' + esc(_fileDisplayName(f.name)) + '</a>' +

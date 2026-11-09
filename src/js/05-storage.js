@@ -229,6 +229,20 @@ function _docRootNormalize(v) {
 function _docRootJoin(root, caseNumber, file) {
   return _docRootNormalize(root) + '\\' + caseNumber + '\\' + file;
 }
+// Åpnet via den lokale serveren (Start-PatentDesk.ps1)? Da stopper nettleseren
+// file:///-lenker, og dokumentene hentes i stedet fra serverens /docs/-adresse.
+function _docServedLocally(loc) {
+  return !!loc && /^https?:$/.test(loc.protocol) &&
+    (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1');
+}
+// Lenke til et saksdokument. loc er window.location (utelatt = file:///-lenke).
+function _docFileUrl(root, caseNumber, name, loc) {
+  var file = _fileResolvedName(name);
+  if (_docServedLocally(loc)) {
+    return loc.origin + '/docs/' + encodeURIComponent(caseNumber) + '/' + encodeURIComponent(file);
+  }
+  return 'file:///' + _docRootJoin(root, caseNumber, file).replace(/\\/g, '/');
+}
 function _fileHasExt(name) {
   return /\.[a-zA-Z0-9]+$/.test(name || '');
 }

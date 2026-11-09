@@ -14,6 +14,13 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   hierarkiet fra CPC-databasen, som for sakens egne klasser. Feltet kan
   endres under «Rediger», er med i eksport og import, og Ctrl+K finner saker
   på motholdenes klasser.
+- **Saksdokumenter åpnes når PatentDesk kjører via localhost.** Edge stopper
+  `file:///`-lenker fra en side på `http://localhost`, så dokumentlenkene og
+  «Åpne alle PDF-er» virket ikke der. Den nye `Start-PatentDesk.ps1` starter
+  en lokal server som også leverer filer fra dokumentmappen (`$docRoot` øverst
+  i filen, samme mappe som «Dokumentrot» i Innstillinger). PDF-er åpnes direkte
+  i Edge, andre filer lastes ned. Serveren nekter alt utenfor dokumentmappen.
+  Åpnet som fil virker lenkene som før.
 ### Changed
 - Ingen oppgradering av dataformatet er nødvendig (skjemaversjon er fortsatt 8).
   Eldre mothold får et tomt CPC-felt.
