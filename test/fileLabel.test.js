@@ -3,8 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
-const { fileListLabel, applyFileEdit, sakFileRowHtml } = loadFunctions(
-  ['fileListLabel', 'applyFileEdit', 'sakFileRowHtml', '_fileHasExt', '_fileResolvedName',
+const { fileListLabel, applyFileEdit, sakFileRowHtml, normalizeImportFiles } = loadFunctions(
+  ['fileListLabel', 'applyFileEdit', 'sakFileRowHtml', 'normalizeImportFiles', '_fileLabelClean', '_fileHasExt', '_fileResolvedName',
     '_fileDisplayName', '_fileExt', '_fileIcon', 'esc', 'sanitizeText'],
   { vars: ['FILE_LABEL_MAX'] }
 );
@@ -36,10 +36,41 @@ test('applyFileEdit: tomt filnavn beholder det gamle (AK 5)', () => {
   assert.deepStrictEqual(plain(applyFileEdit({ name: 'A.pdf', label: 'X' }, '   ', 'X')), { name: 'A.pdf', label: 'X' });
 });
 
-test('applyFileEdit: endrer filnavn og renser kontrolltegn, kutter til maks lengde', () => {
+test('applyFileEdit: endrer filnavn og renser kontrolltegn, kutter visningsnavnet til maks lengde', () => {
   const out = applyFileEdit({ name: 'A.pdf' }, ' B\u0007.pdf ', 'y'.repeat(200));
   assert.strictEqual(out.name, 'B.pdf');
   assert.strictEqual(out.label.length, 80);
+});
+
+test('applyFileEdit: kutter aldri filnavnet — et langt importert navn beholdes, så lenken virker', () => {
+  const long = '(ISA_237) Written Opinion of the International Searching Authority - corrected version.pdf';
+  assert.ok(long.length > 80);
+  assert.deepStrictEqual(plain(applyFileEdit({ name: long }, long, 'WO - ISA')), { name: long, label: 'WO - ISA' });
+});
+
+test('normalizeImportFiles: visningsnavn fra fil renses, trimmes og kuttes (AK 8)', () => {
+  const out = plain(normalizeImportFiles([
+    { name: 'A.pdf', label: '  WO - ISA ' },
+    { name: 'B.pdf', label: 'x\u0007' + 'y'.repeat(200) },
+    { name: 'C.pdf', label: { evil: 1 } },
+    { name: 'D.pdf', label: '   ' },
+    { name: 'E.pdf' }
+  ]));
+  assert.deepStrictEqual(out[0], { name: 'A.pdf', label: 'WO - ISA' });
+  assert.strictEqual(out[1].label, 'x' + 'y'.repeat(79));
+  assert.deepStrictEqual(out[2], { name: 'C.pdf' }, 'label som ikke er tekst fjernes');
+  assert.deepStrictEqual(out[3], { name: 'D.pdf' }, 'tomt label fjernes');
+  assert.deepStrictEqual(out[4], { name: 'E.pdf' });
+});
+
+test('normalizeImportFiles: muterer ikke input og slipper andre verdier gjennom', () => {
+  const input = [{ name: 'A.pdf', label: ' L ' }, null, 'rart'];
+  const copy = JSON.stringify(input);
+  const out = normalizeImportFiles(input);
+  assert.strictEqual(JSON.stringify(input), copy);
+  assert.strictEqual(out[1], null);
+  assert.strictEqual(out[2], 'rart');
+  assert.strictEqual(normalizeImportFiles(undefined), undefined);
 });
 
 test('applyFileEdit: muterer ikke originalen', () => {

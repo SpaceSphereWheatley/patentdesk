@@ -717,6 +717,8 @@ function normalizeImportSakDetails(sd) {
       return copy;
     });
   }
+  // Saksdokumenter: visningsnavnet normaliseres, filnavnet er som i filen.
+  if (Array.isArray(sd.files)) out.files = normalizeImportFiles(sd.files);
   // Innvendinger: bare når filen har dem; vurderingene mot de normaliserte
   // egne innvendingene.
   var hasObj = Object.prototype.hasOwnProperty.call(sd, 'objections');

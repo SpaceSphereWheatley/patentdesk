@@ -262,14 +262,33 @@ function fileListLabel(f) {
   var label = (f && typeof f.label === 'string') ? f.label.trim() : '';
   return label || _fileDisplayName(f && f.name);
 }
+function _fileLabelClean(v) {
+  return sanitizeText(String(v == null ? '' : v)).trim().slice(0, FILE_LABEL_MAX);
+}
 // Ny filpost etter redigering. Tomt filnavn beholder det gamle; tomt
-// visningsnavn fjerner feltet, så filnavnet vises igjen.
+// visningsnavn fjerner feltet, så filnavnet vises igjen. Filnavnet kuttes
+// aldri: et langt navn fra en import må fortsatt peke på filen.
 function applyFileEdit(file, name, label) {
-  var n = sanitizeText(String(name == null ? '' : name)).trim().slice(0, FILE_LABEL_MAX);
-  var l = sanitizeText(String(label == null ? '' : label)).trim().slice(0, FILE_LABEL_MAX);
+  var n = sanitizeText(String(name == null ? '' : name)).trim();
+  var l = _fileLabelClean(label);
   var out = { name: n || file.name };
   if (l) out.label = l;
   return out;
+}
+// Import: visningsnavnet er fri tekst fra filen og får samme form som appen
+// selv skriver (tekst, renset, maks lengde, ellers fjernet). Resten er som før.
+function normalizeImportFiles(files) {
+  if (!Array.isArray(files)) return files;
+  return files.map(function(f) {
+    if (!f || typeof f !== 'object' || Array.isArray(f)) return f;
+    var copy = {};
+    Object.keys(f).forEach(function(k) { if (k !== '__proto__') copy[k] = f[k]; });
+    if (Object.prototype.hasOwnProperty.call(f, 'label')) {
+      var l = typeof f.label === 'string' ? _fileLabelClean(f.label) : '';
+      if (l) copy.label = l; else delete copy.label;
+    }
+    return copy;
+  });
 }
 function _fileExt(name) {
   var m = _fileResolvedName(name).match(/\.([a-zA-Z0-9]+)$/);
