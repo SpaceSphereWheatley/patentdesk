@@ -224,3 +224,34 @@ e2e('↺ har ingen Tab-stopp: Tab fra Avh. av går fortsatt til Nyhet', async ()
   assert.equal(f, 'novelty|4');
   await close();
 });
+
+// ── Markørrammen følger fokus ───────────────────────
+// Rammen rundt cellen viser at tabellen eier tastene. Når fokus forlater
+// tabellen (klikk utenfor), skal rammen bort; det uthevede kravet blir stående.
+function cursorFrameShown(page) {
+  return page.evaluate(() => {
+    const td = document.querySelector('#sak-claims-tbody .sak-claim-active-cell');
+    return !!td && getComputedStyle(td).boxShadow !== 'none';
+  });
+}
+
+e2e('markørrammen forsvinner når fokus forlater tabellen etter Tab fra Avh. av', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.fill(DEP(3), '2');
+  await page.keyboard.press('Tab');
+  assert.equal(await cursorFrameShown(page), true, 'rammen vises mens fokus er i tabellen');
+  await page.mouse.click(5, 5);
+  assert.equal(await cursorFrameShown(page), false, 'rammen er borte etter klikk utenfor');
+  await page.focus(TRI(3, 'novelty'));
+  assert.equal(await cursorFrameShown(page), true, 'rammen kommer tilbake når fokus går inn igjen');
+  await close();
+});
+
+e2e('markørrammen forsvinner også etter klikk på en ja/nei-knapp og så utenfor', async () => {
+  const { page, close } = await h.openCase(browser, 1400);
+  await page.click(TRI(5, 'novelty'));
+  assert.equal(await cursorFrameShown(page), true);
+  await page.mouse.click(5, 5);
+  assert.equal(await cursorFrameShown(page), false);
+  await close();
+});

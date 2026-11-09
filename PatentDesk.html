@@ -2255,7 +2255,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 /* ikke-vurdert: ingen bakgrunn */
 
 .sak-claim-active-row { background: rgba(200,169,110,0.06) !important; }
-.sak-claim-active-cell { box-shadow: inset 0 0 0 2px var(--primary-dim); border-radius: var(--radius-sm); }
+/* Rammen viser at kravtabellen eier tastene, så den vises bare mens fokus er
+   i tabellen. Det uthevede kravet (raden) blir stående etter klikk utenfor. */
+#sak-claims-tbody:focus-within .sak-claim-active-cell { box-shadow: inset 0 0 0 2px var(--primary-dim); border-radius: var(--radius-sm); }
 
 /* Kravkobling: underrad med opphav, endret/uendret og § 13 */
 .km-row td          { border-top: 0 !important; padding: 0 8px 8px !important; text-align: left;
@@ -5104,7 +5106,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.59.2';
+var APP_VERSION    = 'v4.59.3';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
