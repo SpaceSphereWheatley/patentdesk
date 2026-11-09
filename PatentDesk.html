@@ -5072,7 +5072,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.56.0';
+var APP_VERSION    = 'v4.57.0';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -7643,6 +7643,22 @@ function _docRootNormalize(v) {
 }
 function _docRootJoin(root, caseNumber, file) {
   return _docRootNormalize(root) + '\\' + caseNumber + '\\' + file;
+}
+// Åpnet via den lokale serveren (Start-PatentDesk.ps1)? Da stopper nettleseren
+// file:///-lenker, og dokumentene hentes i stedet fra serverens /docs/-adresse.
+function _docServedLocally(loc) {
+  return !!loc && /^https?:$/.test(loc.protocol) && loc.hostname === 'localhost';
+}
+// Lenke til et saksdokument. loc er window.location (utelatt = file:///-lenke).
+// Serveren får dokumentroten fra Innstillinger med i lenken, så mappen bare
+// stilles inn ett sted.
+function _docFileUrl(root, caseNumber, name, loc) {
+  var file = _fileResolvedName(name);
+  if (_docServedLocally(loc)) {
+    return loc.origin + '/docs?root=' + encodeURIComponent(_docRootNormalize(root)) +
+      '&case=' + encodeURIComponent(caseNumber) + '&file=' + encodeURIComponent(file);
+  }
+  return 'file:///' + _docRootJoin(root, caseNumber, file).replace(/\\/g, '/');
 }
 function _fileHasExt(name) {
   return /\.[a-zA-Z0-9]+$/.test(name || '');
@@ -13336,7 +13352,7 @@ function renderSakFileList(data) {
   var root = loadDocRoot();
   list.innerHTML = files.map(function(f, i) {
     var fileUrl = cas
-      ? 'file:///' + _docRootJoin(root, cas.caseNumber, _fileResolvedName(f.name)).replace(/\\/g, '/')
+      ? _docFileUrl(root, cas.caseNumber, f.name, window.location)
       : '#';
     return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
       '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span>' + esc(_fileDisplayName(f.name)) + '</a>' +
@@ -18744,7 +18760,7 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     var pdfs = files.filter(function(f) { return _fileIsPdf(f.name); });
     if (!pdfs.length) { showToast('Ingen PDF-dokumenter å åpne.'); return; }
     pdfs.forEach(function(f) {
-      var fileUrl = 'file:///' + _docRootJoin(root, cas.caseNumber, _fileResolvedName(f.name)).replace(/\\/g, '/');
+      var fileUrl = _docFileUrl(root, cas.caseNumber, f.name, window.location);
       window.open(fileUrl, '_blank');
     });
     dd.style.display = 'none';
