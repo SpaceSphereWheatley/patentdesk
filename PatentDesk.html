@@ -16327,7 +16327,7 @@ function claimFieldEl(claimNum, field) {
   var n  = claimSelVal(claimNum);
   if (field === 'dep')       return tb.querySelector('.sak-dep-inp[data-claim-dep="' + n + '"]');
   if (field === 'depToggle') return tb.querySelector('.sak-num-tog[data-claim-dep-tog="' + n + '"]');
-  if (field === 'note')     return tb.querySelector('.sak-claim-note[data-claim="' + n + '"]');
+  if (field === 'note')      return tb.querySelector('.sak-claim-note[data-claim="' + n + '"]');
   if (field === 'label')     return tb.querySelector('[data-claim-label="' + n + '"]');
   if (field === 'novelty')   return tb.querySelector('.sak-tri-btn[data-claim="' + n + '"][data-field="novelty"]');
   return null;
