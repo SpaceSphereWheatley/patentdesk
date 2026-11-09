@@ -4,35 +4,54 @@
 #   C:\Windows\System32\conhost.exe --headless C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "<mappe>\Start-PatentDesk.ps1"
 #
 # Serveren svarer bare på http://localhost og kan bare nås fra denne maskinen.
-
-# --- Innstillinger -----------------------------------------------------------
-# Samme mappe som «Dokumentrot» under Innstillinger i PatentDesk. Dokumentene
-# hentes fra <docRoot>\<saksnummer>\<fil>. Tom = dokumentlenkene virker ikke.
-$docRoot = ""
+# Dokumentmappen stilles inn i PatentDesk (Innstillinger → Dokumentrot); den
+# følger med i hver dokumentlenke (/docs?root=…&case=…&file=…).
 
 # Ikke bytt port: dataene i nettleseren hører til http://localhost:8080.
 $port = 8080
-# -----------------------------------------------------------------------------
 
 $appFolder = $PSScriptRoot
 $url = "http://localhost:$port/PatentDesk.html"
 
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:$port/")
-try {
-    $listener.Start()
-} catch {
-    # Serveren kjører allerede (porten er i bruk): bare åpne appen.
-    Start-Process "msedge.exe" $url
-    exit
+# Stopp en server som allerede kjører, så endringer i dette skriptet tas i bruk.
+Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe' OR Name = 'pwsh.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*Start-PatentDesk.ps1*' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+
+# Porten kan bruke litt tid på å bli ledig etter at den gamle serveren er stoppet.
+$listener = $null
+for ($i = 0; $i -lt 20 -and -not $listener; $i++) {
+    $candidate = New-Object System.Net.HttpListener
+    $candidate.Prefixes.Add("http://localhost:$port/")
+    try {
+        $candidate.Start()
+        $listener = $candidate
+    } catch {
+        $candidate.Close()
+        Start-Sleep -Milliseconds 250
+    }
 }
 
 Start-Process "msedge.exe" $url
+if (-not $listener) { exit }
 
-# Bare PDF-er vises i nettleseren. Alt annet sendes som nedlasting, slik at
-# f.eks. en HTML-fil i dokumentmappen aldri kjøres som en del av PatentDesk.
+# Dokumenttyper som kan hentes. Bare PDF-er vises i nettleseren; resten lastes
+# ned. Andre typer (f.eks. HTML) avvises, så ingenting fra dokumentmappen kan
+# kjøres som en del av PatentDesk.
 $docTypes = @{
-    '.pdf' = 'application/pdf'
+    '.pdf'  = 'application/pdf'
+    '.doc'  = 'application/msword'
+    '.docx' = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    '.odt'  = 'application/vnd.oasis.opendocument.text'
+    '.xls'  = 'application/vnd.ms-excel'
+    '.xlsx' = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    '.ppt'  = 'application/vnd.ms-powerpoint'
+    '.pptx' = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    '.txt'  = 'text/plain'
+    '.csv'  = 'text/csv'
+    '.png'  = 'image/png'
+    '.jpg'  = 'image/jpeg'
+    '.jpeg' = 'image/jpeg'
 }
 $appTypes = @{
     '.html' = 'text/html; charset=utf-8'
@@ -53,6 +72,20 @@ function Resolve-Inside([string]$root, [string[]]$parts) {
     }
     if ($full.StartsWith($rootFull, [System.StringComparison]::OrdinalIgnoreCase)) { return $full }
     return $null
+}
+
+# Verdien til name i en spørrestreng (a=1&b=2), dekodet som UTF-8, eller $null.
+function Get-QueryValue([string]$query, [string]$name) {
+    foreach ($pair in $query.Split('&')) {
+        $kv = $pair.Split('=', 2)
+        if ($kv.Count -eq 2 -and $kv[0] -eq $name) { return [System.Uri]::UnescapeDataString($kv[1]) }
+    }
+    return $null
+}
+
+# Saksnummer og filnavn kan inneholde / eller \ (fil i en undermappe).
+function Split-PathParts([string]$value) {
+    return @($value -split '[\\/]' | Where-Object { $_ -ne '' })
 }
 
 function Send-Message($response, [int]$status, [string]$title, [string]$detail) {
@@ -91,33 +124,36 @@ while ($listener.IsListening) {
     }
     $response = $context.Response
     try {
-        # Hver del dekodes for seg. Et saksnummer eller filnavn med / eller \
-        # (fil i en undermappe) deles opp i mapper; Resolve-Inside holder
-        # resultatet inne i roten.
+        # Hver del av stien dekodes for seg; Resolve-Inside holder resultatet
+        # inne i app-mappen.
         $segments = @($context.Request.Url.AbsolutePath.TrimStart('/').Split('/') |
-            ForEach-Object { [System.Uri]::UnescapeDataString($_) -split '[\\/]' } |
-            Where-Object { $_ -ne '' })
+            ForEach-Object { Split-PathParts ([System.Uri]::UnescapeDataString($_)) })
+        $raw = $context.Request.RawUrl
+        $query = if ($raw.IndexOf('?') -ge 0) { $raw.Substring($raw.IndexOf('?') + 1) } else { '' }
 
-        if ($segments.Count -ge 1 -and $segments[0] -eq 'docs') {
-            $rest = @($segments | Select-Object -Skip 1)
-            if (-not $docRoot) {
-                Send-Message $response 404 'Dokumentmappen er ikke satt' `
-                    'Fyll inn $docRoot øverst i Start-PatentDesk.ps1 og start PatentDesk på nytt.'
-            } elseif ($rest.Count -lt 2) {
-                Send-Message $response 404 'Fant ikke filen' ($rest -join '\')
+        if ($segments.Count -eq 1 -and $segments[0] -eq 'docs') {
+            $root = Get-QueryValue $query 'root'
+            $caseParts = Split-PathParts (Get-QueryValue $query 'case')
+            $fileParts = Split-PathParts (Get-QueryValue $query 'file')
+            # Roten må være en full sti: C:\… eller \\server\delt\…
+            if (-not ($root -match '^([A-Za-z]:\\|\\\\[^\\]+\\[^\\]+)') -or
+                    $caseParts.Count -eq 0 -or $fileParts.Count -eq 0) {
+                Send-Message $response 400 'Ugyldig dokumentlenke' `
+                    'Sjekk Dokumentrot under Innstillinger i PatentDesk (f.eks. C:\Saker).'
             } else {
-                $path = Resolve-Inside $docRoot $rest
+                # Først saksmappen inne i roten, så filen inne i saksmappen.
+                $caseDir = Resolve-Inside $root $caseParts
+                $path = if ($caseDir) { Resolve-Inside $caseDir $fileParts } else { $null }
+                $ext = if ($path) { [System.IO.Path]::GetExtension($path).ToLowerInvariant() } else { '' }
                 if (-not $path) {
-                    Send-Message $response 403 'Ingen tilgang' 'Filen ligger utenfor dokumentmappen.'
+                    Send-Message $response 403 'Ingen tilgang' 'Filen ligger utenfor saksmappen.'
+                } elseif (-not $docTypes.ContainsKey($ext)) {
+                    Send-Message $response 403 'Filtypen kan ikke åpnes' `
+                        "Filer av typen «$ext» åpnes ikke via PatentDesk. Bruk «Kopier sti»."
                 } elseif (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
                     Send-Message $response 404 'Fant ikke filen' $path
                 } else {
-                    $ext = [System.IO.Path]::GetExtension($path).ToLowerInvariant()
-                    if ($docTypes.ContainsKey($ext)) {
-                        Send-File $response $path $docTypes[$ext] $false
-                    } else {
-                        Send-File $response $path 'application/octet-stream' $true
-                    }
+                    Send-File $response $path $docTypes[$ext] ($ext -ne '.pdf')
                 }
             }
         } else {

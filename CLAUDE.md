@@ -226,5 +226,5 @@ asked.
 | `scripts/codemap.js` | Function/section map of `src/` (`npm run codemap`) |
 | `test/*.test.js` | Unit tests (`npm test`) |
 | `test/e2e/*.e2e.js` | Browser layout tests, not in `npm test`; run `node --test test/e2e/*.e2e.js` (skipped if Playwright is missing) |
-| `Start-PatentDesk.ps1` | Optional local server (Windows PowerShell): serves the app on `http://localhost:8080` and case documents under `/docs/` |
+| `Start-PatentDesk.ps1` | Optional local server (Windows PowerShell): serves the app on `http://localhost:8080` and case documents under `/docs?root=&case=&file=` (restarts a running instance) |
 | `cpc_v2.json` | CPC classification data (external, loaded into IndexedDB) |

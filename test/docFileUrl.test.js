@@ -30,7 +30,7 @@ test('_docFileUrl: without a location falls back to the file:/// link', () => {
 test('_docFileUrl: on localhost links to the local server /docs route', () => {
   assert.strictEqual(
     _docFileUrl('C:\\Saker', 'NO20240001', 'Claims', LOCALHOST),
-    'http://localhost:8080/docs/NO20240001/Claims.pdf'
+    'http://localhost:8080/docs?root=C%3A%5CSaker&case=NO20240001&file=Claims.pdf'
   );
 });
 
@@ -42,10 +42,18 @@ test('_docFileUrl: 127.0.0.1 is not the local server (it only answers on localho
   );
 });
 
-test('_docFileUrl: special characters in case number and file name are encoded', () => {
+test('_docFileUrl: special characters in root, case number and file name are encoded', () => {
   assert.strictEqual(
-    _docFileUrl('C:\\Saker', 'P 2026/001', 'Svar #2 & 100% æøå.pdf', LOCALHOST),
-    'http://localhost:8080/docs/P%202026%2F001/Svar%20%232%20%26%20100%25%20%C3%A6%C3%B8%C3%A5.pdf'
+    _docFileUrl('C:\\Mine saker+', 'P 2026/001', 'Svar #2 & 100% æøå.pdf', LOCALHOST),
+    'http://localhost:8080/docs?root=C%3A%5CMine%20saker%2B&case=P%202026%2F001' +
+      '&file=Svar%20%232%20%26%20100%25%20%C3%A6%C3%B8%C3%A5.pdf'
+  );
+});
+
+test('_docFileUrl: the document root from the settings is normalized before sending', () => {
+  assert.strictEqual(
+    _docFileUrl('  C:/Saker/  ', 'NO1', 'a.pdf', LOCALHOST),
+    'http://localhost:8080/docs?root=C%3A%5CSaker&case=NO1&file=a.pdf'
   );
 });
 
@@ -58,13 +66,23 @@ test('_docFileUrl: a non-local http origin does not use the /docs route', () => 
 });
 
 // The PowerShell server can't run in CI; check that its safeguards are present.
-test('Start-PatentDesk.ps1 confines /docs to $docRoot and serves PDFs inline', () => {
+test('Start-PatentDesk.ps1 takes the root from the link and confines files to root\\case', () => {
   const ps1 = fs.readFileSync(path.join(__dirname, '..', 'Start-PatentDesk.ps1'), 'utf8');
-  assert.match(ps1, /\$docRoot\s*=/);
-  assert.match(ps1, /-eq 'docs'/);
+  assert.doesNotMatch(ps1, /\$docRoot\s*=\s*"/, 'no document folder to fill in by hand');
+  assert.match(ps1, /Get-QueryValue \$query 'root'/);
   assert.match(ps1, /GetFullPath/);
   assert.match(ps1, /StartsWith\(/);
-  assert.match(ps1, /application\/pdf/);
-  // / and \ inside a decoded part become folders (a file in a subfolder), not a 403
-  assert.match(ps1, /UnescapeDataString\(\$_\) -split '\[\\\\\/\]'/);
+  assert.match(ps1, /'\.pdf'\s*=\s*'application\/pdf'/);
+  assert.match(ps1, /'\.docx'/);
+  const docTypes = ps1.slice(ps1.indexOf('$docTypes = @{'), ps1.indexOf('}', ps1.indexOf('$docTypes = @{')));
+  assert.match(docTypes, /'\.pdf'/);
+  assert.doesNotMatch(docTypes, /'\.(html?|svg|js|exe)'/, 'no executable types among the documents');
+});
+
+test('Start-PatentDesk.ps1 stops an already running server before starting', () => {
+  const ps1 = fs.readFileSync(path.join(__dirname, '..', 'Start-PatentDesk.ps1'), 'utf8');
+  assert.match(ps1, /Win32_Process/);
+  assert.match(ps1, /ProcessId -ne \$PID/);
+  assert.match(ps1, /Stop-Process/);
+  assert.ok(ps1.indexOf('Stop-Process') < ps1.indexOf('.Start()'), 'old server is stopped before the new one starts');
 });

@@ -17,10 +17,12 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 - **Saksdokumenter åpnes når PatentDesk kjører via localhost.** Edge stopper
   `file:///`-lenker fra en side på `http://localhost`, så dokumentlenkene og
   «Åpne alle PDF-er» virket ikke der. Den nye `Start-PatentDesk.ps1` starter
-  en lokal server som også leverer filer fra dokumentmappen (`$docRoot` øverst
-  i filen, samme mappe som «Dokumentrot» i Innstillinger). PDF-er åpnes direkte
-  i Edge, andre filer lastes ned. Serveren nekter alt utenfor dokumentmappen.
-  Åpnet som fil virker lenkene som før.
+  en lokal server som også leverer filer fra saksmappene. Dokumentmappen
+  stilles inn bare i PatentDesk (Innstillinger → Dokumentrot) og følger med i
+  lenken. PDF-er åpnes direkte i Edge; Word, Excel, PowerPoint, tekst og bilder
+  lastes ned; andre filtyper avvises. Serveren nekter alt utenfor saksmappen.
+  Starter du skriptet mens en server kjører, stoppes den gamle først, så
+  endringer i skriptet tas i bruk. Åpnet som fil virker lenkene som før.
 ### Changed
 - Ingen oppgradering av dataformatet er nødvendig (skjemaversjon er fortsatt 8).
   Eldre mothold får et tomt CPC-felt.
