@@ -6,6 +6,11 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Fixed
+- **Markørrammen i kravtabellen slipper når du klikker utenfor.** Rammen rundt
+  den aktive cellen ble stående etter Tab fra «Avh. av» eller et klikk på en
+  ja/nei-knapp, selv når fokus var flyttet ut av tabellen. Nå vises den bare
+  mens tabellen har fokus; det uthevede kravet blir stående som før.
 
 ## [4.59.2] - 2026-11-09
 ### Added
