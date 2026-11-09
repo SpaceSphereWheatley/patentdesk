@@ -332,7 +332,11 @@
 
 /* Etikett-celle i tabellen */
 .sak-th-tag         { width: 68px; text-align: center; }
-.sak-th-dep         { width: 56px; text-align: center; }
+/* Feltet (40px) + plass til ↺ (16px), så feltet står 24px fra Nyhet.
+   Overskriften står over feltet, ikke over hele cellen. Ved 960px tas
+   plassen fra Notater (74px, «Notat…» får fortsatt plass). */
+.sak-th-dep         { width: 64px; text-align: center; }
+.sak-claims-table th.sak-th-dep { padding-right: 20px; }
 .sak-tag-display    { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 0 2px;
                       font-size: var(--text-xs); color: var(--muted-text); cursor: pointer; white-space: nowrap; }
 .sak-tag-display:hover { color: var(--text); }
@@ -349,7 +353,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-tag-input:focus { outline: none; border-color: var(--primary); }
 
 /* Avhengig-av select */
-.sak-dep-inp        { width: 48px; font-family: monospace; font-size: var(--text-sm); text-align: center;
+.sak-dep-inp        { width: 40px; font-family: monospace; font-size: var(--text-sm); text-align: center;
                       padding: 2px 2px; border-radius: var(--radius); background: var(--surface2);
                       border: 1px solid var(--border2); color: var(--muted-text);
                       -moz-appearance: textfield; appearance: textfield; }
@@ -357,6 +361,11 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .sak-dep-inp::-webkit-inner-spin-button,
 .sak-dep-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .sak-dep-inp.dep-manual { border-color: var(--accent); color: var(--text); }
+.sak-claims-table td.sak-td-dep { text-align: left; padding-left: 4px; padding-right: 0; }
+.sak-dep-wrap       { display: inline-grid; grid-template-columns: 40px 16px; column-gap: 2px; align-items: center; }
+.sak-dep-reset      { width: 16px; height: 18px; padding: 0; margin: 0; border: none; border-radius: var(--radius);
+                      background: none; color: var(--muted-text); font-size: var(--text-sm); line-height: 1; cursor: pointer; }
+.sak-dep-reset:hover { color: var(--accent-text); background: var(--surface2); }
 .sak-dep-sel        { background: var(--surface2); border: 1px solid var(--border2);
                       color: var(--muted-text); font-family: var(--font-body); font-size: var(--text-xs);
                       padding: 2px var(--space-1); border-radius: var(--radius); width: 72px; }

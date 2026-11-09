@@ -38,10 +38,13 @@ const NOTE = (n) => '#sak-claims-tbody .sak-claim-note[data-claim="' + n + '"]';
 // Baseline recorded from the unmodified v4.52.0 build (this fixture, height
 // 900, sidebar open). Column left x is relative to the table; all values are
 // rounded to 1/100 px. AC7 requires these to stay exactly the same.
+// Tilsiktet endring senere: «Avh. av» ble 8px bredere (plass til ↺ og luft
+// mot Nyhet). Kolonnene etter flyttes 8px, og Notater blir 8px smalere.
+const DEP_GROW = 8;
 const BASE_ROWS = [47.5, 47, 47, 47, 47.5, 47.5, 47, 47, 47, 47, 47, 46.5];
 const BASE_COLS = (notesW) => [
-  { left: 0, width: 40 }, { left: 40, width: 68 }, { left: 108, width: 56 }, { left: 164, width: 108 },
-  { left: 272, width: 108 }, { left: 380, width: 72 }, { left: 452, width: notesW }
+  { left: 0, width: 40 }, { left: 40, width: 68 }, { left: 108, width: 56 + DEP_GROW }, { left: 164 + DEP_GROW, width: 108 },
+  { left: 272 + DEP_GROW, width: 108 }, { left: 380 + DEP_GROW, width: 72 }, { left: 452 + DEP_GROW, width: notesW - DEP_GROW }
 ];
 const BASELINE = {
   1440: { tableHeight: 630.77, ths: BASE_COLS(388.45), rows: BASE_ROWS },

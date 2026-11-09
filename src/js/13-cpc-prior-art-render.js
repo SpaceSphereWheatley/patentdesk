@@ -288,7 +288,10 @@ function claimRowHtml(data, c) {
     }
 
     // Dep input
-    var depCell = '<input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />';
+    // Feltet og ↺ står i et rutenett med fast plass til knappen, så feltene
+    // står likt på manuelle og automatiske rader.
+    var depCell = '<span class="sak-dep-wrap"><input type="number" class="sak-dep-inp' + (c.depManual ? ' dep-manual' : '') + '" data-claim-dep=\"' + esc(c.num) + '\" min="1" placeholder="—" aria-label="' + esc(claimFieldAriaLabel(c.num, 'dep')) + '" value="' + (c.dep !== null ? c.dep : '') + '" />' +
+      depResetHtml(c) + '</span>';
 
     // Kravnummeret er selv bryteren for selvstendig/uselvstendig: fet i
     // ramme = selvstendig, dempet = uselvstendig. Krav 1 kan ikke byttes.
@@ -307,7 +310,7 @@ function claimRowHtml(data, c) {
     return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + ' data-claim=\"' + esc(c.num) + '\">' +
       '<td class="sak-td-krav">' + numCell + '</td>' +
       '<td>' + labelCell + '</td>' +
-      '<td class="sak-td-check">' + depCell + '</td>' +
+      '<td class="sak-td-check sak-td-dep">' + depCell + '</td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + noveltyBtn + claimDocChipHtml(data, c, 'novelty', effNovelty) + '</span></td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + inventiveBtn + claimDocChipHtml(data, c, 'inventive', effNovelty) + '</span></td>' +
       '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim=\"' + esc(c.num) + '\" data-field="formal"' + ariaFor('formal', c.formal, false, false) + '>' + triLabel(c.formal,   true)  + '</button></td>' +

@@ -188,13 +188,14 @@ e2e('C2 @1280: tree below the table at full section width', async () => {
 
 // ── Criterion 3: 1024 and 960 ────────────────────────────────────────────
 for (const w of [1024, 960]) {
-  e2e('C3 @' + w + ': no overflow, Krav..Formelle feil fully visible, Notater >= 80px', async () => {
+  // Var 80px; senket til 70px for å gi plass til ↺ og luft i Avh. av.
+  e2e('C3 @' + w + ': no overflow, Krav..Formelle feil fully visible, Notater >= 70px', async () => {
     const { page, close } = await openCase(w);
     try {
       const m = await measure(page);
       assertNoHorizontalOverflow(m, String(w));
       assertHeaderInside(m, [0, 1, 2, 3, 4, 5], String(w));
-      assert.ok(m.ths[NOTES].width >= 80, 'Notater is ' + m.ths[NOTES].width + 'px, expected >= 80');
+      assert.ok(m.ths[NOTES].width >= 70, 'Notater is ' + m.ths[NOTES].width + 'px, expected >= 70');
       assert.ok(m.ths[NOTES].right <= m.wrap.right + TOL, 'Notater extends past the visible wrap');
     } finally { await close(); }
   });
@@ -377,6 +378,44 @@ e2e('C8 @960: 200 claims -> "200" fits in Krav and dep "199" fits in Avh. av', a
       return out;
     });
     assert.deepEqual(bad, []);
+  } finally { await close(); }
+});
+
+// ── Nullstill-knappen og avstand til Nyhet ──
+e2e('↺ @960, 200 claims: manual dep "199" with reset button stays inside Avh. av; inputs aligned', async () => {
+  const { page, close } = await openCase(960, { numClaims: 200 });
+  try {
+    await page.fill('[data-claim-dep="200"]', '198');
+    await page.press('[data-claim-dep="200"]', 'Enter');
+    const m = await measure(page);
+    assertNoHorizontalOverflow(m, '960/200/manual');
+    const bad = await page.evaluate(() => {
+      const out = [];
+      const tr = document.querySelector('#sak-claims-tbody tr[data-claim="200"]');
+      const btn = tr.querySelector('.sak-dep-reset');
+      if (!btn) return ['precondition: no reset button on claim 200'];
+      const td = btn.closest('td').getBoundingClientRect(), b = btn.getBoundingClientRect();
+      if (b.left < td.left - 0.5 || b.right > td.right + 0.5) out.push('reset button spills Avh. av cell');
+      const inp = tr.querySelector('.sak-dep-inp').getBoundingClientRect();
+      if (b.left < inp.right - 0.5) out.push('reset button overlaps the input');
+      const other = document.querySelector('#sak-claims-tbody tr[data-claim="199"] .sak-dep-inp').getBoundingClientRect();
+      if (Math.abs(other.left - inp.left) > 0.5) out.push('dep inputs not aligned between manual and automatic rows');
+      return out;
+    });
+    assert.deepEqual(bad, []);
+  } finally { await close(); }
+});
+
+e2e('Avh. av @1280: at least 24px between the dep field and the Nyhet button', async () => {
+  const { page, close } = await openCase(1280);
+  try {
+    const gap = await page.evaluate(() => {
+      const tr = document.querySelector('#sak-claims-tbody tr[data-claim="3"]');
+      const a = tr.querySelector('.sak-dep-inp').getBoundingClientRect();
+      const b = tr.querySelector('.sak-tri-btn[data-field="novelty"]').getBoundingClientRect();
+      return b.left - a.right;
+    });
+    assert.ok(gap >= 24, 'gap is only ' + gap.toFixed(1) + 'px');
   } finally { await close(); }
 });
 
