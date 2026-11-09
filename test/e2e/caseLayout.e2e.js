@@ -138,5 +138,8 @@ e2e('AC3: oppdrag shows no claim sections and no phase of only hidden sections',
   assert.equal(await p.locator('.sak-claims-table').isVisible(), false);
   assert.equal(await p.locator('#sak-phase-vurdering').isVisible(), false);
   assert.match(await p.locator('#sak-meta-line').textContent(), /Varighet 3 arb\.dager/);
+  assert.equal(await p.locator('#sak-phase-gransking').isVisible(), false);
+  assert.equal(await p.locator('.sak-fold').count(), 0);
+  assert.equal(await p.locator('#sak-case-notes').isVisible(), true);
   await s.close();
 });
