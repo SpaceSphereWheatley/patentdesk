@@ -216,6 +216,12 @@
                       background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
                       box-shadow: var(--shadow-dropdown); padding: var(--space-3); z-index: 300;
                       min-width: 15rem; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+/* «Som krav n» — kopier valget fra kravet rett over */
+.doc-pop-copy       { width: 100%; text-align: left; cursor: pointer; font-family: var(--font-body);
+                      font-size: var(--text-sm); color: var(--primary); background: none;
+                      border: none; border-bottom: 1px solid var(--border); border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+                      padding: var(--space-2) var(--space-3); margin-bottom: var(--space-2); }
+.doc-pop-copy:hover { background: var(--surface2); }
 .doc-pop-title      { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: var(--tracking-label);
                       color: var(--muted-text); font-weight: var(--weight-semibold); padding: 0 var(--space-2) var(--space-2); }
 .doc-pop-opt        { display: flex; align-items: center; gap: var(--space-3); width: 100%;

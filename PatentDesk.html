@@ -2527,6 +2527,12 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
                       background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
                       box-shadow: var(--shadow-dropdown); padding: var(--space-3); z-index: 300;
                       min-width: 15rem; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+/* «Som krav n» — kopier valget fra kravet rett over */
+.doc-pop-copy       { width: 100%; text-align: left; cursor: pointer; font-family: var(--font-body);
+                      font-size: var(--text-sm); color: var(--primary); background: none;
+                      border: none; border-bottom: 1px solid var(--border); border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+                      padding: var(--space-2) var(--space-3); margin-bottom: var(--space-2); }
+.doc-pop-copy:hover { background: var(--surface2); }
 .doc-pop-title      { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: var(--tracking-label);
                       color: var(--muted-text); font-weight: var(--weight-semibold); padding: 0 var(--space-2) var(--space-2); }
 .doc-pop-opt        { display: flex; align-items: center; gap: var(--space-3); width: 100%;
@@ -5051,7 +5057,14 @@ button.ob-del:hover { color: var(--text-on-no); }
           <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Nyhet / oppfinnelseshøyde / formelle feil</td></tr>
           <tr><td><kbd>Y</kbd> / <kbd>N</kbd> / <kbd>?</kbd></td><td>Ja / nei / ikke vurdert</td></tr>
           <tr><td><kbd>Mellomrom</kbd></td><td>Veksle verdien</td></tr>
+          <tr><td><kbd>C</kbd></td><td>Kopier mothold fra kravet over (nyhet / oppfinnelseshøyde)</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>Forlat tabellen</td></tr>
+        </table>
+        <h3 class="shortcuts-subhead">I feltene Avh. av og Notat</h3>
+        <table class="shortcuts-table">
+          <tr><td><kbd>Enter</kbd></td><td>Lagre og gå til samme felt på neste krav</td></tr>
+          <tr><td><kbd>Tab</kbd></td><td>Lagre og gå til høyre</td></tr>
+          <tr><td><kbd>Backspace</kbd></td><td>I tomt, manuelt Avh. av-felt: tilbake til automatisk</td></tr>
         </table>
       </div>
     </div>
@@ -9429,6 +9442,23 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'CLAIM_DOC_COPY': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      ensureSakDocs(data);
+      var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
+      if (!claim || (payload.field !== 'novelty' && payload.field !== 'inventive')) break;
+      // Samme vilkår som for velgeren: feltet må være ✗, og oppfinnelseshøyden
+      // er låst (arver nyhetsmotholdet) når kravet mangler nyhet.
+      var effNov = effectiveClaimValue(data.claims, claim, 'novelty');
+      if (payload.field === 'inventive' && effNov === false) break;
+      if (effectiveClaimValue(data.claims, claim, payload.field) !== false) break;
+      if (!copyClaimDocsFromAbove(data.claims, payload.claimNum, payload.field, data.docs)) break;
+      if (payload.field === 'novelty') _sakOpenDocPop = null;
+      saveSakData(payload.id, data);
+      renderSakAssessmentRows(data, claimsAffectedBy(data.claims, payload.claimNum));
+      break;
+    }
+
     case 'CLAIM_NOTE_CHANGE': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
@@ -12948,6 +12978,38 @@ function toggleClaimDoc(claim, field, docId, docs) {
   return claim;
 }
 
+// Motholdene for field på kravet rett over (num − 1), filtrert til det som
+// kan velges for feltet. null når det ikke er noe å kopiere: krav 1, tomt
+// valg over, eller samme valg som kravet allerede har.
+// Ren funksjon — se test/claimDocCopy.test.js.
+function claimDocCopySource(claims, claimNum, field, docs) {
+  var above = (claims || []).find(function(c) { return c && c.num === claimNum - 1; });
+  var self  = (claims || []).find(function(c) { return c && c.num === claimNum; });
+  if (!above || !self) return null;
+  var ok = {};
+  claimDocSelectable(docs, field).forEach(function(d) { ok[d.id] = true; });
+  var src = field === 'novelty' ? (above.noveltyDoc ? [above.noveltyDoc] : [])
+          : (Array.isArray(above.inventiveDocs) ? above.inventiveDocs : []);
+  var ids = src.filter(function(id) { return ok[id]; });
+  if (field === 'inventive') ids = ids.slice(0, MAX_INVENTIVE_DOCS);
+  if (!ids.length) return null;
+  var cur = field === 'novelty' ? (self.noveltyDoc ? [self.noveltyDoc] : [])
+          : (Array.isArray(self.inventiveDocs) ? self.inventiveDocs : []);
+  if (cur.length === ids.length && cur.every(function(id, i) { return id === ids[i]; })) return null;
+  return ids;
+}
+
+// Erstatter kravets valg for field med valget fra kravet rett over.
+// Returnerer true hvis noe ble endret.
+function copyClaimDocsFromAbove(claims, claimNum, field, docs) {
+  var ids = claimDocCopySource(claims, claimNum, field, docs);
+  if (!ids) return false;
+  var self = claims.find(function(c) { return c && c.num === claimNum; });
+  if (field === 'novelty') self.noveltyDoc = ids[0];
+  else self.inventiveDocs = ids.slice();
+  return true;
+}
+
 // Kategorien ett mothold får for ett krav: X, Y, A — eller null når kravet
 // ikke er ferdig vurdert og derfor holdes utenfor rapporten.
 function claimDocCategory(claims, claim, doc) {
@@ -14866,7 +14928,13 @@ function claimDocPopHtml(data, c, field, ids) {
       '<strong>' + esc(d.id) + '</strong><span>' + esc(d.ref || '') + '</span>' +
     '</button>';
   }).join('');
-  return '<span class="doc-pop">' +
+  var copyIds = claimDocCopySource(data.claims, c.num, field, data.docs);
+  var copy = copyIds
+    ? '<button class="doc-pop-copy" data-doc-copy=\"' + esc(c.num) + '\" data-field="' + field + '"' +
+        ' title="Erstatt valget med motholdene fra krav ' + esc(c.num - 1) + ' (hurtigtast C)">' +
+        '⧉ Som krav ' + esc(c.num - 1) + ' (' + esc(copyIds.join('+')) + ')</button>'
+    : '';
+  return '<span class="doc-pop">' + copy +
     '<span class="doc-pop-title">' + (isNovelty ? 'Nyheten tas av' : 'Oppfinnelseshøyden tas av') + '</span>' +
     opts +
     '<span class="doc-pop-hint">' + (isNovelty
@@ -15924,6 +15992,11 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
       field: pick.dataset.field, docId: pick.dataset.docPick });
     return;
   }
+  var copyBtn = e.target.closest('[data-doc-copy]');
+  if (copyBtn) {
+    dispatch('CLAIM_DOC_COPY', { id: id, claimNum: parseInt(copyBtn.dataset.docCopy, 10), field: copyBtn.dataset.field });
+    return;
+  }
   var chip = e.target.closest('[data-doc-pop]');
   if (chip) {
     var num = parseInt(chip.dataset.docPop, 10), field = chip.dataset.field;
@@ -16116,6 +16189,13 @@ document.addEventListener('keydown', function(e) {
     _sakKeyField = action.field;
     var b = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
     if (b && !b.disabled) b.focus();
+    paintClaimCursor();
+    return;
+  }
+  if (action.type === 'copyDocs') {
+    dispatch('CLAIM_DOC_COPY', { id: id, claimNum: _sakActiveClaimNum, field: _sakKeyField });
+    var cb = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
+    if (cb && !cb.disabled) cb.focus();
     paintClaimCursor();
     return;
   }
@@ -18152,6 +18232,7 @@ function claimKeyAction(key) {
     case 'n': case 'N': return { type: 'set', value: false };
     case '?': return { type: 'set', value: null };
     case ' ': return { type: 'toggle' };
+    case 'c': case 'C': return { type: 'copyDocs' };
     case 'Escape': return { type: 'exit' };
     default: return null;
   }

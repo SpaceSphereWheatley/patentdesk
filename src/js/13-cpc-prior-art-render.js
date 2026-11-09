@@ -880,7 +880,13 @@ function claimDocPopHtml(data, c, field, ids) {
       '<strong>' + esc(d.id) + '</strong><span>' + esc(d.ref || '') + '</span>' +
     '</button>';
   }).join('');
-  return '<span class="doc-pop">' +
+  var copyIds = claimDocCopySource(data.claims, c.num, field, data.docs);
+  var copy = copyIds
+    ? '<button class="doc-pop-copy" data-doc-copy=\"' + esc(c.num) + '\" data-field="' + field + '"' +
+        ' title="Erstatt valget med motholdene fra krav ' + esc(c.num - 1) + ' (hurtigtast C)">' +
+        '⧉ Som krav ' + esc(c.num - 1) + ' (' + esc(copyIds.join('+')) + ')</button>'
+    : '';
+  return '<span class="doc-pop">' + copy +
     '<span class="doc-pop-title">' + (isNovelty ? 'Nyheten tas av' : 'Oppfinnelseshøyden tas av') + '</span>' +
     opts +
     '<span class="doc-pop-hint">' + (isNovelty

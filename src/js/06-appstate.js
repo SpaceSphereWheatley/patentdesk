@@ -604,6 +604,23 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'CLAIM_DOC_COPY': {
+      var data = loadSakData(payload.id) || defaultSakData(0);
+      ensureSakDocs(data);
+      var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });
+      if (!claim || (payload.field !== 'novelty' && payload.field !== 'inventive')) break;
+      // Samme vilkår som for velgeren: feltet må være ✗, og oppfinnelseshøyden
+      // er låst (arver nyhetsmotholdet) når kravet mangler nyhet.
+      var effNov = effectiveClaimValue(data.claims, claim, 'novelty');
+      if (payload.field === 'inventive' && effNov === false) break;
+      if (effectiveClaimValue(data.claims, claim, payload.field) !== false) break;
+      if (!copyClaimDocsFromAbove(data.claims, payload.claimNum, payload.field, data.docs)) break;
+      if (payload.field === 'novelty') _sakOpenDocPop = null;
+      saveSakData(payload.id, data);
+      renderSakAssessmentRows(data, claimsAffectedBy(data.claims, payload.claimNum));
+      break;
+    }
+
     case 'CLAIM_NOTE_CHANGE': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       var claim = data.claims.find(function(c) { return c.num === payload.claimNum; });

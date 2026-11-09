@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const { claimDocChipHtml } = loadFunctions(
-  ['claimDocChipHtml', 'claimDocPopHtml', 'claimDocSelectable', 'effectiveClaimValue', 'getClaimCascadeValue', 'esc'],
+  ['claimDocChipHtml', 'claimDocPopHtml', 'claimDocCopySource', 'claimDocSelectable', 'effectiveClaimValue', 'getClaimCascadeValue', 'esc'],
   { vars: ['MAX_INVENTIVE_DOCS'], globals: { _sakOpenDocPop: null } }
 );
 

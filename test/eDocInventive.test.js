@@ -23,7 +23,7 @@ const {
   'toggleClaimDoc',
   'ensureSakDocs', 'capPartyText', 'capCpcText', 'sanitizeText',
   'claimDocSelectable',
-  'claimDocPopHtml',
+  'claimDocPopHtml', 'claimDocCopySource',
   'esc',
 ], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN', 'CPC_MAX_LEN', 'CPC_MAX_CLASSES'] });
 

@@ -781,6 +781,11 @@ document.getElementById('sak-claims-tbody').addEventListener('click', function(e
       field: pick.dataset.field, docId: pick.dataset.docPick });
     return;
   }
+  var copyBtn = e.target.closest('[data-doc-copy]');
+  if (copyBtn) {
+    dispatch('CLAIM_DOC_COPY', { id: id, claimNum: parseInt(copyBtn.dataset.docCopy, 10), field: copyBtn.dataset.field });
+    return;
+  }
   var chip = e.target.closest('[data-doc-pop]');
   if (chip) {
     var num = parseInt(chip.dataset.docPop, 10), field = chip.dataset.field;
@@ -973,6 +978,13 @@ document.addEventListener('keydown', function(e) {
     _sakKeyField = action.field;
     var b = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
     if (b && !b.disabled) b.focus();
+    paintClaimCursor();
+    return;
+  }
+  if (action.type === 'copyDocs') {
+    dispatch('CLAIM_DOC_COPY', { id: id, claimNum: _sakActiveClaimNum, field: _sakKeyField });
+    var cb = document.querySelector('#sak-claims-tbody [data-claim="' + claimSelVal(_sakActiveClaimNum) + '"][data-field="' + _sakKeyField + '"]');
+    if (cb && !cb.disabled) cb.focus();
     paintClaimCursor();
     return;
   }
