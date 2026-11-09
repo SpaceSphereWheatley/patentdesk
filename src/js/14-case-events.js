@@ -12,6 +12,7 @@ function updateCaseField(id, patch) {
     document.getElementById('sak-page-title').textContent = updated.caseNumber;
     document.getElementById('sak-page-sub').textContent = sakSubtitle(updated);
     document.getElementById('sak-sticky-cn').textContent = updated.caseNumber;
+    renderSakMeta(updated);
     document.title = updated.caseNumber + (updated.title ? ' — ' + updated.title : '') + ' — PatentDesk';
   }
 }
@@ -263,6 +264,13 @@ document.getElementById('view-sak').addEventListener('change', function(e) {
   var label = cb.closest('.sak-check-row');
   if (label) label.classList.toggle('sak-check-done', cb.checked);
   dispatch('CHECKLIST_TOGGLE', { id: id, itemId: cb.dataset.itemId, checked: cb.checked });
+  var fold = cb.closest('.sak-fold');
+  if (fold) {
+    var boxes = fold.querySelectorAll('.sak-checkbox[data-item-id]');
+    var done = fold.querySelectorAll('.sak-checkbox[data-item-id]:checked').length;
+    fold.querySelector('.sak-fold-count').textContent = done + ' / ' + boxes.length;
+    fold.querySelector('.sak-fold-bar span').style.width = (boxes.length ? Math.round(done / boxes.length * 100) : 0) + '%';
+  }
 });
 
 // CPC-klasser: legg til (via Enter i inputfeltet)
@@ -1283,3 +1291,17 @@ document.getElementById('sak-notes').addEventListener('input', function() {
   dispatch('SAK_NOTES_CHANGE', { id: id, notes: this.value });
 });
 
+
+// Notater: ett felt om gangen — «Synlig i oversikten» eller «Intern». Begge
+// feltene ligger i DOM-en og lagres som før; bare visningen byttes.
+document.querySelectorAll('.sak-seg-btn[data-notes]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var which = btn.dataset.notes;
+    document.querySelector('.sak-notes-grid').dataset.notesShow = which;
+    document.querySelectorAll('.sak-seg-btn[data-notes]').forEach(function(b) {
+      var on = b.dataset.notes === which;
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  });
+});

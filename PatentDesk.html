@@ -2588,7 +2588,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-result-summary     { display: flex; flex-direction: column; gap: 0; }
 .sak-result-grid        { display: flex; flex-direction: column; gap: 0.1rem; }
 .res-row                { display: flex; align-items: baseline; gap: var(--space-4);
-                          padding: var(--space-2) var(--space-3); border-radius: var(--radius); font-size: var(--text-base); }
+                          padding: 2px var(--space-3); border-radius: var(--radius); font-size: var(--text-base); }
 .res-label              { font-weight: var(--weight-semibold); white-space: nowrap; flex-shrink: 0; }
 .res-nums               { font-variant-numeric: tabular-nums; font-family: monospace; font-size: var(--text-sm); text-align: right; flex: 1; }
 .res-ok                 { color: var(--color-ok); }
@@ -2600,7 +2600,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 /* Resultatoversikt: kolonner */
 .sak-result-cols        { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-                          gap: var(--space-6) var(--space-8); margin-top: var(--space-5); }
+                          gap: var(--space-4) var(--space-8); margin-top: var(--space-3); }
 .sak-result-col         { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
 .sak-result-col-title   { font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--muted-text);
                            text-transform: uppercase; letter-spacing: var(--tracking-label);
@@ -2697,9 +2697,11 @@ tr:hover .sak-tag-display.sak-tag-empty,
 
 /* Sammendragsboks (progress + resultat) */
 .sak-summary-box    { background: var(--surface); border: 1px solid var(--border);
-                      border-radius: var(--radius); padding: 1.1rem var(--space-7); }
-.sak-summary-box .sak-progress-bars { background: none; border: none; padding: 0; margin-bottom: 0; }
-.sak-summary-box .sak-result-summary { margin-top: var(--space-6); padding-top: var(--space-6);
+                      border-radius: var(--radius); padding: var(--space-5) var(--space-7); }
+.sak-summary-box .sak-progress-bars { background: none; border: none; padding: 0; margin-bottom: 0;
+                                       flex-direction: row; gap: var(--space-9); }
+.sak-summary-box .sak-progress-item { flex: 1; min-width: 0; }
+.sak-summary-box .sak-result-summary { margin-top: var(--space-4); padding-top: var(--space-4);
                                         border-top: 1px solid var(--border); }
 
 /* ── 27b. Sak docs dropdown ───────────────────────── */
@@ -2888,6 +2890,43 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .modal-footer-end        { display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-5) var(--space-7); }
 
   
+
+/* ── Saksvisning: Vurdering først ──────────────────── */
+/* Metalinjen i sakshodet: tittel, datoer, buffer og medlesing på én linje. */
+.sak-meta-line        { display: flex; flex-wrap: wrap; align-items: baseline; color: var(--muted-text);
+                        font-size: var(--text-sm); margin-top: var(--space-1); }
+.sak-meta-line span:first-child { color: var(--text); font-size: var(--text-md); font-weight: var(--weight-medium); }
+.sak-meta-line span + span::before { content: "·"; margin: 0 var(--space-3); color: var(--muted-text); }
+
+/* Sjekklister: en rad med navn, framdrift og pil; innholdet åpnes ved klikk. */
+.sak-fold             { padding: 0; }
+.sak-fold-head        { display: flex; align-items: center; gap: var(--space-5); width: 100%;
+                        background: none; border: none; cursor: pointer; text-align: left;
+                        padding: var(--space-5) var(--space-7); font-family: var(--font-body); color: var(--text); }
+.sak-fold-head:hover  { background: var(--surface2); border-radius: var(--radius-lg); }
+.sak-fold-head:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: var(--radius-lg); }
+.sak-fold-title       { font-size: var(--text-base); font-weight: var(--weight-semibold); }
+.sak-fold-bar         { flex: 1; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.sak-fold-bar span    { display: block; height: 100%; background: var(--primary); border-radius: 4px; }
+.sak-fold-count       { font-size: var(--text-xs); color: var(--muted-text); font-variant-numeric: tabular-nums; }
+.sak-fold-chev        { font-size: var(--text-xs); color: var(--muted-text); transition: transform var(--dur-base) ease; }
+.sak-fold.is-open .sak-fold-chev { transform: rotate(90deg); }
+.sak-fold-body        { padding: 0 var(--space-7) var(--space-7); border-top: 1px solid var(--border); padding-top: var(--space-5); }
+.sak-fold-body[hidden] { display: none; }
+
+/* Notater: ett felt om gangen */
+.sak-seg              { display: inline-flex; border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; }
+.sak-seg-btn          { background: var(--surface); border: none; padding: 3px var(--space-5);
+                        font: inherit; font-size: var(--text-xs); color: var(--muted-text); cursor: pointer;
+                        text-transform: none; letter-spacing: 0; font-weight: var(--weight-regular); }
+.sak-seg-btn + .sak-seg-btn { border-left: 1px solid var(--border2); }
+.sak-seg-btn.is-on    { background: var(--surface2); color: var(--text); font-weight: var(--weight-semibold); }
+.sak-seg-btn.has-text:not(.is-on)::after { content: " •"; color: var(--primary); }
+.sak-seg-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.sak-notes-grid[data-notes-show] { grid-template-columns: 1fr; }
+.sak-notes-grid[data-notes-show="vis"] [data-notes-pane="int"],
+.sak-notes-grid[data-notes-show="int"] [data-notes-pane="vis"] { display: none; }
+.sak-subtitle[hidden] { display: none; }
 /* ── Tidslinje-modal ──────────────────────────────── */
 
 /* axis toggle — shared between home and modal */
@@ -4078,9 +4117,9 @@ button.ob-del:hover { color: var(--text-on-no); }
         <div id="sak-sticky-bar" class="sak-sticky-bar" aria-hidden="true">
           <span class="sak-sticky-cn" id="sak-sticky-cn"></span>
           <nav class="sak-anchors" id="sak-anchors" aria-label="Gå til seksjon">
-            <button class="sak-anchor" data-anchor="saken">Saken</button>
-            <button class="sak-anchor" data-anchor="gransking">Gransking</button>
             <button class="sak-anchor" data-anchor="vurdering">Vurdering</button>
+            <button class="sak-anchor" data-anchor="gransking">Gransking</button>
+            <button class="sak-anchor" data-anchor="saken">Saken</button>
           </nav>
           <div class="sak-sticky-progress">
             <span class="sak-sticky-label" id="sak-sticky-cl-label">Sjekkliste</span>
@@ -4121,7 +4160,8 @@ button.ob-del:hover { color: var(--text-on-no); }
                   </div>
                 </div>
               </div>
-              <span class="sak-subtitle" id="sak-page-sub"></span>
+              <span class="sak-subtitle" id="sak-page-sub" hidden></span>
+              <div class="sak-meta-line" id="sak-meta-line"></div>
               <span class="sak-round-line" id="sak-page-round"></span>
             </div>
           </div>
@@ -4199,129 +4239,10 @@ button.ob-del:hover { color: var(--text-on-no); }
         </section>
         <div id="sak-summary-sentinel"></div>
 
-        <!-- ══ FASE A — Saken ══ -->
-        <section class="sak-phase" data-phase="saken" id="sak-phase-saken">
-          <button class="sak-phase-head" id="sak-phase-head-saken" aria-expanded="true" aria-controls="sak-phase-body-saken">
-            <span class="sak-phase-key">A</span>
-            <span class="sak-phase-name">Saken</span>
-            <span class="sak-phase-desc">Frist, status og metadata</span>
-            <span class="sak-phase-chev" aria-hidden="true">▾</span>
-          </button>
-          <div class="sak-phase-body" id="sak-phase-body-saken">
-
-            <section class="sak-section" data-sak-section="info">
-              <h2 class="sak-section-title sak-section-title-row">
-                <span class="sak-section-title-left">Saksinformasjon</span>
-                <span class="sak-section-title-right">
-                  <button class="btn-icon btn-icon-sm" id="btn-sak-edit-fields" title="Rediger saksopplysninger"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>
-                </span>
-              </h2>
-              <dl class="sak-info-dl">
-                <div class="sak-info-pair">
-                  <dt>Saksnummer</dt><dd id="sak-case-number"></dd>
-                </div>
-                <div class="sak-info-pair">
-                  <dt>Innleveringsdato</dt><dd id="sak-filing-date"></dd>
-                </div>
-                <div class="sak-info-pair">
-                  <dt>Prioritetsdato</dt><dd id="sak-priority-date"></dd>
-                </div>
-                <div class="sak-info-pair" id="sak-medl-field">
-                  <dt>Medlesing</dt><dd id="sak-medl"></dd>
-                </div>
-                <div class="sak-info-pair" id="sak-case-buffer-field">
-                  <dt>Buffer (dager)</dt><dd id="sak-case-buffer"></dd>
-                </div>
-                <div class="sak-info-pair" id="sak-duration-field" style="display:none;">
-                  <dt>Varighet (arbeidsdager)</dt><dd id="sak-duration"></dd>
-                </div>
-                <div class="sak-info-pair sak-info-pair-wide">
-                  <dt>Tittel</dt><dd id="sak-title"></dd>
-                </div>
-              </dl>
-
-              <div class="sak-info-block">
-                <label class="sak-info-label" for="sak-tags">Stikkord</label>
-                <div class="sak-tags-wrap" id="sak-tags-wrap">
-                  <div class="tag-pill-editor" id="sak-tags-editor">
-                    <div id="sak-tags-pills" class="tag-pill-list"></div>
-                    <input class="tag-pill-input" id="sak-tags" type="text" placeholder="Legg til stikkord…" autocomplete="off" />
-                  </div>
-                </div>
-                <input type="hidden" id="sak-tags-value" />
-                <span class="field-hint">Enter eller komma legger til</span>
-              </div>
-            </section>
-
-            <section class="sak-section" data-sak-section="notes">
-              <h2 class="sak-section-title">Notater</h2>
-              <div class="sak-notes-grid">
-                <div class="sak-note-field">
-                  <div class="sak-note-head">
-                    <label for="sak-case-notes">Notater</label>
-                    <span class="sak-note-badge sak-note-badge-vis">Synlig i oversikten</span>
-                  </div>
-                  <textarea class="field-input sak-info-input" id="sak-case-notes" rows="4" placeholder="Valgfrie notater…"></textarea>
-                </div>
-                <div class="sak-note-field">
-                  <div class="sak-note-head">
-                    <label for="sak-notes">Interne notater</label>
-                    <span class="sak-note-badge sak-note-badge-int">Kun her</span>
-                  </div>
-                  <textarea class="field-input sak-notes-area" id="sak-notes" rows="4" placeholder="Interne notater for denne saken…"></textarea>
-                </div>
-              </div>
-            </section>
-
-            <div class="sak-checklist-slot" id="sak-checklist-saken"></div>
-
-          </div>
-        </section>
-
-        <!-- ══ FASE B — Gransking ══ -->
-        <section class="sak-phase" data-phase="gransking" id="sak-phase-gransking">
-          <button class="sak-phase-head" id="sak-phase-head-gransking" aria-expanded="true" aria-controls="sak-phase-body-gransking">
-            <span class="sak-phase-key">B</span>
-            <span class="sak-phase-name">Gransking</span>
-            <span class="sak-phase-desc">Klasser og søk</span>
-            <span class="sak-phase-chev" aria-hidden="true">▾</span>
-          </button>
-          <div class="sak-phase-body" id="sak-phase-body-gransking">
-
-            <section class="sak-section" data-sak-section="cpc">
-              <h2 class="sak-section-title sak-section-title-row">
-                <span class="sak-section-title-left">
-                  CPC-klasser
-                  <span id="cpc-load-banner" class="cpc-load-banner-inner">
-                    <span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>
-                    <button class="cpc-load-banner-btn" id="btn-cpc-load">Last inn</button>
-                  </span>
-                </span>
-                <span class="sak-section-title-right">
-                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes-rough" title="Kopier grovklasser (4 tegn)"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Grovklasser</button>
-                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes" title="Kopier alle klasser med /low"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Alle klasser</button>
-                </span>
-              </h2>
-              <input type="file" id="cpc-file-input" accept=".json" />
-              <div id="sak-classes-list" class="sak-classes-list-unified"></div>
-              <div class="sak-classes-add-row">
-                <div class="sak-class-input-wrap">
-                  <input class="field-input sak-class-input" id="sak-class-assumed-input" type="text" placeholder="f.eks. H04L 9/00" maxlength="30" autocomplete="off" />
-                  <div class="cpc-suggestions" id="cpc-suggestions" style="display:none;"></div>
-                </div>
-              </div>
-            </section>
-
-            <div class="sak-checklist-slot" id="sak-checklist-gransking"></div>
-            <div class="sak-checklist-slot" id="sak-checklist-rest"></div>
-
-          </div>
-        </section>
-
-        <!-- ══ FASE C — Vurdering ══ -->
+        <!-- ══ FASE 1 — Vurdering ══ -->
         <section class="sak-phase" data-phase="vurdering" id="sak-phase-vurdering">
           <button class="sak-phase-head" id="sak-phase-head-vurdering" aria-expanded="true" aria-controls="sak-phase-body-vurdering">
-            <span class="sak-phase-key">C</span>
+            <span class="sak-phase-key">1</span>
             <span class="sak-phase-name">Vurdering</span>
             <span class="sak-phase-desc">Krav, mothold og rapport</span>
             <span class="sak-phase-chev" aria-hidden="true">▾</span>
@@ -4373,6 +4294,133 @@ button.ob-del:hover { color: var(--text-on-no); }
             </section>
 
             <div class="sak-checklist-slot" id="sak-checklist-vurdering"></div>
+
+          </div>
+        </section>
+
+        <!-- ══ FASE 2 — Gransking ══ -->
+        <section class="sak-phase" data-phase="gransking" id="sak-phase-gransking">
+          <button class="sak-phase-head" id="sak-phase-head-gransking" aria-expanded="true" aria-controls="sak-phase-body-gransking">
+            <span class="sak-phase-key">2</span>
+            <span class="sak-phase-name">Gransking</span>
+            <span class="sak-phase-desc">Klasser og søk</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-gransking">
+
+            <section class="sak-section" data-sak-section="cpc">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">
+                  CPC-klasser
+                  <span id="cpc-load-banner" class="cpc-load-banner-inner">
+                    <span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>
+                    <button class="cpc-load-banner-btn" id="btn-cpc-load">Last inn</button>
+                  </span>
+                </span>
+                <span class="sak-section-title-right">
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes-rough" title="Kopier grovklasser (4 tegn)"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Grovklasser</button>
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes" title="Kopier alle klasser med /low"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Alle klasser</button>
+                </span>
+              </h2>
+              <input type="file" id="cpc-file-input" accept=".json" />
+              <div id="sak-classes-list" class="sak-classes-list-unified"></div>
+              <div class="sak-classes-add-row">
+                <div class="sak-class-input-wrap">
+                  <input class="field-input sak-class-input" id="sak-class-assumed-input" type="text" placeholder="f.eks. H04L 9/00" maxlength="30" autocomplete="off" />
+                  <div class="cpc-suggestions" id="cpc-suggestions" style="display:none;"></div>
+                </div>
+              </div>
+            </section>
+
+            <div class="sak-checklist-slot" id="sak-checklist-gransking"></div>
+            <div class="sak-checklist-slot" id="sak-checklist-rest"></div>
+
+          </div>
+        </section>
+
+        <!-- ══ FASE 3 — Saken ══ -->
+        <section class="sak-phase" data-phase="saken" id="sak-phase-saken">
+          <button class="sak-phase-head" id="sak-phase-head-saken" aria-expanded="true" aria-controls="sak-phase-body-saken">
+            <span class="sak-phase-key">3</span>
+            <span class="sak-phase-name">Saken</span>
+            <span class="sak-phase-desc">Frist, status og metadata</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-saken">
+
+            <section class="sak-section" data-sak-section="info">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Saksinformasjon</span>
+                <span class="sak-section-title-right">
+                  <button class="btn-icon btn-icon-sm" id="btn-sak-edit-fields" title="Rediger saksopplysninger"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>
+                </span>
+              </h2>
+              <dl class="sak-info-dl">
+                <div class="sak-info-pair">
+                  <dt>Saksnummer</dt><dd id="sak-case-number"></dd>
+                </div>
+                <div class="sak-info-pair">
+                  <dt>Innleveringsdato</dt><dd id="sak-filing-date"></dd>
+                </div>
+                <div class="sak-info-pair">
+                  <dt>Prioritetsdato</dt><dd id="sak-priority-date"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-medl-field">
+                  <dt>Medlesing</dt><dd id="sak-medl"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-case-buffer-field">
+                  <dt>Buffer (dager)</dt><dd id="sak-case-buffer"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-duration-field" style="display:none;">
+                  <dt>Varighet (arbeidsdager)</dt><dd id="sak-duration"></dd>
+                </div>
+                <div class="sak-info-pair sak-info-pair-wide">
+                  <dt>Tittel</dt><dd id="sak-title"></dd>
+                </div>
+              </dl>
+
+              <div class="sak-info-block">
+                <label class="sak-info-label" for="sak-tags">Stikkord</label>
+                <div class="sak-tags-wrap" id="sak-tags-wrap">
+                  <div class="tag-pill-editor" id="sak-tags-editor">
+                    <div id="sak-tags-pills" class="tag-pill-list"></div>
+                    <input class="tag-pill-input" id="sak-tags" type="text" placeholder="Legg til stikkord…" autocomplete="off" />
+                  </div>
+                </div>
+                <input type="hidden" id="sak-tags-value" />
+                <span class="field-hint">Enter eller komma legger til</span>
+              </div>
+            </section>
+
+            <section class="sak-section" data-sak-section="notes">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Notater</span>
+                <span class="sak-section-title-right">
+                  <span class="sak-seg" role="group" aria-label="Notattype">
+                    <button type="button" class="sak-seg-btn is-on" data-notes="vis" aria-pressed="true">Synlig i oversikten</button>
+                    <button type="button" class="sak-seg-btn" data-notes="int" aria-pressed="false">Intern</button>
+                  </span>
+                </span>
+              </h2>
+              <div class="sak-notes-grid" data-notes-show="vis">
+                <div class="sak-note-field" data-notes-pane="vis">
+                  <div class="sak-note-head">
+                    <label for="sak-case-notes">Notater</label>
+                    <span class="sak-note-badge sak-note-badge-vis">Synlig i oversikten</span>
+                  </div>
+                  <textarea class="field-input sak-info-input" id="sak-case-notes" rows="4" placeholder="Valgfrie notater…"></textarea>
+                </div>
+                <div class="sak-note-field" data-notes-pane="int">
+                  <div class="sak-note-head">
+                    <label for="sak-notes">Interne notater</label>
+                    <span class="sak-note-badge sak-note-badge-int">Kun her</span>
+                  </div>
+                  <textarea class="field-input sak-notes-area" id="sak-notes" rows="4" placeholder="Interne notater for denne saken…"></textarea>
+                </div>
+              </div>
+            </section>
+
+            <div class="sak-checklist-slot" id="sak-checklist-saken"></div>
 
           </div>
         </section>
@@ -13277,6 +13325,9 @@ function renderSak(id) {
   var medlEntry = isOppdrag ? null : caseMedlFor(medlLog, cas.id);
   document.getElementById('sak-medl').textContent = medlEntry ? medlEntry.reader + ' · ' + toDisplay(medlEntry.sent) : '—';
 
+  // Metalinjen i sakshodet (lesing; redigering skjer fortsatt i «Rediger sak»)
+  renderSakMeta(cas);
+
   // Status-knapper — forenklet for oppdrag
   var statusBtns = document.getElementById('sak-status-btns');
   if (isOppdrag) {
@@ -13352,6 +13403,10 @@ function renderSak(id) {
 
   // Notater
   document.getElementById('sak-notes').value = data.sakNotes || '';
+  var intBtn = document.querySelector('.sak-seg-btn[data-notes="int"]');
+  if (intBtn) intBtn.classList.toggle('has-text', !!(data.sakNotes || '').trim());
+  var visBtn = document.querySelector('.sak-seg-btn[data-notes="vis"]');
+  if (visBtn) visBtn.classList.toggle('has-text', !!(cas.notes || '').trim());
 
   // Saksdokumenter
   renderSakFileList(data);
@@ -13363,6 +13418,24 @@ function renderSak(id) {
   // Sticky-bar: uten sammendrag finnes ingen sentinel å observere
   initSakStickyBar(!showSummary);
   updateSakAnchors();
+}
+
+function renderSakMeta(cas) {
+  var el = document.getElementById('sak-meta-line'); if (!el) return;
+  var isOppdrag = cas.type === 'oppdrag';
+  var data = loadSakData(cas.id) || {};
+  var medlEntry = isOppdrag ? null : caseMedlFor(medlLog, cas.id);
+  var parts = sakMetaLine({
+    title: cas.title || '', isOppdrag: isOppdrag,
+    durationLabel: String(cas.duration || workWindowDays(cas)),
+    filing: data.filingDate, priority: data.priorityDate,
+    bufferLabel: caseBufferLabel(cas),
+    medl: medlEntry ? medlEntry.reader + ' · ' + toDisplay(medlEntry.sent) : ''
+  });
+  el.textContent = '';
+  parts.forEach(function(t) {
+    var sp = document.createElement('span'); sp.textContent = t; el.appendChild(sp);
+  });
 }
 
 // ── Faser: kollaps ────────────────────────────────
@@ -13461,6 +13534,19 @@ document.getElementById('sak-anchors').addEventListener('click', function(e) {
   }
   phase.scrollIntoView({ behavior: 'smooth', block: 'start' });
   setActiveAnchor(btn.dataset.anchor);
+});
+
+// Sjekklistene: klikk på raden åpner/lukker. Delegert, siden radene tegnes på nytt per sak.
+document.getElementById('view-sak').addEventListener('click', function(e) {
+  var head = e.target.closest('.sak-fold-head'); if (!head) return;
+  var sec = head.closest('.sak-fold'); if (!sec) return;
+  var open = !sec.classList.contains('is-open');
+  sec.classList.toggle('is-open', open);
+  head.setAttribute('aria-expanded', open ? 'true' : 'false');
+  sec.querySelector('.sak-fold-body').hidden = !open;
+  var state = loadChecklistOpen();
+  state[sec.dataset.fold] = open;
+  lsSetSafe(CHECKLIST_OPEN_KEY, JSON.stringify(state));
 });
 
 // ── Framoverknappen ───────────────────────────────
@@ -13626,6 +13712,46 @@ function groupChecklistByPhase(template) {
   return out;
 }
 
+// Rekkefølgen på fasene i saksvisningen: det du jobber mest med står øverst.
+var SAK_PHASE_ORDER = ['vurdering', 'gransking', 'saken'];
+
+// Sjekklistene er oppslagsverk, ikke hovedarbeidet: de står lukket med én linje
+// (navn + framdrift) til du åpner dem. Valget huskes globalt, som fasene.
+// Ikke pt_sak_-prefikset, så oppryddingen av foreldreløse saksdetaljer lar det stå.
+var CHECKLIST_OPEN_KEY = 'pt_checklists_open';
+
+function checklistGroupCounts(data, group) {
+  var items = (group && Array.isArray(group.items)) ? group.items : [];
+  var checks = (data && data.checklist) || {};
+  var done = items.filter(function(it) { return checks[it.id] === true; }).length;
+  return { done: done, total: items.length };
+}
+function checklistOpenKey(name) { return String(name == null ? '' : name).trim().toLowerCase(); }
+function isChecklistOpen(state, name) {
+  var key = checklistOpenKey(name);
+  return !!(state && Object.prototype.hasOwnProperty.call(state, key) && state[key]);
+}
+function loadChecklistOpen() {
+  try { return JSON.parse(localStorage.getItem(CHECKLIST_OPEN_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+
+// Metalinjen under saksnummeret. Ren funksjon: returnerer delene i rekkefølge,
+// uten HTML — kalleren setter dem inn som tekst.
+function sakMetaLine(o) {
+  var parts = [];
+  if (o.title) parts.push(o.title);
+  if (o.isOppdrag) {
+    parts.push('Varighet ' + o.durationLabel + ' arb.dager');
+    return parts;
+  }
+  parts.push('Innlevert ' + (toDisplay(o.filing) || '—'));
+  parts.push('Prioritet ' + (toDisplay(o.priority) || '—'));
+  parts.push('Buffer ' + o.bufferLabel);
+  parts.push('Medlesing ' + (o.medl || '—'));
+  return parts;
+}
+
 function _checklistItemsHtml(data, group) {
   return group.items.map(function(item) {
     var checked = data.checklist[item.id] === true;
@@ -13636,10 +13762,28 @@ function _checklistItemsHtml(data, group) {
   }).join('');
 }
 
-// Én gruppe per fase er normalen, og da er gruppenavnet seksjonens overskrift.
+// Hver gruppe er en sammenleggbar rad: navn, framdrift og en pil. Innholdet er
+// alltid i DOM-en (lukket via hidden), så avkryssing og tellere virker uendret.
+function _checklistFoldHtml(data, g, titleHtml, bodyHtml, open) {
+  var c = checklistGroupCounts(data, g);
+  var key = esc(checklistOpenKey(g.phase));
+  var pct = c.total ? Math.round(c.done / c.total * 100) : 0;
+  return '<section class="sak-section sak-fold' + (open ? ' is-open' : '') + '" data-sak-section="checklist" data-fold="' + key + '">' +
+    '<button type="button" class="sak-fold-head" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+      '<span class="sak-fold-title">' + titleHtml + '</span>' +
+      '<span class="sak-fold-bar" aria-hidden="true"><span style="width:' + pct + '%"></span></span>' +
+      '<span class="sak-fold-count">' + c.done + ' / ' + c.total + '</span>' +
+      '<span class="sak-fold-chev" aria-hidden="true">▸</span>' +
+    '</button>' +
+    '<div class="sak-fold-body"' + (open ? '' : ' hidden') + '>' + bodyHtml + '</div>' +
+  '</section>';
+}
+
+// Én gruppe per fase er normalen, og da er gruppenavnet radens overskrift.
 // Reserveplassen i fase B kan ha flere, og beholder da gruppetitlene inni.
 function _checklistSlotHtml(data, groups, fallbackTitle) {
   if (!groups.length) return '';
+  var state = loadChecklistOpen();
   if (fallbackTitle) {
     var inner = groups.map(function(g) {
       return '<div class="sak-check-phase">' +
@@ -13647,16 +13791,15 @@ function _checklistSlotHtml(data, groups, fallbackTitle) {
         _checklistItemsHtml(data, g) +
       '</div>';
     }).join('');
-    return '<section class="sak-section" data-sak-section="checklist">' +
-      '<h2 class="sak-section-title">' + esc(fallbackTitle) + '</h2>' +
-      '<div class="sak-checklist">' + inner + '</div>' +
-    '</section>';
+    var all = { phase: fallbackTitle, items: [] };
+    groups.forEach(function(g) { all.items = all.items.concat(g.items); });
+    return _checklistFoldHtml(data, all, esc(fallbackTitle),
+      '<div class="sak-checklist">' + inner + '</div>', isChecklistOpen(state, fallbackTitle));
   }
   return groups.map(function(g) {
-    return '<section class="sak-section" data-sak-section="checklist">' +
-      '<h2 class="sak-section-title">' + esc(g.phase) + '</h2>' +
-      '<div class="sak-checklist sak-checklist-flat">' + _checklistItemsHtml(data, g) + '</div>' +
-    '</section>';
+    return _checklistFoldHtml(data, g, esc(g.phase),
+      '<div class="sak-checklist sak-checklist-flat">' + _checklistItemsHtml(data, g) + '</div>',
+      isChecklistOpen(state, g.phase));
   }).join('');
 }
 
@@ -15328,6 +15471,7 @@ function updateCaseField(id, patch) {
     document.getElementById('sak-page-title').textContent = updated.caseNumber;
     document.getElementById('sak-page-sub').textContent = sakSubtitle(updated);
     document.getElementById('sak-sticky-cn').textContent = updated.caseNumber;
+    renderSakMeta(updated);
     document.title = updated.caseNumber + (updated.title ? ' — ' + updated.title : '') + ' — PatentDesk';
   }
 }
@@ -15579,6 +15723,13 @@ document.getElementById('view-sak').addEventListener('change', function(e) {
   var label = cb.closest('.sak-check-row');
   if (label) label.classList.toggle('sak-check-done', cb.checked);
   dispatch('CHECKLIST_TOGGLE', { id: id, itemId: cb.dataset.itemId, checked: cb.checked });
+  var fold = cb.closest('.sak-fold');
+  if (fold) {
+    var boxes = fold.querySelectorAll('.sak-checkbox[data-item-id]');
+    var done = fold.querySelectorAll('.sak-checkbox[data-item-id]:checked').length;
+    fold.querySelector('.sak-fold-count').textContent = done + ' / ' + boxes.length;
+    fold.querySelector('.sak-fold-bar span').style.width = (boxes.length ? Math.round(done / boxes.length * 100) : 0) + '%';
+  }
 });
 
 // CPC-klasser: legg til (via Enter i inputfeltet)
@@ -16599,6 +16750,20 @@ document.getElementById('sak-notes').addEventListener('input', function() {
   dispatch('SAK_NOTES_CHANGE', { id: id, notes: this.value });
 });
 
+
+// Notater: ett felt om gangen — «Synlig i oversikten» eller «Intern». Begge
+// feltene ligger i DOM-en og lagres som før; bare visningen byttes.
+document.querySelectorAll('.sak-seg-btn[data-notes]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var which = btn.dataset.notes;
+    document.querySelector('.sak-notes-grid').dataset.notesShow = which;
+    document.querySelectorAll('.sak-seg-btn[data-notes]').forEach(function(b) {
+      var on = b.dataset.notes === which;
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  });
+});
 // ── Hjem-side ──────────────────────────────────────
 // Fristene på Hjem som er dine: Ny, Viderebehandling og aktive oppdrag med
 // frist. Fristarkiv er søkerens frist, og en sak som ikke er fordelt er ikke

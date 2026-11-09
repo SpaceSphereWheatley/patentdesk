@@ -833,9 +833,9 @@
         <div id="sak-sticky-bar" class="sak-sticky-bar" aria-hidden="true">
           <span class="sak-sticky-cn" id="sak-sticky-cn"></span>
           <nav class="sak-anchors" id="sak-anchors" aria-label="Gå til seksjon">
-            <button class="sak-anchor" data-anchor="saken">Saken</button>
-            <button class="sak-anchor" data-anchor="gransking">Gransking</button>
             <button class="sak-anchor" data-anchor="vurdering">Vurdering</button>
+            <button class="sak-anchor" data-anchor="gransking">Gransking</button>
+            <button class="sak-anchor" data-anchor="saken">Saken</button>
           </nav>
           <div class="sak-sticky-progress">
             <span class="sak-sticky-label" id="sak-sticky-cl-label">Sjekkliste</span>
@@ -876,7 +876,8 @@
                   </div>
                 </div>
               </div>
-              <span class="sak-subtitle" id="sak-page-sub"></span>
+              <span class="sak-subtitle" id="sak-page-sub" hidden></span>
+              <div class="sak-meta-line" id="sak-meta-line"></div>
               <span class="sak-round-line" id="sak-page-round"></span>
             </div>
           </div>
@@ -954,129 +955,10 @@
         </section>
         <div id="sak-summary-sentinel"></div>
 
-        <!-- ══ FASE A — Saken ══ -->
-        <section class="sak-phase" data-phase="saken" id="sak-phase-saken">
-          <button class="sak-phase-head" id="sak-phase-head-saken" aria-expanded="true" aria-controls="sak-phase-body-saken">
-            <span class="sak-phase-key">A</span>
-            <span class="sak-phase-name">Saken</span>
-            <span class="sak-phase-desc">Frist, status og metadata</span>
-            <span class="sak-phase-chev" aria-hidden="true">▾</span>
-          </button>
-          <div class="sak-phase-body" id="sak-phase-body-saken">
-
-            <section class="sak-section" data-sak-section="info">
-              <h2 class="sak-section-title sak-section-title-row">
-                <span class="sak-section-title-left">Saksinformasjon</span>
-                <span class="sak-section-title-right">
-                  <button class="btn-icon btn-icon-sm" id="btn-sak-edit-fields" title="Rediger saksopplysninger"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>
-                </span>
-              </h2>
-              <dl class="sak-info-dl">
-                <div class="sak-info-pair">
-                  <dt>Saksnummer</dt><dd id="sak-case-number"></dd>
-                </div>
-                <div class="sak-info-pair">
-                  <dt>Innleveringsdato</dt><dd id="sak-filing-date"></dd>
-                </div>
-                <div class="sak-info-pair">
-                  <dt>Prioritetsdato</dt><dd id="sak-priority-date"></dd>
-                </div>
-                <div class="sak-info-pair" id="sak-medl-field">
-                  <dt>Medlesing</dt><dd id="sak-medl"></dd>
-                </div>
-                <div class="sak-info-pair" id="sak-case-buffer-field">
-                  <dt>Buffer (dager)</dt><dd id="sak-case-buffer"></dd>
-                </div>
-                <div class="sak-info-pair" id="sak-duration-field" style="display:none;">
-                  <dt>Varighet (arbeidsdager)</dt><dd id="sak-duration"></dd>
-                </div>
-                <div class="sak-info-pair sak-info-pair-wide">
-                  <dt>Tittel</dt><dd id="sak-title"></dd>
-                </div>
-              </dl>
-
-              <div class="sak-info-block">
-                <label class="sak-info-label" for="sak-tags">Stikkord</label>
-                <div class="sak-tags-wrap" id="sak-tags-wrap">
-                  <div class="tag-pill-editor" id="sak-tags-editor">
-                    <div id="sak-tags-pills" class="tag-pill-list"></div>
-                    <input class="tag-pill-input" id="sak-tags" type="text" placeholder="Legg til stikkord…" autocomplete="off" />
-                  </div>
-                </div>
-                <input type="hidden" id="sak-tags-value" />
-                <span class="field-hint">Enter eller komma legger til</span>
-              </div>
-            </section>
-
-            <section class="sak-section" data-sak-section="notes">
-              <h2 class="sak-section-title">Notater</h2>
-              <div class="sak-notes-grid">
-                <div class="sak-note-field">
-                  <div class="sak-note-head">
-                    <label for="sak-case-notes">Notater</label>
-                    <span class="sak-note-badge sak-note-badge-vis">Synlig i oversikten</span>
-                  </div>
-                  <textarea class="field-input sak-info-input" id="sak-case-notes" rows="4" placeholder="Valgfrie notater…"></textarea>
-                </div>
-                <div class="sak-note-field">
-                  <div class="sak-note-head">
-                    <label for="sak-notes">Interne notater</label>
-                    <span class="sak-note-badge sak-note-badge-int">Kun her</span>
-                  </div>
-                  <textarea class="field-input sak-notes-area" id="sak-notes" rows="4" placeholder="Interne notater for denne saken…"></textarea>
-                </div>
-              </div>
-            </section>
-
-            <div class="sak-checklist-slot" id="sak-checklist-saken"></div>
-
-          </div>
-        </section>
-
-        <!-- ══ FASE B — Gransking ══ -->
-        <section class="sak-phase" data-phase="gransking" id="sak-phase-gransking">
-          <button class="sak-phase-head" id="sak-phase-head-gransking" aria-expanded="true" aria-controls="sak-phase-body-gransking">
-            <span class="sak-phase-key">B</span>
-            <span class="sak-phase-name">Gransking</span>
-            <span class="sak-phase-desc">Klasser og søk</span>
-            <span class="sak-phase-chev" aria-hidden="true">▾</span>
-          </button>
-          <div class="sak-phase-body" id="sak-phase-body-gransking">
-
-            <section class="sak-section" data-sak-section="cpc">
-              <h2 class="sak-section-title sak-section-title-row">
-                <span class="sak-section-title-left">
-                  CPC-klasser
-                  <span id="cpc-load-banner" class="cpc-load-banner-inner">
-                    <span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>
-                    <button class="cpc-load-banner-btn" id="btn-cpc-load">Last inn</button>
-                  </span>
-                </span>
-                <span class="sak-section-title-right">
-                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes-rough" title="Kopier grovklasser (4 tegn)"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Grovklasser</button>
-                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes" title="Kopier alle klasser med /low"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Alle klasser</button>
-                </span>
-              </h2>
-              <input type="file" id="cpc-file-input" accept=".json" />
-              <div id="sak-classes-list" class="sak-classes-list-unified"></div>
-              <div class="sak-classes-add-row">
-                <div class="sak-class-input-wrap">
-                  <input class="field-input sak-class-input" id="sak-class-assumed-input" type="text" placeholder="f.eks. H04L 9/00" maxlength="30" autocomplete="off" />
-                  <div class="cpc-suggestions" id="cpc-suggestions" style="display:none;"></div>
-                </div>
-              </div>
-            </section>
-
-            <div class="sak-checklist-slot" id="sak-checklist-gransking"></div>
-            <div class="sak-checklist-slot" id="sak-checklist-rest"></div>
-
-          </div>
-        </section>
-
-        <!-- ══ FASE C — Vurdering ══ -->
+        <!-- ══ FASE 1 — Vurdering ══ -->
         <section class="sak-phase" data-phase="vurdering" id="sak-phase-vurdering">
           <button class="sak-phase-head" id="sak-phase-head-vurdering" aria-expanded="true" aria-controls="sak-phase-body-vurdering">
-            <span class="sak-phase-key">C</span>
+            <span class="sak-phase-key">1</span>
             <span class="sak-phase-name">Vurdering</span>
             <span class="sak-phase-desc">Krav, mothold og rapport</span>
             <span class="sak-phase-chev" aria-hidden="true">▾</span>
@@ -1128,6 +1010,133 @@
             </section>
 
             <div class="sak-checklist-slot" id="sak-checklist-vurdering"></div>
+
+          </div>
+        </section>
+
+        <!-- ══ FASE 2 — Gransking ══ -->
+        <section class="sak-phase" data-phase="gransking" id="sak-phase-gransking">
+          <button class="sak-phase-head" id="sak-phase-head-gransking" aria-expanded="true" aria-controls="sak-phase-body-gransking">
+            <span class="sak-phase-key">2</span>
+            <span class="sak-phase-name">Gransking</span>
+            <span class="sak-phase-desc">Klasser og søk</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-gransking">
+
+            <section class="sak-section" data-sak-section="cpc">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">
+                  CPC-klasser
+                  <span id="cpc-load-banner" class="cpc-load-banner-inner">
+                    <span class="cpc-banner-text">Autofullfør ikke tilgjengelig</span>
+                    <button class="cpc-load-banner-btn" id="btn-cpc-load">Last inn</button>
+                  </span>
+                </span>
+                <span class="sak-section-title-right">
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes-rough" title="Kopier grovklasser (4 tegn)"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Grovklasser</button>
+                  <button class="btn-icon btn-icon-sm" id="btn-copy-classes" title="Kopier alle klasser med /low"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Alle klasser</button>
+                </span>
+              </h2>
+              <input type="file" id="cpc-file-input" accept=".json" />
+              <div id="sak-classes-list" class="sak-classes-list-unified"></div>
+              <div class="sak-classes-add-row">
+                <div class="sak-class-input-wrap">
+                  <input class="field-input sak-class-input" id="sak-class-assumed-input" type="text" placeholder="f.eks. H04L 9/00" maxlength="30" autocomplete="off" />
+                  <div class="cpc-suggestions" id="cpc-suggestions" style="display:none;"></div>
+                </div>
+              </div>
+            </section>
+
+            <div class="sak-checklist-slot" id="sak-checklist-gransking"></div>
+            <div class="sak-checklist-slot" id="sak-checklist-rest"></div>
+
+          </div>
+        </section>
+
+        <!-- ══ FASE 3 — Saken ══ -->
+        <section class="sak-phase" data-phase="saken" id="sak-phase-saken">
+          <button class="sak-phase-head" id="sak-phase-head-saken" aria-expanded="true" aria-controls="sak-phase-body-saken">
+            <span class="sak-phase-key">3</span>
+            <span class="sak-phase-name">Saken</span>
+            <span class="sak-phase-desc">Frist, status og metadata</span>
+            <span class="sak-phase-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="sak-phase-body" id="sak-phase-body-saken">
+
+            <section class="sak-section" data-sak-section="info">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Saksinformasjon</span>
+                <span class="sak-section-title-right">
+                  <button class="btn-icon btn-icon-sm" id="btn-sak-edit-fields" title="Rediger saksopplysninger"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg> Rediger sak</button>
+                </span>
+              </h2>
+              <dl class="sak-info-dl">
+                <div class="sak-info-pair">
+                  <dt>Saksnummer</dt><dd id="sak-case-number"></dd>
+                </div>
+                <div class="sak-info-pair">
+                  <dt>Innleveringsdato</dt><dd id="sak-filing-date"></dd>
+                </div>
+                <div class="sak-info-pair">
+                  <dt>Prioritetsdato</dt><dd id="sak-priority-date"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-medl-field">
+                  <dt>Medlesing</dt><dd id="sak-medl"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-case-buffer-field">
+                  <dt>Buffer (dager)</dt><dd id="sak-case-buffer"></dd>
+                </div>
+                <div class="sak-info-pair" id="sak-duration-field" style="display:none;">
+                  <dt>Varighet (arbeidsdager)</dt><dd id="sak-duration"></dd>
+                </div>
+                <div class="sak-info-pair sak-info-pair-wide">
+                  <dt>Tittel</dt><dd id="sak-title"></dd>
+                </div>
+              </dl>
+
+              <div class="sak-info-block">
+                <label class="sak-info-label" for="sak-tags">Stikkord</label>
+                <div class="sak-tags-wrap" id="sak-tags-wrap">
+                  <div class="tag-pill-editor" id="sak-tags-editor">
+                    <div id="sak-tags-pills" class="tag-pill-list"></div>
+                    <input class="tag-pill-input" id="sak-tags" type="text" placeholder="Legg til stikkord…" autocomplete="off" />
+                  </div>
+                </div>
+                <input type="hidden" id="sak-tags-value" />
+                <span class="field-hint">Enter eller komma legger til</span>
+              </div>
+            </section>
+
+            <section class="sak-section" data-sak-section="notes">
+              <h2 class="sak-section-title sak-section-title-row">
+                <span class="sak-section-title-left">Notater</span>
+                <span class="sak-section-title-right">
+                  <span class="sak-seg" role="group" aria-label="Notattype">
+                    <button type="button" class="sak-seg-btn is-on" data-notes="vis" aria-pressed="true">Synlig i oversikten</button>
+                    <button type="button" class="sak-seg-btn" data-notes="int" aria-pressed="false">Intern</button>
+                  </span>
+                </span>
+              </h2>
+              <div class="sak-notes-grid" data-notes-show="vis">
+                <div class="sak-note-field" data-notes-pane="vis">
+                  <div class="sak-note-head">
+                    <label for="sak-case-notes">Notater</label>
+                    <span class="sak-note-badge sak-note-badge-vis">Synlig i oversikten</span>
+                  </div>
+                  <textarea class="field-input sak-info-input" id="sak-case-notes" rows="4" placeholder="Valgfrie notater…"></textarea>
+                </div>
+                <div class="sak-note-field" data-notes-pane="int">
+                  <div class="sak-note-head">
+                    <label for="sak-notes">Interne notater</label>
+                    <span class="sak-note-badge sak-note-badge-int">Kun her</span>
+                  </div>
+                  <textarea class="field-input sak-notes-area" id="sak-notes" rows="4" placeholder="Interne notater for denne saken…"></textarea>
+                </div>
+              </div>
+            </section>
+
+            <div class="sak-checklist-slot" id="sak-checklist-saken"></div>
 
           </div>
         </section>

@@ -6,6 +6,22 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Changed
+- **Saksvisningen: Vurdering først.** Rekkefølgen er nå Vurdering (krav og
+  mothold), Gransking, Saken — det du jobber mest med står øverst. Fasene er
+  nummerert 1–3 i stedet for A–C, og ankerne i sticky-baren følger samme
+  rekkefølge.
+- **Sjekklistene er sammenleggbare.** Forberedelse, Gransking og Rapport står
+  som én rad med navn, framdrift (f.eks. 3 / 12) og pil, og åpnes ved klikk.
+  Valget huskes. Avkrysning og tellerne i sammendraget virker som før.
+- **Ett Notater-felt om gangen.** «Synlig i oversikten» og «Intern» byttes med
+  en velger; en prikk viser at det andre feltet har tekst. Begge lagres som før.
+- **Metalinje i sakshodet.** Tittel, innlevering, prioritet, buffer og
+  medlesing står på én linje under saksnummeret (varighet for oppdrag).
+- **Kompaktere sammendrag.** Sjekkliste og kravvurdering står side om side, og
+  radavstanden i resultatoversikten er mindre, så kravtabellen er synlig uten å
+  rulle ved 900 px høyde.
+
 
 ## [4.60.1] - 2026-11-10
 ### Added
