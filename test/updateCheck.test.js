@@ -19,6 +19,14 @@ const { compareVersions, parseRemoteVersion, runUpdateCheck, renderUpdateStatus,
   { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_TIMEOUT_MS'], globals: sandboxGlobals }
 );
 
+test('every check asks for a fresh copy past CDN and proxy caches (?t=<now>)', async () => {
+  let url;
+  const before = Date.now();
+  await runUpdateCheck((u) => { url = u; return okFetch("var APP_VERSION = 'v4.54.0';")(); });
+  const t = Number(/\?t=(\d+)$/.exec(url)[1]);
+  assert.ok(t >= before && t <= Date.now(), 'cache-buster is the current time');
+});
+
 test('compareVersions compares numerically, not as strings', () => {
   assert.strictEqual(compareVersions('v4.10.0', 'v4.9.0'), 1);
   assert.strictEqual(compareVersions('v4.9.0', 'v4.10.0'), -1);
@@ -70,7 +78,7 @@ test('a request that never answers times out as "error" instead of hanging', asy
 test('request is a plain GET: no body, no credentials, no referrer, no cache', async () => {
   let seen;
   await runUpdateCheck((url, opts) => { seen = { url, opts }; return okFetch("var APP_VERSION = 'v4.54.0';")(); });
-  assert.match(seen.url, /^https:\/\/raw\.githubusercontent\.com\/SpaceSphereWheatley\/patentdesk\/main\/src\/js\/01-config-templates\.js$/);
+  assert.match(seen.url, /^https:\/\/raw\.githubusercontent\.com\/SpaceSphereWheatley\/patentdesk\/main\/src\/js\/01-config-templates\.js\?t=\d+$/);
   assert.strictEqual(seen.opts.method, 'GET');
   assert.ok(!('body' in seen.opts));
   assert.strictEqual(seen.opts.credentials, 'omit');
