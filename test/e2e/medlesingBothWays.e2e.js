@@ -250,3 +250,23 @@ e2e('table headers: the actions column has an accessible name, and no extra Nota
   assert.ok(ths.includes('Handling'), 'actions column needs an accessible name: ' + JSON.stringify(ths));
   await close();
 });
+
+e2e('notes: at 960 a long note does not push the action buttons further out than without a note', async () => {
+  const long = 'x '.repeat(300);
+  const widths = {};
+  for (const withNote of [false, true]) {
+    const cs = [mk('a', '20261235', 'ny', '2026-12-20', { notes: withNote ? long : '' })];
+    const { page, close } = await openApp(cs, LOG.slice(0, 1), []);
+    await page.setViewportSize({ width: 960, height: 900 });
+    widths[withNote] = await page.locator('#medl-out-table').evaluate((t) => t.scrollWidth);
+    await close();
+  }
+  assert.ok(widths[true] - widths[false] <= 60, 'long note widens the table by ' + (widths[true] - widths[false]) + 'px: ' + JSON.stringify(widths));
+});
+
+e2e('the hidden «Handling» header cannot leak out of the table wrapper (no contain hack needed)', async () => {
+  const { page, close } = await openApp(NOTED, LOG, READINGS);
+  const pos = await page.locator('#medl-out-table thead th').last().evaluate((th) => getComputedStyle(th).position);
+  assert.equal(pos, 'relative', 'the sr-only span is absolutely positioned; its header cell must be its containing block');
+  await close();
+});

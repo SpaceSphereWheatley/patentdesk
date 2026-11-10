@@ -587,6 +587,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 #medl-out-tbody .medl-out-case { color: inherit; }
 .medl-note-cell { margin-top: 2px; }
 .medl-note-cell .case-note { width: 100%; max-width: 360px; font-weight: var(--weight-regular); letter-spacing: 0; }
-/* Medlesing-tabellene: et langt notat (én linje med «…») må ikke gjøre selve siden bredere.
-   overflow alene holder ikke her; contain: paint klipper også det som lekker ut av omslaget. */
-#view-medlesing .table-wrap { contain: paint; }
+/* Medlesing-tabellene: den skjulte «Handling»-teksten (.sr-only) er absolutt posisjonert.
+   Uten en posisjonert celle ligger dens containing block utenfor .table-wrap, så
+   overflow-x der klipper den ikke og siden får vannrett rulling. */
+#view-medlesing .case-table th { position: relative; }
+/* Notatet skal ikke styre kolonnebredden på trange skjermer; knappene skal ikke skyves lenger ut. */
+@media (max-width: 1100px) { .medl-note-cell .case-note { max-width: 140px; } }
