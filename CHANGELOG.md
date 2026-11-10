@@ -6,6 +6,22 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Changed
+- **«Hos medleser» på Medlesing-siden er en historikk.** Seksjonen viste bare
+  det som ligger ute akkurat nå, altså nesten alltid ingenting, mens «Jeg
+  medleser» viser alt. Nå står alle gangene du har sendt en sak til en medleser
+  i en tabell: saksnummer, medleser, sendt, tilbake, antall dager og status.
+  Åpne utsendinger står øverst med Endre og Tilbake ✓; de som er kommet tilbake
+  står under, nyeste først. Saksnummeret er en lenke bare hvis saken finnes.
+  En sak som går til Fristarkiv eller Avsluttet, eller slettes, regnes som
+  tilbake den dagen. Menytallet og Hjem teller fortsatt bare det som er ute nå.
+- **Notater på Medlesing-siden.** Under saksnummeret i «Jeg medleser» står
+  lesingens eget notat, og i «Hos medleser» står sakens notat «Synlig i
+  oversikten». De interne notatene vises ikke. Teksten kuttes med «…», og hele
+  notatet står i verktøytipset. Notatene redigeres der de alltid har vært:
+  lesingens i detaljvisningen og sakens på saken.
+- «Tid» i «Hos medleser» viser «—» ved ugyldig dato og aldri negative dager, og
+  kolonnen med knapper har et navn for skjermlesere.
 ### Added
 - **Medlesing viser begge retninger.** Siden har to seksjoner: «Jeg medleser»
   (lesingene du gjør for andre, som før) og «Hos medleser» (dine egne saker som

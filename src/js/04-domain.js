@@ -535,6 +535,24 @@ function openMedlEntries(log) {
   });
 }
 
+// Hele historikken for Medlesing-siden: åpne utsendinger først (den som har
+// ligget lengst øverst), så de som er kommet tilbake, nyeste først. days er
+// tid hos medleser: sendt til tilbake, eller sendt til i dag for en åpen.
+// Rene funksjoner — se test/medlesingBothWays.test.js.
+function medlHistoryRows(log, today) {
+  return (Array.isArray(log) ? log : []).map(function(x) {
+    var open = !x.returned;
+    var d = daysBetweenIso(x.sent, open ? today : x.returned);
+    // Ugyldig dato gir null (vises som «—»); en dato frem i tid gir 0, ikke negativt.
+    return Object.assign({}, x, { open: open, days: isFinite(d) ? Math.max(0, d) : null });
+  }).sort(function(a, b) {
+    if (a.open !== b.open) return a.open ? -1 : 1;
+    if (a.open) return a.sent < b.sent ? -1 : a.sent > b.sent ? 1 : String(a.caseNumber).localeCompare(String(b.caseNumber));
+    if (a.returned !== b.returned) return a.returned < b.returned ? 1 : -1;
+    return a.sent < b.sent ? 1 : a.sent > b.sent ? -1 : 0;
+  });
+}
+
 // Tallet ved «Medlesing» i menyen: alt som er åpent i begge retninger —
 // lesinger du selv gjør for andre og dine saker som ligger ute hos en medleser.
 function medlNavCount(readings, log) {
