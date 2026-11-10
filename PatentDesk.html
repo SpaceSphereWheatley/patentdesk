@@ -1705,6 +1705,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .medl-section-hint  { margin: 0 0 var(--space-4); font-size: var(--text-sm); color: var(--muted-text); }
 .medl-out-actions-cell { text-align: right; white-space: nowrap; }
 #medl-out-tbody .medl-out-case { color: inherit; }
+.medl-note-cell { margin-top: 2px; }
+.medl-note-cell .case-note { width: 100%; max-width: 360px; font-weight: var(--weight-regular); letter-spacing: 0; }
+/* Medlesing-tabellene: et langt notat (én linje med «…») må ikke gjøre selve siden bredere.
+   overflow alene holder ikke her; contain: paint klipper også det som lekker ut av omslaget. */
+#view-medlesing .table-wrap { contain: paint; }
 /* ── 26. Kortlayout for sakslister ────────────────── */
 .case-list          { display: flex; flex-direction: column; gap: var(--space-2); animation: fadeUp var(--dur-slowest) ease both; margin-top: var(--space-5); }
 
@@ -4515,7 +4520,7 @@ button.ob-del:hover { color: var(--text-on-no); }
                     <th>Tilbake</th>
                     <th>Tid</th>
                     <th>Status</th>
-                    <th></th>
+                    <th><span class="sr-only">Handling</span></th>
                   </tr>
                 </thead>
                 <tbody id="medl-out-tbody"></tbody>
@@ -7361,7 +7366,9 @@ function openMedlEntries(log) {
 function medlHistoryRows(log, today) {
   return (Array.isArray(log) ? log : []).map(function(x) {
     var open = !x.returned;
-    return Object.assign({}, x, { open: open, days: daysBetweenIso(x.sent, open ? today : x.returned) });
+    var d = daysBetweenIso(x.sent, open ? today : x.returned);
+    // Ugyldig dato gir null (vises som «—»); en dato frem i tid gir 0, ikke negativt.
+    return Object.assign({}, x, { open: open, days: isFinite(d) ? Math.max(0, d) : null });
   }).sort(function(a, b) {
     if (a.open !== b.open) return a.open ? -1 : 1;
     if (a.open) return a.sent < b.sent ? -1 : a.sent > b.sent ? 1 : String(a.caseNumber).localeCompare(String(b.caseNumber));
@@ -10688,11 +10695,12 @@ function renderMedlOutList() {
         '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + esc(r.caseId) + '">Tilbake ✓</button>'
       : '';
     return '<tr data-id="' + esc(r.caseId) + '" data-entry="' + esc(r.id) + '">' +
-      '<td class="case-no">' + cn + '</td>' +
+      '<td class="case-no">' + cn +
+        '<div class="medl-note-cell">' + caseNoteHtml(cases.find(function(c) { return c.id === r.caseId; })) + '</div></td>' +
       '<td>' + esc(r.reader) + '</td>' +
       '<td class="medl-date-cell">' + esc(toDisplay(r.sent)) + '</td>' +
       '<td class="medl-date-cell">' + (r.returned ? esc(toDisplay(r.returned)) : '—') + '</td>' +
-      '<td class="medl-date-cell">' + r.days + (r.days === 1 ? ' dag' : ' dager') + '</td>' +
+      '<td class="medl-date-cell">' + (r.days === null ? '—' : r.days + (r.days === 1 ? ' dag' : ' dager')) + '</td>' +
       '<td>' + status + '</td>' +
       '<td class="medl-out-actions-cell">' + actions + '</td>' +
     '</tr>';
@@ -14337,7 +14345,10 @@ function renderMedlesingList() {
     var prog = medlesingProgress(medlesingTemplateFor(rec.type), rec.checklist);
     var pct = prog.total ? Math.round(prog.checked / prog.total * 100) : 0;
     return '<tr class="medl-row" data-id="' + rec.id + '">' +
-      '<td class="case-no">' + esc(rec.caseNumber) + '</td>' +
+      // Lesingens eget notat (redigeres i detaljvisningen) står under saksnummeret;
+      // caseNoteHtml tar {notes}.
+      '<td class="case-no">' + esc(rec.caseNumber) +
+        '<div class="medl-note-cell">' + caseNoteHtml({ notes: rec.notat }) + '</div></td>' +
       '<td>' + esc(rec.saksbehandler) + '</td>' +
       '<td><span class="medl-type-pill medl-type-' + rec.type + '">' + _medlesingTypeLabel(rec.type) + '</span></td>' +
       '<td class="medl-date-cell">' + esc(toDisplay(rec.date)) + '</td>' +

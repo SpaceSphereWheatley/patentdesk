@@ -434,11 +434,12 @@ function renderMedlOutList() {
         '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + esc(r.caseId) + '">Tilbake ✓</button>'
       : '';
     return '<tr data-id="' + esc(r.caseId) + '" data-entry="' + esc(r.id) + '">' +
-      '<td class="case-no">' + cn + '</td>' +
+      '<td class="case-no">' + cn +
+        '<div class="medl-note-cell">' + caseNoteHtml(cases.find(function(c) { return c.id === r.caseId; })) + '</div></td>' +
       '<td>' + esc(r.reader) + '</td>' +
       '<td class="medl-date-cell">' + esc(toDisplay(r.sent)) + '</td>' +
       '<td class="medl-date-cell">' + (r.returned ? esc(toDisplay(r.returned)) : '—') + '</td>' +
-      '<td class="medl-date-cell">' + r.days + (r.days === 1 ? ' dag' : ' dager') + '</td>' +
+      '<td class="medl-date-cell">' + (r.days === null ? '—' : r.days + (r.days === 1 ? ' dag' : ' dager')) + '</td>' +
       '<td>' + status + '</td>' +
       '<td class="medl-out-actions-cell">' + actions + '</td>' +
     '</tr>';

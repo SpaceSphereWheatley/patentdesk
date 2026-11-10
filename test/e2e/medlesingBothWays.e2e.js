@@ -41,10 +41,10 @@ const READINGS = [
   { id: 'm2', caseNumber: '20188888', saksbehandler: 'Eva', type: 'normal', date: '2026-10-02', checklist: {}, completed: true, notat: '' }
 ];
 
-async function openApp(cases, log, readings) {
+async function openApp(cases, log, readings, sak) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.addInitScript(([cs, lg, rd]) => {
+  await page.addInitScript(([cs, lg, rd, sk]) => {
     if (sessionStorage.getItem('__seeded')) return;
     sessionStorage.setItem('__seeded', '1');
     localStorage.clear();
@@ -53,8 +53,9 @@ async function openApp(cases, log, readings) {
     localStorage.setItem('pt_cases', cs);
     localStorage.setItem('pt_medl_log', lg);
     localStorage.setItem('pt_medlesing', rd);
+    Object.keys(sk).forEach((id) => localStorage.setItem('pt_sak_' + id, JSON.stringify(sk[id])));
     localStorage.setItem('pt_medlesere', JSON.stringify([{ name: 'Kari', active: true }, { name: 'Ola', active: true }]));
-  }, [JSON.stringify(cases), JSON.stringify(log), JSON.stringify(readings)]);
+  }, [JSON.stringify(cases), JSON.stringify(log), JSON.stringify(readings), sak || {}]);
   await page.goto(APP_URL);
   await page.waitForTimeout(200);
   await page.evaluate(() => navigateTo('medlesing'));
@@ -168,5 +169,84 @@ e2e('Hjem still shows its own «Hos medleser» block', async () => {
   assert.equal(await page.locator('#home-medl-out .medl-out').count(), 2);
   assert.equal(await page.locator('#home-medl-out .btn-medl-send').count(), 0, 'Hjem has no Endre button');
   assert.equal(await page.locator('#home-medl-out .btn-medl-return').count(), 2);
+  await close();
+});
+
+// ── Notater på siden ────────────────────────────────────────────────────────
+const NOTED = [
+  mk('a', '20261235', 'ny', '2026-12-20', { notes: 'Venter på svar fra Kari\nom D2' }),
+  mk('b', '20250871', 'viderebehandling', '2026-12-22')
+];
+
+e2e('notes: «Jeg medleser» shows the reading note (full text in the tooltip), empty note gives an empty cell', async () => {
+  const readings = [
+    Object.assign({}, READINGS[0], { notat: 'Sjekk klasse H04L\nog kravene' }),
+    Object.assign({}, READINGS[1], { notat: '' })
+  ];
+  const { page, close } = await openApp(NOTED, LOG, readings);
+  const withNote = page.locator('#medl-tbody tr[data-id="m1"] .medl-note-cell .case-note');
+  assert.equal(await withNote.count(), 1);
+  assert.match(await withNote.locator('.case-note-text').textContent(), /Sjekk klasse H04L og kravene/);
+  assert.match(await withNote.getAttribute('title'), /Sjekk klasse H04L\nog kravene/);
+  assert.equal(await page.locator('#medl-tbody tr[data-id="m2"] .medl-note-cell .case-note').count(), 0);
+  await close();
+});
+
+e2e('notes: «Hos medleser» shows the case note visible in the overview, never the internal note', async () => {
+  const sak = { a: { sakNotes: 'HEMMELIG INTERN' } };
+  const { page, close } = await openApp(NOTED, LOG, READINGS, sak);
+  const a = page.locator('#medl-out-tbody tr[data-id="a"] .medl-note-cell');
+  assert.match(await a.textContent(), /Venter på svar fra Kari om D2/);
+  assert.ok(!(await page.locator('#medl-out-tbody').textContent()).includes('HEMMELIG'));
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="b"] .medl-note-cell .case-note').count(), 0);
+  await close();
+});
+
+e2e('notes: a deleted case shows an empty note cell', async () => {
+  const gone = { id: 'g', caseId: 'deleted', caseNumber: '20111111', reader: 'Per', sent: '2026-09-01', returned: '2026-09-04' };
+  const { page, close } = await openApp(NOTED, [gone], []);
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="deleted"] .medl-note-cell .case-note').count(), 0);
+  await close();
+});
+
+e2e('notes: note text is escaped in both tables', async () => {
+  const evil = '<img src=x onerror="window.__pwned=1">';
+  const cs = [mk('a', '20261235', 'ny', '2026-12-20', { notes: evil })];
+  const readings = [Object.assign({}, READINGS[0], { notat: evil })];
+  const { page, close } = await openApp(cs, LOG.slice(0, 1), readings);
+  assert.equal(await page.locator('#medl-tbody img, #medl-out-tbody img').count(), 0);
+  assert.equal(await page.evaluate(() => window.__pwned), undefined);
+  await close();
+});
+
+e2e('notes: very long notes are cut off, never widen the page (960 and 1440)', async () => {
+  const long = 'x '.repeat(300);
+  const cs = [mk('a', '20261235', 'ny', '2026-12-20', { notes: long })];
+  const readings = [Object.assign({}, READINGS[0], { notat: long })];
+  const { page, close } = await openApp(cs, LOG.slice(0, 1), readings);
+  for (const w of [1440, 960]) {
+    await page.setViewportSize({ width: w, height: 900 });
+    const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert.ok(over <= 0, 'horizontal overflow ' + over + 'px at ' + w);
+  }
+  await close();
+});
+
+e2e('notes: clicking a reading row still opens its detail view', async () => {
+  const readings = [Object.assign({}, READINGS[0], { notat: 'Et notat' })];
+  const { page, close } = await openApp(NOTED, LOG, readings);
+  await page.locator('#medl-tbody tr[data-id="m1"] .medl-note-cell').click();
+  assert.equal(await page.locator('#medl-detail-view').isVisible(), true);
+  assert.equal(await page.inputValue('#medl-d-notat'), 'Et notat');
+  await close();
+});
+
+e2e('table headers: the actions column has an accessible name, and no extra Notat column', async () => {
+  const { page, close } = await openApp(NOTED, LOG, READINGS);
+  const first = (await page.locator('#medl-list-view table').first().locator('thead th').allTextContents()).map((t) => t.trim());
+  assert.ok(!first.includes('Notat'), 'notes sit under the case number, not in a column');
+  const ths = (await page.locator('#medl-out-table thead th').allTextContents()).map((t) => t.trim());
+  assert.ok(!ths.includes('Notat'));
+  assert.ok(ths.includes('Handling'), 'actions column needs an accessible name: ' + JSON.stringify(ths));
   await close();
 });

@@ -66,3 +66,13 @@ test('medlHistoryRows: tom/manglende logg gir tom liste, og inndata endres ikke'
   medlHistoryRows(log, '2026-11-10');
   assert.deepStrictEqual(J(log), copy);
 });
+
+test('medlHistoryRows: dato frem i tid gir 0 dager, ikke negativt', () => {
+  const rows = J(medlHistoryRows([e('1', 'a', '2026-11-13')], '2026-11-10'));
+  assert.strictEqual(rows[0].days, 0);
+});
+test('medlHistoryRows: ugyldig dato gir null (vises som «—»), ikke NaN', () => {
+  const rows = medlHistoryRows([e('1', 'a', '2026-13-45')], '2026-11-10');
+  assert.strictEqual(rows[0].days, null);
+  assert.ok(!Number.isNaN(rows[0].days));
+});

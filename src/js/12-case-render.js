@@ -955,7 +955,10 @@ function renderMedlesingList() {
     var prog = medlesingProgress(medlesingTemplateFor(rec.type), rec.checklist);
     var pct = prog.total ? Math.round(prog.checked / prog.total * 100) : 0;
     return '<tr class="medl-row" data-id="' + rec.id + '">' +
-      '<td class="case-no">' + esc(rec.caseNumber) + '</td>' +
+      // Lesingens eget notat (redigeres i detaljvisningen) står under saksnummeret;
+      // caseNoteHtml tar {notes}.
+      '<td class="case-no">' + esc(rec.caseNumber) +
+        '<div class="medl-note-cell">' + caseNoteHtml({ notes: rec.notat }) + '</div></td>' +
       '<td>' + esc(rec.saksbehandler) + '</td>' +
       '<td><span class="medl-type-pill medl-type-' + rec.type + '">' + _medlesingTypeLabel(rec.type) + '</span></td>' +
       '<td class="medl-date-cell">' + esc(toDisplay(rec.date)) + '</td>' +

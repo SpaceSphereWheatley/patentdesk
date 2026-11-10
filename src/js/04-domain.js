@@ -542,7 +542,9 @@ function openMedlEntries(log) {
 function medlHistoryRows(log, today) {
   return (Array.isArray(log) ? log : []).map(function(x) {
     var open = !x.returned;
-    return Object.assign({}, x, { open: open, days: daysBetweenIso(x.sent, open ? today : x.returned) });
+    var d = daysBetweenIso(x.sent, open ? today : x.returned);
+    // Ugyldig dato gir null (vises som «—»); en dato frem i tid gir 0, ikke negativt.
+    return Object.assign({}, x, { open: open, days: isFinite(d) ? Math.max(0, d) : null });
   }).sort(function(a, b) {
     if (a.open !== b.open) return a.open ? -1 : 1;
     if (a.open) return a.sent < b.sent ? -1 : a.sent > b.sent ? 1 : String(a.caseNumber).localeCompare(String(b.caseNumber));
