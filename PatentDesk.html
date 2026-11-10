@@ -1578,6 +1578,16 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
   align-items: center;
   gap: 0;
 }
+/* Pil mot det du holder over: ned når popupen står over sporet, opp under */
+.tl-popup::before, .tl-popup::after {
+  content: ''; position: absolute; top: 100%; left: var(--tl-popup-arrow-x, 50%); transform: translateX(-50%);
+  border: 6px solid transparent; border-bottom: 0;
+}
+.tl-popup::before { border-top-color: var(--border2); margin-top: 1px; }
+.tl-popup::after  { border-top-color: var(--surface); }
+.tl-popup.is-below::before, .tl-popup.is-below::after { top: auto; bottom: 100%; border: 6px solid transparent; border-top: 0; }
+.tl-popup.is-below::before { border-bottom-color: var(--border2); margin-top: 0; margin-bottom: 1px; }
+.tl-popup.is-below::after  { border-bottom-color: var(--surface); }
 .tl-popup-cn    { font-size: var(--text-sm); color: var(--accent-text); letter-spacing: var(--tracking-wide); }
 .tl-popup-sep   { font-size: var(--text-sm); color: var(--muted-text); }
 .tl-popup-title { font-size: var(--text-xs); color: var(--muted-text); }
@@ -3076,13 +3086,21 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .tl-overdue-band { position: absolute; height: 5px; border-radius: 3px; background: rgba(220,38,38,0.75); z-index: 1; }
 /* Brikken over en bjelke som dras: hva draget gjør med bufferen */
 .tl-drag-chip {
-  position: absolute; z-index: 6; transform: translate(-50%, -100%); pointer-events: none;
+  position: absolute; z-index: 6; pointer-events: none;
   padding: 5px 9px; border-radius: 6px; white-space: nowrap;
   background: var(--text); color: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   font-size: var(--text-xs); line-height: 1.35;
 }
 .tl-drag-chip b { display: block; font-weight: var(--weight-semibold); }
 .tl-drag-chip small { display: block; font-size: inherit; opacity: 0.75; }
+/* Pil mot bjelken: ned når brikken står over sporet, opp når den står under */
+.tl-drag-chip::after {
+  content: ''; position: absolute; top: 100%; left: var(--tl-popup-arrow-x, 50%); transform: translateX(-50%);
+  border: 6px solid transparent; border-bottom: 0; border-top-color: var(--text);
+}
+.tl-drag-chip.is-below::after { top: auto; bottom: 100%; border: 6px solid transparent; border-top: 0; border-bottom-color: var(--text); }
+.tl-drag-chip.is-warn::after { border-top-color: var(--badge-urgent-bg); }
+.tl-drag-chip.is-warn.is-below::after { border-top-color: transparent; border-bottom-color: var(--badge-urgent-bg); }
 .tl-bar-milestone { min-width: 5px; border-radius: 2px; }
 .tl-bar-milestone .tl-bar-label { display: none; }
 .tl-bar-label {
@@ -8816,6 +8834,39 @@ function timelineDragChip(origBuffer, newBuffer, typeDefault, effTxt, dueTxt, bl
           : newBuffer < 0 ? 'planlagt ' + effTxt + ' · frist ' + dueTxt
           : (newBuffer > 0 ? 'buffret til ' + effTxt + ' · ' : '') + 'frist ' + dueTxt;
   return { head: head, sub: sub, warn: warn };
+}
+
+// Popupen i tidslinjen venter litt før den vises, så den ikke blafrer når du
+// bare fører musen over sporet. Står en popup allerede (eller ble den nettopp
+// lukket), byttes den med en gang når du går videre til neste bjelke.
+var TL_POPUP_DELAY_MS = 500;
+var TL_POPUP_WARM_MS  = 300;
+// Luft mellom popupen og sporet, og til vinduskanten (px); pilen står i den.
+var TL_POPUP_GAP_PX   = 8;
+
+// timelinePopupDelay: hvor lenge popupen skal vente (ms) — 0 når en popup
+// står, eller ble lukket for under TL_POPUP_WARM_MS siden.
+function timelinePopupDelay(isVisible, msSinceHidden) {
+  return isVisible || msSinceHidden < TL_POPUP_WARM_MS ? 0 : TL_POPUP_DELAY_MS;
+}
+
+// timelinePopupPosition: hvor popupen står (vinduskoordinater). Over sporet
+// (trackTop–trackBottom), så den ikke dekker bjelkene; under når det ikke er
+// plass over; passer den ingen av stedene, på siden med mest plass, holdt
+// innenfor vinduet. Vannrett midtstilt på anchorX (musen, eller midt på
+// bjelken med tastaturet) og innenfor vinduet. arrowX er hvor pilen peker,
+// målt fra popupens venstre kant; below sier at pilen peker opp.
+function timelinePopupPosition(anchorX, trackTop, trackBottom, popupW, popupH, viewportW, viewportH) {
+  var gap = TL_POPUP_GAP_PX;
+  var left = Math.max(gap, Math.min(anchorX - popupW / 2, viewportW - popupW - gap));
+  var arrowX = Math.max(10, Math.min(popupW - 10, anchorX - left));
+  var roomAbove = trackTop - gap - gap;
+  var roomBelow = viewportH - trackBottom - gap - gap;
+  var below = popupH > roomAbove && (popupH <= roomBelow || roomBelow > roomAbove);
+  var top = below
+    ? Math.max(gap, Math.min(trackBottom + gap, viewportH - popupH - gap))
+    : Math.max(gap, trackTop - gap - popupH);
+  return { left: Math.round(left), top: Math.round(top), arrowX: Math.round(arrowX), below: below };
 }
 
 // timelineKeyBuffer: ny buffer når Alt + pil trykkes på en bjelke. Pil til
@@ -20294,11 +20345,21 @@ function applyTimelineLink(id, force) {
   popup.style.display = 'none';
   popup.style.pointerEvents = 'none';
   document.body.appendChild(popup);
+  // Drag-koden skjuler popupen (og en som venter) når et drag starter
+  popup.addEventListener('tl-popup-hide', function() { handleLeave(); });
 
-  // Fyller popupen for en saksbjelke eller ferie og plasserer den ved (x, y)
-  // i sidekoordinater.
+  // Popupen står ved sporet (timelinePopupPosition), så den ikke dekker
+  // bjelkene, og kommer etter en kort forsinkelse (timelinePopupDelay).
+  var visibleFor = null;   // elementet popupen vises for nå
+  var pendingFor = null;   // elementet en ventende popup gjelder
+  var pendingX = 0;        // hvor musen sist var over det
+  var timer = null;
+  var hiddenAt = -Infinity;
+
+  // Fyller popupen for en saksbjelke eller ferie og plasserer den ved sporet,
+  // vannrett ved anchorX (vinduskoordinat).
   // vl er et ferie- eller rød dag-felt; begge har label, from og to.
-  function showFor(el, vl, x, y) {
+  function showFor(el, vl, anchorX) {
     if (vl) {
       var vFrom = vl.dataset.from, vTo = vl.dataset.to;
       var isHoliday = vl.classList.contains('tl-holiday');
@@ -20335,21 +20396,64 @@ function applyTimelineLink(id, force) {
         (el.classList.contains('draggable') ? '<span class="tl-popup-hint">Dra for å endre bufferen' + (canPostpone(caseObj) ? ', også forbi fristen' : '') + ' · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd></span>' : '');
     }
     popup.style.display = 'block';
-    // Hold popupen innenfor vinduet nær høyre kant
-    var maxX = window.scrollX + document.documentElement.clientWidth - popup.offsetWidth - 8;
-    popup.style.left = Math.max(window.scrollX + 8, Math.min(x, maxX)) + 'px';
-    popup.style.top  = y + 'px';
+    visibleFor = el || vl;
+    place(anchorX);
+  }
+
+  function place(anchorX) {
+    var track = visibleFor && visibleFor.closest('.tl-track');
+    if (!track) return;
+    // Faktiske mål, ikke offsetHeight (avrundet), så luften blir hele 8 px
+    var r = track.getBoundingClientRect(), pr = popup.getBoundingClientRect();
+    var pos = timelinePopupPosition(anchorX, r.top, r.bottom, pr.width, pr.height,
+      document.documentElement.clientWidth, document.documentElement.clientHeight);
+    popup.style.left = pos.left + 'px';
+    popup.style.top  = pos.top + 'px';
+    popup.style.setProperty('--tl-popup-arrow-x', pos.arrowX + 'px');
+    popup.classList.toggle('is-below', pos.below);
+  }
+
+  function cancelPending() {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    pendingFor = null;
+  }
+
+  function handleLeave() {
+    cancelPending();
+    if (visibleFor) hiddenAt = Date.now();
+    visibleFor = null;
+    popup.style.display = 'none';
+  }
+
+  // Viser popupen for el/vl ved anchorX — med en gang når en popup allerede
+  // står (eller nettopp ble lukket), ellers etter forsinkelsen.
+  function request(el, vl, anchorX) {
+    var target = el || vl;
+    if (target === visibleFor) { place(anchorX); return; }
+    if (target === pendingFor) { pendingX = anchorX; return; }
+    cancelPending();
+    var wait = timelinePopupDelay(!!visibleFor, Date.now() - hiddenAt);
+    if (!wait) { showFor(el, vl, anchorX); return; }
+    pendingFor = target;
+    pendingX = anchorX;
+    timer = setTimeout(function() {
+      var t = pendingFor;
+      timer = null;
+      pendingFor = null;
+      // Bjelken kan ha forsvunnet (ny tegning) eller blitt dratt i mellomtiden
+      if (!t || !t.isConnected || document.querySelector('.tl-bar.dragging')) return;
+      showFor(el, vl, pendingX);
+    }, wait);
   }
 
   function handleMove(e) {
     var el = e.target.closest('.tl-bar, .tl-overdue-band');
     var vl = e.target.closest('.tl-bar-vacation, .tl-holiday');
     // Under drag viser brikken over bjelken det som skjer
-    if ((!el && !vl) || (el && el.classList.contains('dragging'))) { popup.style.display = 'none'; return; }
-    showFor(el, vl, e.pageX + 12, e.pageY - 28);
+    if ((!el && !vl) || (el && el.classList.contains('dragging'))) { handleLeave(); return; }
+    request(el, vl, e.clientX);
   }
-
-  function handleLeave() { popup.style.display = 'none'; }
 
   // Forhåndsvisningen i sak-dialogen er bare til å se på — et klikk der ville
   // lukket dialogen og kastet det som er skrevet inn.
@@ -20379,7 +20483,7 @@ function applyTimelineLink(id, force) {
   }
 
   document.addEventListener('mousemove', function(e) {
-    if (!inTimeline(e.target)) { popup.style.display = 'none'; return; }
+    if (!inTimeline(e.target)) { if (visibleFor || pendingFor) handleLeave(); return; }
     handleMove(e);
   });
   document.addEventListener('mouseout', function(e) {
@@ -20396,8 +20500,10 @@ function applyTimelineLink(id, force) {
   document.addEventListener('focusin', function(e) {
     var el = e.target.closest && e.target.closest('.tl-bar');
     if (!el || !inTimeline(el)) return;
+    // Med tastaturet vises popupen med en gang, midt ved bjelken
     var r = el.getBoundingClientRect();
-    showFor(el, null, r.left + window.scrollX, r.top + window.scrollY - 34);
+    cancelPending();
+    showFor(el, null, r.left + r.width / 2);
   });
   document.addEventListener('focusout', function(e) {
     if (e.target.closest && e.target.closest('.tl-bar')) handleLeave();
@@ -20907,7 +21013,8 @@ function init() {
     }
 
     // Brikken står i tidslinjens ramme (ikke i sporet, som klipper alt over
-    // seg), midt over bjelken.
+    // seg), ved sporet som popupen (timelinePopupPosition), så den ikke dekker
+    // andre bjelker. Pilen peker på bjelken.
     function showChip(d) {
       var host = d.bar.closest('.home-timeline-wrap');
       if (!host) return;
@@ -20922,8 +21029,14 @@ function init() {
       d.chip.classList.toggle('is-warn', t.warn);
       d.chip.innerHTML = '<b>' + (t.warn ? '⚠ ' : '') + esc(t.head) + '</b><small>' + esc(t.sub) + '</small>';
       var b = d.bar.getBoundingClientRect(), h = host.getBoundingClientRect();
-      d.chip.style.left = (b.left + b.width / 2 - h.left) + 'px';
-      d.chip.style.top  = (b.top - h.top - 8) + 'px';
+      var tr = d.bar.closest('.tl-track').getBoundingClientRect();
+      var cr = d.chip.getBoundingClientRect();
+      var pos = timelinePopupPosition(b.left + b.width / 2, tr.top, tr.bottom, cr.width, cr.height,
+        document.documentElement.clientWidth, document.documentElement.clientHeight);
+      d.chip.style.left = (pos.left - h.left) + 'px';
+      d.chip.style.top  = (pos.top - h.top) + 'px';
+      d.chip.style.setProperty('--tl-popup-arrow-x', pos.arrowX + 'px');
+      d.chip.classList.toggle('is-below', pos.below);
     }
 
     // Lagrer en ny buffer (lik standarden for typen → ingen egen buffer) og
@@ -20973,7 +21086,7 @@ function init() {
         // Under drag sender ikke nettleseren mousemove (pointerdown er
         // preventDefault-et), så popupen skjules her; brikken tar over.
         var pop = document.querySelector('.tl-popup');
-        if (pop) pop.style.display = 'none';
+        if (pop) pop.dispatchEvent(new Event('tl-popup-hide'));
       }
       var newBuffer = timelineDragBuffer(d.origBuffer, dx, d.pxPerDay, TYPE_BUFFER_MAX, d.minBuffer);
       d.newBuffer = newBuffer;

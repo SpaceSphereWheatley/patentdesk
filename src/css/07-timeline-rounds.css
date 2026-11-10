@@ -130,13 +130,21 @@
 .tl-overdue-band { position: absolute; height: 5px; border-radius: 3px; background: rgba(220,38,38,0.75); z-index: 1; }
 /* Brikken over en bjelke som dras: hva draget gjør med bufferen */
 .tl-drag-chip {
-  position: absolute; z-index: 6; transform: translate(-50%, -100%); pointer-events: none;
+  position: absolute; z-index: 6; pointer-events: none;
   padding: 5px 9px; border-radius: 6px; white-space: nowrap;
   background: var(--text); color: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   font-size: var(--text-xs); line-height: 1.35;
 }
 .tl-drag-chip b { display: block; font-weight: var(--weight-semibold); }
 .tl-drag-chip small { display: block; font-size: inherit; opacity: 0.75; }
+/* Pil mot bjelken: ned når brikken står over sporet, opp når den står under */
+.tl-drag-chip::after {
+  content: ''; position: absolute; top: 100%; left: var(--tl-popup-arrow-x, 50%); transform: translateX(-50%);
+  border: 6px solid transparent; border-bottom: 0; border-top-color: var(--text);
+}
+.tl-drag-chip.is-below::after { top: auto; bottom: 100%; border: 6px solid transparent; border-top: 0; border-bottom-color: var(--text); }
+.tl-drag-chip.is-warn::after { border-top-color: var(--badge-urgent-bg); }
+.tl-drag-chip.is-warn.is-below::after { border-top-color: transparent; border-bottom-color: var(--badge-urgent-bg); }
 .tl-bar-milestone { min-width: 5px; border-radius: 2px; }
 .tl-bar-milestone .tl-bar-label { display: none; }
 .tl-bar-label {

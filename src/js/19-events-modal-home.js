@@ -535,11 +535,21 @@ function applyTimelineLink(id, force) {
   popup.style.display = 'none';
   popup.style.pointerEvents = 'none';
   document.body.appendChild(popup);
+  // Drag-koden skjuler popupen (og en som venter) når et drag starter
+  popup.addEventListener('tl-popup-hide', function() { handleLeave(); });
 
-  // Fyller popupen for en saksbjelke eller ferie og plasserer den ved (x, y)
-  // i sidekoordinater.
+  // Popupen står ved sporet (timelinePopupPosition), så den ikke dekker
+  // bjelkene, og kommer etter en kort forsinkelse (timelinePopupDelay).
+  var visibleFor = null;   // elementet popupen vises for nå
+  var pendingFor = null;   // elementet en ventende popup gjelder
+  var pendingX = 0;        // hvor musen sist var over det
+  var timer = null;
+  var hiddenAt = -Infinity;
+
+  // Fyller popupen for en saksbjelke eller ferie og plasserer den ved sporet,
+  // vannrett ved anchorX (vinduskoordinat).
   // vl er et ferie- eller rød dag-felt; begge har label, from og to.
-  function showFor(el, vl, x, y) {
+  function showFor(el, vl, anchorX) {
     if (vl) {
       var vFrom = vl.dataset.from, vTo = vl.dataset.to;
       var isHoliday = vl.classList.contains('tl-holiday');
@@ -576,21 +586,64 @@ function applyTimelineLink(id, force) {
         (el.classList.contains('draggable') ? '<span class="tl-popup-hint">Dra for å endre bufferen' + (canPostpone(caseObj) ? ', også forbi fristen' : '') + ' · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd></span>' : '');
     }
     popup.style.display = 'block';
-    // Hold popupen innenfor vinduet nær høyre kant
-    var maxX = window.scrollX + document.documentElement.clientWidth - popup.offsetWidth - 8;
-    popup.style.left = Math.max(window.scrollX + 8, Math.min(x, maxX)) + 'px';
-    popup.style.top  = y + 'px';
+    visibleFor = el || vl;
+    place(anchorX);
+  }
+
+  function place(anchorX) {
+    var track = visibleFor && visibleFor.closest('.tl-track');
+    if (!track) return;
+    // Faktiske mål, ikke offsetHeight (avrundet), så luften blir hele 8 px
+    var r = track.getBoundingClientRect(), pr = popup.getBoundingClientRect();
+    var pos = timelinePopupPosition(anchorX, r.top, r.bottom, pr.width, pr.height,
+      document.documentElement.clientWidth, document.documentElement.clientHeight);
+    popup.style.left = pos.left + 'px';
+    popup.style.top  = pos.top + 'px';
+    popup.style.setProperty('--tl-popup-arrow-x', pos.arrowX + 'px');
+    popup.classList.toggle('is-below', pos.below);
+  }
+
+  function cancelPending() {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    pendingFor = null;
+  }
+
+  function handleLeave() {
+    cancelPending();
+    if (visibleFor) hiddenAt = Date.now();
+    visibleFor = null;
+    popup.style.display = 'none';
+  }
+
+  // Viser popupen for el/vl ved anchorX — med en gang når en popup allerede
+  // står (eller nettopp ble lukket), ellers etter forsinkelsen.
+  function request(el, vl, anchorX) {
+    var target = el || vl;
+    if (target === visibleFor) { place(anchorX); return; }
+    if (target === pendingFor) { pendingX = anchorX; return; }
+    cancelPending();
+    var wait = timelinePopupDelay(!!visibleFor, Date.now() - hiddenAt);
+    if (!wait) { showFor(el, vl, anchorX); return; }
+    pendingFor = target;
+    pendingX = anchorX;
+    timer = setTimeout(function() {
+      var t = pendingFor;
+      timer = null;
+      pendingFor = null;
+      // Bjelken kan ha forsvunnet (ny tegning) eller blitt dratt i mellomtiden
+      if (!t || !t.isConnected || document.querySelector('.tl-bar.dragging')) return;
+      showFor(el, vl, pendingX);
+    }, wait);
   }
 
   function handleMove(e) {
     var el = e.target.closest('.tl-bar, .tl-overdue-band');
     var vl = e.target.closest('.tl-bar-vacation, .tl-holiday');
     // Under drag viser brikken over bjelken det som skjer
-    if ((!el && !vl) || (el && el.classList.contains('dragging'))) { popup.style.display = 'none'; return; }
-    showFor(el, vl, e.pageX + 12, e.pageY - 28);
+    if ((!el && !vl) || (el && el.classList.contains('dragging'))) { handleLeave(); return; }
+    request(el, vl, e.clientX);
   }
-
-  function handleLeave() { popup.style.display = 'none'; }
 
   // Forhåndsvisningen i sak-dialogen er bare til å se på — et klikk der ville
   // lukket dialogen og kastet det som er skrevet inn.
@@ -620,7 +673,7 @@ function applyTimelineLink(id, force) {
   }
 
   document.addEventListener('mousemove', function(e) {
-    if (!inTimeline(e.target)) { popup.style.display = 'none'; return; }
+    if (!inTimeline(e.target)) { if (visibleFor || pendingFor) handleLeave(); return; }
     handleMove(e);
   });
   document.addEventListener('mouseout', function(e) {
@@ -637,8 +690,10 @@ function applyTimelineLink(id, force) {
   document.addEventListener('focusin', function(e) {
     var el = e.target.closest && e.target.closest('.tl-bar');
     if (!el || !inTimeline(el)) return;
+    // Med tastaturet vises popupen med en gang, midt ved bjelken
     var r = el.getBoundingClientRect();
-    showFor(el, null, r.left + window.scrollX, r.top + window.scrollY - 34);
+    cancelPending();
+    showFor(el, null, r.left + r.width / 2);
   });
   document.addEventListener('focusout', function(e) {
     if (e.target.closest && e.target.closest('.tl-bar')) handleLeave();

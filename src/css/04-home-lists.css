@@ -458,6 +458,16 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
   align-items: center;
   gap: 0;
 }
+/* Pil mot det du holder over: ned når popupen står over sporet, opp under */
+.tl-popup::before, .tl-popup::after {
+  content: ''; position: absolute; top: 100%; left: var(--tl-popup-arrow-x, 50%); transform: translateX(-50%);
+  border: 6px solid transparent; border-bottom: 0;
+}
+.tl-popup::before { border-top-color: var(--border2); margin-top: 1px; }
+.tl-popup::after  { border-top-color: var(--surface); }
+.tl-popup.is-below::before, .tl-popup.is-below::after { top: auto; bottom: 100%; border: 6px solid transparent; border-top: 0; }
+.tl-popup.is-below::before { border-bottom-color: var(--border2); margin-top: 0; margin-bottom: 1px; }
+.tl-popup.is-below::after  { border-bottom-color: var(--surface); }
 .tl-popup-cn    { font-size: var(--text-sm); color: var(--accent-text); letter-spacing: var(--tracking-wide); }
 .tl-popup-sep   { font-size: var(--text-sm); color: var(--muted-text); }
 .tl-popup-title { font-size: var(--text-xs); color: var(--muted-text); }

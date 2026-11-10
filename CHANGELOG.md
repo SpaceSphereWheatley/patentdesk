@@ -30,6 +30,14 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   har en egen verdi — standarden for sakstypen står ikke i hodet.
 - CPC-varselet på Hjem har fått luft under seg, så det ikke ligger tett mot
   «Oversikt».
+- **Popupen i tidslinjen dekker ikke lenger bjelkene.** Holder du over en
+  bjelke, ferie, rød dag eller et forfalt-bånd, vises teksten over tidslinjen
+  med en pil ned mot det du peker på. Er det ikke plass over, som når
+  tidslinjen står øverst på en saksliste, vises den under. Det samme gjelder
+  brikken som viser bufferen når du drar en bjelke.
+- **Popupen venter et halvt sekund.** Den vises ikke lenger med en gang du
+  fører musen over tidslinjen. Står en popup allerede, bytter den med en gang
+  når du går videre til neste bjelke. Med tastaturet vises den med en gang.
 
 ### Fixed
 - **Fristblokken står på én grunnlinje.** «DIN FRIST», datoen, nedtellingen,
