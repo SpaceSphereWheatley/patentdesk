@@ -20355,6 +20355,21 @@ function applyTimelineLink(id, force) {
   var pendingX = 0;        // hvor musen sist var over det
   var timer = null;
   var hiddenAt = -Infinity;
+  var lastAnchorX = 0;     // der popupen sist ble plassert vannrett
+  // Sporet kan endre høyde mens popupen står (radene følger det du ser, med en
+  // overgang), og da flytter toppen seg. Popupen følger med.
+  var trackObserver = typeof ResizeObserver === 'function'
+    ? new ResizeObserver(function() { if (visibleFor) place(currentAnchorX()); })
+    : null;
+
+  // Med tastaturfokus peker popupen på midten av bjelken; ellers dit musen var.
+  function currentAnchorX() {
+    if (visibleFor && visibleFor === document.activeElement) {
+      var r = visibleFor.getBoundingClientRect();
+      return r.left + r.width / 2;
+    }
+    return lastAnchorX;
+  }
 
   // Fyller popupen for en saksbjelke eller ferie og plasserer den ved sporet,
   // vannrett ved anchorX (vinduskoordinat).
@@ -20398,9 +20413,12 @@ function applyTimelineLink(id, force) {
     popup.style.display = 'block';
     visibleFor = el || vl;
     place(anchorX);
+    var track = visibleFor.closest('.tl-track');
+    if (trackObserver) { trackObserver.disconnect(); if (track) trackObserver.observe(track); }
   }
 
   function place(anchorX) {
+    lastAnchorX = anchorX;
     var track = visibleFor && visibleFor.closest('.tl-track');
     if (!track) return;
     // Faktiske mål, ikke offsetHeight (avrundet), så luften blir hele 8 px
@@ -20423,6 +20441,7 @@ function applyTimelineLink(id, force) {
     cancelPending();
     if (visibleFor) hiddenAt = Date.now();
     visibleFor = null;
+    if (trackObserver) trackObserver.disconnect();
     popup.style.display = 'none';
   }
 
@@ -20513,11 +20532,7 @@ function applyTimelineLink(id, force) {
   // tastaturfokus følger bjelken (nettleseren scroller den fram når du tabber
   // til den); ellers skjules den til neste musebevegelse.
   document.addEventListener('scroll', function() {
-    if (visibleFor && visibleFor === document.activeElement) {
-      var r = visibleFor.getBoundingClientRect();
-      place(r.left + r.width / 2);
-      return;
-    }
+    if (visibleFor && visibleFor === document.activeElement) { place(currentAnchorX()); return; }
     if (visibleFor || pendingFor) handleLeave();
   }, true);
   document.addEventListener('keydown', function(e) {

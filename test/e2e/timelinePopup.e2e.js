@@ -258,6 +258,29 @@ e2e('keyboard focus on a bar scrolled out of view still shows the popup, at the 
   await close();
 });
 
+e2e('the popup follows the track when its height changes (rows follow the view)', async () => {
+  const { page, errors, close } = await openApp();
+  await go(page, 'hjem');
+  const b = await barCentre(page, '#home-timeline .tl-bar[data-id="b"]');
+  await page.mouse.move(b.x, b.y);
+  await page.clock.runFor(650);
+  assert.equal(await popupShown(page), true);
+  const before = await geom(page, 'home-timeline');
+  // Sporet blir 60 px høyere uten overgang, som når radene endres
+  await page.evaluate(() => {
+    const tr = document.querySelector('#home-timeline .tl-track');
+    tr.style.transition = 'none';
+    tr.style.height = (tr.getBoundingClientRect().height + 60) + 'px';
+  });
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r())));
+  await page.clock.runFor(50);
+  const after = await geom(page, 'home-timeline');
+  assert.notEqual(after.tTop + after.tBottom, before.tTop + before.tBottom, 'the track moved or grew');
+  assertOutsideTrack(after);
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 e2e('a pending popup is dropped when the timeline is redrawn', async () => {
   const { page, errors, close } = await openApp();
   await go(page, 'hjem');
