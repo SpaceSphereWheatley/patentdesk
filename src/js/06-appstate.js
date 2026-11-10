@@ -744,6 +744,7 @@ function _dispatch(action, payload) {
       fData.files.push({ name: sanitizeText(payload.name) });
       saveSakData(payload.id, fData);
       renderSakFileList(fData);
+      if (typeof renderDocPanes === 'function') renderDocPanes();
       showToast('✓ Fil lagt til');
       break;
     }
@@ -755,6 +756,7 @@ function _dispatch(action, payload) {
       if (fData.files[payload.idx]) fData.files[payload.idx] = applyFileEdit(fData.files[payload.idx], payload.name, payload.label);
       saveSakData(payload.id, fData);
       renderSakFileList(fData);
+      if (typeof renderDocPanes === 'function') renderDocPanes();
       showToast('✓ Navn endret');
       break;
     }
@@ -766,6 +768,7 @@ function _dispatch(action, payload) {
       fData.files.splice(payload.idx, 1);
       saveSakData(payload.id, fData);
       renderSakFileList(fData);
+      if (typeof renderDocPanes === 'function') renderDocPanes();
       showToast('✓ Fil slettet');
       break;
     }
@@ -1107,6 +1110,7 @@ function _dispatch(action, payload) {
       deadlines = normalizeDeadlines(null);
       homeDeadlineFilter = defaultHomeDeadlineFilter();
       docLayout = defaultDocLayout();
+      if (typeof dpReset === 'function') dpReset();
       undoSnapshot = null; // en åpen «Angre» skal ikke kunne hente sakene tilbake
       closeBackdrop('delete-all-backdrop-2');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();

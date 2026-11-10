@@ -5,7 +5,7 @@
 // kravpanelets side og bredde, plassregler, panelbredder) ligger i docLayout.
 var _dpTab    = 'overview';        // 'overview' | 'docs'
 var _dpCaseId = null;
-var _dpManual = [null, null, null]; // filvalg for hånd, per panel; gjelder bare denne saken
+var _dpManual = [null, null, null]; // filnavn valgt for hånd, per panel; gjelder bare denne saken (navn, ikke plass i listen, så slette/legge til filer ikke flytter valget)
 var _dpBuilt  = false;
 var _dpDrag   = null;
 
@@ -23,6 +23,17 @@ function dpOnSakRendered(id) {
   }
   dpApplyTab();
   if (_dpTab === 'docs') renderDocPanes();
+}
+
+// Alt data er slettet: tilbake til start, så ingen PDF fra de slettede sakene
+// blir stående lastet og innstillingsfeltene viser reglene som faktisk gjelder.
+function dpReset() {
+  _dpCaseId = null;
+  _dpManual = [null, null, null];
+  _dpTab = 'overview';
+  _dpResetFrames();
+  dpApplyTab();
+  _dpFillRuleInputs();
 }
 
 function _dpResetFrames() {
@@ -133,8 +144,15 @@ function _dpApplyLayout() {
     if (i < l.count) p.style.flex = (w[i] * 1000) + ' 1 0';
   });
   document.querySelectorAll('.dp-split[data-dp-split]').forEach(function(s) {
-    s.hidden = Number(s.dataset.dpSplit) + 1 >= l.count;
+    var i = Number(s.dataset.dpSplit);
+    s.hidden = i + 1 >= l.count;
+    s.setAttribute('aria-valuenow', String(Math.round(w[i] * 100)));
+    s.setAttribute('aria-valuemin', String(Math.round(DOC_PANE_MIN * 100)));
+    s.setAttribute('aria-valuemax', String(Math.round((1 - DOC_PANE_MIN) * 100)));
   });
+  csplit.setAttribute('aria-valuenow', String(l.claimsWidth));
+  csplit.setAttribute('aria-valuemin', String(DOC_CLAIMS_W_MIN));
+  csplit.setAttribute('aria-valuemax', String(DOC_CLAIMS_W_MAX));
 }
 
 function _dpFillRuleInputs() {
@@ -172,7 +190,12 @@ function renderDocPanes() {
   document.getElementById('dp-claims').innerHTML = dpClaimsHtml(data && data.claims);
 
   var files = _dpFiles();
-  var assigned = docSlotAssign(files, docLayout.rules, docLayout.count, _dpManual);
+  var picks = _dpManual.map(function(name) {
+    if (typeof name !== 'string') return null;
+    for (var k = 0; k < files.length; k++) { if (files[k] && files[k].name === name) return k; }
+    return null; // filen er slettet eller omdøpt: valget faller bort, regelen gjelder igjen
+  });
+  var assigned = docSlotAssign(files, docLayout.rules, docLayout.count, picks);
   var root = loadDocRoot();
   for (var i = 0; i < DOC_PANE_MAX; i++) {
     var visible = i < docLayout.count;
@@ -182,7 +205,7 @@ function renderDocPanes() {
     var empty = document.getElementById('dp-empty-' + i);
     if (!visible) { _dpSetFrame(frame, ''); continue; }
     var idx = assigned[i];
-    var manual = Number.isInteger(_dpManual[i]) && idx === _dpManual[i];
+    var manual = Number.isInteger(picks[i]) && idx === picks[i];
     var rule = docLayout.rules[i];
     var opts = '<option value="">' + (manual ? 'Automatisk' : (idx >= 0 ? 'Automatisk: ' + esc(_fileDisplayName(files[idx].name)) : 'Velg fil …')) + '</option>';
     files.forEach(function(f, k) {
@@ -241,7 +264,8 @@ document.getElementById('dp-toolbar').addEventListener('click', function(e) {
 document.getElementById('dp-panes').addEventListener('change', function(e) {
   var sel = e.target.closest('[data-dp-pick]');
   if (!sel) return;
-  _dpManual[Number(sel.dataset.dpPick)] = sel.value === '' ? null : Number(sel.value);
+  var chosen = sel.value === '' ? null : _dpFiles()[Number(sel.value)];
+  _dpManual[Number(sel.dataset.dpPick)] = chosen ? chosen.name : null;
   renderDocPanes();
 });
 

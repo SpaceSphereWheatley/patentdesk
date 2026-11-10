@@ -818,6 +818,7 @@ function normalizePaneWidths(raw, count) {
     if (typeof raw[i] !== 'number' || !isFinite(raw[i]) || raw[i] <= 0) return equal;
     total += raw[i];
   }
+  if (!isFinite(total) || total <= 0) return equal; // summen kan flyte over selv om hvert tall er endelig
   var w = raw.map(function(x) { return x / total; });
   var out = w.slice(), fixed = [], rem = 1;
   for (var pass = 0; pass <= n; pass++) {

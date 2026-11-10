@@ -94,6 +94,14 @@ test('normalizePaneWidths: every pane keeps at least the minimum width', () => {
   assert.ok(Math.abs(sum(out) - 1) < 1e-9);
 });
 
+test('normalizePaneWidths: values whose sum overflows fall back to equal, never NaN', () => {
+  const out = normalizePaneWidths([1e308, 1e308], 2);
+  assert.ok(out.every(Number.isFinite), 'finite: ' + out);
+  assert.ok(Math.abs(out[0] - 0.5) < 1e-9);
+  const lay = normalizeDocLayout({ widths: { 2: [1e308, 1e308], 3: [Infinity, 1, 1] } });
+  [2, 3].forEach(n => assert.ok(lay.widths[n].every(Number.isFinite) && Math.abs(sum(lay.widths[n]) - 1) < 1e-9));
+});
+
 test('normalizePaneWidths: one pane is always the full width', () => {
   assert.deepStrictEqual(Array.from(normalizePaneWidths([0.3], 1)), [1]);
 });

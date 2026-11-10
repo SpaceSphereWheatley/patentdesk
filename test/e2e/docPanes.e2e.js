@@ -61,9 +61,9 @@ function seedFor(opts) {
     { num: 3, novelty: true, inventive: null, formal: false, notes: '', independent: false, dep: 2, depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] }
   ];
   const kase = {
-    id: CASE_ID, caseNumber: '20261299', status: 'ny', dueDate: '2026-12-15', title: 'Panelsak', notes: '', tags: '',
+    id: CASE_ID, caseNumber: '20261299', status: opts.status || 'ny', dueDate: '2026-12-15', title: 'Panelsak', notes: '', tags: '',
     createdAt: '2026-10-01T08:00:00.000Z', history: [{ status: 'ny', date: '2026-10-01T08:00:00.000Z' }],
-    type: 'sak', duration: null, caseBuffer: null
+    type: opts.type || 'sak', duration: opts.type === 'oppdrag' ? 3 : null, caseBuffer: null
   };
   const sak = { numClaims: 3, filingDate: '', priorityDate: '', checklist: [], classes: [], docs: [], claims: claims, files: opts.files };
   return { cases: JSON.stringify([kase]), sak: JSON.stringify(sak) };
@@ -282,5 +282,102 @@ e2e('returning to the same case keeps the Dokumenter tab', async () => {
   await p.evaluate(() => navigateTo('hjem'));
   await p.evaluate((id) => navigateTo('sak/' + id), CASE_ID);
   assert.equal(await p.locator('#sak-viewer').isVisible(), true, 'same case: tab is kept');
+  await s.close();
+});
+
+// ── Review round 1 ──────────────────────────────────
+
+e2e('AC7: the tab works the same in every workflow state and for an Oppdrag with files', async () => {
+  for (const o of [{ status: 'fristarkiv' }, { status: 'viderebehandling' }, { status: 'avsluttet' }, { type: 'oppdrag' }]) {
+    const s = await openDocs(o);
+    assert.equal(await s.page.locator('.dp-pane:visible').count(), 2, JSON.stringify(o));
+    assert.match(await frameUrl(s.page, 0), /file=Claims\.pdf/, JSON.stringify(o));
+    assert.match(await frameUrl(s.page, 1), /file=Figures\.pdf/, JSON.stringify(o));
+    await s.close();
+  }
+});
+
+e2e('AC7: a registered file that does not exist is still named above the pane (the server answers the 404)', async () => {
+  const s = await openDocs({ files: [{ name: 'Claims.pdf' }, { name: 'Gone.pdf' }] });
+  await s.page.selectOption('[data-dp-pick="1"]', { label: 'Gone' });
+  assert.match(await frameUrl(s.page, 1), /file=Gone\.pdf/);
+  assert.equal(await s.page.locator('[data-dp-pick="1"] option:checked').textContent(), 'Gone');
+  await s.close();
+});
+
+e2e('AC5: manual picks are dropped when another case is opened', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.selectOption('[data-dp-pick="0"]', { label: 'D1' });
+  assert.match(await frameUrl(p, 0), /file=D1\.pdf/);
+  await p.evaluate(() => dpOnSakRendered('another-case'));
+  assert.deepEqual(await p.evaluate(() => _dpManual), [null, null, null]);
+  await s.close();
+});
+
+e2e('files: a manual pick follows the file, not its position, when the list changes', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.selectOption('[data-dp-pick="0"]', { label: 'Figures' });
+  assert.match(await frameUrl(p, 0), /file=Figures\.pdf/);
+  await p.evaluate((id) => dispatch('FILE_DELETE', { id, idx: 0 }), CASE_ID); // Description.pdf goes
+  assert.match(await frameUrl(p, 0), /file=Figures\.pdf/, 'still Figures, not whatever moved into its index');
+  assert.match(await p.locator('#dp-pin-0').textContent(), /for hånd/);
+  // deleting the picked file itself drops the pick; the rule takes over again
+  await p.evaluate((id) => dispatch('FILE_DELETE', { id, idx: 1 }), CASE_ID); // Figures.pdf itself
+  assert.match(await frameUrl(p, 0), /file=Claims\.pdf/, 'the pick is gone, so the rule (claims) applies again');
+  assert.doesNotMatch(await p.locator('#dp-pin-0').textContent(), /for hånd/);
+  await s.close();
+});
+
+e2e('files: adding or renaming a file redraws the panes at once', async () => {
+  const s = await openDocs({ files: [{ name: 'Description.pdf' }] });
+  const p = s.page;
+  assert.match(await p.locator('#dp-empty-0').textContent(), /Ingen fil passer regelen «claims»/);
+  await p.evaluate((id) => dispatch('FILE_ADD', { id, name: 'Claims.pdf' }), CASE_ID);
+  assert.match(await frameUrl(p, 0), /file=Claims\.pdf/);
+  await p.evaluate((id) => dispatch('FILE_RENAME', { id, idx: 1, name: 'Claims_v2.pdf', label: '' }), CASE_ID);
+  assert.match(await frameUrl(p, 0), /file=Claims_v2\.pdf/);
+  await s.close();
+});
+
+e2e('AC9: the layout is in the export payload, applied by import, and reset by delete-all', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.click('[data-dp-count="3"]');
+  await p.click('[data-dp-side="right"]');
+  const exported = await p.evaluate(() => JSON.parse(JSON.stringify(makeExportPayload().docLayout)));
+  assert.equal(exported.count, 3);
+  assert.equal(exported.claimsSide, 'right');
+  // import (replace) of a payload with another layout is applied and saved
+  const payload = await p.evaluate(() => {
+    const d = JSON.parse(JSON.stringify(makeExportPayload()));
+    d.docLayout = { count: 1, claimsSide: 'left', claimsVisible: false, rules: ['  descr ', '', ''] };
+    return d;
+  });
+  await p.evaluate((d) => dispatch('DATA_IMPORT', { data: d, mode: 'replace' }), payload);
+  const stored = await p.evaluate(() => JSON.parse(localStorage.getItem('pt_doc_layout')));
+  assert.equal(stored.count, 1);
+  assert.equal(stored.claimsVisible, false);
+  assert.equal(stored.rules[0], 'descr');
+  assert.equal(await p.evaluate(() => docLayout.count), 1);
+  // delete-all: memory, storage, the settings inputs and the loaded PDFs are all reset
+  await p.evaluate(() => dispatch('DATA_DELETE_ALL', {}));
+  assert.equal(await p.evaluate(() => docLayout.count), 2);
+  assert.equal(await p.evaluate(() => localStorage.getItem('pt_doc_layout')), null);
+  assert.equal(await p.evaluate(() => document.querySelector('[data-dp-rule="0"]').value), 'claims');
+  assert.equal(await p.evaluate(() => Array.from(document.querySelectorAll('.dp-frame')).every((f) => !f.getAttribute('src'))), true);
+  await s.close();
+});
+
+e2e('a11y: the tab does not point at a missing id and the dividers expose their value', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  const ctl = await p.getAttribute('#sak-tab-overview', 'aria-controls');
+  if (ctl) assert.equal(await p.locator('#' + ctl).count(), 1, 'aria-controls target exists: ' + ctl);
+  const now = Number(await p.getAttribute('[data-dp-split="0"]', 'aria-valuenow'));
+  assert.ok(now >= 15 && now <= 85, 'aria-valuenow ' + now);
+  assert.equal(await p.getAttribute('[data-dp-split="0"]', 'aria-valuemin'), '15');
+  assert.ok(Number(await p.getAttribute('#dp-csplit', 'aria-valuenow')) >= 160);
   await s.close();
 });
