@@ -2988,7 +2988,6 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .dp-seg .dp-seg-btn:last-child  { border-radius: 0 var(--radius) var(--radius) 0; }
 .dp-claims-toggle { border-radius: var(--radius); }
 .dp-seg-btn[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-.dp-claims-toggle[aria-pressed="true"] { background: var(--surface); border-color: var(--border2); color: var(--text); }
 .dp-seg-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; position: relative; }
 
 .dp-notice { background: var(--notice-warn-bg); color: var(--notice-warn-text); border: 1px solid var(--badge-urgent-border);
@@ -4345,7 +4344,7 @@ button.ob-del:hover { color: var(--text-on-no); }
               <button type="button" class="dp-seg-btn" data-dp-side="left" aria-pressed="false">Krav til venstre</button>
               <button type="button" class="dp-seg-btn" data-dp-side="right" aria-pressed="false">Krav til høyre</button>
             </div>
-            <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle" aria-pressed="true">Skjul krav</button>
+            <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle">Skjul krav</button>
           </div>
           <div class="dp-notice" id="dp-notice" role="status" hidden></div>
           <div class="dp-body" id="dp-body">
@@ -10387,6 +10386,7 @@ function _dispatch(action, payload) {
         Object.keys(sdWrite).forEach(function(id) { saveSakData(id, sdWrite[id]); });
       } else {
         cases = d.cases;
+        if (typeof dpReset === 'function') dpReset(); // saksvisningen starter på nytt, som etter «Slett alt»
         if (d.stats) stats = d.stats;
         saveCases(); saveStats();
         var sdAll = importSakDetailsToWrite(d.sakDetails, d.cases, 'replace');
@@ -21407,7 +21407,6 @@ function _dpApplyLayout() {
   claims.style.width = l.claimsWidth + 'px';
   var tog = document.getElementById('dp-claims-toggle');
   tog.textContent = l.claimsVisible ? 'Skjul krav' : 'Vis krav';
-  tog.setAttribute('aria-pressed', l.claimsVisible ? 'true' : 'false');
   document.querySelectorAll('[data-dp-count]').forEach(function(b) {
     b.setAttribute('aria-pressed', Number(b.dataset.dpCount) === l.count ? 'true' : 'false');
   });
@@ -21564,7 +21563,7 @@ function _dpStartDrag(e, el, kind, index) {
   var body = document.getElementById('dp-body');
   var panes = document.getElementById('dp-panes');
   _dpDrag = {
-    kind: kind, index: index, x: e.clientX,
+    kind: kind, index: index, x: e.clientX, pointerId: e.pointerId,
     widths: _dpPaneWidths().slice(), claimsWidth: docLayout.claimsWidth,
     panesPx: panes.getBoundingClientRect().width || 1,
     el: el
@@ -21575,7 +21574,8 @@ function _dpStartDrag(e, el, kind, index) {
   e.preventDefault();
 }
 function _dpMoveDrag(e) {
-  if (!_dpDrag) return;
+  if (!_dpDrag || e.pointerId !== _dpDrag.pointerId) return;
+  if (e.buttons === 0) { _dpEndDrag(); return; } // slippet gikk tapt (f.eks. en kontekstmeny): ingen knapp er nede, så draget er over
   var dx = e.clientX - _dpDrag.x;
   if (_dpDrag.kind === 'panes') {
     var w = dragPaneWidths(_dpDrag.widths, _dpDrag.index, dx / _dpDrag.panesPx);
@@ -21594,6 +21594,7 @@ function _dpEndDrag() {
   dispatch('DOC_LAYOUT_SET', { layout: docLayout });
 }
 document.getElementById('dp-body').addEventListener('pointerdown', function(e) {
+  if (e.button !== 0) return; // bare venstre knapp drar; høyreklikk og andre knapper gjør ingenting
   var cs = e.target.closest('#dp-csplit');
   if (cs) { _dpStartDrag(e, cs, 'claims', 0); return; }
   var s = e.target.closest('[data-dp-split]');

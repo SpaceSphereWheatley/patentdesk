@@ -633,7 +633,6 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .dp-seg .dp-seg-btn:last-child  { border-radius: 0 var(--radius) var(--radius) 0; }
 .dp-claims-toggle { border-radius: var(--radius); }
 .dp-seg-btn[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-.dp-claims-toggle[aria-pressed="true"] { background: var(--surface); border-color: var(--border2); color: var(--text); }
 .dp-seg-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; position: relative; }
 
 .dp-notice { background: var(--notice-warn-bg); color: var(--notice-warn-text); border: 1px solid var(--badge-urgent-border);

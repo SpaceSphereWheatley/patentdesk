@@ -381,3 +381,32 @@ e2e('a11y: the tab does not point at a missing id and the dividers expose their 
   assert.ok(Number(await p.getAttribute('#dp-csplit', 'aria-valuenow')) >= 160);
   await s.close();
 });
+
+e2e('drag: only the left button drags, and a lost release ends the drag', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  const split = await p.locator('[data-dp-split="0"]').boundingBox();
+  const sx = split.x + split.width / 2, sy = split.y + 100;
+  await p.mouse.move(sx, sy);
+  await p.mouse.down({ button: 'right' });
+  assert.equal(await p.evaluate(() => document.getElementById('dp-body').classList.contains('is-dragging')), false, 'right button does not start a drag');
+  await p.mouse.up({ button: 'right' });
+  await p.mouse.down();
+  assert.equal(await p.evaluate(() => document.getElementById('dp-body').classList.contains('is-dragging')), true);
+  // the release is lost (e.g. swallowed by a context menu): the next move arrives with no button down
+  await p.evaluate(() => document.getElementById('dp-body').dispatchEvent(new PointerEvent('pointermove', { pointerId: _dpDrag.pointerId, buttons: 0, clientX: 10, clientY: 10, bubbles: true })));
+  assert.equal(await p.evaluate(() => document.getElementById('dp-body').classList.contains('is-dragging')), false, 'a move with no button down ends the drag');
+  await p.mouse.up();
+  await s.close();
+});
+
+e2e('import replace starts the case view fresh, like delete-all', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.selectOption('[data-dp-pick="0"]', { label: 'D1' });
+  const payload = await p.evaluate(() => JSON.parse(JSON.stringify(makeExportPayload())));
+  await p.evaluate((d) => dispatch('DATA_IMPORT', { data: d, mode: 'replace' }), payload);
+  assert.deepEqual(await p.evaluate(() => _dpManual), [null, null, null]);
+  assert.equal(await p.evaluate(() => _dpTab), 'overview');
+  await s.close();
+});

@@ -1015,6 +1015,7 @@ function _dispatch(action, payload) {
         Object.keys(sdWrite).forEach(function(id) { saveSakData(id, sdWrite[id]); });
       } else {
         cases = d.cases;
+        if (typeof dpReset === 'function') dpReset(); // saksvisningen starter på nytt, som etter «Slett alt»
         if (d.stats) stats = d.stats;
         saveCases(); saveStats();
         var sdAll = importSakDetailsToWrite(d.sakDetails, d.cases, 'replace');

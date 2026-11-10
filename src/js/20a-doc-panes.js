@@ -130,7 +130,6 @@ function _dpApplyLayout() {
   claims.style.width = l.claimsWidth + 'px';
   var tog = document.getElementById('dp-claims-toggle');
   tog.textContent = l.claimsVisible ? 'Skjul krav' : 'Vis krav';
-  tog.setAttribute('aria-pressed', l.claimsVisible ? 'true' : 'false');
   document.querySelectorAll('[data-dp-count]').forEach(function(b) {
     b.setAttribute('aria-pressed', Number(b.dataset.dpCount) === l.count ? 'true' : 'false');
   });
@@ -287,7 +286,7 @@ function _dpStartDrag(e, el, kind, index) {
   var body = document.getElementById('dp-body');
   var panes = document.getElementById('dp-panes');
   _dpDrag = {
-    kind: kind, index: index, x: e.clientX,
+    kind: kind, index: index, x: e.clientX, pointerId: e.pointerId,
     widths: _dpPaneWidths().slice(), claimsWidth: docLayout.claimsWidth,
     panesPx: panes.getBoundingClientRect().width || 1,
     el: el
@@ -298,7 +297,8 @@ function _dpStartDrag(e, el, kind, index) {
   e.preventDefault();
 }
 function _dpMoveDrag(e) {
-  if (!_dpDrag) return;
+  if (!_dpDrag || e.pointerId !== _dpDrag.pointerId) return;
+  if (e.buttons === 0) { _dpEndDrag(); return; } // slippet gikk tapt (f.eks. en kontekstmeny): ingen knapp er nede, så draget er over
   var dx = e.clientX - _dpDrag.x;
   if (_dpDrag.kind === 'panes') {
     var w = dragPaneWidths(_dpDrag.widths, _dpDrag.index, dx / _dpDrag.panesPx);
@@ -317,6 +317,7 @@ function _dpEndDrag() {
   dispatch('DOC_LAYOUT_SET', { layout: docLayout });
 }
 document.getElementById('dp-body').addEventListener('pointerdown', function(e) {
+  if (e.button !== 0) return; // bare venstre knapp drar; høyreklikk og andre knapper gjør ingenting
   var cs = e.target.closest('#dp-csplit');
   if (cs) { _dpStartDrag(e, cs, 'claims', 0); return; }
   var s = e.target.closest('[data-dp-split]');
