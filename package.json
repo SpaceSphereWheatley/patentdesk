@@ -8,6 +8,7 @@
     "lint:js": "eslint PatentDesk.html",
     "lint:html": "eslint --no-eslintrc -c .eslintrc-html.json PatentDesk.html",
     "test": "node --test test/*.test.js",
+    "test:quiet": "node --test --test-reporter=dot test/*.test.js",
     "coverage:functions": "node test/functionCoverage.js",
     "codemap": "node scripts/codemap.js"
   },

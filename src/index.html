@@ -1201,9 +1201,26 @@
           </section>
 
           <h2 class="medl-section-title">Hos medleser</h2>
-          <p class="medl-section-hint">Dine egne saker som er sendt til en kollega for medlesing. Send ut og hent tilbake fra ⋯-menyen på saken, eller hent tilbake her.</p>
-          <div id="medl-out-list" class="medl-out-list"></div>
-          <div class="table-empty" id="medl-out-empty">Ingen av sakene dine ligger ute hos en medleser.</div>
+          <p class="medl-section-hint">Alle gangene du har sendt en sak til en medleser. Send ut og hent tilbake fra ⋯-menyen på saken, eller hent tilbake her.</p>
+          <section class="table-section">
+            <div class="table-wrap" id="medl-out-list">
+              <table class="case-table" id="medl-out-table">
+                <thead>
+                  <tr>
+                    <th>Saksnummer</th>
+                    <th>Medleser</th>
+                    <th>Sendt</th>
+                    <th>Tilbake</th>
+                    <th>Tid</th>
+                    <th>Status</th>
+                    <th><span class="sr-only">Handling</span></th>
+                  </tr>
+                </thead>
+                <tbody id="medl-out-tbody"></tbody>
+              </table>
+              <div class="table-empty" id="medl-out-empty">Du har ikke sendt noen saker til medlesing ennå.</div>
+            </div>
+          </section>
         </div>
 
         <!-- Detalj -->

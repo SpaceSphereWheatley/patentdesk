@@ -390,17 +390,15 @@ function medlPillHtml(c) {
   return '<span class="medl-out-pill" title="' + esc('Hos medleser: ' + m.reader + ' · ' + _medlSinceTxt(m)) + '">Hos ' + esc(m.reader) + '</span>';
 }
 
-// Linjen på sakssiden, Oversikt og Medlesing. withCase: vis saksnummer og lenke.
-// withEdit: vis «Endre» (standard: bare når saksnummeret ikke vises).
-function medlOutHtml(entry, withCase, withEdit) {
-  if (withEdit === undefined) withEdit = !withCase;
+// Linjen på sakssiden og Oversikt. withCase: vis saksnummer og lenke.
+function medlOutHtml(entry, withCase) {
   return '<div class="medl-out" data-id="' + esc(entry.caseId) + '">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg>' +
     '<span class="medl-out-text">Hos medleser: ' +
       (withCase ? '<a href="#" class="medl-out-case" data-id="' + esc(entry.caseId) + '">' + esc(entry.caseNumber) + '</a> – ' : '') +
       '<strong>' + esc(entry.reader) + '</strong> · ' + esc(_medlSinceTxt(entry)) + '</span>' +
     '<span class="medl-out-actions">' +
-      (withEdit ? '<button class="s-btn btn-medl-send" data-id="' + esc(entry.caseId) + '">Endre</button>' : '') +
+      (withCase ? '' : '<button class="s-btn btn-medl-send" data-id="' + esc(entry.caseId) + '">Endre</button>') +
       '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + esc(entry.caseId) + '">Tilbake ✓</button>' +
     '</span></div>';
 }
@@ -413,15 +411,42 @@ function renderSakMedl(cas) {
   el.hidden = !m;
 }
 
-// Medlesing-siden: dine saker som ligger ute hos en medleser, med samme knapper som på Hjem.
+// Medlesing-siden: alle gangene du har sendt en sak til medlesing, som
+// «Jeg medleser» viser alt du har lest. Åpne rader har Endre og Tilbake ✓
+// (samme knapper som på Hjem); tilbakeleverte har ingen. Saksnummeret er en
+// lenke bare hvis saken fortsatt finnes. Returnerer antall som er ute nå.
 function renderMedlOutList() {
-  var el = document.getElementById('medl-out-list');
+  var tbody = document.getElementById('medl-out-tbody');
   var empty = document.getElementById('medl-out-empty');
-  if (!el) return 0;
-  var open = openMedlEntries(medlLog);
-  el.innerHTML = open.map(function(x) { return medlOutHtml(x, true, true); }).join('');
-  if (empty) empty.style.display = open.length ? 'none' : 'block';
-  return open.length;
+  var table = document.getElementById('medl-out-table');
+  if (!tbody) return 0;
+  var rows = medlHistoryRows(medlLog, todayStr());
+  tbody.innerHTML = rows.map(function(r) {
+    var exists = cases.some(function(c) { return c.id === r.caseId; });
+    var cn = exists
+      ? '<a href="#" class="medl-out-case" data-id="' + esc(r.caseId) + '">' + esc(r.caseNumber) + '</a>'
+      : esc(r.caseNumber);
+    var status = r.open
+      ? '<span class="medl-status-pill">Hos medleser</span>'
+      : '<span class="medl-status-pill medl-status-done">Tilbake</span>';
+    var actions = r.open
+      ? '<button class="s-btn btn-medl-send" data-id="' + esc(r.caseId) + '">Endre</button> ' +
+        '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + esc(r.caseId) + '">Tilbake ✓</button>'
+      : '';
+    return '<tr data-id="' + esc(r.caseId) + '" data-entry="' + esc(r.id) + '">' +
+      '<td class="case-no">' + cn +
+        '<div class="medl-note-cell">' + caseNoteHtml(cases.find(function(c) { return c.id === r.caseId; })) + '</div></td>' +
+      '<td>' + esc(r.reader) + '</td>' +
+      '<td class="medl-date-cell">' + esc(toDisplay(r.sent)) + '</td>' +
+      '<td class="medl-date-cell">' + (r.returned ? esc(toDisplay(r.returned)) : '—') + '</td>' +
+      '<td class="medl-date-cell">' + (r.days === null ? '—' : r.days + (r.days === 1 ? ' dag' : ' dager')) + '</td>' +
+      '<td>' + status + '</td>' +
+      '<td class="medl-out-actions-cell">' + actions + '</td>' +
+    '</tr>';
+  }).join('');
+  if (table) table.style.display = rows.length ? '' : 'none';
+  if (empty) empty.style.display = rows.length ? 'none' : 'block';
+  return rows.filter(function(r) { return r.open; }).length;
 }
 
 function renderHomeMedl() {

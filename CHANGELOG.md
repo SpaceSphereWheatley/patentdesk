@@ -6,15 +6,33 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Changed
+- **Popupen i tidslinjen dekker ikke lenger bjelkene.** Holder du over en
+  bjelke, ferie, rød dag eller et forfalt-bånd, vises teksten over tidslinjen
+  med en pil ned mot det du peker på. Er det ikke plass over, som når
+  tidslinjen står øverst på en saksliste, vises den under. Det samme gjelder
+  brikken som viser bufferen når du drar en bjelke.
+- **Popupen venter et halvt sekund.** Den vises ikke lenger med en gang du
+  fører musen over tidslinjen. Står en popup allerede, bytter den med en gang
+  når du går videre til neste bjelke. Med tastaturet vises den med en gang.
+
+## [4.62.0] - 2026-11-10
 ### Added
 - **Medlesing viser begge retninger.** Siden har to seksjoner: «Jeg medleser»
   (lesingene du gjør for andre, som før) og «Hos medleser» (dine egne saker som
-  ligger ute hos en kollega). Hver rad har saksnummer (lenke til saken),
-  medleser, hvor lenge den har ligget ute, **Endre** og **Tilbake ✓** — de
-  eldste står øverst. Antallet øverst viser også hvor mange som er ute, og
-  tallet ved «Medlesing» i menyen teller nå åpne lesinger pluss saker som er
-  ute. En sak som går til Fristarkiv eller Avsluttet forsvinner fra lista, som
-  på Hjem. Hjem beholder sin egen «Hos medleser»-blokk.
+  er sendt til en kollega). «Hos medleser» er en historikk, ikke bare det som
+  ligger ute nå: saksnummer (lenke til saken hvis den finnes), medleser, sendt,
+  tilbake, antall dager og status. Åpne utsendinger står øverst, eldst først, med
+  **Endre** og **Tilbake ✓**; de som er kommet tilbake står under, nyeste først.
+  En sak som går til Fristarkiv eller Avsluttet, eller slettes, regnes som
+  tilbake den dagen. Antallet øverst sier også hvor mange som er ute, og tallet
+  ved «Medlesing» i menyen teller åpne lesinger pluss saker som er ute. Hjem
+  beholder sin egen «Hos medleser»-blokk.
+- **Notater på Medlesing-siden.** Under saksnummeret i «Jeg medleser» står
+  lesingens eget notat, og i «Hos medleser» står sakens notat «Synlig i
+  oversikten». De interne notatene vises ikke. Teksten kuttes med «…», og hele
+  notatet står i verktøytipset. Notatene redigeres der de alltid har vært:
+  lesingens i detaljvisningen og sakens på saken.
 - **Arbeidsplan kan slås sammen på sakslistene.** Over tidslinjen på Ny,
   Viderebehandling, Fristarkiv og Oppdrag står nå «▾ Arbeidsplan», som på Hjem.
   Et klikk skjuler tidslinjen så lista får plassen. Valget huskes på tvers av
@@ -25,26 +43,23 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   linje.
 
 ### Changed
-- **Metalinjen viser bare felt med data.** Innlevert, Prioritet og Medlesing står
-  ikke lenger med «—» når de er tomme; de skjules. Bufferen vises bare når saken
-  har en egen verdi — standarden for sakstypen står ikke i hodet.
+- **Metalinjen i sakshodet viser bare felt med data.** Innlevert, Prioritet og
+  Medlesing står ikke lenger med «—» når de er tomme; de skjules. Bufferen vises
+  bare når saken har en egen verdi — standarden for sakstypen står ikke i hodet.
 - CPC-varselet på Hjem har fått luft under seg, så det ikke ligger tett mot
   «Oversikt».
-- **Popupen i tidslinjen dekker ikke lenger bjelkene.** Holder du over en
-  bjelke, ferie, rød dag eller et forfalt-bånd, vises teksten over tidslinjen
-  med en pil ned mot det du peker på. Er det ikke plass over, som når
-  tidslinjen står øverst på en saksliste, vises den under. Det samme gjelder
-  brikken som viser bufferen når du drar en bjelke.
-- **Popupen venter et halvt sekund.** Den vises ikke lenger med en gang du
-  fører musen over tidslinjen. Står en popup allerede, bytter den med en gang
-  når du går videre til neste bjelke. Med tastaturet vises den med en gang.
+- Testkommandoer for utviklingsøkter: `npm run test:quiet` gir en kort
+  utskrift (feilkode og full detalj bare ved feil), og lint kjøres uten rør slik
+  at en feil ikke skjules. `npm test` er uendret for CI.
 
 ### Fixed
 - **Fristblokken står på én grunnlinje.** «DIN FRIST», datoen, nedtellingen,
   «Faktisk frist …» og forklaringen til høyre ble sentrert hver for seg og lå
   opptil 5 px skjevt. Raden er nå justert på felles tekstlinje.
-- **Skjermleser-navn på tre symbolknapper.** «Tøm filter» (✕) og årspilene (‹ ›)
-  på Statistikk har fått `aria-label`, ikke bare `title`.
+- **Skjermleser-navn på symbolknapper.** «Tøm filter» (✕), årspilene (‹ ›) på
+  Statistikk og kolonnen med knapper i «Hos medleser» har fått navn for
+  skjermlesere, ikke bare `title`.
+- «Tid» i «Hos medleser» viser «—» ved ugyldig dato og aldri negative dager.
 
 ## [4.61.0] - 2026-11-10
 ### Changed

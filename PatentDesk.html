@@ -1713,7 +1713,16 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 /* Medlesing-siden: to seksjoner, «Jeg medleser» og «Hos medleser» */
 .medl-section-title { margin: var(--space-7) 0 var(--space-3); font-size: var(--text-md); font-weight: var(--weight-semibold); }
 .medl-section-hint  { margin: 0 0 var(--space-4); font-size: var(--text-sm); color: var(--muted-text); }
-.medl-out-list      { display: flex; flex-direction: column; gap: var(--space-2); }
+.medl-out-actions-cell { text-align: right; white-space: nowrap; }
+#medl-out-tbody .medl-out-case { color: inherit; }
+.medl-note-cell { margin-top: 2px; }
+.medl-note-cell .case-note { width: 100%; max-width: 360px; font-weight: var(--weight-regular); letter-spacing: 0; }
+/* Medlesing-tabellene: den skjulte «Handling»-teksten (.sr-only) er absolutt posisjonert.
+   Uten en posisjonert celle ligger dens containing block utenfor .table-wrap, så
+   overflow-x der klipper den ikke og siden får vannrett rulling. */
+#view-medlesing .case-table th { position: relative; }
+/* Notatet skal ikke styre kolonnebredden på trange skjermer; knappene skal ikke skyves lenger ut. */
+@media (max-width: 1100px) { .medl-note-cell .case-note { max-width: 140px; } }
 /* ── 26. Kortlayout for sakslister ────────────────── */
 .case-list          { display: flex; flex-direction: column; gap: var(--space-2); animation: fadeUp var(--dur-slowest) ease both; margin-top: var(--space-5); }
 
@@ -4520,9 +4529,26 @@ button.ob-del:hover { color: var(--text-on-no); }
           </section>
 
           <h2 class="medl-section-title">Hos medleser</h2>
-          <p class="medl-section-hint">Dine egne saker som er sendt til en kollega for medlesing. Send ut og hent tilbake fra ⋯-menyen på saken, eller hent tilbake her.</p>
-          <div id="medl-out-list" class="medl-out-list"></div>
-          <div class="table-empty" id="medl-out-empty">Ingen av sakene dine ligger ute hos en medleser.</div>
+          <p class="medl-section-hint">Alle gangene du har sendt en sak til en medleser. Send ut og hent tilbake fra ⋯-menyen på saken, eller hent tilbake her.</p>
+          <section class="table-section">
+            <div class="table-wrap" id="medl-out-list">
+              <table class="case-table" id="medl-out-table">
+                <thead>
+                  <tr>
+                    <th>Saksnummer</th>
+                    <th>Medleser</th>
+                    <th>Sendt</th>
+                    <th>Tilbake</th>
+                    <th>Tid</th>
+                    <th>Status</th>
+                    <th><span class="sr-only">Handling</span></th>
+                  </tr>
+                </thead>
+                <tbody id="medl-out-tbody"></tbody>
+              </table>
+              <div class="table-empty" id="medl-out-empty">Du har ikke sendt noen saker til medlesing ennå.</div>
+            </div>
+          </section>
         </div>
 
         <!-- Detalj -->
@@ -5216,7 +5242,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.61.0';
+var APP_VERSION    = 'v4.62.0';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -7351,6 +7377,24 @@ function normalizeMedlLog(raw) {
 function openMedlEntries(log) {
   return (Array.isArray(log) ? log : []).filter(function(x) { return !x.returned; }).sort(function(a, b) {
     return a.sent < b.sent ? -1 : a.sent > b.sent ? 1 : String(a.caseNumber).localeCompare(String(b.caseNumber));
+  });
+}
+
+// Hele historikken for Medlesing-siden: åpne utsendinger først (den som har
+// ligget lengst øverst), så de som er kommet tilbake, nyeste først. days er
+// tid hos medleser: sendt til tilbake, eller sendt til i dag for en åpen.
+// Rene funksjoner — se test/medlesingBothWays.test.js.
+function medlHistoryRows(log, today) {
+  return (Array.isArray(log) ? log : []).map(function(x) {
+    var open = !x.returned;
+    var d = daysBetweenIso(x.sent, open ? today : x.returned);
+    // Ugyldig dato gir null (vises som «—»); en dato frem i tid gir 0, ikke negativt.
+    return Object.assign({}, x, { open: open, days: isFinite(d) ? Math.max(0, d) : null });
+  }).sort(function(a, b) {
+    if (a.open !== b.open) return a.open ? -1 : 1;
+    if (a.open) return a.sent < b.sent ? -1 : a.sent > b.sent ? 1 : String(a.caseNumber).localeCompare(String(b.caseNumber));
+    if (a.returned !== b.returned) return a.returned < b.returned ? 1 : -1;
+    return a.sent < b.sent ? 1 : a.sent > b.sent ? -1 : 0;
   });
 }
 
@@ -10661,17 +10705,15 @@ function medlPillHtml(c) {
   return '<span class="medl-out-pill" title="' + esc('Hos medleser: ' + m.reader + ' · ' + _medlSinceTxt(m)) + '">Hos ' + esc(m.reader) + '</span>';
 }
 
-// Linjen på sakssiden, Oversikt og Medlesing. withCase: vis saksnummer og lenke.
-// withEdit: vis «Endre» (standard: bare når saksnummeret ikke vises).
-function medlOutHtml(entry, withCase, withEdit) {
-  if (withEdit === undefined) withEdit = !withCase;
+// Linjen på sakssiden og Oversikt. withCase: vis saksnummer og lenke.
+function medlOutHtml(entry, withCase) {
   return '<div class="medl-out" data-id="' + esc(entry.caseId) + '">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg>' +
     '<span class="medl-out-text">Hos medleser: ' +
       (withCase ? '<a href="#" class="medl-out-case" data-id="' + esc(entry.caseId) + '">' + esc(entry.caseNumber) + '</a> – ' : '') +
       '<strong>' + esc(entry.reader) + '</strong> · ' + esc(_medlSinceTxt(entry)) + '</span>' +
     '<span class="medl-out-actions">' +
-      (withEdit ? '<button class="s-btn btn-medl-send" data-id="' + esc(entry.caseId) + '">Endre</button>' : '') +
+      (withCase ? '' : '<button class="s-btn btn-medl-send" data-id="' + esc(entry.caseId) + '">Endre</button>') +
       '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + esc(entry.caseId) + '">Tilbake ✓</button>' +
     '</span></div>';
 }
@@ -10684,15 +10726,42 @@ function renderSakMedl(cas) {
   el.hidden = !m;
 }
 
-// Medlesing-siden: dine saker som ligger ute hos en medleser, med samme knapper som på Hjem.
+// Medlesing-siden: alle gangene du har sendt en sak til medlesing, som
+// «Jeg medleser» viser alt du har lest. Åpne rader har Endre og Tilbake ✓
+// (samme knapper som på Hjem); tilbakeleverte har ingen. Saksnummeret er en
+// lenke bare hvis saken fortsatt finnes. Returnerer antall som er ute nå.
 function renderMedlOutList() {
-  var el = document.getElementById('medl-out-list');
+  var tbody = document.getElementById('medl-out-tbody');
   var empty = document.getElementById('medl-out-empty');
-  if (!el) return 0;
-  var open = openMedlEntries(medlLog);
-  el.innerHTML = open.map(function(x) { return medlOutHtml(x, true, true); }).join('');
-  if (empty) empty.style.display = open.length ? 'none' : 'block';
-  return open.length;
+  var table = document.getElementById('medl-out-table');
+  if (!tbody) return 0;
+  var rows = medlHistoryRows(medlLog, todayStr());
+  tbody.innerHTML = rows.map(function(r) {
+    var exists = cases.some(function(c) { return c.id === r.caseId; });
+    var cn = exists
+      ? '<a href="#" class="medl-out-case" data-id="' + esc(r.caseId) + '">' + esc(r.caseNumber) + '</a>'
+      : esc(r.caseNumber);
+    var status = r.open
+      ? '<span class="medl-status-pill">Hos medleser</span>'
+      : '<span class="medl-status-pill medl-status-done">Tilbake</span>';
+    var actions = r.open
+      ? '<button class="s-btn btn-medl-send" data-id="' + esc(r.caseId) + '">Endre</button> ' +
+        '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + esc(r.caseId) + '">Tilbake ✓</button>'
+      : '';
+    return '<tr data-id="' + esc(r.caseId) + '" data-entry="' + esc(r.id) + '">' +
+      '<td class="case-no">' + cn +
+        '<div class="medl-note-cell">' + caseNoteHtml(cases.find(function(c) { return c.id === r.caseId; })) + '</div></td>' +
+      '<td>' + esc(r.reader) + '</td>' +
+      '<td class="medl-date-cell">' + esc(toDisplay(r.sent)) + '</td>' +
+      '<td class="medl-date-cell">' + (r.returned ? esc(toDisplay(r.returned)) : '—') + '</td>' +
+      '<td class="medl-date-cell">' + (r.days === null ? '—' : r.days + (r.days === 1 ? ' dag' : ' dager')) + '</td>' +
+      '<td>' + status + '</td>' +
+      '<td class="medl-out-actions-cell">' + actions + '</td>' +
+    '</tr>';
+  }).join('');
+  if (table) table.style.display = rows.length ? '' : 'none';
+  if (empty) empty.style.display = rows.length ? 'none' : 'block';
+  return rows.filter(function(r) { return r.open; }).length;
 }
 
 function renderHomeMedl() {
@@ -14330,7 +14399,10 @@ function renderMedlesingList() {
     var prog = medlesingProgress(medlesingTemplateFor(rec.type), rec.checklist);
     var pct = prog.total ? Math.round(prog.checked / prog.total * 100) : 0;
     return '<tr class="medl-row" data-id="' + rec.id + '">' +
-      '<td class="case-no">' + esc(rec.caseNumber) + '</td>' +
+      // Lesingens eget notat (redigeres i detaljvisningen) står under saksnummeret;
+      // caseNoteHtml tar {notes}.
+      '<td class="case-no">' + esc(rec.caseNumber) +
+        '<div class="medl-note-cell">' + caseNoteHtml({ notes: rec.notat }) + '</div></td>' +
       '<td>' + esc(rec.saksbehandler) + '</td>' +
       '<td><span class="medl-type-pill medl-type-' + rec.type + '">' + _medlesingTypeLabel(rec.type) + '</span></td>' +
       '<td class="medl-date-cell">' + esc(toDisplay(rec.date)) + '</td>' +
