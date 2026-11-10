@@ -497,6 +497,8 @@ document.getElementById('search-backdrop').addEventListener('click', function(e)
 var UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/src/js/01-config-templates.js';
 var UPDATE_FILE_URL = 'https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/PatentDesk.html';
 var UPDATE_DOWNLOAD_URL = 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/PatentDesk.html';
+// Endringsloggen på main. Samme adresse står som fast lenke i menyfoten (index.html).
+var CHANGELOG_URL = 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md';
 var UPDATE_TIMEOUT_MS = 8000;
 var UPDATE_DOWNLOAD_TIMEOUT_MS = 30000;
 
@@ -579,9 +581,9 @@ function saveAppFile(text) {
   setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
 }
 
-function githubLink() {
+function githubLink(href) {
   var a = document.createElement('a');
-  a.href = UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  a.href = href || UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
   return a;
 }
 
@@ -629,6 +631,10 @@ function renderUpdateStatus(el, result, fetchFn, btn) {
       startUpdateDownload(el, fetchFn, result.remote, btn);
     };
     el.appendChild(a);
+    el.appendChild(document.createTextNode(' · '));
+    var log = githubLink(CHANGELOG_URL);
+    log.textContent = 'Hva er nytt';
+    el.appendChild(log);
   } else if (result.kind === 'current') {
     el.textContent = 'Du har nyeste versjon';
   } else {

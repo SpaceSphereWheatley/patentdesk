@@ -249,6 +249,8 @@ body {
 .upd-btn:hover:not(:disabled) { color: var(--primary); }
 .upd-btn:disabled { cursor: default; opacity: 0.6; }
 .upd-btn .ti { width: 0.9em; height: 0.9em; }
+.changelog-link { text-decoration: none; }
+.changelog-link:hover { color: var(--primary); }
 .upd-status { font-size: var(--text-2xs); color: var(--muted-text); line-height: 1.4; text-align: center; }
 .upd-status:empty { display: none; }
 .upd-status a { color: var(--primary); font-weight: var(--weight-medium); }
@@ -3405,6 +3407,10 @@ button.ob-del:hover { color: var(--text-on-no); }
         <div class="drawer-date" id="current-date"></div>
         <a class="nipo-badge nipo-link" href="https://www.patentstyret.no" target="_blank" rel="noopener">Patentstyret</a>
         <span class="drawer-version logo-version"></span>
+        <a class="upd-btn changelog-link" href="https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
+          <svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg>
+          Endringslogg
+        </a>
         <button type="button" class="upd-btn" id="btn-check-update">
           <svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg>
           Se etter oppdatering
@@ -5112,7 +5118,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.60.0';
+var APP_VERSION    = 'v4.60.1';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -18539,6 +18545,8 @@ document.getElementById('search-backdrop').addEventListener('click', function(e)
 var UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/src/js/01-config-templates.js';
 var UPDATE_FILE_URL = 'https://raw.githubusercontent.com/SpaceSphereWheatley/patentdesk/main/PatentDesk.html';
 var UPDATE_DOWNLOAD_URL = 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/PatentDesk.html';
+// Endringsloggen på main. Samme adresse står som fast lenke i menyfoten (index.html).
+var CHANGELOG_URL = 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md';
 var UPDATE_TIMEOUT_MS = 8000;
 var UPDATE_DOWNLOAD_TIMEOUT_MS = 30000;
 
@@ -18621,9 +18629,9 @@ function saveAppFile(text) {
   setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
 }
 
-function githubLink() {
+function githubLink(href) {
   var a = document.createElement('a');
-  a.href = UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  a.href = href || UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
   return a;
 }
 
@@ -18671,6 +18679,10 @@ function renderUpdateStatus(el, result, fetchFn, btn) {
       startUpdateDownload(el, fetchFn, result.remote, btn);
     };
     el.appendChild(a);
+    el.appendChild(document.createTextNode(' · '));
+    var log = githubLink(CHANGELOG_URL);
+    log.textContent = 'Hva er nytt';
+    el.appendChild(log);
   } else if (result.kind === 'current') {
     el.textContent = 'Du har nyeste versjon';
   } else {

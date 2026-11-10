@@ -54,6 +54,8 @@
 .upd-btn:hover:not(:disabled) { color: var(--primary); }
 .upd-btn:disabled { cursor: default; opacity: 0.6; }
 .upd-btn .ti { width: 0.9em; height: 0.9em; }
+.changelog-link { text-decoration: none; }
+.changelog-link:hover { color: var(--primary); }
 .upd-status { font-size: var(--text-2xs); color: var(--muted-text); line-height: 1.4; text-align: center; }
 .upd-status:empty { display: none; }
 .upd-status a { color: var(--primary); font-weight: var(--weight-medium); }

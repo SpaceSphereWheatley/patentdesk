@@ -7,6 +7,13 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.60.1] - 2026-11-10
+### Added
+- **Endringslogg fra appen.** Lenken «Endringslogg» i menyfoten, under
+  versjonsnummeret, åpner endringsloggen på GitHub i en ny fane. Finner
+  «Se etter oppdatering» en ny versjon, står det også «Hva er nytt» ved siden
+  av «Last ned».
+
 ## [4.60.0] - 2026-11-09
 ### Added
 - **Eget navn på saksdokumenter.** Blyanten i dokumentlisten har nå to felt:

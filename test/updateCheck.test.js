@@ -16,7 +16,7 @@ const document = {
 const sandboxGlobals = { APP_VERSION: 'v4.54.0', document, setTimeout, clearTimeout, AbortController, Promise };
 const { compareVersions, parseRemoteVersion, runUpdateCheck, renderUpdateStatus, startUpdateCheck, wireUpdateCheck } = loadFunctions(
   ['compareVersions', 'parseRemoteVersion', 'fetchTextWithTimeout', 'runUpdateCheck', 'renderUpdateStatus', 'startUpdateCheck', 'wireUpdateCheck', 'githubLink'],
-  { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_TIMEOUT_MS'], globals: sandboxGlobals }
+  { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'CHANGELOG_URL', 'UPDATE_TIMEOUT_MS'], globals: sandboxGlobals }
 );
 
 test('every check asks for a fresh copy past CDN and proxy caches (?t=<now>)', async () => {
@@ -107,6 +107,23 @@ test('renderUpdateStatus shows the right text per kind, with the download link o
   assert.strictEqual(el.className, 'upd-status upd-error');
 });
 
+test('renderUpdateStatus: ny versjon gir også en «Hva er nytt»-lenke til endringsloggen på GitHub', () => {
+  const el = makeEl();
+  renderUpdateStatus(el, { kind: 'new', remote: 'v4.61.0' });
+  const a = el.children[el.children.length - 1];
+  assert.strictEqual(a.href, 'https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md');
+  assert.strictEqual(a.textContent, 'Hva er nytt');
+  assert.strictEqual(a.target, '_blank');
+  assert.strictEqual(a.rel, 'noopener noreferrer');
+  assert.strictEqual(a.onclick, undefined, 'endringslogg-lenken laster ikke ned noe');
+
+  for (const kind of ['current', 'error']) {
+    const e = makeEl();
+    renderUpdateStatus(e, { kind });
+    assert.strictEqual(e.children.length, 0);
+  }
+});
+
 test('startUpdateCheck locks the button while checking, ignores a second click, and unlocks after success and error', async () => {
   const btn = { disabled: false }, out = makeEl();
   let calls = 0, release;
@@ -137,7 +154,7 @@ test('the check touches no storage: a successful check still reports "new"', asy
   const boom = new Proxy({}, { get() { throw new Error('storage touched'); } });
   const g = Object.assign({}, sandboxGlobals, { localStorage: boom, indexedDB: boom });
   const f = loadFunctions(['compareVersions', 'parseRemoteVersion', 'fetchTextWithTimeout', 'runUpdateCheck', 'renderUpdateStatus', 'startUpdateCheck', 'githubLink'],
-    { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_TIMEOUT_MS'], globals: g });
+    { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'CHANGELOG_URL', 'UPDATE_TIMEOUT_MS'], globals: g });
   const btn = { disabled: false }, out = makeEl();
   const r = await f.startUpdateCheck(btn, out, okFetch("var APP_VERSION = 'v4.55.0';"));
   assert.strictEqual(r.kind, 'new'); // a storage access would be swallowed into 'error'
@@ -181,7 +198,7 @@ function dlSandbox(extra) {
   const f = loadFunctions(
     ['compareVersions', 'parseRemoteVersion', 'fetchTextWithTimeout', 'runUpdateCheck', 'isPatentDeskFile',
      'runUpdateDownload', 'saveAppFile', 'startUpdateDownload', 'renderUpdateStatus', 'startUpdateCheck', 'githubLink'],
-    { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'UPDATE_FILE_URL', 'UPDATE_TIMEOUT_MS', 'UPDATE_DOWNLOAD_TIMEOUT_MS'], globals: g });
+    { vars: ['UPDATE_CHECK_URL', 'UPDATE_DOWNLOAD_URL', 'CHANGELOG_URL', 'UPDATE_FILE_URL', 'UPDATE_TIMEOUT_MS', 'UPDATE_DOWNLOAD_TIMEOUT_MS'], globals: g });
   return { f, saved, clicks };
 }
 
