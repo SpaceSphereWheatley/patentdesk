@@ -6,6 +6,10 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.62.1] - 2026-11-10
+Popupen i tidslinjen dekker ikke lenger bjelkene og blafrer ikke.
+
 ### Changed
 - **Popupen i tidslinjen dekker ikke lenger bjelkene.** Holder du over en
   bjelke, ferie, rød dag eller et forfalt-bånd, vises teksten over tidslinjen
