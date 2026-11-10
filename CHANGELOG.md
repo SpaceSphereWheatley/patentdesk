@@ -21,6 +21,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   «Oversikt».
 
 ### Fixed
+- **Fristblokken står på én grunnlinje.** «DIN FRIST», datoen, nedtellingen,
+  «Faktisk frist …» og forklaringen til høyre ble sentrert hver for seg og lå
+  opptil 5 px skjevt. Raden er nå justert på felles tekstlinje.
 - **Skjermleser-navn på tre symbolknapper.** «Tøm filter» (✕) og årspilene (‹ ›)
   på Statistikk har fått `aria-label`, ikke bare `title`.
 
