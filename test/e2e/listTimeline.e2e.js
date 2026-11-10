@@ -26,18 +26,20 @@ const mk = (id, n, status, due, type) => ({
   type: type || 'sak', duration: type === 'oppdrag' ? 3 : null, caseBuffer: null
 });
 
+// Seeder med evaluate + reload, ikke addInitScript: init-skriptet leser noen
+// ganger tom localStorage ved reload på file:// og seeder da på nytt, så
+// «huskes etter reload» kunne ikke testes.
 async function openApp(cases) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.addInitScript((cs) => {
-    if (sessionStorage.getItem('__seeded')) return;
-    sessionStorage.setItem('__seeded', '1');
+  await page.goto(APP_URL);
+  await page.evaluate((cs) => {
     localStorage.clear();
     localStorage.setItem('pt_onboarding_completed', '1');
     localStorage.setItem('pt_schema_version', '7');
     localStorage.setItem('pt_cases', cs);
   }, JSON.stringify(cases));
-  await page.goto(APP_URL);
+  await page.reload();
   await page.waitForTimeout(200);
   return { page, close: () => ctx.close() };
 }

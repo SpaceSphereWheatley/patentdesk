@@ -579,3 +579,9 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .dp-day-sel         { background: var(--primary); color: var(--dp-sel-text) !important; font-weight: var(--weight-bold); }
 .dp-day-sel:hover   { background: var(--primary); }
 
+
+/* Medlesing-siden: to seksjoner, «Jeg medleser» og «Hos medleser» */
+.medl-section-title { margin: var(--space-7) 0 var(--space-3); font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.medl-section-hint  { margin: 0 0 var(--space-4); font-size: var(--text-sm); color: var(--muted-text); }
+.medl-out-list      { display: flex; flex-direction: column; gap: var(--space-2); }
+#medl-count + .medl-section-title { margin-top: 0; }

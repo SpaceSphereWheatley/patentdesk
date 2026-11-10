@@ -946,7 +946,9 @@ function renderMedlesingList() {
   document.getElementById('medl-detail-view').style.display = 'none';
 
   var sorted = medlesing.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
-  document.getElementById('medl-count').textContent = sorted.length + ' medlesing' + (sorted.length !== 1 ? 'er' : '');
+  var outCount = renderMedlOutList();
+  document.getElementById('medl-count').textContent = sorted.length + ' medlesing' + (sorted.length !== 1 ? 'er' : '') +
+    (outCount ? ' · ' + outCount + ' ute hos medleser' : '');
   document.getElementById('medl-empty').style.display = sorted.length ? 'none' : 'block';
 
   document.getElementById('medl-tbody').innerHTML = sorted.map(function(rec) {

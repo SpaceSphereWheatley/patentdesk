@@ -527,6 +527,21 @@ function normalizeMedlLog(raw) {
   });
 }
 
+// Åpne utsendinger, eldst først (den som har ventet lengst står øverst), så
+// saksnummer. Lager en ny liste; loggen røres ikke. Brukt av Medlesing-siden.
+function openMedlEntries(log) {
+  return (Array.isArray(log) ? log : []).filter(function(x) { return !x.returned; }).sort(function(a, b) {
+    return a.sent < b.sent ? -1 : a.sent > b.sent ? 1 : String(a.caseNumber).localeCompare(String(b.caseNumber));
+  });
+}
+
+// Tallet ved «Medlesing» i menyen: alt som er åpent i begge retninger —
+// lesinger du selv gjør for andre og dine saker som ligger ute hos en medleser.
+function medlNavCount(readings, log) {
+  var reading = (Array.isArray(readings) ? readings : []).filter(function(m) { return !m.completed; }).length;
+  return reading + openMedlEntries(log).length;
+}
+
 function openMedlFor(log, caseId) {
   return log.find(function(x) { return x.caseId === caseId && !x.returned; }) || null;
 }

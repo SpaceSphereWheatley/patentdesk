@@ -7,6 +7,14 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 ### Added
+- **Medlesing viser begge retninger.** Siden har to seksjoner: «Jeg medleser»
+  (lesingene du gjør for andre, som før) og «Hos medleser» (dine egne saker som
+  ligger ute hos en kollega). Hver rad har saksnummer (lenke til saken),
+  medleser, hvor lenge den har ligget ute, **Endre** og **Tilbake ✓** — de
+  eldste står øverst. Antallet øverst viser også hvor mange som er ute, og
+  tallet ved «Medlesing» i menyen teller nå åpne lesinger pluss saker som er
+  ute. En sak som går til Fristarkiv eller Avsluttet forsvinner fra lista, som
+  på Hjem. Hjem beholder sin egen «Hos medleser»-blokk.
 - **Arbeidsplan kan slås sammen på sakslistene.** Over tidslinjen på Ny,
   Viderebehandling, Fristarkiv og Oppdrag står nå «▾ Arbeidsplan», som på Hjem.
   Et klikk skjuler tidslinjen så lista får plassen. Valget huskes på tvers av
