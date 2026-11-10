@@ -62,54 +62,82 @@ async function openApp(cases, log, readings) {
   return { page, close: () => ctx.close() };
 }
 
-e2e('AC1: open sendings show under «Hos medleser», returned ones do not; oldest first', async () => {
+const rowsOf = (page) => page.locator('#medl-out-tbody tr').allTextContents();
+
+e2e('AC1: all sendings show, open first (oldest first), then returned (newest first)', async () => {
   const { page, close } = await openApp(CASES, LOG, READINGS);
-  const rows = await page.locator('#medl-out-list .medl-out').allTextContents();
-  assert.equal(rows.length, 2);
-  assert.match(rows[0], /20250871.*Ola/s);     // sent 2026-11-01, oldest first
-  assert.match(rows[1], /20261235.*Kari/s);
-  assert.ok(!(await page.locator('#medl-out-list').textContent()).includes('Per'));
+  const rows = await rowsOf(page);
+  assert.equal(rows.length, 3);
+  assert.match(rows[0], /20250871.*Ola/s);     // open, sent 2026-11-01 (oldest open)
+  assert.match(rows[1], /20261235.*Kari/s);    // open, sent 2026-11-03
+  assert.match(rows[2], /20240412.*Per/s);     // returned
+  assert.match(rows[0], /Hos medleser/);
+  assert.match(rows[2], /Tilbake/);
+  // returned rows have no action buttons, open rows have both
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="c"] button').count(), 0);
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="a"] .btn-medl-return').count(), 1);
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="a"] .btn-medl-send').count(), 1);
   // the existing section is still there
   assert.equal(await page.locator('#medl-tbody tr').count(), 2);
   await close();
 });
 
-e2e('AC2: a case that moves to Fristarkiv or Avsluttet drops out of the section', async () => {
+e2e('AC1b: days are shown: sent-to-returned for returned, so-far for open', async () => {
+  const { page, close } = await openApp(CASES, LOG, READINGS);
+  assert.match(await page.locator('#medl-out-tbody tr[data-id="c"]').textContent(), /5 dager/);   // 10-20 -> 10-25
+  assert.match(await page.locator('#medl-out-tbody tr[data-id="b"]').textContent(), /\d+ dager/);
+  await close();
+});
+
+e2e('AC2: a case that moves to Fristarkiv or Avsluttet becomes a returned row and loses its buttons', async () => {
   const { page, close } = await openApp(CASES, LOG, READINGS);
   await page.evaluate(() => { cases.find((c) => c.id === 'a').status = 'fristarkiv'; render(); });
-  assert.equal(await page.locator('#medl-out-list .medl-out').count(), 1);
+  assert.equal(await page.locator('#medl-out-tbody tr').count(), 3);                    // still listed
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="a"] button').count(), 0); // closed
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="b"] .btn-medl-return').count(), 1);
   await page.evaluate(() => { cases.find((c) => c.id === 'b').status = 'avsluttet'; render(); });
-  assert.equal(await page.locator('#medl-out-list .medl-out').count(), 0);
-  assert.equal(await page.locator('#medl-out-empty').isVisible(), true);
+  assert.equal(await page.locator('#medl-out-tbody .btn-medl-return').count(), 0);
+  assert.equal(await page.locator('#medl-out-empty').isVisible(), false);                // history is not empty
+  assert.match(await page.locator('#medl-count').textContent(), /^2 medlesinger$/);        // none out any more
   await close();
 });
 
 e2e('AC3: Viderebehandling is shown like Ny', async () => {
   const { page, close } = await openApp(CASES, LOG, READINGS);
-  assert.equal(await page.locator('#medl-out-list .medl-out[data-id="b"]').count(), 1);
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="b"] .btn-medl-return').count(), 1);
   await close();
 });
 
-e2e('AC4: empty sections show their own empty state and nothing throws', async () => {
+e2e('AC4: no sendings ever -> empty state; nothing throws', async () => {
   const errors = [];
   const { page, close } = await openApp([], [], []);
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.evaluate(() => render());
   assert.equal(await page.locator('#medl-empty').isVisible(), true);
   assert.equal(await page.locator('#medl-out-empty').isVisible(), true);
-  assert.equal(await page.locator('#medl-out-list .medl-out').count(), 0);
+  assert.equal(await page.locator('#medl-out-tbody tr').count(), 0);
   assert.deepEqual(errors, []);
   await close();
 });
 
-e2e('AC5: Tilbake ✓ and Endre work from the page, the menu count follows', async () => {
+e2e('AC4b: only returned sendings -> history shown, no empty state', async () => {
+  const { page, close } = await openApp(CASES, [LOG[2]], []);
+  assert.equal(await page.locator('#medl-out-tbody tr').count(), 1);
+  assert.equal(await page.locator('#medl-out-empty').isVisible(), false);
+  await close();
+});
+
+e2e('AC5: Tilbake moves the row down (not away) and the menu count follows; Endre opens the dialog', async () => {
   const { page, close } = await openApp(CASES, LOG, READINGS);
   const badge = () => page.locator('.nav-tab[data-page="medlesing"] .nav-count').textContent();
   assert.equal(await badge(), '3');                 // 1 open reading + 2 open sendings
-  await page.locator('#medl-out-list .medl-out[data-id="b"] .btn-medl-return').click();
-  assert.equal(await page.locator('#medl-out-list .medl-out').count(), 1);
+  await page.locator('#medl-out-tbody tr[data-id="b"] .btn-medl-return').click();
+  assert.equal(await page.locator('#medl-out-tbody tr').count(), 3);
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="b"] button').count(), 0);
+  const order = await page.locator('#medl-out-tbody tr').evaluateAll((trs) => trs.map((t) => t.dataset.id));
+  assert.equal(order[0], 'a');                      // the only open one stays first
   assert.equal(await badge(), '2');
-  await page.locator('#medl-out-list .medl-out[data-id="a"] .btn-medl-send').click();
+  await page.locator('#medl-out-tbody tr[data-id="a"] .btn-medl-send').click();
   assert.equal(await page.locator('#medl-send-backdrop').evaluate((el) => el.classList.contains('open')), true);
   await close();
 });
@@ -117,14 +145,17 @@ e2e('AC5: Tilbake ✓ and Endre work from the page, the menu count follows', asy
 e2e('AC6: case number and reader name are escaped', async () => {
   const log = [{ id: 'x', caseId: 'a', caseNumber: '<img src=x onerror="window.__pwned=1">', reader: '<b>Kari</b>', sent: '2026-11-03', returned: null }];
   const { page, close } = await openApp(CASES, log, []);
-  assert.equal(await page.locator('#medl-out-list img, #medl-out-list b').count(), 0);
+  assert.equal(await page.locator('#medl-out-tbody img, #medl-out-tbody b').count(), 0);
   assert.equal(await page.evaluate(() => window.__pwned), undefined);
   await close();
 });
 
-e2e('the case-number link opens the case', async () => {
-  const { page, close } = await openApp(CASES, LOG, READINGS);
-  await page.locator('#medl-out-list .medl-out-case[data-id="a"]').click();
+e2e('the case-number link opens the case; a deleted case shows without a link', async () => {
+  const gone = { id: 'g', caseId: 'deleted', caseNumber: '20111111', reader: 'Per', sent: '2026-09-01', returned: '2026-09-04' };
+  const { page, close } = await openApp(CASES, LOG.concat([gone]), READINGS);
+  assert.equal(await page.locator('#medl-out-tbody tr[data-id="deleted"] .medl-out-case').count(), 0);
+  assert.match(await page.locator('#medl-out-tbody tr[data-id="deleted"]').textContent(), /20111111/);
+  await page.locator('#medl-out-tbody .medl-out-case[data-id="a"]').click();
   await page.waitForTimeout(150);
   assert.equal(await page.evaluate(() => activePage), 'sak');
   await close();
