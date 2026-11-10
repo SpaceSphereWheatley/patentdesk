@@ -20508,6 +20508,11 @@ function applyTimelineLink(id, force) {
   document.addEventListener('focusout', function(e) {
     if (e.target.closest && e.target.closest('.tl-bar')) handleLeave();
   });
+  // Popupen står fast i vinduet; scrolles siden eller tidslinjen, ville den
+  // blitt stående igjen mens sporet flytter seg. Skjul den til neste musebevegelse.
+  document.addEventListener('scroll', function() {
+    if (visibleFor || pendingFor) handleLeave();
+  }, true);
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     var el = e.target.closest && e.target.closest('.tl-bar');

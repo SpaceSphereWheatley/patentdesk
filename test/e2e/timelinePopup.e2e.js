@@ -1,6 +1,8 @@
 'use strict';
 // Browser tests for the timeline popup: placed at the track (above, else
 // below), so it never covers the bars, and shown after half a second.
+// Time is driven by Playwright's clock (page.clock.runFor), so the 500 ms and
+// 300 ms thresholds are exact and the tests do not depend on machine speed.
 // NOT part of `npm test`; run with: node --test test/e2e/*.e2e.js
 
 const { test, before, after } = require('node:test');
@@ -44,6 +46,7 @@ async function openApp(viewport) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
+  await page.clock.install();
   await page.goto(APP_URL);
   await page.evaluate((cs) => {
     localStorage.clear();
@@ -52,10 +55,10 @@ async function openApp(viewport) {
     localStorage.setItem('pt_cases', cs);
   }, JSON.stringify(CASES));
   await page.reload();
-  await page.waitForTimeout(200);
+  await page.clock.runFor(200);
   return { page, errors, close: () => ctx.close() };
 }
-const go = (p, name) => p.evaluate((n) => navigateTo(n), name).then(() => p.waitForTimeout(200));
+const go = (p, name) => p.evaluate((n) => navigateTo(n), name).then(() => p.clock.runFor(200));
 
 async function barCentre(page, sel) {
   const loc = page.locator(sel).first();
@@ -85,9 +88,9 @@ e2e('Hjem: the popup waits, then stands above the track', async () => {
   await go(page, 'hjem');
   const c = await barCentre(page, '#home-timeline .tl-bar[data-id="b"]');
   await page.mouse.move(c.x, c.y);
-  await page.waitForTimeout(200);
+  await page.clock.runFor(200);
   assert.equal(await popupShown(page), false, 'hidden after 200 ms');
-  await page.waitForTimeout(450);
+  await page.clock.runFor(450);
   assert.equal(await popupShown(page), true, 'shown after 650 ms');
   const g = await geom(page, 'home-timeline');
   assert.equal(g.below, false);
@@ -102,15 +105,15 @@ e2e('the popup switches at once to the next bar, and waits again after leaving',
   const b = await barCentre(page, '#home-timeline .tl-bar[data-id="b"]');
   const a = await barCentre(page, '#home-timeline .tl-bar[data-id="a"]');
   await page.mouse.move(b.x, b.y);
-  await page.waitForTimeout(650);
+  await page.clock.runFor(650);
   await page.mouse.move(a.x, a.y);
-  await page.waitForTimeout(30);
+  await page.clock.runFor(30);
   assert.equal(await popupShown(page), true, 'switched at once');
   assert.match(await page.locator('.tl-popup').textContent(), /20261235/);
   await page.mouse.move(5, 5);
-  await page.waitForTimeout(1000);
+  await page.clock.runFor(1000);
   await page.mouse.move(b.x, b.y);
-  await page.waitForTimeout(200);
+  await page.clock.runFor(200);
   assert.equal(await popupShown(page), false, 'waits again after 1 s away');
   await close();
 });
@@ -120,9 +123,9 @@ e2e('leaving before half a second shows no popup', async () => {
   await go(page, 'hjem');
   const b = await barCentre(page, '#home-timeline .tl-bar[data-id="b"]');
   await page.mouse.move(b.x, b.y);
-  await page.waitForTimeout(200);
+  await page.clock.runFor(200);
   await page.mouse.move(5, 5);
-  await page.waitForTimeout(600);
+  await page.clock.runFor(600);
   assert.equal(await popupShown(page), false);
   await close();
 });
@@ -131,7 +134,7 @@ e2e('keyboard focus shows the popup at once', async () => {
   const { page, close } = await openApp();
   await go(page, 'hjem');
   await page.locator('#home-timeline .tl-bar[data-id="b"]').first().focus();
-  await page.waitForTimeout(30);
+  await page.clock.runFor(30);
   assert.equal(await popupShown(page), true);
   assertOutsideTrack(await geom(page, 'home-timeline'));
   await close();
@@ -143,7 +146,7 @@ e2e('list page: a tall popup with no room above goes below the track', async () 
   await page.evaluate(() => window.scrollTo(0, 0));
   const a = await barCentre(page, '#cases-timeline .tl-bar[data-id="a"]');
   await page.mouse.move(a.x, a.y);
-  await page.waitForTimeout(650);
+  await page.clock.runFor(650);
   assert.equal(await popupShown(page), true);
   const g = await geom(page, 'cases-timeline');
   assert.ok(g.pBottom - g.pTop > g.tTop - 16, 'the 20-line note does not fit above');
@@ -168,11 +171,11 @@ e2e('every kind of bar gets a popup outside the track', async () => {
     await go(page, view);
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.mouse.move(5, 5);
-    await page.waitForTimeout(400);
+    await page.clock.runFor(400);
     assert.equal(await page.locator('#' + host + ' ' + sel).count() > 0, true, view + ' ' + sel + ' exists');
     const p = await barCentre(page, '#' + host + ' ' + sel);
     await page.mouse.move(p.x, p.y);
-    await page.waitForTimeout(650);
+    await page.clock.runFor(650);
     assert.equal(await popupShown(page), true, 'popup for ' + view + ' ' + sel);
     assertOutsideTrack(await geom(page, host));
   }
@@ -188,7 +191,7 @@ e2e('drag: no popup, and the chip stands outside the track', async () => {
   await page.mouse.move(p.x, p.y);
   await page.mouse.down();
   await page.mouse.move(p.x - 40, p.y, { steps: 5 });
-  await page.waitForTimeout(650);
+  await page.clock.runFor(650);
   assert.equal(await popupShown(page), false, 'no popup while dragging');
   const g = await page.evaluate(() => {
     const ch = document.querySelector('.tl-drag-chip').getBoundingClientRect();
@@ -207,18 +210,76 @@ e2e('empty timeline: hovering it raises no error', async () => {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
+  await page.clock.install();
   await page.goto(APP_URL);
   await page.evaluate(() => { localStorage.clear(); localStorage.setItem('pt_onboarding_completed', '1'); localStorage.setItem('pt_cases', '[]'); });
   await page.reload();
-  await page.waitForTimeout(200);
+  await page.clock.runFor(200);
   await page.evaluate(() => navigateTo('hjem'));
   const tl = page.locator('#home-timeline');
   if (await tl.count() && await tl.isVisible()) {
     const b = await tl.boundingBox();
     await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
-    await page.waitForTimeout(650);
+    await page.clock.runFor(650);
   }
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.tl-popup')).display), 'none');
   assert.deepEqual(errors, []);
   await ctx.close();
+});
+
+e2e('a pending popup is dropped when the timeline is redrawn', async () => {
+  const { page, errors, close } = await openApp();
+  await go(page, 'hjem');
+  const b = await barCentre(page, '#home-timeline .tl-bar[data-id="b"]');
+  await page.mouse.move(b.x, b.y);
+  await page.clock.runFor(200);
+  await page.evaluate(() => renderTimeline({ target: 'home-timeline' }));   // the hovered bar is replaced
+  await page.clock.runFor(600);
+  assert.equal(await popupShown(page), false, 'no popup for a bar that is gone');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
+e2e('scrolling hides the popup instead of leaving it behind', async () => {
+  const { page, close } = await openApp();
+  await go(page, 'hjem');
+  const b = await barCentre(page, '#home-timeline .tl-bar[data-id="b"]');
+  await page.mouse.move(b.x, b.y);
+  await page.clock.runFor(650);
+  assert.equal(await popupShown(page), true);
+  // Siden scrolles (scroll-hendelsen går til document)
+  await page.evaluate(() => document.dispatchEvent(new Event('scroll')));
+  assert.equal(await popupShown(page), false, 'hidden when the page scrolls');
+  // Tidslinjen scrolles sideveis
+  await page.mouse.move(b.x + 1, b.y);
+  await page.clock.runFor(650);
+  assert.equal(await popupShown(page), true);
+  await page.evaluate(() => {
+    const wrap = document.querySelector('#home-timeline .tl-track').closest('.tl-scroll-wrap');
+    wrap.dispatchEvent(new Event('scroll'));
+  });
+  assert.equal(await popupShown(page), false, 'hidden when the timeline scrolls');
+  await close();
+});
+
+e2e('sak-dialogen: the popup in the preview stands outside the track', async () => {
+  const { page, errors, close } = await openApp();
+  await go(page, 'ny');
+  await page.evaluate(() => openModal(cases.find((c) => c.id === 'b')));
+  await page.clock.runFor(300);
+  const sel = '#modal-timeline .tl-bar';
+  assert.ok(await page.locator(sel).count() > 0, 'the dialog shows a timeline with bars');
+  const p = await barCentre(page, sel);
+  await page.mouse.move(p.x, p.y);
+  await page.clock.runFor(650);
+  assert.equal(await popupShown(page), true);
+  assertOutsideTrack(await geom(page, 'modal-timeline'));
+  // the popup (pointer-events: none) must stack above the dialog
+  const z = await page.evaluate(() => ({
+    pz: parseInt(getComputedStyle(document.querySelector('.tl-popup')).zIndex, 10),
+    bz: parseInt(getComputedStyle(document.getElementById('modal-backdrop')).zIndex, 10) || 0
+  }));
+  assert.ok(z.pz > z.bz, 'popup above the dialog: ' + JSON.stringify(z));
+  assert.deepEqual(errors, []);
+  await close();
 });
