@@ -18,7 +18,8 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ### Changed
 - **Metalinjen viser bare felt med data.** Innlevert, Prioritet og Medlesing står
-  ikke lenger med «—» når de er tomme; de skjules. Tittel og buffer vises som før.
+  ikke lenger med «—» når de er tomme; de skjules. Bufferen vises bare når saken
+  har en egen verdi — standarden for sakstypen står ikke i hodet.
 - CPC-varselet på Hjem har fått luft under seg, så det ikke ligger tett mot
   «Oversikt».
 

@@ -150,7 +150,7 @@ e2e('meta line: only the title is styled as a title; empty fields are hidden', a
   const sizes = await p.evaluate(() => {
     const c = cases[0];
     const out = {};
-    const d = loadSakData(c.id); d.filingDate = '2026-01-02'; saveSakData(c.id, d);
+    const d = loadSakData(c.id); d.filingDate = '2026-01-02'; d.priorityDate = '2025-06-30'; saveSakData(c.id, d);
     c.title = '';
     renderSakMeta(c);
     const spans = Array.from(document.querySelectorAll('#sak-meta-line span'));

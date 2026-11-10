@@ -185,7 +185,7 @@ function renderSakMeta(cas) {
     title: cas.title || '', isOppdrag: isOppdrag,
     durationLabel: cas.duration ? cas.duration + ' arb.dager' : workWindowDays(cas) + ' arb.dager (standard)',
     filing: data.filingDate, priority: data.priorityDate,
-    bufferLabel: caseBufferLabel(cas),
+    bufferLabel: metaBufferLabel(cas),
     medl: medlEntry ? medlEntry.reader + ' · ' + toDisplay(medlEntry.sent) : ''
   });
   el.textContent = '';
@@ -497,6 +497,13 @@ function loadChecklistOpen() {
 
 // Metalinjen under saksnummeret. Ren funksjon: returnerer delene i rekkefølge,
 // uten HTML — kalleren setter dem inn som tekst.
+// Bufferen vises bare når saken har en egen verdi. Standarden for typen står i
+// Innstillinger og er ikke noe som er satt på saken; i Fristarkiv er bufferen ikke aktiv.
+function metaBufferLabel(c) {
+  if (!c || c.status === 'fristarkiv' || c.caseBuffer == null) return '';
+  return caseBufferLabel(c);
+}
+
 function sakMetaLine(o) {
   var parts = [];
   var title = String(o.title == null ? '' : o.title).trim();
@@ -511,7 +518,7 @@ function sakMetaLine(o) {
   var medl     = String(o.medl == null ? '' : o.medl).trim();
   if (filing)   parts.push('Innlevert ' + filing);
   if (priority) parts.push('Prioritet ' + priority);
-  parts.push('Buffer ' + o.bufferLabel);
+  if (o.bufferLabel) parts.push('Buffer ' + o.bufferLabel);
   if (medl)     parts.push('Medlesing ' + medl);
   return parts;
 }

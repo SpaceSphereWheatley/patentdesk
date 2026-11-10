@@ -4,9 +4,9 @@ const { loadFunctions } = require('./extractFunctions');
 
 const fs = require('fs');
 const path = require('path');
-const { checklistGroupCounts, isChecklistOpen, checklistOpenKey, sakMetaLine, claimsTableShown } = loadFunctions(
-  ['checklistGroupCounts', 'isChecklistOpen', 'checklistOpenKey', 'sakMetaLine', 'claimsTableShown'],
-  { globals: { toDisplay: (d) => (d ? d.replace(/-/g, '.') : '') } }
+const { checklistGroupCounts, isChecklistOpen, checklistOpenKey, sakMetaLine, claimsTableShown, metaBufferLabel } = loadFunctions(
+  ['checklistGroupCounts', 'isChecklistOpen', 'checklistOpenKey', 'sakMetaLine', 'claimsTableShown', 'metaBufferLabel'],
+  { globals: { toDisplay: (d) => (d ? d.replace(/-/g, '.') : ''), caseBufferLabel: (c) => c.caseBuffer + ' dager · egen' } }
 );
 
 const J = (x) => JSON.parse(JSON.stringify(x));
@@ -80,4 +80,24 @@ test('sakMetaLine: oppdrag viser varighet, ikke datoer/buffer/medlesing', () => 
 });
 test('sakMetaLine: manglende tittel hoppes over', () => {
   assert.strictEqual(sakMetaLine({ title: '', isOppdrag: true, durationLabel: '2 arb.dager (standard)' })[0], 'Varighet 2 arb.dager (standard)');
+});
+
+test('sakMetaLine: tom bufferetikett skjuler Buffer', () => {
+  const m = sakMetaLine({ title: 'T', bufferLabel: '', filing: '2026-01-02', priority: '', medl: '' });
+  assert.deepStrictEqual(J(m), ['T', 'Innlevert 2026.01.02']);
+});
+test('metaBufferLabel: standardbuffer gir tom etikett (ingen egen verdi)', () => {
+  assert.strictEqual(metaBufferLabel({ status: 'ny', caseBuffer: null }), '');
+  assert.strictEqual(metaBufferLabel({ status: 'ny' }), '');
+});
+test('metaBufferLabel: egen buffer gir etiketten, også 0 og negativ (utsatt)', () => {
+  assert.strictEqual(metaBufferLabel({ status: 'ny', caseBuffer: 2 }), '2 dager · egen');
+  assert.strictEqual(metaBufferLabel({ status: 'ny', caseBuffer: 0 }), '0 dager · egen');
+  assert.strictEqual(metaBufferLabel({ status: 'viderebehandling', caseBuffer: -3 }), '-3 dager · egen');
+});
+test('metaBufferLabel: Fristarkiv har ingen aktiv buffer og viser ingenting', () => {
+  assert.strictEqual(metaBufferLabel({ status: 'fristarkiv', caseBuffer: 2 }), '');
+});
+test('metaBufferLabel: manglende sak gir tom etikett', () => {
+  assert.strictEqual(metaBufferLabel(null), '');
 });
