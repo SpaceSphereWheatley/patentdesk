@@ -6,6 +6,11 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Added
+- **Endringslogg fra appen.** Lenken «Endringslogg» i menyfoten, under
+  versjonsnummeret, åpner endringsloggen på GitHub i en ny fane. Finner
+  «Se etter oppdatering» en ny versjon, står det også «Hva er nytt» ved siden
+  av «Last ned».
 
 ## [4.60.0] - 2026-11-09
 ### Added
