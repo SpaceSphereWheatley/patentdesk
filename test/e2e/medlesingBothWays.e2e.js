@@ -135,5 +135,7 @@ e2e('Hjem still shows its own «Hos medleser» block', async () => {
   await page.evaluate(() => navigateTo('hjem'));
   await page.waitForTimeout(150);
   assert.equal(await page.locator('#home-medl-out .medl-out').count(), 2);
+  assert.equal(await page.locator('#home-medl-out .btn-medl-send').count(), 0, 'Hjem has no Endre button');
+  assert.equal(await page.locator('#home-medl-out .btn-medl-return').count(), 2);
   await close();
 });

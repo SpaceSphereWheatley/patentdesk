@@ -394,14 +394,14 @@ function medlPillHtml(c) {
 // withEdit: vis «Endre» (standard: bare når saksnummeret ikke vises).
 function medlOutHtml(entry, withCase, withEdit) {
   if (withEdit === undefined) withEdit = !withCase;
-  return '<div class="medl-out" data-id="' + entry.caseId + '">' +
+  return '<div class="medl-out" data-id="' + esc(entry.caseId) + '">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg>' +
     '<span class="medl-out-text">Hos medleser: ' +
-      (withCase ? '<a href="#" class="medl-out-case" data-id="' + entry.caseId + '">' + esc(entry.caseNumber) + '</a> – ' : '') +
+      (withCase ? '<a href="#" class="medl-out-case" data-id="' + esc(entry.caseId) + '">' + esc(entry.caseNumber) + '</a> – ' : '') +
       '<strong>' + esc(entry.reader) + '</strong> · ' + esc(_medlSinceTxt(entry)) + '</span>' +
     '<span class="medl-out-actions">' +
-      (withEdit ? '<button class="s-btn btn-medl-send" data-id="' + entry.caseId + '">Endre</button>' : '') +
-      '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + entry.caseId + '">Tilbake ✓</button>' +
+      (withEdit ? '<button class="s-btn btn-medl-send" data-id="' + esc(entry.caseId) + '">Endre</button>' : '') +
+      '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + esc(entry.caseId) + '">Tilbake ✓</button>' +
     '</span></div>';
 }
 
