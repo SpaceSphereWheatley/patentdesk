@@ -143,3 +143,28 @@ e2e('AC3: oppdrag shows no claim sections and no phase of only hidden sections',
   assert.equal(await p.locator('#sak-case-notes').isVisible(), true);
   await s.close();
 });
+
+e2e('meta line: only the title is styled as a title; empty fields are hidden', async () => {
+  const s = await open(1440);
+  const p = s.page;
+  const sizes = await p.evaluate(() => {
+    const c = cases[0];
+    const out = {};
+    const d = loadSakData(c.id); d.filingDate = '2026-01-02'; saveSakData(c.id, d);
+    c.title = '';
+    renderSakMeta(c);
+    const spans = Array.from(document.querySelectorAll('#sak-meta-line span'));
+    out.noTitle = spans.map((x) => ({ t: x.textContent, fs: getComputedStyle(x).fontSize }));
+    c.title = 'En tittel';
+    renderSakMeta(c);
+    const sp2 = Array.from(document.querySelectorAll('#sak-meta-line span'));
+    out.withTitle = sp2.map((x) => ({ t: x.textContent, fs: getComputedStyle(x).fontSize }));
+    return out;
+  });
+  assert.ok(sizes.noTitle.length >= 2, 'need two spans to compare: ' + JSON.stringify(sizes.noTitle));
+  const small = sizes.noTitle[0].fs;
+  assert.ok(sizes.noTitle.every((x) => x.fs === small), 'no span is title-sized without a title: ' + JSON.stringify(sizes.noTitle));
+  assert.ok(sizes.noTitle.every((x) => !x.t.includes('—')), 'no placeholders: ' + JSON.stringify(sizes.noTitle));
+  assert.notEqual(sizes.withTitle[0].fs, sizes.withTitle[1].fs, 'title is larger than the other fields');
+  await s.close();
+});

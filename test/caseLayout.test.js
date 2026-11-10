@@ -57,9 +57,22 @@ test('claimsTableShown: tabellen vises bare med minst ett krav', () => {
   assert.strictEqual(claimsTableShown({ numClaims: 12 }), true);
 });
 
-test('sakMetaLine: tittel, datoer, buffer og medlesing på én linje', () => {
+test('sakMetaLine: viser bare feltene som har data', () => {
   const m = sakMetaLine({ title: 'Anordning', bufferLabel: '0 dager · standard', filing: '2026-01-02', priority: '', medl: '' });
-  assert.deepStrictEqual(J(m), ['Anordning', 'Innlevert 2026.01.02', 'Prioritet —', 'Buffer 0 dager · standard', 'Medlesing —']);
+  assert.deepStrictEqual(J(m), ['Anordning', 'Innlevert 2026.01.02', 'Buffer 0 dager · standard']);
+});
+test('sakMetaLine: alle felt med data kommer i fast rekkefølge', () => {
+  const m = sakMetaLine({ title: 'T', bufferLabel: '1 dag · egen', filing: '2026-01-02', priority: '2025-06-30', medl: 'Kari · 2026.11.01' });
+  assert.deepStrictEqual(J(m), ['T', 'Innlevert 2026.01.02', 'Prioritet 2025.06.30', 'Buffer 1 dag · egen', 'Medlesing Kari · 2026.11.01']);
+});
+test('sakMetaLine: ingen «—»-plassholdere når datoer og medlesing mangler', () => {
+  const m = sakMetaLine({ title: '', bufferLabel: '0 dager · standard', filing: '', priority: null, medl: '' });
+  assert.deepStrictEqual(J(m), ['Buffer 0 dager · standard']);
+  assert.ok(!J(m).join(' ').includes('—'));
+});
+test('sakMetaLine: felt med bare mellomrom regnes som tomme', () => {
+  const m = sakMetaLine({ title: '   ', bufferLabel: '0 dager · standard', filing: '', priority: '', medl: '  ' });
+  assert.deepStrictEqual(J(m), ['Buffer 0 dager · standard']);
 });
 test('sakMetaLine: oppdrag viser varighet, ikke datoer/buffer/medlesing', () => {
   const m = sakMetaLine({ title: 'Kvalitet', isOppdrag: true, durationLabel: '3 arb.dager' });

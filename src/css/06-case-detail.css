@@ -571,7 +571,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 /* Metalinjen i sakshodet: tittel, datoer, buffer og medlesing på én linje. */
 .sak-meta-line        { display: flex; flex-wrap: wrap; align-items: baseline; color: var(--muted-text);
                         font-size: var(--text-sm); margin-top: var(--space-1); }
-.sak-meta-line span:first-child { color: var(--text); font-size: var(--text-md); font-weight: var(--weight-medium); }
+.sak-meta-line .sak-meta-title { color: var(--text); font-size: var(--text-md); font-weight: var(--weight-medium); }
 .sak-meta-line span + span::before { content: "·"; margin: 0 var(--space-3); color: var(--muted-text); }
 
 /* Sjekklister: en rad med navn, framdrift og pil; innholdet åpnes ved klikk. */

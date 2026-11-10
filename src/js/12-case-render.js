@@ -189,8 +189,11 @@ function renderSakMeta(cas) {
     medl: medlEntry ? medlEntry.reader + ' · ' + toDisplay(medlEntry.sent) : ''
   });
   el.textContent = '';
-  parts.forEach(function(t) {
-    var sp = document.createElement('span'); sp.textContent = t; el.appendChild(sp);
+  var hasTitle = !!String(cas.title == null ? '' : cas.title).trim();
+  parts.forEach(function(t, i) {
+    var sp = document.createElement('span'); sp.textContent = t;
+    if (hasTitle && i === 0) sp.className = 'sak-meta-title';
+    el.appendChild(sp);
   });
 }
 
@@ -496,15 +499,20 @@ function loadChecklistOpen() {
 // uten HTML — kalleren setter dem inn som tekst.
 function sakMetaLine(o) {
   var parts = [];
-  if (o.title) parts.push(o.title);
+  var title = String(o.title == null ? '' : o.title).trim();
+  if (title) parts.push(title);
   if (o.isOppdrag) {
     parts.push('Varighet ' + o.durationLabel);
     return parts;
   }
-  parts.push('Innlevert ' + (toDisplay(o.filing) || '—'));
-  parts.push('Prioritet ' + (toDisplay(o.priority) || '—'));
+  // Bare felt som har data: et tomt felt viser ingenting, ikke en «—».
+  var filing   = toDisplay(o.filing);
+  var priority = toDisplay(o.priority);
+  var medl     = String(o.medl == null ? '' : o.medl).trim();
+  if (filing)   parts.push('Innlevert ' + filing);
+  if (priority) parts.push('Prioritet ' + priority);
   parts.push('Buffer ' + o.bufferLabel);
-  parts.push('Medlesing ' + (o.medl || '—'));
+  if (medl)     parts.push('Medlesing ' + medl);
   return parts;
 }
 
