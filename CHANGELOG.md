@@ -7,6 +7,19 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Added
+- **Fanen «Dokumenter» på saksiden.** Saksfilene (PDF) vises side om side i
+  1–3 paneler, med kravoversikten (nyhet og oppfinnelseshøyde per krav) i et
+  eget panel. Kravpanelet kan stå til venstre eller høyre, og kan skjules helt.
+  Skillelinjene mellom panelene kan dras (dobbeltklikk nullstiller), og
+  oppsettet huskes og følger med i eksport og sikkerhetskopi. Du markerer i PDF-en
+  med Edges egne fargeverktøy. Fanen krever den lokale serveren
+  (`Start-PatentDesk.ps1`); åpnet som vanlig fil vises en forklaring.
+- **Plassregler for panelene** (Innstillinger → Saksbehandling). Hver plass har
+  en tekst, og første PDF der filnavnet inneholder teksten havner der — f.eks.
+  «claims» i panel 1 og «figures» i panel 2. Du kan alltid velge en annen fil
+  for hånd i et panel; «Automatisk» går tilbake til regelen.
+
 ## [4.62.1] - 2026-11-10
 Popupen i tidslinjen dekker ikke lenger bjelkene og blafrer ikke.
 

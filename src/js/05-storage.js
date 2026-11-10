@@ -475,6 +475,13 @@ function loadHomeDeadlineFilter() {
 function saveHomeDeadlineFilter(f) {
   lsSetSafe(HOME_DEADLINE_KEY, JSON.stringify(f));
 }
+function loadDocLayout() {
+  try { return normalizeDocLayout(JSON.parse(localStorage.getItem(DOC_LAYOUT_KEY))); }
+  catch(e) { return defaultDocLayout(); }
+}
+function saveDocLayout(l) {
+  lsSetSafe(DOC_LAYOUT_KEY, JSON.stringify(l));
+}
 function loadTlView() {
   try { return normalizeTlView(JSON.parse(localStorage.getItem(TL_VIEW_KEY))); }
   catch(e) { return normalizeTlView(null); }
@@ -1447,6 +1454,7 @@ var typeBuffers    = loadTypeBuffers();
 var workWindows    = loadWorkWindows();
 var deadlines      = loadDeadlines();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
+var docLayout = loadDocLayout();
 var activeCase = loadActiveCase();
 var unassignedReminder = loadUnassignedReminder();
 var medleserList = loadMedleserList();

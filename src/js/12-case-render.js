@@ -35,6 +35,7 @@ function renderSak(id) {
   renderSakActiveButton(cas);
   renderSakUnassigned(cas);
   renderSakMedl(cas);
+  if (typeof dpOnSakRendered === 'function') dpOnSakRendered(id);
 
   document.getElementById('btn-sak-back')._sakId = id;
 

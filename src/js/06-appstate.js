@@ -900,6 +900,12 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'DOC_LAYOUT_SET': {
+      docLayout = normalizeDocLayout(payload.layout);
+      saveDocLayout(docLayout);
+      break;
+    }
+
     case 'SETTINGS_DOC_ROOT_CHANGE': {
       saveDocRoot(payload.value);
       showToast('✓ Saksmappe-rot lagret');
@@ -1039,6 +1045,7 @@ function _dispatch(action, payload) {
         if ('deadlines' in s) { deadlines = s.deadlines; saveDeadlines(deadlines); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
+        if ('docLayout' in s) { docLayout = s.docLayout; saveDocLayout(docLayout); if (typeof renderDocPanes === 'function') renderDocPanes(); }
         if ('activeCase' in s) { activeCase = s.activeCase; saveActiveCase(activeCase); }
         if ('unassignedReminder' in s) { unassignedReminder = s.unassignedReminder; saveUnassignedReminder(unassignedReminder); }
         if ('medlesere' in s) { medleserList = s.medlesere; saveMedleserList(medleserList); }
@@ -1099,6 +1106,7 @@ function _dispatch(action, payload) {
       workWindows = normalizeWorkWindows(null);
       deadlines = normalizeDeadlines(null);
       homeDeadlineFilter = defaultHomeDeadlineFilter();
+      docLayout = defaultDocLayout();
       undoSnapshot = null; // en åpen «Angre» skal ikke kunne hente sakene tilbake
       closeBackdrop('delete-all-backdrop-2');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();

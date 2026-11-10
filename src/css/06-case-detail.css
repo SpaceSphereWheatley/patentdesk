@@ -608,3 +608,85 @@ tr:hover .sak-tag-display.sak-tag-empty,
                         padding: var(--space-6) 0; color: var(--muted-text); }
 .sak-claims-empty[hidden] { display: none; }
 .sak-claims-empty p   { margin: 0; }
+
+/* ── Dokumentpaneler (dp-) ──────────────────────────
+   Fanen «Dokumenter» på saksiden: kravpanel + 1–3 PDF-paneler i én rad.
+   Rekkefølgen venstre/høyre styres med order, så iframene aldri flyttes
+   (og lastes på nytt) når kravpanelet bytter side. */
+.dp-tabstrip { display: flex; gap: var(--space-1); margin: var(--space-3) 0 var(--space-5);
+               border-bottom: 1px solid var(--border); }
+.dp-tab       { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent;
+                margin-bottom: -1px; padding: var(--space-3) var(--space-6); font: inherit;
+                font-size: var(--text-sm); font-weight: 600; color: var(--muted-text); cursor: pointer; }
+.dp-tab:hover { color: var(--text); }
+.dp-tab.is-on { color: var(--primary); border-bottom-color: var(--primary); }
+.dp-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
+.dp-viewer[hidden], .dp-notice[hidden], .dp-toolbar[hidden], .dp-body[hidden] { display: none; }
+.dp-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4);
+              margin-bottom: var(--space-4); }
+.dp-seg     { display: inline-flex; }
+.dp-seg-btn { appearance: none; background: var(--surface); border: 1px solid var(--border2); font: inherit;
+              font-size: var(--text-sm); color: var(--text); padding: var(--space-2) var(--space-5); cursor: pointer; }
+.dp-seg .dp-seg-btn + .dp-seg-btn { margin-left: -1px; }
+.dp-seg .dp-seg-btn:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+.dp-seg .dp-seg-btn:last-child  { border-radius: 0 var(--radius) var(--radius) 0; }
+.dp-claims-toggle { border-radius: var(--radius); }
+.dp-seg-btn[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.dp-claims-toggle[aria-pressed="true"] { background: var(--surface); border-color: var(--border2); color: var(--text); }
+.dp-seg-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; position: relative; }
+
+.dp-notice { background: var(--notice-warn-bg); color: var(--notice-warn-text); border: 1px solid var(--badge-urgent-border);
+             border-radius: var(--radius); padding: var(--space-5) var(--space-6); font-size: var(--text-sm); }
+
+.dp-body   { display: flex; height: calc(100vh - 250px); min-height: 420px; background: var(--surface);
+             border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.dp-body.is-dragging iframe { pointer-events: none; }  /* ellers sluker PDF-visningen musehendelsene */
+.dp-body.is-dragging { user-select: none; cursor: col-resize; }
+.dp-claims { flex: 0 0 auto; overflow: auto; padding: var(--space-4); background: var(--surface); min-width: 0; }
+.dp-claims[hidden], .dp-csplit[hidden] { display: none; }
+.dp-panes  { flex: 1 1 0; min-width: 0; display: flex; }
+.dp-body.is-claims-left  .dp-claims { order: 0; }
+.dp-body.is-claims-left  .dp-csplit { order: 1; }
+.dp-body.is-claims-left  .dp-panes  { order: 2; }
+.dp-body.is-claims-right .dp-panes  { order: 0; }
+.dp-body.is-claims-right .dp-csplit { order: 1; }
+.dp-body.is-claims-right .dp-claims { order: 2; }
+
+.dp-split  { flex: 0 0 6px; background: var(--border); cursor: col-resize; }
+.dp-split:hover, .dp-split:focus-visible, .dp-body.is-dragging .dp-split.is-active { background: var(--primary); outline: none; }
+.dp-pane   { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.dp-pane[hidden], .dp-split[hidden] { display: none; }
+.dp-phead  { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3);
+             background: var(--surface2); border-bottom: 1px solid var(--border); font-size: var(--text-xs); }
+.dp-slot   { color: var(--muted-text); font-weight: 600; }
+.dp-pick   { flex: 1; min-width: 0; font: inherit; font-size: var(--text-xs); padding: 2px var(--space-2);
+             border: 1px solid var(--border2); border-radius: 4px; background: var(--surface); color: var(--text); }
+.dp-pin    { color: var(--muted-text); white-space: nowrap; }
+.dp-frame  { flex: 1; width: 100%; border: 0; background: #525659; }
+.dp-frame[hidden] { display: none; }
+.dp-empty  { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
+             padding: var(--space-6); background: var(--surface2); color: var(--muted-text); font-size: var(--text-sm); }
+.dp-empty[hidden] { display: none; }
+
+.dp-claims-title { margin: 0 0 var(--space-3); font-size: var(--text-sm); font-weight: 600; }
+.dp-ov     { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.dp-ov th  { text-align: left; font-weight: 600; font-size: var(--text-xs); color: var(--muted-text);
+             padding: var(--space-2) var(--space-2); border-bottom: 1px solid var(--border); }
+.dp-ov td  { padding: var(--space-2) var(--space-2); border-bottom: 1px solid var(--border); }
+.dp-ov .dp-ov-dep { color: var(--muted-text); font-size: var(--text-xs); }
+.dp-ov .dp-yes { color: var(--color-ok); font-weight: 700; }
+.dp-ov .dp-no  { color: var(--danger);  font-weight: 700; }
+.dp-ov .dp-unk { color: var(--muted-text); }
+.dp-claims-empty { color: var(--muted-text); font-size: var(--text-sm); margin: 0; }
+
+.dp-rule-row { display: grid; grid-template-columns: 5rem minmax(0, 20rem); align-items: center; gap: var(--space-3); }
+.dp-rule-row label { font-size: var(--text-sm); color: var(--muted-text); }
+
+#view-sak.is-docs-tab .sak-unassigned,
+#view-sak.is-docs-tab #sak-medl-out,
+#view-sak.is-docs-tab .sak-frist,
+#view-sak.is-docs-tab .sak-progress-section,
+#view-sak.is-docs-tab #sak-summary-sentinel,
+#view-sak.is-docs-tab .sak-phase,
+#view-sak.is-docs-tab #sak-sticky-bar { display: none !important; }

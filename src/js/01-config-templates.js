@@ -21,6 +21,7 @@ var TYPE_BUFFER_KEY = 'pt_type_buffers';
 var WORK_WINDOW_KEY = 'pt_work_windows';
 var DEADLINES_KEY   = 'pt_deadlines';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
+var DOC_LAYOUT_KEY    = 'pt_doc_layout';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
 var UNASSIGNED_REMINDER_KEY = 'pt_unassigned_reminder';
 var MEDLESERE_KEY     = 'pt_medlesere';

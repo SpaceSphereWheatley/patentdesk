@@ -670,6 +670,15 @@
                       </ul>
                     </div>
                   </div>
+                  <div class="settings-row settings-row-col" id="settings-dp-rules">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Dokumentpaneler: plassregler</span>
+                      <span class="settings-label-sub">Hvilken fil som åpnes i hvilket panel på fanen Dokumenter. Første PDF der filnavnet inneholder teksten, uten forskjell på store og små bokstaver. Tomt felt = velges for hånd.</span>
+                    </div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-1">Panel 1</label><input class="field-input" id="input-dp-rule-1" data-dp-rule="0" type="text" maxlength="40" placeholder="f.eks. claims" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-2">Panel 2</label><input class="field-input" id="input-dp-rule-2" data-dp-rule="1" type="text" maxlength="40" placeholder="f.eks. figures" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-3">Panel 3</label><input class="field-input" id="input-dp-rule-3" data-dp-rule="2" type="text" maxlength="40" placeholder="(for hånd)" /></div>
+                  </div>
                   <div class="settings-row settings-row-col">
                     <div class="settings-label">
                       <span class="settings-label-title">Lenke til nye saker</span>
@@ -909,6 +918,32 @@
             <button class="btn-sak-forward" id="btn-sak-forward" style="display:none;"></button>
           </div>
         </section>
+
+        <!-- Faner: Oversikt (hele saksiden) | Dokumenter (paneler side om side) -->
+        <div class="dp-tabstrip" id="sak-tabs" role="tablist" aria-label="Visning">
+          <button type="button" class="dp-tab is-on" role="tab" id="sak-tab-overview" data-sak-tab="overview" aria-selected="true" aria-controls="sak-overview-tab">Oversikt</button>
+          <button type="button" class="dp-tab" role="tab" id="sak-tab-docs" data-sak-tab="docs" aria-selected="false" aria-controls="sak-viewer">Dokumenter</button>
+        </div>
+        <div class="dp-viewer" id="sak-viewer" role="tabpanel" aria-labelledby="sak-tab-docs" hidden>
+          <div class="dp-toolbar" id="dp-toolbar">
+            <div class="dp-seg" role="group" aria-label="Antall paneler">
+              <button type="button" class="dp-seg-btn" data-dp-count="1" aria-pressed="false">1</button>
+              <button type="button" class="dp-seg-btn" data-dp-count="2" aria-pressed="false">2</button>
+              <button type="button" class="dp-seg-btn" data-dp-count="3" aria-pressed="false">3</button>
+            </div>
+            <div class="dp-seg" role="group" aria-label="Kravpanelets plassering">
+              <button type="button" class="dp-seg-btn" data-dp-side="left" aria-pressed="false">Krav til venstre</button>
+              <button type="button" class="dp-seg-btn" data-dp-side="right" aria-pressed="false">Krav til høyre</button>
+            </div>
+            <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle" aria-pressed="true">Skjul krav</button>
+          </div>
+          <div class="dp-notice" id="dp-notice" role="status" hidden></div>
+          <div class="dp-body" id="dp-body">
+            <aside class="dp-claims" id="dp-claims" aria-label="Kravoversikt"></aside>
+            <div class="dp-split dp-csplit" id="dp-csplit" role="separator" aria-orientation="vertical" aria-label="Bredde på kravpanelet" tabindex="0"></div>
+            <div class="dp-panes" id="dp-panes"></div>
+          </div>
+        </div>
 
         <!-- Ikke fordelt: saken venter på fordeling -->
         <div class="sak-unassigned" id="sak-unassigned" hidden>
@@ -1916,6 +1951,7 @@
 <!-- @include js/18-events-routing-cases.js -->
 <!-- @include js/19-events-modal-home.js -->
 <!-- @include js/20-events-settings.js -->
+<!-- @include js/20a-doc-panes.js -->
 <!-- @include js/21-bootstrap.js -->
   </script>
 

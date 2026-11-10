@@ -2963,6 +2963,88 @@ tr:hover .sak-tag-display.sak-tag-empty,
                         padding: var(--space-6) 0; color: var(--muted-text); }
 .sak-claims-empty[hidden] { display: none; }
 .sak-claims-empty p   { margin: 0; }
+
+/* ── Dokumentpaneler (dp-) ──────────────────────────
+   Fanen «Dokumenter» på saksiden: kravpanel + 1–3 PDF-paneler i én rad.
+   Rekkefølgen venstre/høyre styres med order, så iframene aldri flyttes
+   (og lastes på nytt) når kravpanelet bytter side. */
+.dp-tabstrip { display: flex; gap: var(--space-1); margin: var(--space-3) 0 var(--space-5);
+               border-bottom: 1px solid var(--border); }
+.dp-tab       { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent;
+                margin-bottom: -1px; padding: var(--space-3) var(--space-6); font: inherit;
+                font-size: var(--text-sm); font-weight: 600; color: var(--muted-text); cursor: pointer; }
+.dp-tab:hover { color: var(--text); }
+.dp-tab.is-on { color: var(--primary); border-bottom-color: var(--primary); }
+.dp-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
+.dp-viewer[hidden], .dp-notice[hidden], .dp-toolbar[hidden], .dp-body[hidden] { display: none; }
+.dp-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4);
+              margin-bottom: var(--space-4); }
+.dp-seg     { display: inline-flex; }
+.dp-seg-btn { appearance: none; background: var(--surface); border: 1px solid var(--border2); font: inherit;
+              font-size: var(--text-sm); color: var(--text); padding: var(--space-2) var(--space-5); cursor: pointer; }
+.dp-seg .dp-seg-btn + .dp-seg-btn { margin-left: -1px; }
+.dp-seg .dp-seg-btn:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+.dp-seg .dp-seg-btn:last-child  { border-radius: 0 var(--radius) var(--radius) 0; }
+.dp-claims-toggle { border-radius: var(--radius); }
+.dp-seg-btn[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.dp-claims-toggle[aria-pressed="true"] { background: var(--surface); border-color: var(--border2); color: var(--text); }
+.dp-seg-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; position: relative; }
+
+.dp-notice { background: var(--notice-warn-bg); color: var(--notice-warn-text); border: 1px solid var(--badge-urgent-border);
+             border-radius: var(--radius); padding: var(--space-5) var(--space-6); font-size: var(--text-sm); }
+
+.dp-body   { display: flex; height: calc(100vh - 250px); min-height: 420px; background: var(--surface);
+             border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.dp-body.is-dragging iframe { pointer-events: none; }  /* ellers sluker PDF-visningen musehendelsene */
+.dp-body.is-dragging { user-select: none; cursor: col-resize; }
+.dp-claims { flex: 0 0 auto; overflow: auto; padding: var(--space-4); background: var(--surface); min-width: 0; }
+.dp-claims[hidden], .dp-csplit[hidden] { display: none; }
+.dp-panes  { flex: 1 1 0; min-width: 0; display: flex; }
+.dp-body.is-claims-left  .dp-claims { order: 0; }
+.dp-body.is-claims-left  .dp-csplit { order: 1; }
+.dp-body.is-claims-left  .dp-panes  { order: 2; }
+.dp-body.is-claims-right .dp-panes  { order: 0; }
+.dp-body.is-claims-right .dp-csplit { order: 1; }
+.dp-body.is-claims-right .dp-claims { order: 2; }
+
+.dp-split  { flex: 0 0 6px; background: var(--border); cursor: col-resize; }
+.dp-split:hover, .dp-split:focus-visible, .dp-body.is-dragging .dp-split.is-active { background: var(--primary); outline: none; }
+.dp-pane   { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.dp-pane[hidden], .dp-split[hidden] { display: none; }
+.dp-phead  { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3);
+             background: var(--surface2); border-bottom: 1px solid var(--border); font-size: var(--text-xs); }
+.dp-slot   { color: var(--muted-text); font-weight: 600; }
+.dp-pick   { flex: 1; min-width: 0; font: inherit; font-size: var(--text-xs); padding: 2px var(--space-2);
+             border: 1px solid var(--border2); border-radius: 4px; background: var(--surface); color: var(--text); }
+.dp-pin    { color: var(--muted-text); white-space: nowrap; }
+.dp-frame  { flex: 1; width: 100%; border: 0; background: #525659; }
+.dp-frame[hidden] { display: none; }
+.dp-empty  { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
+             padding: var(--space-6); background: var(--surface2); color: var(--muted-text); font-size: var(--text-sm); }
+.dp-empty[hidden] { display: none; }
+
+.dp-claims-title { margin: 0 0 var(--space-3); font-size: var(--text-sm); font-weight: 600; }
+.dp-ov     { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.dp-ov th  { text-align: left; font-weight: 600; font-size: var(--text-xs); color: var(--muted-text);
+             padding: var(--space-2) var(--space-2); border-bottom: 1px solid var(--border); }
+.dp-ov td  { padding: var(--space-2) var(--space-2); border-bottom: 1px solid var(--border); }
+.dp-ov .dp-ov-dep { color: var(--muted-text); font-size: var(--text-xs); }
+.dp-ov .dp-yes { color: var(--color-ok); font-weight: 700; }
+.dp-ov .dp-no  { color: var(--danger);  font-weight: 700; }
+.dp-ov .dp-unk { color: var(--muted-text); }
+.dp-claims-empty { color: var(--muted-text); font-size: var(--text-sm); margin: 0; }
+
+.dp-rule-row { display: grid; grid-template-columns: 5rem minmax(0, 20rem); align-items: center; gap: var(--space-3); }
+.dp-rule-row label { font-size: var(--text-sm); color: var(--muted-text); }
+
+#view-sak.is-docs-tab .sak-unassigned,
+#view-sak.is-docs-tab #sak-medl-out,
+#view-sak.is-docs-tab .sak-frist,
+#view-sak.is-docs-tab .sak-progress-section,
+#view-sak.is-docs-tab #sak-summary-sentinel,
+#view-sak.is-docs-tab .sak-phase,
+#view-sak.is-docs-tab #sak-sticky-bar { display: none !important; }
 /* ── Tidslinje-modal ──────────────────────────────── */
 
 /* axis toggle — shared between home and modal */
@@ -3998,6 +4080,15 @@ button.ob-del:hover { color: var(--text-on-no); }
                       </ul>
                     </div>
                   </div>
+                  <div class="settings-row settings-row-col" id="settings-dp-rules">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Dokumentpaneler: plassregler</span>
+                      <span class="settings-label-sub">Hvilken fil som åpnes i hvilket panel på fanen Dokumenter. Første PDF der filnavnet inneholder teksten, uten forskjell på store og små bokstaver. Tomt felt = velges for hånd.</span>
+                    </div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-1">Panel 1</label><input class="field-input" id="input-dp-rule-1" data-dp-rule="0" type="text" maxlength="40" placeholder="f.eks. claims" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-2">Panel 2</label><input class="field-input" id="input-dp-rule-2" data-dp-rule="1" type="text" maxlength="40" placeholder="f.eks. figures" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-3">Panel 3</label><input class="field-input" id="input-dp-rule-3" data-dp-rule="2" type="text" maxlength="40" placeholder="(for hånd)" /></div>
+                  </div>
                   <div class="settings-row settings-row-col">
                     <div class="settings-label">
                       <span class="settings-label-title">Lenke til nye saker</span>
@@ -4237,6 +4328,32 @@ button.ob-del:hover { color: var(--text-on-no); }
             <button class="btn-sak-forward" id="btn-sak-forward" style="display:none;"></button>
           </div>
         </section>
+
+        <!-- Faner: Oversikt (hele saksiden) | Dokumenter (paneler side om side) -->
+        <div class="dp-tabstrip" id="sak-tabs" role="tablist" aria-label="Visning">
+          <button type="button" class="dp-tab is-on" role="tab" id="sak-tab-overview" data-sak-tab="overview" aria-selected="true" aria-controls="sak-overview-tab">Oversikt</button>
+          <button type="button" class="dp-tab" role="tab" id="sak-tab-docs" data-sak-tab="docs" aria-selected="false" aria-controls="sak-viewer">Dokumenter</button>
+        </div>
+        <div class="dp-viewer" id="sak-viewer" role="tabpanel" aria-labelledby="sak-tab-docs" hidden>
+          <div class="dp-toolbar" id="dp-toolbar">
+            <div class="dp-seg" role="group" aria-label="Antall paneler">
+              <button type="button" class="dp-seg-btn" data-dp-count="1" aria-pressed="false">1</button>
+              <button type="button" class="dp-seg-btn" data-dp-count="2" aria-pressed="false">2</button>
+              <button type="button" class="dp-seg-btn" data-dp-count="3" aria-pressed="false">3</button>
+            </div>
+            <div class="dp-seg" role="group" aria-label="Kravpanelets plassering">
+              <button type="button" class="dp-seg-btn" data-dp-side="left" aria-pressed="false">Krav til venstre</button>
+              <button type="button" class="dp-seg-btn" data-dp-side="right" aria-pressed="false">Krav til høyre</button>
+            </div>
+            <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle" aria-pressed="true">Skjul krav</button>
+          </div>
+          <div class="dp-notice" id="dp-notice" role="status" hidden></div>
+          <div class="dp-body" id="dp-body">
+            <aside class="dp-claims" id="dp-claims" aria-label="Kravoversikt"></aside>
+            <div class="dp-split dp-csplit" id="dp-csplit" role="separator" aria-orientation="vertical" aria-label="Bredde på kravpanelet" tabindex="0"></div>
+            <div class="dp-panes" id="dp-panes"></div>
+          </div>
+        </div>
 
         <!-- Ikke fordelt: saken venter på fordeling -->
         <div class="sak-unassigned" id="sak-unassigned" hidden>
@@ -5260,6 +5377,7 @@ var TYPE_BUFFER_KEY = 'pt_type_buffers';
 var WORK_WINDOW_KEY = 'pt_work_windows';
 var DEADLINES_KEY   = 'pt_deadlines';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
+var DOC_LAYOUT_KEY    = 'pt_doc_layout';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
 var UNASSIGNED_REMINDER_KEY = 'pt_unassigned_reminder';
 var MEDLESERE_KEY     = 'pt_medlesere';
@@ -7096,6 +7214,7 @@ function makeExportPayload() {
     workWindowUnit: 'workdays',
     deadlines:  deadlines,
     homeDeadlineFilter: homeDeadlineFilter,
+    docLayout:  docLayout,
     activeCase: activeCase,
     unassignedReminder: unassignedReminder,
     medlesing:  medlesing,
@@ -7149,6 +7268,9 @@ function readImportSettings(d) {
   }
   if (d.homeDeadlineFilter && typeof d.homeDeadlineFilter === 'object') {
     out.homeDeadlineFilter = normalizeHomeDeadlineFilter(d.homeDeadlineFilter);
+  }
+  if (d.docLayout && typeof d.docLayout === 'object' && !Array.isArray(d.docLayout)) {
+    out.docLayout = normalizeDocLayout(d.docLayout);
   }
   if (d.activeCase === null) out.activeCase = null;
   else if (d.activeCase !== undefined && normalizeActiveCase(d.activeCase)) out.activeCase = normalizeActiveCase(d.activeCase);
@@ -7618,6 +7740,157 @@ function buildCasePath(caseNumber) {
   return root + '\\' + caseNumber;
 }
 
+
+// ── Dokumentpaneler ────────────────────────────────
+// Visningen «Dokumenter» på saksiden: 1–3 paneler side om side med saksfilene
+// og et kravpanel som kan flyttes, byttes og skjules. Oppsettet er felles for
+// alle saker (localStorage, pt_doc_layout) og følger med i eksport og
+// sikkerhetskopi. Plassreglene bestemmer hvilken fil som havner i hvilket
+// panel: første PDF der filnavnet (uten .pdf) inneholder teksten. Rene
+// funksjoner — se test/docPanes.test.js.
+var DOC_PANE_MAX = 3;
+var DOC_PANE_MIN = 0.15;
+var DOC_CLAIMS_MODES = ['overview'];
+var DOC_CLAIMS_SIDES = ['left', 'right'];
+var DOC_RULE_MAX = 40;
+var DOC_CLAIMS_W_MIN = 160;
+var DOC_CLAIMS_W_MAX = 480;
+
+function defaultDocLayout() {
+  return {
+    count: 2,
+    claimsVisible: true,
+    claimsSide: 'left',
+    claimsMode: 'overview',
+    claimsWidth: 250,
+    rules: ['claims', 'figures', ''],
+    widths: { 1: [1], 2: [0.5, 0.5], 3: [1 / 3, 1 / 3, 1 / 3] }
+  };
+}
+
+// Bredder som andeler av panelflaten: n tall som summerer til 1, hver minst
+// DOC_PANE_MIN. Ugyldig inndata gir like brede paneler.
+function normalizePaneWidths(raw, count) {
+  var n = count;
+  if (n <= 1) return [1];
+  var equal = [];
+  for (var e = 0; e < n; e++) equal.push(1 / n);
+  if (!Array.isArray(raw) || raw.length !== n) return equal;
+  var total = 0;
+  for (var i = 0; i < n; i++) {
+    if (typeof raw[i] !== 'number' || !isFinite(raw[i]) || raw[i] <= 0) return equal;
+    total += raw[i];
+  }
+  var w = raw.map(function(x) { return x / total; });
+  var out = w.slice(), fixed = [], rem = 1;
+  for (var pass = 0; pass <= n; pass++) {
+    var free = [], freeSum = 0;
+    for (var k = 0; k < n; k++) { if (!fixed[k]) { free.push(k); freeSum += w[k]; } }
+    if (!free.length) break;
+    var scale = rem / freeSum, again = false;
+    free.forEach(function(j) {
+      if (w[j] * scale < DOC_PANE_MIN - 1e-12) { out[j] = DOC_PANE_MIN; fixed[j] = true; rem -= DOC_PANE_MIN; again = true; }
+    });
+    if (!again) { free.forEach(function(j) { out[j] = w[j] * scale; }); break; }
+  }
+  return out;
+}
+
+// Skillelinje i mellom panel i og i+1 flyttes delta (andel). Ingen av de to
+// går under minstebredden; resten røres ikke.
+function dragPaneWidths(widths, i, delta) {
+  if (!Array.isArray(widths)) return [];
+  var w = widths.slice();
+  if (!Number.isInteger(i) || i < 0 || i + 1 >= w.length || typeof delta !== 'number' || !isFinite(delta)) return w;
+  var total = w[i] + w[i + 1];
+  var a = Math.min(Math.max(w[i] + delta, DOC_PANE_MIN), total - DOC_PANE_MIN);
+  w[i] = a;
+  w[i + 1] = total - a;
+  return w;
+}
+
+function normalizeDocLayout(raw) {
+  var d = defaultDocLayout();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return d;
+  if (Number.isInteger(raw.count) && raw.count >= 1 && raw.count <= DOC_PANE_MAX) d.count = raw.count;
+  if (typeof raw.claimsVisible === 'boolean') d.claimsVisible = raw.claimsVisible;
+  if (DOC_CLAIMS_SIDES.indexOf(raw.claimsSide) !== -1) d.claimsSide = raw.claimsSide;
+  if (DOC_CLAIMS_MODES.indexOf(raw.claimsMode) !== -1) d.claimsMode = raw.claimsMode;
+  if (typeof raw.claimsWidth === 'number' && isFinite(raw.claimsWidth)) {
+    d.claimsWidth = Math.round(Math.min(Math.max(raw.claimsWidth, DOC_CLAIMS_W_MIN), DOC_CLAIMS_W_MAX));
+  }
+  if (Array.isArray(raw.rules)) {
+    d.rules = [0, 1, 2].map(function(i) {
+      var r = raw.rules[i];
+      return typeof r === 'string' ? r.trim().slice(0, DOC_RULE_MAX) : '';
+    });
+  }
+  var rw = (raw.widths && typeof raw.widths === 'object' && !Array.isArray(raw.widths)) ? raw.widths : {};
+  [1, 2, 3].forEach(function(n) { d.widths[n] = normalizePaneWidths(rw[n], n); });
+  return d;
+}
+
+// Indeksen til første PDF i files der navnet (uten .pdf) inneholder regelen,
+// uten forskjell på store og små bokstaver. Filer i skip hoppes over. -1 = ingen.
+function docSlotMatch(files, rule, skip) {
+  var r = (typeof rule === 'string' ? rule : '').trim().toLowerCase();
+  if (!r || !Array.isArray(files)) return -1;
+  var skipped = Array.isArray(skip) ? skip : [];
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    if (skipped.indexOf(i) !== -1) continue;
+    if (!f || typeof f.name !== 'string' || !_fileIsPdf(f.name)) continue;
+    if (_fileDisplayName(f.name).toLowerCase().indexOf(r) !== -1) return i;
+  }
+  return -1;
+}
+
+// Filindeks per panel (-1 = tomt). manual[i] er et valg brukeren har gjort i
+// panel i og går foran regelen; regler plasserer aldri samme fil to ganger.
+function docSlotAssign(files, rules, count, manual) {
+  var n = (Number.isInteger(count) && count >= 1 && count <= DOC_PANE_MAX) ? count : 2;
+  var list = Array.isArray(files) ? files : [];
+  var picks = Array.isArray(manual) ? manual : [];
+  var rl = Array.isArray(rules) ? rules : [];
+  var out = [], used = [], pending = [];
+  for (var i = 0; i < n; i++) {
+    var m = picks[i], f = list[m];
+    if (Number.isInteger(m) && m >= 0 && m < list.length && f && typeof f.name === 'string' && _fileIsPdf(f.name)) {
+      out.push(m); used.push(m);
+    } else {
+      out.push(-1); pending.push(i);
+    }
+  }
+  pending.forEach(function(s) {
+    var hit = docSlotMatch(list, rl[s], used);
+    if (hit >= 0) { out[s] = hit; used.push(hit); }
+  });
+  return out;
+}
+
+// Raden per krav i kravpanelets oversikt: nummer, avhengighet, nyhet og
+// oppfinnelseshøyde (true / false / null = ikke vurdert).
+function claimOverviewRows(claims) {
+  if (!Array.isArray(claims)) return [];
+  var rows = [];
+  claims.forEach(function(c) {
+    if (!c || typeof c !== 'object' || Array.isArray(c)) return;
+    if (!Number.isInteger(c.num) || c.num < 1) return;
+    rows.push({
+      num: c.num,
+      dep: (Number.isInteger(c.dep) && c.dep >= 1) ? c.dep : null,
+      novelty: roundTriState(c.novelty),
+      inventive: roundTriState(c.inventive)
+    });
+  });
+  return rows.sort(function(a, b) { return a.num - b.num; });
+}
+
+// Adressen et panel laster, eller null når appen ikke er åpnet via den lokale
+// serveren — da stopper nettleseren file:///-adresser i en iframe.
+function docPaneUrl(root, caseNumber, name, loc) {
+  return _docServedLocally(loc) ? _docFileUrl(root, caseNumber, name, loc) : null;
+}
 // ════════════════════════════════════════════════════════════════════════════
 // SEKSJON 3 · STORAGE-LAG
 // Eneste sted som leser/skriver localStorage
@@ -8094,6 +8367,13 @@ function loadHomeDeadlineFilter() {
 }
 function saveHomeDeadlineFilter(f) {
   lsSetSafe(HOME_DEADLINE_KEY, JSON.stringify(f));
+}
+function loadDocLayout() {
+  try { return normalizeDocLayout(JSON.parse(localStorage.getItem(DOC_LAYOUT_KEY))); }
+  catch(e) { return defaultDocLayout(); }
+}
+function saveDocLayout(l) {
+  lsSetSafe(DOC_LAYOUT_KEY, JSON.stringify(l));
 }
 function loadTlView() {
   try { return normalizeTlView(JSON.parse(localStorage.getItem(TL_VIEW_KEY))); }
@@ -9067,6 +9347,7 @@ var typeBuffers    = loadTypeBuffers();
 var workWindows    = loadWorkWindows();
 var deadlines      = loadDeadlines();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
+var docLayout = loadDocLayout();
 var activeCase = loadActiveCase();
 var unassignedReminder = loadUnassignedReminder();
 var medleserList = loadMedleserList();
@@ -9990,6 +10271,12 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'DOC_LAYOUT_SET': {
+      docLayout = normalizeDocLayout(payload.layout);
+      saveDocLayout(docLayout);
+      break;
+    }
+
     case 'SETTINGS_DOC_ROOT_CHANGE': {
       saveDocRoot(payload.value);
       showToast('✓ Saksmappe-rot lagret');
@@ -10129,6 +10416,7 @@ function _dispatch(action, payload) {
         if ('deadlines' in s) { deadlines = s.deadlines; saveDeadlines(deadlines); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
+        if ('docLayout' in s) { docLayout = s.docLayout; saveDocLayout(docLayout); if (typeof renderDocPanes === 'function') renderDocPanes(); }
         if ('activeCase' in s) { activeCase = s.activeCase; saveActiveCase(activeCase); }
         if ('unassignedReminder' in s) { unassignedReminder = s.unassignedReminder; saveUnassignedReminder(unassignedReminder); }
         if ('medlesere' in s) { medleserList = s.medlesere; saveMedleserList(medleserList); }
@@ -10189,6 +10477,7 @@ function _dispatch(action, payload) {
       workWindows = normalizeWorkWindows(null);
       deadlines = normalizeDeadlines(null);
       homeDeadlineFilter = defaultHomeDeadlineFilter();
+      docLayout = defaultDocLayout();
       undoSnapshot = null; // en åpen «Angre» skal ikke kunne hente sakene tilbake
       closeBackdrop('delete-all-backdrop-2');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
@@ -13479,6 +13768,7 @@ function renderSak(id) {
   renderSakActiveButton(cas);
   renderSakUnassigned(cas);
   renderSakMedl(cas);
+  if (typeof dpOnSakRendered === 'function') dpOnSakRendered(id);
 
   document.getElementById('btn-sak-back')._sakId = id;
 
@@ -20980,6 +21270,335 @@ document.getElementById('btn-reset-confirm').addEventListener('click', function(
   dispatch('STATS_RESET');
 });
 
+// ── Dokumentpaneler: fanen «Dokumenter» ─────────────
+// Tegner kravpanelet og 1–3 PDF-paneler på saksiden. Hvilke filer som havner
+// hvor, avgjøres av de rene funksjonene docSlotAssign og docPaneUrl
+// (test/docPanes.test.js); her er bare DOM og hendelser. Oppsettet (antall,
+// kravpanelets side og bredde, plassregler, panelbredder) ligger i docLayout.
+var _dpTab    = 'overview';        // 'overview' | 'docs'
+var _dpCaseId = null;
+var _dpManual = [null, null, null]; // filvalg for hånd, per panel; gjelder bare denne saken
+var _dpBuilt  = false;
+var _dpDrag   = null;
+
+function _dpActiveCase() {
+  return activeSakId && cases.find(function(c) { return c.id === activeSakId; }) || null;
+}
+
+// Saksiden ble tegnet. Bytter vi sak, starter vi på Oversikt med tomme filvalg.
+function dpOnSakRendered(id) {
+  if (id !== _dpCaseId) {
+    _dpCaseId = id;
+    _dpManual = [null, null, null];
+    _dpTab = 'overview';
+    _dpResetFrames();
+  }
+  dpApplyTab();
+  if (_dpTab === 'docs') renderDocPanes();
+}
+
+function _dpResetFrames() {
+  [0, 1, 2].forEach(function(i) {
+    var f = document.getElementById('dp-frame-' + i);
+    if (f) { f.removeAttribute('src'); f.hidden = true; f.dataset.url = ''; }
+  });
+}
+
+function dpApplyTab() {
+  var docs = _dpTab === 'docs';
+  var view = document.getElementById('view-sak');
+  if (view) view.classList.toggle('is-docs-tab', docs);
+  var viewer = document.getElementById('sak-viewer');
+  if (viewer) viewer.hidden = !docs;
+  [['overview', 'sak-tab-overview'], ['docs', 'sak-tab-docs']].forEach(function(t) {
+    var b = document.getElementById(t[1]);
+    if (!b) return;
+    var on = _dpTab === t[0];
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+    b.tabIndex = on ? 0 : -1;
+  });
+}
+
+function setSakTab(tab) {
+  _dpTab = tab === 'docs' ? 'docs' : 'overview';
+  dpApplyTab();
+  if (_dpTab === 'docs') renderDocPanes();
+  else window.scrollTo(0, 0);
+}
+
+// Byggeklossene (tre paneler, to skillelinjer) lages én gang og vises/skjules
+// etterpå, så en iframe ikke lastes på nytt av at kravpanelet bytter side.
+function _dpBuild() {
+  if (_dpBuilt) return;
+  var host = document.getElementById('dp-panes');
+  if (!host) return;
+  var html = '';
+  for (var i = 0; i < DOC_PANE_MAX; i++) {
+    if (i > 0) html += '<div class="dp-split" role="separator" aria-orientation="vertical" tabindex="0" data-dp-split="' + (i - 1) + '" aria-label="Bredde på panel ' + i + ' og ' + (i + 1) + '"></div>';
+    html += '<section class="dp-pane" data-dp-pane="' + i + '" aria-label="Panel ' + (i + 1) + '">' +
+      '<div class="dp-phead"><span class="dp-slot">' + (i + 1) + '</span>' +
+      '<select class="dp-pick" data-dp-pick="' + i + '" aria-label="Fil i panel ' + (i + 1) + '"></select>' +
+      '<span class="dp-pin" id="dp-pin-' + i + '"></span></div>' +
+      '<iframe class="dp-frame" id="dp-frame-' + i + '" title="Dokument i panel ' + (i + 1) + '" hidden></iframe>' +
+      '<div class="dp-empty" id="dp-empty-' + i + '"></div>' +
+      '</section>';
+  }
+  host.innerHTML = html;
+  _dpBuilt = true;
+}
+
+function _dpFiles() {
+  var id = activeSakId;
+  var data = id ? loadSakData(id) : null;
+  return (data && Array.isArray(data.files)) ? data.files : [];
+}
+
+function _dpMarkClaim(v) {
+  if (v === true)  return '<span class="dp-yes" aria-label="Ja">✓</span>';
+  if (v === false) return '<span class="dp-no" aria-label="Nei">✗</span>';
+  return '<span class="dp-unk" aria-label="Ikke vurdert">–</span>';
+}
+
+// Oversikten over kravene: samme data som kravtabellen, bare lesevisning.
+function dpClaimsHtml(claims) {
+  var rows = claimOverviewRows(claims);
+  var head = '<h3 class="dp-claims-title">Krav</h3>';
+  if (!rows.length) return head + '<p class="dp-claims-empty">Ingen krav er lagt inn ennå.</p>';
+  return head + '<table class="dp-ov"><thead><tr><th scope="col">Krav</th><th scope="col">Nyhet</th>' +
+    '<th scope="col">Oppf.høyde</th></tr></thead><tbody>' +
+    rows.map(function(r) {
+      return '<tr><td>' + r.num + (r.dep ? ' <span class="dp-ov-dep">→ ' + r.dep + '</span>' : '') + '</td><td>' +
+        _dpMarkClaim(r.novelty) + '</td><td>' + _dpMarkClaim(r.inventive) + '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
+function _dpPaneWidths() {
+  return docLayout.widths[docLayout.count];
+}
+
+// Legger oppsettet (antall, side, bredder, synlighet) på DOM-en uten å røre iframene.
+function _dpApplyLayout() {
+  var body = document.getElementById('dp-body');
+  if (!body) return;
+  var l = docLayout;
+  body.classList.toggle('is-claims-left',  l.claimsSide === 'left');
+  body.classList.toggle('is-claims-right', l.claimsSide === 'right');
+  var claims = document.getElementById('dp-claims');
+  var csplit = document.getElementById('dp-csplit');
+  claims.hidden = !l.claimsVisible;
+  csplit.hidden = !l.claimsVisible;
+  claims.style.width = l.claimsWidth + 'px';
+  var tog = document.getElementById('dp-claims-toggle');
+  tog.textContent = l.claimsVisible ? 'Skjul krav' : 'Vis krav';
+  tog.setAttribute('aria-pressed', l.claimsVisible ? 'true' : 'false');
+  document.querySelectorAll('[data-dp-count]').forEach(function(b) {
+    b.setAttribute('aria-pressed', Number(b.dataset.dpCount) === l.count ? 'true' : 'false');
+  });
+  document.querySelectorAll('[data-dp-side]').forEach(function(b) {
+    b.setAttribute('aria-pressed', b.dataset.dpSide === l.claimsSide ? 'true' : 'false');
+  });
+  var w = _dpPaneWidths();
+  document.querySelectorAll('.dp-pane').forEach(function(p) {
+    var i = Number(p.dataset.dpPane);
+    p.hidden = i >= l.count;
+    if (i < l.count) p.style.flex = (w[i] * 1000) + ' 1 0';
+  });
+  document.querySelectorAll('.dp-split[data-dp-split]').forEach(function(s) {
+    s.hidden = Number(s.dataset.dpSplit) + 1 >= l.count;
+  });
+}
+
+function _dpFillRuleInputs() {
+  document.querySelectorAll('[data-dp-rule]').forEach(function(inp) {
+    inp.value = docLayout.rules[Number(inp.dataset.dpRule)] || '';
+  });
+}
+
+function _dpShowNotice(text) {
+  var n = document.getElementById('dp-notice');
+  if (!n) return;
+  n.hidden = !text;
+  n.innerHTML = text || '';
+}
+
+function renderDocPanes() {
+  _dpFillRuleInputs();
+  if (_dpTab !== 'docs') return;
+  var cas = _dpActiveCase();
+  if (!cas) return;
+  _dpBuild();
+  var served = _docServedLocally(window.location);
+  var body = document.getElementById('dp-body');
+  document.getElementById('dp-toolbar').hidden = !served;
+  if (!served) {
+    body.hidden = true;
+    _dpShowNotice('Dokumentpaneler krever den lokale serveren. Start <strong>Start-PatentDesk.ps1</strong> og åpne PatentDesk via <strong>http://localhost:8080</strong>. Filene kan fortsatt åpnes fra listen «Dokumenter» øverst.');
+    return;
+  }
+  body.hidden = false;
+  _dpShowNotice('');
+  _dpApplyLayout();
+
+  var data = loadSakData(cas.id);
+  document.getElementById('dp-claims').innerHTML = dpClaimsHtml(data && data.claims);
+
+  var files = _dpFiles();
+  var assigned = docSlotAssign(files, docLayout.rules, docLayout.count, _dpManual);
+  var root = loadDocRoot();
+  for (var i = 0; i < DOC_PANE_MAX; i++) {
+    var visible = i < docLayout.count;
+    var sel = document.querySelector('[data-dp-pick="' + i + '"]');
+    var pin = document.getElementById('dp-pin-' + i);
+    var frame = document.getElementById('dp-frame-' + i);
+    var empty = document.getElementById('dp-empty-' + i);
+    if (!visible) { _dpSetFrame(frame, ''); continue; }
+    var idx = assigned[i];
+    var manual = Number.isInteger(_dpManual[i]) && idx === _dpManual[i];
+    var rule = docLayout.rules[i];
+    var opts = '<option value="">' + (manual ? 'Automatisk' : (idx >= 0 ? 'Automatisk: ' + esc(_fileDisplayName(files[idx].name)) : 'Velg fil …')) + '</option>';
+    files.forEach(function(f, k) {
+      if (!_fileIsPdf(f.name)) return;
+      opts += '<option value="' + k + '"' + (manual && k === idx ? ' selected' : '') + '>' + esc(fileListLabel(f)) + '</option>';
+    });
+    sel.innerHTML = opts;
+    pin.textContent = manual ? 'valgt for hånd' : (rule ? 'regel: ' + rule : '');
+    var url = idx >= 0 ? docPaneUrl(root, cas.caseNumber, files[idx].name, window.location) : '';
+    _dpSetFrame(frame, url || '');
+    if (url) {
+      empty.hidden = true;
+    } else {
+      empty.hidden = false;
+      empty.textContent = !files.length ? 'Ingen filer registrert på saken.'
+        : (rule && !manual ? 'Ingen fil passer regelen «' + rule + '». Velg en fil over.' : 'Velg en fil over.');
+    }
+  }
+}
+
+// iframen får ny adresse bare når den faktisk er en annen — ellers mister
+// leseren sted og zoom hver gang oppsettet endres.
+function _dpSetFrame(frame, url) {
+  if (!frame) return;
+  if ((frame.dataset.url || '') === url) { frame.hidden = !url; return; }
+  frame.dataset.url = url;
+  if (url) { frame.src = url; frame.hidden = false; }
+  else { frame.removeAttribute('src'); frame.hidden = true; }
+}
+
+function _dpSetLayout(patch) {
+  dispatch('DOC_LAYOUT_SET', { layout: Object.assign({}, docLayout, patch) });
+  renderDocPanes();
+}
+
+// ── Hendelser ──────────────────────────────────────
+document.getElementById('sak-tabs').addEventListener('click', function(e) {
+  var b = e.target.closest('[data-sak-tab]');
+  if (b) setSakTab(b.dataset.sakTab);
+});
+document.getElementById('sak-tabs').addEventListener('keydown', function(e) {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  setSakTab(_dpTab === 'docs' ? 'overview' : 'docs');
+  var b = document.getElementById(_dpTab === 'docs' ? 'sak-tab-docs' : 'sak-tab-overview');
+  if (b) b.focus();
+});
+
+document.getElementById('dp-toolbar').addEventListener('click', function(e) {
+  var c = e.target.closest('[data-dp-count]');
+  if (c) { _dpSetLayout({ count: Number(c.dataset.dpCount) }); return; }
+  var s = e.target.closest('[data-dp-side]');
+  if (s) { _dpSetLayout({ claimsSide: s.dataset.dpSide }); return; }
+  if (e.target.closest('#dp-claims-toggle')) _dpSetLayout({ claimsVisible: !docLayout.claimsVisible });
+});
+
+document.getElementById('dp-panes').addEventListener('change', function(e) {
+  var sel = e.target.closest('[data-dp-pick]');
+  if (!sel) return;
+  _dpManual[Number(sel.dataset.dpPick)] = sel.value === '' ? null : Number(sel.value);
+  renderDocPanes();
+});
+
+// Plassreglene i Innstillinger
+document.querySelectorAll('[data-dp-rule]').forEach(function(inp) {
+  inp.addEventListener('change', function() {
+    var rules = docLayout.rules.slice();
+    rules[Number(inp.dataset.dpRule)] = inp.value;
+    dispatch('DOC_LAYOUT_SET', { layout: Object.assign({}, docLayout, { rules: rules }) });
+    inp.value = docLayout.rules[Number(inp.dataset.dpRule)];
+    showToast('✓ Plassregel lagret');
+  });
+});
+
+// Skillelinjer: dra, eller piltaster på en skillelinje i fokus. Mens du drar,
+// får iframene pointer-events: none (is-dragging), ellers sluker PDF-visningen
+// musehendelsene og draget setter seg fast.
+function _dpStartDrag(e, el, kind, index) {
+  var body = document.getElementById('dp-body');
+  var panes = document.getElementById('dp-panes');
+  _dpDrag = {
+    kind: kind, index: index, x: e.clientX,
+    widths: _dpPaneWidths().slice(), claimsWidth: docLayout.claimsWidth,
+    panesPx: panes.getBoundingClientRect().width || 1,
+    el: el
+  };
+  body.classList.add('is-dragging');
+  el.classList.add('is-active');
+  el.setPointerCapture(e.pointerId); // på selve skillelinjen, så klikk og dobbeltklikk også treffer den
+  e.preventDefault();
+}
+function _dpMoveDrag(e) {
+  if (!_dpDrag) return;
+  var dx = e.clientX - _dpDrag.x;
+  if (_dpDrag.kind === 'panes') {
+    var w = dragPaneWidths(_dpDrag.widths, _dpDrag.index, dx / _dpDrag.panesPx);
+    docLayout.widths[docLayout.count] = w;
+  } else {
+    var sign = docLayout.claimsSide === 'left' ? 1 : -1;
+    docLayout.claimsWidth = Math.round(Math.min(Math.max(_dpDrag.claimsWidth + sign * dx, DOC_CLAIMS_W_MIN), DOC_CLAIMS_W_MAX));
+  }
+  _dpApplyLayout();
+}
+function _dpEndDrag() {
+  if (!_dpDrag) return;
+  _dpDrag.el.classList.remove('is-active');
+  document.getElementById('dp-body').classList.remove('is-dragging');
+  _dpDrag = null;
+  dispatch('DOC_LAYOUT_SET', { layout: docLayout });
+}
+document.getElementById('dp-body').addEventListener('pointerdown', function(e) {
+  var cs = e.target.closest('#dp-csplit');
+  if (cs) { _dpStartDrag(e, cs, 'claims', 0); return; }
+  var s = e.target.closest('[data-dp-split]');
+  if (s) _dpStartDrag(e, s, 'panes', Number(s.dataset.dpSplit));
+});
+document.getElementById('dp-body').addEventListener('pointermove', _dpMoveDrag);
+document.getElementById('dp-body').addEventListener('pointerup', _dpEndDrag);
+document.getElementById('dp-body').addEventListener('pointercancel', _dpEndDrag);
+document.getElementById('dp-body').addEventListener('dblclick', function(e) {
+  if (e.target.closest('#dp-csplit')) {
+    _dpSetLayout({ claimsWidth: defaultDocLayout().claimsWidth });
+  } else if (e.target.closest('[data-dp-split]')) {
+    var widths = {}; [1, 2, 3].forEach(function(n) { widths[n] = docLayout.widths[n]; });
+    widths[docLayout.count] = normalizePaneWidths(null, docLayout.count);
+    _dpSetLayout({ widths: widths });
+  }
+});
+document.getElementById('dp-body').addEventListener('keydown', function(e) {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  var step = (e.key === 'ArrowRight' ? 1 : -1) * 0.02;
+  var cs = e.target.closest('#dp-csplit');
+  var s = e.target.closest('[data-dp-split]');
+  if (cs) {
+    var sign = docLayout.claimsSide === 'left' ? 1 : -1;
+    _dpSetLayout({ claimsWidth: docLayout.claimsWidth + sign * step * 500 });
+  } else if (s) {
+    var widths = {}; [1, 2, 3].forEach(function(n) { widths[n] = docLayout.widths[n]; });
+    widths[docLayout.count] = dragPaneWidths(docLayout.widths[docLayout.count], Number(s.dataset.dpSplit), step);
+    _dpSetLayout({ widths: widths });
+  } else return;
+  e.preventDefault();
+});
+
+_dpFillRuleInputs();
 // ── Sjekkliste-editor ──────────────────────────────
 // SEKSJON 7 · BOOTSTRAP
 // init()-kall, migrasjon, første render
