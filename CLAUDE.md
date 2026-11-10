@@ -131,7 +131,7 @@ state it; the owner can override.
 
 - **Fix** — a bug or small logic change, no UI or stored-data change.
   Write a failing test → fix in `src/` → `npm run build` → `npm run test:quiet` +
-  `npm run lint`. No agents.
+  `npm run --silent lint`. No agents.
 - **Feature** — new or changed behaviour, possibly UI.
   1. Write a short spec: problem, scope (in/out), numbered testable
      acceptance criteria (cover each workflow state, Oppdrag, overdue,
@@ -196,7 +196,7 @@ come with a test before the implementation. Add or update a test in
 `test/*.test.js` using the `loadFunctions` harness
 (`test/extractFunctions.js`) that exercises the new/changed behavior; stub
 dates and `isNonWorkday` so tests don't drift with the calendar. Run
-the tests before considering the change done. UI-only/render code with no
+`npm run test:quiet` (see *Running tests*) before considering the change done. UI-only/render code with no
 extractable pure logic is exempt, but extract pure logic into its own
 function where possible so it can be tested this way.
 
@@ -205,7 +205,12 @@ function where possible so it can be tested this way.
   report is ~250 KB (tens of thousands of tokens); the quiet one prints a dot
   per test and full details only for failures. Exit code 0 = all pass.
 - To run one file while working: `node --test --test-reporter=dot test/<file>.test.js`.
-- Pipe `npm run lint` through `tail -30`; never read full test or lint output.
+- Browser tests: `node --test --test-reporter=dot test/e2e/*.e2e.js` (same short output).
+- Lint: run **`npm run --silent lint`** with no pipe. ESLint prints nothing
+  when clean and only the problems otherwise, so it is already short. Never
+  pipe lint or tests through `tail`/`head`: the pipe replaces the exit code, so
+  a failure looks like a pass.
+- Never read the full `npm test` report; the quiet runs above are enough.
 - `npm test` stays the full report for CI (GitHub Actions runs it on every
   PR and push to `main`).
 
