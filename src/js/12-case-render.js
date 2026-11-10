@@ -23,7 +23,6 @@ function renderSak(id) {
 
   // Topptekst + fane-tittel
   document.getElementById('sak-page-title').textContent = cas.caseNumber;
-  document.getElementById('sak-page-sub').textContent = sakSubtitle(cas);
   if (_roundDrawer.open && _roundDrawer.caseId !== id) closeRoundDrawer();
   renderSakRoundLine(cas, data);
   renderRoundDrawer();
@@ -63,6 +62,9 @@ function renderSak(id) {
   if (medlField) medlField.style.display = isOppdrag ? 'none' : '';
   var medlEntry = isOppdrag ? null : caseMedlFor(medlLog, cas.id);
   document.getElementById('sak-medl').textContent = medlEntry ? medlEntry.reader + ' · ' + toDisplay(medlEntry.sent) : '—';
+
+  // Metalinjen i sakshodet (lesing; redigering skjer fortsatt i «Rediger sak»)
+  renderSakMeta(cas);
 
   // Status-knapper — forenklet for oppdrag
   var statusBtns = document.getElementById('sak-status-btns');
@@ -139,6 +141,7 @@ function renderSak(id) {
 
   // Notater
   document.getElementById('sak-notes').value = data.sakNotes || '';
+  setNotesView('vis');
 
   // Saksdokumenter
   renderSakFileList(data);
@@ -150,6 +153,48 @@ function renderSak(id) {
   // Sticky-bar: uten sammendrag finnes ingen sentinel å observere
   initSakStickyBar(!showSummary);
   updateSakAnchors();
+}
+
+// Notater: ett felt om gangen. Begge ligger i DOM-en og lagres som før; bare
+// visningen byttes. En prikk på den skjulte fanen viser at den har tekst.
+function setNotesView(which) {
+  var grid = document.querySelector('.sak-notes-grid');
+  if (grid) grid.dataset.notesShow = which;
+  document.querySelectorAll('.sak-seg-btn[data-notes]').forEach(function(b) {
+    var on = b.dataset.notes === which;
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  syncNotesDots();
+}
+function syncNotesDots() {
+  var vis = document.getElementById('sak-case-notes');
+  var int = document.getElementById('sak-notes');
+  var visBtn = document.querySelector('.sak-seg-btn[data-notes="vis"]');
+  var intBtn = document.querySelector('.sak-seg-btn[data-notes="int"]');
+  if (visBtn && vis) visBtn.classList.toggle('has-text', !!vis.value.trim());
+  if (intBtn && int) intBtn.classList.toggle('has-text', !!int.value.trim());
+}
+
+function renderSakMeta(cas) {
+  var el = document.getElementById('sak-meta-line'); if (!el) return;
+  var isOppdrag = cas.type === 'oppdrag';
+  var data = loadSakData(cas.id) || {};
+  var medlEntry = isOppdrag ? null : caseMedlFor(medlLog, cas.id);
+  var parts = sakMetaLine({
+    title: cas.title || '', isOppdrag: isOppdrag,
+    durationLabel: cas.duration ? cas.duration + ' arb.dager' : workWindowDays(cas) + ' arb.dager (standard)',
+    filing: data.filingDate, priority: data.priorityDate,
+    bufferLabel: metaBufferLabel(cas),
+    medl: medlEntry ? medlEntry.reader + ' · ' + toDisplay(medlEntry.sent) : ''
+  });
+  el.textContent = '';
+  var hasTitle = !!String(cas.title == null ? '' : cas.title).trim();
+  parts.forEach(function(t, i) {
+    var sp = document.createElement('span'); sp.textContent = t;
+    if (hasTitle && i === 0) sp.className = 'sak-meta-title';
+    el.appendChild(sp);
+  });
 }
 
 // ── Faser: kollaps ────────────────────────────────
@@ -248,6 +293,19 @@ document.getElementById('sak-anchors').addEventListener('click', function(e) {
   }
   phase.scrollIntoView({ behavior: 'smooth', block: 'start' });
   setActiveAnchor(btn.dataset.anchor);
+});
+
+// Sjekklistene: klikk på raden åpner/lukker. Delegert, siden radene tegnes på nytt per sak.
+document.getElementById('view-sak').addEventListener('click', function(e) {
+  var head = e.target.closest('.sak-fold-head'); if (!head) return;
+  var sec = head.closest('.sak-fold'); if (!sec) return;
+  var open = !sec.classList.contains('is-open');
+  sec.classList.toggle('is-open', open);
+  head.setAttribute('aria-expanded', open ? 'true' : 'false');
+  sec.querySelector('.sak-fold-body').hidden = !open;
+  var state = loadChecklistOpen();
+  state[sec.dataset.fold] = open;
+  lsSetSafe(CHECKLIST_OPEN_KEY, JSON.stringify(state));
 });
 
 // ── Framoverknappen ───────────────────────────────
@@ -388,10 +446,10 @@ function renderSakFileList(data) {
 }
 
 // Sjekklistens egne grupper — Forberedelse, Gransking, Rapport — er de samme
-// stegene som sakssiden deler seg inn i som fase A, B og C. Lå hele listen i
-// fase B, sto «Rapport»-punktene en fase unna rapporten de gjelder. Gruppene
+// stegene som sakssiden deler seg inn i som fase 1–3. Lå hele listen i
+// Gransking, sto «Rapport»-punktene en fase unna rapporten de gjelder. Gruppene
 // legges derfor i fasen de hører til. Malen er brukerens egen, så en gruppe vi
-// ikke kjenner igjen havner samlet i fase B, der hele listen lå før — ingen
+// ikke kjenner igjen havner samlet i Gransking, der hele listen lå før — ingen
 // punkter forsvinner av at noen har døpt om en gruppe.
 var CHECKLIST_PHASE_MAP = {
   'forberedelse': 'saken',
@@ -413,6 +471,58 @@ function groupChecklistByPhase(template) {
   return out;
 }
 
+// Fasene står i denne rekkefølgen i src/index.html og i ankerne: det du jobber
+// mest med (Vurdering) øverst. test/caseLayout.test.js leser rekkefølgen derfra.
+
+// Sjekklistene er oppslagsverk, ikke hovedarbeidet: de står lukket med én linje
+// (navn + framdrift) til du åpner dem. Valget huskes globalt, som fasene.
+// Ikke pt_sak_-prefikset, så oppryddingen av foreldreløse saksdetaljer lar det stå.
+var CHECKLIST_OPEN_KEY = 'pt_checklists_open';
+
+function checklistGroupCounts(data, group) {
+  var items = (group && Array.isArray(group.items)) ? group.items : [];
+  var checks = (data && data.checklist) || {};
+  var done = items.filter(function(it) { return checks[it.id] === true; }).length;
+  return { done: done, total: items.length };
+}
+function checklistOpenKey(name) { return String(name == null ? '' : name).trim().toLowerCase(); }
+function isChecklistOpen(state, name) {
+  var key = checklistOpenKey(name);
+  return !!(state && Object.prototype.hasOwnProperty.call(state, key) && state[key]);
+}
+function loadChecklistOpen() {
+  try { return JSON.parse(localStorage.getItem(CHECKLIST_OPEN_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+
+// Metalinjen under saksnummeret. Ren funksjon: returnerer delene i rekkefølge,
+// uten HTML — kalleren setter dem inn som tekst.
+// Bufferen vises bare når saken har en egen verdi. Standarden for typen står i
+// Innstillinger og er ikke noe som er satt på saken; i Fristarkiv er bufferen ikke aktiv.
+function metaBufferLabel(c) {
+  if (!c || c.status === 'fristarkiv' || c.caseBuffer == null) return '';
+  return caseBufferLabel(c);
+}
+
+function sakMetaLine(o) {
+  var parts = [];
+  var title = String(o.title == null ? '' : o.title).trim();
+  if (title) parts.push(title);
+  if (o.isOppdrag) {
+    parts.push('Varighet ' + o.durationLabel);
+    return parts;
+  }
+  // Bare felt som har data: et tomt felt viser ingenting, ikke en «—».
+  var filing   = toDisplay(o.filing);
+  var priority = toDisplay(o.priority);
+  var medl     = String(o.medl == null ? '' : o.medl).trim();
+  if (filing)   parts.push('Innlevert ' + filing);
+  if (priority) parts.push('Prioritet ' + priority);
+  if (o.bufferLabel) parts.push('Buffer ' + o.bufferLabel);
+  if (medl)     parts.push('Medlesing ' + medl);
+  return parts;
+}
+
 function _checklistItemsHtml(data, group) {
   return group.items.map(function(item) {
     var checked = data.checklist[item.id] === true;
@@ -423,10 +533,29 @@ function _checklistItemsHtml(data, group) {
   }).join('');
 }
 
-// Én gruppe per fase er normalen, og da er gruppenavnet seksjonens overskrift.
-// Reserveplassen i fase B kan ha flere, og beholder da gruppetitlene inni.
+// Hver gruppe er en sammenleggbar rad: navn, framdrift og en pil. Innholdet er
+// alltid i DOM-en (lukket via hidden), så avkryssing og tellere virker uendret.
+function _checklistFoldHtml(data, g, titleHtml, bodyHtml, open) {
+  var c = checklistGroupCounts(data, g);
+  var key = esc(checklistOpenKey(g.phase));
+  var bodyId = 'sak-fold-body-' + key.replace(/[^a-z0-9]+/g, '-');
+  var pct = c.total ? Math.round(c.done / c.total * 100) : 0;
+  return '<section class="sak-section sak-fold' + (open ? ' is-open' : '') + '" data-sak-section="checklist" data-fold="' + key + '">' +
+    '<h2 class="sak-fold-h"><button type="button" class="sak-fold-head" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + bodyId + '">' +
+      '<span class="sak-fold-title">' + titleHtml + '</span>' +
+      '<span class="sak-fold-bar" aria-hidden="true"><span style="width:' + pct + '%"></span></span>' +
+      '<span class="sak-fold-count">' + c.done + ' / ' + c.total + '</span>' +
+      '<span class="sak-fold-chev" aria-hidden="true">▸</span>' +
+    '</button></h2>' +
+    '<div class="sak-fold-body" id="' + bodyId + '"' + (open ? '' : ' hidden') + '>' + bodyHtml + '</div>' +
+  '</section>';
+}
+
+// Én gruppe per fase er normalen, og da er gruppenavnet radens overskrift.
+// Reserveplassen i Gransking kan ha flere, og beholder da gruppetitlene inni.
 function _checklistSlotHtml(data, groups, fallbackTitle) {
   if (!groups.length) return '';
+  var state = loadChecklistOpen();
   if (fallbackTitle) {
     var inner = groups.map(function(g) {
       return '<div class="sak-check-phase">' +
@@ -434,16 +563,15 @@ function _checklistSlotHtml(data, groups, fallbackTitle) {
         _checklistItemsHtml(data, g) +
       '</div>';
     }).join('');
-    return '<section class="sak-section" data-sak-section="checklist">' +
-      '<h2 class="sak-section-title">' + esc(fallbackTitle) + '</h2>' +
-      '<div class="sak-checklist">' + inner + '</div>' +
-    '</section>';
+    var all = { phase: fallbackTitle, items: [] };
+    groups.forEach(function(g) { all.items = all.items.concat(g.items); });
+    return _checklistFoldHtml(data, all, esc(fallbackTitle),
+      '<div class="sak-checklist">' + inner + '</div>', isChecklistOpen(state, fallbackTitle));
   }
   return groups.map(function(g) {
-    return '<section class="sak-section" data-sak-section="checklist">' +
-      '<h2 class="sak-section-title">' + esc(g.phase) + '</h2>' +
-      '<div class="sak-checklist sak-checklist-flat">' + _checklistItemsHtml(data, g) + '</div>' +
-    '</section>';
+    return _checklistFoldHtml(data, g, esc(g.phase),
+      '<div class="sak-checklist sak-checklist-flat">' + _checklistItemsHtml(data, g) + '</div>',
+      isChecklistOpen(state, g.phase));
   }).join('');
 }
 
@@ -818,7 +946,9 @@ function renderMedlesingList() {
   document.getElementById('medl-detail-view').style.display = 'none';
 
   var sorted = medlesing.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
-  document.getElementById('medl-count').textContent = sorted.length + ' medlesing' + (sorted.length !== 1 ? 'er' : '');
+  var outCount = renderMedlOutList();
+  document.getElementById('medl-count').textContent = sorted.length + ' medlesing' + (sorted.length !== 1 ? 'er' : '') +
+    (outCount ? ' · ' + outCount + ' ute hos medleser' : '');
   document.getElementById('medl-empty').style.display = sorted.length ? 'none' : 'block';
 
   document.getElementById('medl-tbody').innerHTML = sorted.map(function(rec) {

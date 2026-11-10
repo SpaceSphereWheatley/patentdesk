@@ -113,8 +113,8 @@ document.getElementById('btn-medl-send-confirm').addEventListener('click', funct
   if (id && reader) dispatch('MEDL_SEND', { id: id, reader: reader, sent: date });
 });
 
-// Knappene i «Hos medleser»-linjen på sakssiden og Oversikt.
-['sak-medl-out', 'home-medl-out'].forEach(function(elId) {
+// Knappene i «Hos medleser»-linjen på sakssiden, Oversikt og Medlesing.
+['sak-medl-out', 'home-medl-out', 'medl-out-list'].forEach(function(elId) {
   document.getElementById(elId).addEventListener('click', function(e) {
     var link = e.target.closest('.medl-out-case');
     if (link) { e.preventDefault(); navigateTo('sak/' + link.dataset.id); return; }

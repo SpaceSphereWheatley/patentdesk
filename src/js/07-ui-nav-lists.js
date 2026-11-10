@@ -29,7 +29,7 @@ function updateNav() {
     if (!navHasBadge(page)) { if (badge) badge.remove(); return; }
     if (!badge) { badge = document.createElement('span'); badge.className = 'nav-count'; tab.appendChild(badge); }
     if (page === 'medlesing') {
-      badge.textContent = medlesing.filter(function(m) { return !m.completed; }).length;
+      badge.textContent = medlNavCount(medlesing, medlLog);
       return;
     }
     var list = byPage[page] || casesForPage(page);
@@ -390,16 +390,18 @@ function medlPillHtml(c) {
   return '<span class="medl-out-pill" title="' + esc('Hos medleser: ' + m.reader + ' · ' + _medlSinceTxt(m)) + '">Hos ' + esc(m.reader) + '</span>';
 }
 
-// Linjen på sakssiden og på Oversikt. withCase: vis saksnummer og lenke.
-function medlOutHtml(entry, withCase) {
-  return '<div class="medl-out" data-id="' + entry.caseId + '">' +
+// Linjen på sakssiden, Oversikt og Medlesing. withCase: vis saksnummer og lenke.
+// withEdit: vis «Endre» (standard: bare når saksnummeret ikke vises).
+function medlOutHtml(entry, withCase, withEdit) {
+  if (withEdit === undefined) withEdit = !withCase;
+  return '<div class="medl-out" data-id="' + esc(entry.caseId) + '">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg>' +
     '<span class="medl-out-text">Hos medleser: ' +
-      (withCase ? '<a href="#" class="medl-out-case" data-id="' + entry.caseId + '">' + esc(entry.caseNumber) + '</a> – ' : '') +
+      (withCase ? '<a href="#" class="medl-out-case" data-id="' + esc(entry.caseId) + '">' + esc(entry.caseNumber) + '</a> – ' : '') +
       '<strong>' + esc(entry.reader) + '</strong> · ' + esc(_medlSinceTxt(entry)) + '</span>' +
     '<span class="medl-out-actions">' +
-      (withCase ? '' : '<button class="s-btn btn-medl-send" data-id="' + entry.caseId + '">Endre</button>') +
-      '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + entry.caseId + '">Tilbake ✓</button>' +
+      (withEdit ? '<button class="s-btn btn-medl-send" data-id="' + esc(entry.caseId) + '">Endre</button>' : '') +
+      '<button class="s-btn s-btn-accent btn-medl-return" data-id="' + esc(entry.caseId) + '">Tilbake ✓</button>' +
     '</span></div>';
 }
 
@@ -409,6 +411,17 @@ function renderSakMedl(cas) {
   var m = canSendToMedleser(cas) ? openMedlFor(medlLog, cas.id) : null;
   el.innerHTML = m ? medlOutHtml(m, false) : '';
   el.hidden = !m;
+}
+
+// Medlesing-siden: dine saker som ligger ute hos en medleser, med samme knapper som på Hjem.
+function renderMedlOutList() {
+  var el = document.getElementById('medl-out-list');
+  var empty = document.getElementById('medl-out-empty');
+  if (!el) return 0;
+  var open = openMedlEntries(medlLog);
+  el.innerHTML = open.map(function(x) { return medlOutHtml(x, true, true); }).join('');
+  if (empty) empty.style.display = open.length ? 'none' : 'block';
+  return open.length;
 }
 
 function renderHomeMedl() {
@@ -526,18 +539,21 @@ function render() {
 
   var isOversikt = !!cfg.showAll;
 
-  // Tidslinje: vis på alle sakssider unntatt avsluttet og oversikt (alle saker)
+  // Tidslinje: vis på alle sakssider unntatt avsluttet og oversikt (alle saker).
+  // Er den slått sammen, tegnes den ikke — den har ingen bredde å regne fra.
+  var tlDock = document.getElementById('cases-tl-dock');
   var tlHost = document.getElementById('cases-tl-host');
   var showTl = activePage !== 'avsluttet' && !isOversikt;
-  if (tlHost) tlHost.style.display = showTl ? '' : 'none';
+  if (tlDock) tlDock.hidden = !showTl;
   if (showTl) {
+    applyCasesTlCollapsed();
     if (_tlLastCasesPage !== activePage && _tlPageDefaults[activePage]) {
       _tlConfig['cases-timeline'].typeFilter = _tlPageDefaults[activePage].slice();
       _tlLastCasesPage = activePage;
       var casesTlWrap = tlHost.querySelector('.home-timeline-wrap');
       if (casesTlWrap && casesTlWrap._syncVisual) casesTlWrap._syncVisual();
     }
-    renderTimeline({ target: 'cases-timeline' });
+    if (!casesTlCollapsed()) renderTimeline({ target: 'cases-timeline' });
   }
 
   // Oversikt (Alle saker) → tabell; øvrige → kortliste

@@ -337,19 +337,19 @@ for (const w of [1440, 1280]) {
 }
 
 // ── Criterion 8: edges ───────────────────────────────────────────────────
-e2e('C8 @960: 0 claims -> empty-row message spans 7 columns, no overflow', async () => {
+e2e('C8 @960: 0 claims -> empty state replaces the table, no overflow', async () => {
   const { page, close } = await openCase(960, { numClaims: 0 });
   try {
     const m = await measure(page);
-    const td = await page.evaluate(() => {
-      const c = document.querySelector('#sak-claims-tbody td.table-empty');
-      if (!c) return null;
-      const b = c.getBoundingClientRect(), t = c.closest('table').getBoundingClientRect();
-      return { colSpan: c.colSpan, left: b.left, right: b.right, tLeft: t.left, tRight: t.right };
+    const st = await page.evaluate(() => {
+      const e = document.getElementById('sak-claims-empty');
+      const t = document.querySelector('.sak-claims-table');
+      const b = e.getBoundingClientRect();
+      return { emptyShown: e.offsetParent !== null, tableShown: t.offsetParent !== null, right: b.right, vw: window.innerWidth };
     });
-    assert.ok(td, 'empty-row message not rendered');
-    assert.equal(td.colSpan, 7);
-    assert.ok(Math.abs(td.left - td.tLeft) <= 1 && Math.abs(td.right - td.tRight) <= 1, 'empty row does not span the table');
+    assert.equal(st.emptyShown, true, 'empty state not rendered');
+    assert.equal(st.tableShown, false, 'table should be hidden with 0 claims');
+    assert.ok(st.right <= st.vw, 'empty state overflows the viewport');
     assertNoHorizontalOverflow(m, '960/empty');
   } finally { await close(); }
 });

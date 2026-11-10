@@ -6,6 +6,59 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Added
+- **Medlesing viser begge retninger.** Siden har to seksjoner: «Jeg medleser»
+  (lesingene du gjør for andre, som før) og «Hos medleser» (dine egne saker som
+  ligger ute hos en kollega). Hver rad har saksnummer (lenke til saken),
+  medleser, hvor lenge den har ligget ute, **Endre** og **Tilbake ✓** — de
+  eldste står øverst. Antallet øverst viser også hvor mange som er ute, og
+  tallet ved «Medlesing» i menyen teller nå åpne lesinger pluss saker som er
+  ute. En sak som går til Fristarkiv eller Avsluttet forsvinner fra lista, som
+  på Hjem. Hjem beholder sin egen «Hos medleser»-blokk.
+- **Arbeidsplan kan slås sammen på sakslistene.** Over tidslinjen på Ny,
+  Viderebehandling, Fristarkiv og Oppdrag står nå «▾ Arbeidsplan», som på Hjem.
+  Et klikk skjuler tidslinjen så lista får plassen. Valget huskes på tvers av
+  listene; som før er tidslinjen åpen til du lukker den. En skjult tidslinje
+  tegnes ikke.
+- **Tom tilstand i aktivitetsgrafen.** Uten nybehandlinger i året og uten
+  prognose viser Statistikk en kort beskjed med årstallet i stedet for en flat
+  linje.
+
+### Changed
+- **Metalinjen viser bare felt med data.** Innlevert, Prioritet og Medlesing står
+  ikke lenger med «—» når de er tomme; de skjules. Bufferen vises bare når saken
+  har en egen verdi — standarden for sakstypen står ikke i hodet.
+- CPC-varselet på Hjem har fått luft under seg, så det ikke ligger tett mot
+  «Oversikt».
+
+### Fixed
+- **Fristblokken står på én grunnlinje.** «DIN FRIST», datoen, nedtellingen,
+  «Faktisk frist …» og forklaringen til høyre ble sentrert hver for seg og lå
+  opptil 5 px skjevt. Raden er nå justert på felles tekstlinje.
+- **Skjermleser-navn på tre symbolknapper.** «Tøm filter» (✕) og årspilene (‹ ›)
+  på Statistikk har fått `aria-label`, ikke bare `title`.
+
+## [4.61.0] - 2026-11-10
+### Changed
+- **Saksvisningen: Vurdering først.** Rekkefølgen er nå Vurdering (krav og
+  mothold), Gransking, Saken — det du jobber mest med står øverst. Fasene er
+  nummerert 1–3 i stedet for A–C, og ankerne i sticky-baren følger samme
+  rekkefølge.
+- **Sjekklistene er sammenleggbare.** Forberedelse, Gransking og Rapport står
+  som én rad med navn, framdrift (f.eks. 3 / 12) og pil, og åpnes ved klikk.
+  Valget huskes. Avkrysning og tellerne i sammendraget virker som før.
+- **Ett Notater-felt om gangen.** «Synlig i oversikten» og «Intern» byttes med
+  en velger; en prikk viser at det andre feltet har tekst. Begge lagres som før.
+- **Metalinje i sakshodet.** Tittel, innlevering, prioritet, buffer og
+  medlesing står på én linje under saksnummeret (varighet for oppdrag).
+  Saksinformasjon-kortet viser nå bare stikkord og «Rediger sak», så
+  opplysningene ikke står to ganger.
+- **Tom kravtabell erstattes av en tomtilstand.** Uten krav vises en kort
+  beskjed og en knapp som flytter fokus til «Antall krav».
+- **Kompaktere sammendrag.** Sjekkliste og kravvurdering står side om side, og
+  radavstanden i resultatoversikten er mindre, så kravtabellen er synlig uten å
+  rulle ved 900 px høyde.
+
 
 ## [4.60.1] - 2026-11-10
 ### Added

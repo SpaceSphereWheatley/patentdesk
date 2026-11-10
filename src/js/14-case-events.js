@@ -10,8 +10,8 @@ function updateCaseField(id, patch) {
   var updated = cases.find(function(c) { return c.id === id; });
   if (updated) {
     document.getElementById('sak-page-title').textContent = updated.caseNumber;
-    document.getElementById('sak-page-sub').textContent = sakSubtitle(updated);
     document.getElementById('sak-sticky-cn').textContent = updated.caseNumber;
+    renderSakMeta(updated);
     document.title = updated.caseNumber + (updated.title ? ' — ' + updated.title : '') + ' — PatentDesk';
   }
 }
@@ -263,6 +263,13 @@ document.getElementById('view-sak').addEventListener('change', function(e) {
   var label = cb.closest('.sak-check-row');
   if (label) label.classList.toggle('sak-check-done', cb.checked);
   dispatch('CHECKLIST_TOGGLE', { id: id, itemId: cb.dataset.itemId, checked: cb.checked });
+  var fold = cb.closest('.sak-fold');
+  if (fold) {
+    var boxes = fold.querySelectorAll('.sak-checkbox[data-item-id]');
+    var done = fold.querySelectorAll('.sak-checkbox[data-item-id]:checked').length;
+    fold.querySelector('.sak-fold-count').textContent = done + ' / ' + boxes.length;
+    fold.querySelector('.sak-fold-bar span').style.width = (boxes.length ? Math.round(done / boxes.length * 100) : 0) + '%';
+  }
 });
 
 // CPC-klasser: legg til (via Enter i inputfeltet)
@@ -1283,3 +1290,15 @@ document.getElementById('sak-notes').addEventListener('input', function() {
   dispatch('SAK_NOTES_CHANGE', { id: id, notes: this.value });
 });
 
+
+// Notater: velgeren bytter synlig felt (setNotesView i 12-case-render.js).
+document.querySelectorAll('.sak-seg-btn[data-notes]').forEach(function(btn) {
+  btn.addEventListener('click', function() { setNotesView(btn.dataset.notes); });
+});
+document.getElementById('sak-case-notes').addEventListener('input', syncNotesDots);
+document.getElementById('sak-notes').addEventListener('input', syncNotesDots);
+
+// Tomt krav-antall: knappen i tomtilstanden flytter fokus til «Antall krav».
+document.getElementById('btn-claims-empty-set').addEventListener('click', function() {
+  document.getElementById('sak-num-claims').focus();
+});
