@@ -130,7 +130,7 @@ The main session does the work. The **owner** (the user) has the final say;
 state it; the owner can override.
 
 - **Fix** — a bug or small logic change, no UI or stored-data change.
-  Write a failing test → fix in `src/` → `npm run build` → `npm test` +
+  Write a failing test → fix in `src/` → `npm run build` → `npm run test:quiet` +
   `npm run lint`. No agents.
 - **Feature** — new or changed behaviour, possibly UI.
   1. Write a short spec: problem, scope (in/out), numbered testable
@@ -196,9 +196,18 @@ come with a test before the implementation. Add or update a test in
 `test/*.test.js` using the `loadFunctions` harness
 (`test/extractFunctions.js`) that exercises the new/changed behavior; stub
 dates and `isNonWorkday` so tests don't drift with the calendar. Run
-`npm test` before considering the change done. UI-only/render code with no
+the tests before considering the change done. UI-only/render code with no
 extractable pure logic is exempt, but extract pure logic into its own
 function where possible so it can be tested this way.
+
+### Running tests (token budget)
+- In a session, run **`npm run test:quiet`**, not `npm test`. The full
+  report is ~250 KB (tens of thousands of tokens); the quiet one prints a dot
+  per test and full details only for failures. Exit code 0 = all pass.
+- To run one file while working: `node --test --test-reporter=dot test/<file>.test.js`.
+- Pipe `npm run lint` through `tail -30`; never read full test or lint output.
+- `npm test` stays the full report for CI (GitHub Actions runs it on every
+  PR and push to `main`).
 
 ### Download link after each push
 After committing and pushing a change to the app (`src/`), always include a
@@ -224,7 +233,7 @@ asked.
 | `CLAUDE.md` | These instructions |
 | `.claude/agents/reviewer.md` | Independent reviewer agent (see Workflow) |
 | `scripts/codemap.js` | Function/section map of `src/` (`npm run codemap`) |
-| `test/*.test.js` | Unit tests (`npm test`) |
+| `test/*.test.js` | Unit tests (`npm test`; in sessions `npm run test:quiet`) |
 | `test/e2e/*.e2e.js` | Browser layout tests, not in `npm test`; run `node --test test/e2e/*.e2e.js` (skipped if Playwright is missing) |
 | `Start-PatentDesk.ps1` | Optional local server (Windows PowerShell): serves the app on `http://localhost:8080` and case documents under `/docs?root=&case=&file=` (restarts a running instance) |
 | `cpc_v2.json` | CPC classification data (external, loaded into IndexedDB) |

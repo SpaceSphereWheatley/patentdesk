@@ -16,7 +16,7 @@ code paths it touches; `PatentDesk.html` is generated from `src/`.
 
 ## Checklist
 
-1. **Run** `npm test` and `npm run lint`. Report failures verbatim.
+1. **Run** `npm run test:quiet` and `npm run lint | tail -30`. Report failures verbatim.
 2. **Acceptance criteria** — each one: met / not met / not testable, with
    evidence (test name or file:line). Every criterion that can be tested
    must have a test that would fail without the change.
