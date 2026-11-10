@@ -1260,6 +1260,39 @@ function timelineDragChip(origBuffer, newBuffer, typeDefault, effTxt, dueTxt, bl
   return { head: head, sub: sub, warn: warn };
 }
 
+// Popupen i tidslinjen venter litt før den vises, så den ikke blafrer når du
+// bare fører musen over sporet. Står en popup allerede (eller ble den nettopp
+// lukket), byttes den med en gang når du går videre til neste bjelke.
+var TL_POPUP_DELAY_MS = 500;
+var TL_POPUP_WARM_MS  = 300;
+// Luft mellom popupen og sporet, og til vinduskanten (px); pilen står i den.
+var TL_POPUP_GAP_PX   = 8;
+
+// timelinePopupDelay: hvor lenge popupen skal vente (ms) — 0 når en popup
+// står, eller ble lukket for under TL_POPUP_WARM_MS siden.
+function timelinePopupDelay(isVisible, msSinceHidden) {
+  return isVisible || msSinceHidden < TL_POPUP_WARM_MS ? 0 : TL_POPUP_DELAY_MS;
+}
+
+// timelinePopupPosition: hvor popupen står (vinduskoordinater). Over sporet
+// (trackTop–trackBottom), så den ikke dekker bjelkene; under når det ikke er
+// plass over; passer den ingen av stedene, på siden med mest plass, holdt
+// innenfor vinduet. Vannrett midtstilt på anchorX (musen, eller midt på
+// bjelken med tastaturet) og innenfor vinduet. arrowX er hvor pilen peker,
+// målt fra popupens venstre kant; below sier at pilen peker opp.
+function timelinePopupPosition(anchorX, trackTop, trackBottom, popupW, popupH, viewportW, viewportH) {
+  var gap = TL_POPUP_GAP_PX;
+  var left = Math.max(gap, Math.min(anchorX - popupW / 2, viewportW - popupW - gap));
+  var arrowX = Math.max(10, Math.min(popupW - 10, anchorX - left));
+  var roomAbove = trackTop - gap - gap;
+  var roomBelow = viewportH - trackBottom - gap - gap;
+  var below = popupH > roomAbove && (popupH <= roomBelow || roomBelow > roomAbove);
+  var top = below
+    ? Math.max(gap, Math.min(trackBottom + gap, viewportH - popupH - gap))
+    : Math.max(gap, trackTop - gap - popupH);
+  return { left: Math.round(left), top: Math.round(top), arrowX: Math.round(arrowX), below: below };
+}
+
 // timelineKeyBuffer: ny buffer når Alt + pil trykkes på en bjelke. Pil til
 // venstre flytter bjelken tidligere (større buffer), til høyre senere — som
 // når den dras, og med samme grenser. null for andre taster.

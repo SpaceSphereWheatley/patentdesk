@@ -130,7 +130,8 @@ function init() {
     }
 
     // Brikken står i tidslinjens ramme (ikke i sporet, som klipper alt over
-    // seg), midt over bjelken.
+    // seg), ved sporet som popupen (timelinePopupPosition), så den ikke dekker
+    // andre bjelker. Pilen peker på bjelken.
     function showChip(d) {
       var host = d.bar.closest('.home-timeline-wrap');
       if (!host) return;
@@ -145,8 +146,14 @@ function init() {
       d.chip.classList.toggle('is-warn', t.warn);
       d.chip.innerHTML = '<b>' + (t.warn ? '⚠ ' : '') + esc(t.head) + '</b><small>' + esc(t.sub) + '</small>';
       var b = d.bar.getBoundingClientRect(), h = host.getBoundingClientRect();
-      d.chip.style.left = (b.left + b.width / 2 - h.left) + 'px';
-      d.chip.style.top  = (b.top - h.top - 8) + 'px';
+      var tr = d.bar.closest('.tl-track').getBoundingClientRect();
+      var cr = d.chip.getBoundingClientRect();
+      var pos = timelinePopupPosition(b.left + b.width / 2, tr.top, tr.bottom, cr.width, cr.height,
+        document.documentElement.clientWidth, document.documentElement.clientHeight);
+      d.chip.style.left = (pos.left - h.left) + 'px';
+      d.chip.style.top  = (pos.top - h.top) + 'px';
+      d.chip.style.setProperty('--tl-popup-arrow-x', pos.arrowX + 'px');
+      d.chip.classList.toggle('is-below', pos.below);
     }
 
     // Lagrer en ny buffer (lik standarden for typen → ingen egen buffer) og
@@ -196,7 +203,7 @@ function init() {
         // Under drag sender ikke nettleseren mousemove (pointerdown er
         // preventDefault-et), så popupen skjules her; brikken tar over.
         var pop = document.querySelector('.tl-popup');
-        if (pop) pop.style.display = 'none';
+        if (pop) pop.dispatchEvent(new Event('tl-popup-hide'));
       }
       var newBuffer = timelineDragBuffer(d.origBuffer, dx, d.pxPerDay, TYPE_BUFFER_MAX, d.minBuffer);
       d.newBuffer = newBuffer;
