@@ -227,6 +227,37 @@ e2e('empty timeline: hovering it raises no error', async () => {
   await ctx.close();
 });
 
+e2e('keyboard focus on a bar scrolled out of view still shows the popup, at the bar', async () => {
+  const { page, errors, close } = await openApp({ width: 900, height: 500 });
+  await go(page, 'hjem');
+  await page.evaluate(() => {
+    const wrap = document.querySelector('#home-timeline .tl-track').closest('.tl-scroll-wrap');
+    wrap.scrollLeft = wrap.scrollWidth;                     // bars at the start are out of view
+  });
+  const bar = page.locator('#home-timeline .tl-bar[data-id="e"]').first();
+  const before = await page.evaluate(() => {
+    const wrap = document.querySelector('#home-timeline .tl-track').closest('.tl-scroll-wrap');
+    const b = document.querySelector('#home-timeline .tl-bar[data-id="e"]').getBoundingClientRect();
+    const w = wrap.getBoundingClientRect();
+    return b.right < w.left || b.left > w.right;
+  });
+  assert.equal(before, true, 'the bar starts out of view');
+  await bar.focus();
+  await page.clock.runFor(300);
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  assert.equal(await popupShown(page), true, 'popup shown after the browser scrolled the bar into view');
+  const g = await page.evaluate(() => {
+    const p = document.querySelector('.tl-popup');
+    const pr = p.getBoundingClientRect();
+    const br = document.activeElement.getBoundingClientRect();
+    return { arrow: pr.left + parseFloat(p.style.getPropertyValue('--tl-popup-arrow-x')), mid: br.left + br.width / 2 };
+  });
+  assert.ok(Math.abs(g.arrow - g.mid) <= 12, 'the arrow points at the focused bar: ' + JSON.stringify(g));
+  assertOutsideTrack(await geom(page, 'home-timeline'));
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 e2e('a pending popup is dropped when the timeline is redrawn', async () => {
   const { page, errors, close } = await openApp();
   await go(page, 'hjem');

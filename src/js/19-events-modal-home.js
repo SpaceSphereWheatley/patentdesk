@@ -699,8 +699,15 @@ function applyTimelineLink(id, force) {
     if (e.target.closest && e.target.closest('.tl-bar')) handleLeave();
   });
   // Popupen står fast i vinduet; scrolles siden eller tidslinjen, ville den
-  // blitt stående igjen mens sporet flytter seg. Skjul den til neste musebevegelse.
+  // blitt stående igjen mens sporet flytter seg. En popup for bjelken med
+  // tastaturfokus følger bjelken (nettleseren scroller den fram når du tabber
+  // til den); ellers skjules den til neste musebevegelse.
   document.addEventListener('scroll', function() {
+    if (visibleFor && visibleFor === document.activeElement) {
+      var r = visibleFor.getBoundingClientRect();
+      place(r.left + r.width / 2);
+      return;
+    }
     if (visibleFor || pendingFor) handleLeave();
   }, true);
   document.addEventListener('keydown', function(e) {
