@@ -7,6 +7,21 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.64.1] - 2026-11-11
+Små rettelser på fanen Dokumenter og i mappelesingen.
+
+### Fixed
+- **Dokumentflaten fyller vinduet også når toppfeltet bytter linjer.** Høyden
+  måles nå på nytt hver gang toppfeltet endrer høyde (f.eks. når sidemenyen
+  glir inn på et smalt vindu), så det ikke blir et tomrom under dokumentene.
+- **Rundeskuffen følger sidemenyen.** Når sidemenyen trekkes inn eller ut av seg
+  selv mens fanen Dokumenter åpnes eller lukkes, tegnes en åpen rundeskuff på
+  nytt, som ved et vanlig trykk på menyknappen.
+- **Mellomrom først i et filnavn beholdes** når mappen leses. Windows tillater
+  det, og navnet ble ellers kuttet slik at lenken ikke traff filen.
+- **«Slett alle data» glemmer også mappelesingene** som er gjort for de slettede
+  sakene.
+
 ## [4.64.0] - 2026-11-11
 Saksmappen leses når en sak åpnes, fanen Dokumenter har et kompakt toppfelt, og Tilbake virker alltid.
 

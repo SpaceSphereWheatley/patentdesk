@@ -30,6 +30,8 @@ function dpOnSakRendered(id) {
 // Alt data er slettet: tilbake til start, så ingen PDF fra de slettede sakene
 // blir stående lastet og innstillingsfeltene viser reglene som faktisk gjelder.
 function dpReset() {
+  _folderListing = {};
+  _folderSyncKey = null;
   _dpCaseId = null;
   _dpManual = [null, null, null];
   _dpTab = 'overview';
@@ -68,6 +70,11 @@ function _dpDrawerSet(collapse) {
     btn.innerHTML = c ? '&#8250;' : '&#8249;';
     btn.title = c ? 'Vis navigasjon' : 'Skjul navigasjon';
   }
+  // Festeregelen til rundeskuffen avhenger av sidemenyens bredde: sjekk på nytt
+  // når overgangen er ferdig, som ved et vanlig trykk på menyknappen.
+  setTimeout(function() {
+    if (typeof _roundDrawer !== 'undefined' && _roundDrawer.open) renderRoundDrawer();
+  }, 450);
 }
 
 // Dokumentflaten får resten av vinduet under toppfeltet.
@@ -78,6 +85,16 @@ function _dpFitHeight() {
   body.style.height = Math.max(360, Math.floor(window.innerHeight - top - 16)) + 'px';
 }
 window.addEventListener('resize', _dpFitHeight);
+// Toppfeltet kan bytte linjer uten at vinduet endrer størrelse (sidemenyen
+// glir inn, tittelen blir lengre), og da flytter dokumentflaten seg. Mål på nytt
+// hver gang toppfeltet endrer høyde.
+if (typeof ResizeObserver === 'function') {
+  var _dpBarObserver = new ResizeObserver(function() { _dpFitHeight(); });
+  ['.dp-bar', '#view-sak .top-bar'].forEach(function(sel) {
+    var el = document.querySelector(sel);
+    if (el) _dpBarObserver.observe(el);
+  });
+}
 // Velger brukeren selv å åpne eller trekke inn menyen, er det hennes valg, ikke vårt.
 document.getElementById('drawer-toggle-btn').addEventListener('click', function() { _dpDrawerAuto = false; });
 

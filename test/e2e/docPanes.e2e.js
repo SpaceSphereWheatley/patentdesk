@@ -541,3 +541,69 @@ e2e('sidebar: opened by hand on the Dokumenter tab it stays open through redraws
   assert.equal(await collapsed(), true, 'leaving the tab keeps what the user chose');
   await s.close();
 });
+
+// ── Review round 3 ──────────────────────────────────
+
+e2e('compact header: the documents fill the window also when the tab row wraps (narrow window)', async () => {
+  for (const width of [1100, 1280, 1440]) {
+    const ctx = await browser.newContext({ viewport: { width, height: 900 } });
+    const page = await ctx.newPage();
+    const sd = seedFor({ files: FILES });
+    await page.addInitScript(([id, cs, sak]) => {
+      if (sessionStorage.getItem('__seeded')) return;
+      sessionStorage.setItem('__seeded', '1');
+      localStorage.clear();
+      localStorage.setItem('pt_onboarding_completed', '1');
+      localStorage.setItem('pt_schema_version', '8');
+      localStorage.setItem('pt_cases', cs);
+      localStorage.setItem('pt_sak_' + id, sak);
+    }, [CASE_ID, sd.cases, sd.sak]);
+    await page.goto(base + '/PatentDesk.html');
+    await page.evaluate((id) => { navigateTo('sak/' + id); }, CASE_ID);
+    await page.click('#sak-tab-docs');
+    await page.waitForTimeout(800); // the sidebar folds with a transition
+    const b = await page.evaluate(() => { const r = document.getElementById('dp-body').getBoundingClientRect(); return { bottom: r.bottom, h: innerHeight, scroll: document.documentElement.scrollHeight }; });
+    assert.ok(b.bottom <= b.h, width + ' px: no overflow, bottom ' + b.bottom + ' of ' + b.h);
+    assert.ok(b.h - b.bottom < 40, width + ' px: no gap under the documents: ' + (b.h - b.bottom));
+    assert.ok(b.scroll <= b.h + 1, width + ' px: the page does not scroll');
+    await ctx.close();
+  }
+});
+
+e2e('sidebar: an open round drawer is redrawn when the sidebar folds in or out automatically', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.click('#sak-tab-overview');
+  await p.waitForTimeout(600);
+  await p.evaluate(() => { window.__rd = 0; const orig = renderRoundDrawer; window.renderRoundDrawer = function() { window.__rd++; return orig.apply(this, arguments); }; _roundDrawer.open = true; });
+  await p.click('#sak-tab-docs');
+  await p.waitForTimeout(700);
+  assert.ok(await p.evaluate(() => window.__rd) >= 1, 'redrawn after the fold');
+  await p.evaluate(() => { window.__rd = 0; _roundDrawer.open = true; }); // the first redraw may have closed it
+  await p.click('#sak-tab-overview');
+  await p.waitForTimeout(700);
+  assert.ok(await p.evaluate(() => window.__rd) >= 1, 'redrawn after the unfold');
+  await s.close();
+});
+
+e2e('delete-all also forgets the folder listings read for the deleted cases', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.evaluate((id) => { _folderListing[id] = { key: 'x', exists: true, files: ['Secret.pdf'] }; _folderSyncKey = 'x'; }, CASE_ID);
+  await p.evaluate(() => dispatch('DATA_DELETE_ALL', {}));
+  assert.deepEqual(await p.evaluate(() => Object.keys(_folderListing)), []);
+  assert.equal(await p.evaluate(() => _folderSyncKey), null);
+  await s.close();
+});
+
+e2e('compact header: when the top bar changes height by itself, the documents re-fit at once', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  // force the pane controls to wrap onto a second row without resizing the window
+  await p.evaluate(() => { document.getElementById('dp-toolbar').style.minWidth = '3000px'; });
+  await p.waitForTimeout(300);
+  const b = await p.evaluate(() => { const r = document.getElementById('dp-body').getBoundingClientRect(); return { bottom: r.bottom, h: innerHeight }; });
+  assert.ok(b.bottom <= b.h, 'no overflow after the bar wrapped: bottom ' + b.bottom + ' of ' + b.h);
+  assert.ok(b.h - b.bottom < 40, 'no gap: ' + (b.h - b.bottom));
+  await s.close();
+});

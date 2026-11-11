@@ -312,7 +312,8 @@ function normalizeFolderListing(raw) {
   var out = [], seen = {};
   raw.files.forEach(function(n) {
     if (typeof n !== 'string' || out.length >= FOLDER_LIST_MAX) return;
-    var name = sanitizeText(n).replace(/\\/g, '/').trim();
+    // Bare slutten trimmes: et mellomrom først er en del av filnavnet i Windows
+    var name = sanitizeText(n).replace(/\\/g, '/').replace(/\s+$/, '');
     if (!name || name.length > 200 || name.charAt(0) === '/' || name.indexOf(':') !== -1) return;
     var segs = name.split('/');
     // Én mappe ned, som serveren leser; ingen tomme, «.»- eller «..»-ledd

@@ -38,6 +38,13 @@ test('normalizeFolderListing: only safe, plain file names survive', () => {
   assert.deepStrictEqual(arr(r.files), ['ok.pdf', 'ctrl.pdf', 'Sub/Back.pdf']);
 });
 
+test('normalizeFolderListing: a leading space is part of a Windows file name and is kept; trailing space and blank names are not', () => {
+  const r = normalizeFolderListing({ exists: true, files: [' D1.pdf', 'D2.pdf  ', '   ', ' '] });
+  assert.deepStrictEqual(arr(r.files), [' D1.pdf', 'D2.pdf']);
+  // " D1.pdf" and "D1.pdf" are different files: the registered one is not "found" by the other
+  assert.deepStrictEqual(arr(missingFileIndexes(names(['D1.pdf']), [' D1.pdf'])), [0]);
+});
+
 test('normalizeFolderListing: only one level of subfolder, and no "." segments', () => {
   const r = normalizeFolderListing({ exists: true, files: ['Sub/ok.pdf', 'a/b/c.pdf', './x.pdf', 'sub/./y.pdf', 'Claims.pdf'] });
   assert.deepStrictEqual(arr(r.files), ['Sub/ok.pdf', 'Claims.pdf']);

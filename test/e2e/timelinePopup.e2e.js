@@ -63,6 +63,11 @@ const go = (p, name) => p.evaluate((n) => navigateTo(n), name).then(() => p.cloc
 async function barCentre(page, sel) {
   const loc = page.locator(sel).first();
   await loc.scrollIntoViewIfNeeded();
+  // Popupen skjules av alle scroll-hendelser (det er meningen), og en bjelke som
+  // må rulles fram, ruller videre en stund. Uten å vente hoverer testen mens
+  // rullingen pågår, og popupen blir avbrutt. Om en bjelke må rulles avhenger av
+  // dagens dato, så testen feilet bare på noen dager.
+  await page.clock.runFor(1000);
   const b = await loc.boundingBox();
   return { x: b.x + Math.min(b.width / 2, 20), y: b.y + b.height / 2 };
 }
