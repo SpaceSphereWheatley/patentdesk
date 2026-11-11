@@ -43,7 +43,10 @@ function dpReset() {
 function _dpResetFrames() {
   [0, 1, 2].forEach(function(i) {
     var f = document.getElementById('dp-frame-' + i);
-    if (f) { f.removeAttribute('src'); f.hidden = true; f.dataset.url = ''; }
+    if (f) {
+      if (f._dpLoad) { f.removeEventListener('load', f._dpLoad); f._dpLoad = null; }
+      f.removeAttribute('src'); f.hidden = true; f.dataset.url = '';
+    }
   });
 }
 
@@ -110,7 +113,9 @@ function dpOnPageChange(page) {
 
 // Fokusmodus gjelder bare på fanen Dokumenter; Oversikt har alltid hele toppfeltet.
 function _dpApplyFocus() {
-  var on = _dpTab === 'docs' && !!docLayout.focus;
+  // Uten serveren er panelvalgene (og dermed «Avslutt fokus») skjult, så fokus
+  // kan ikke slås på da — ellers ble toppfeltet borte uten vei tilbake.
+  var on = _dpTab === 'docs' && !!docLayout.focus && _docServedLocally(window.location);
   var view = document.getElementById('view-sak');
   if (view) view.classList.toggle('is-focus', on);
   document.body.classList.toggle('dp-focus-mode', on);
@@ -229,7 +234,6 @@ function _dpApplyLayout() {
   var tog = document.getElementById('dp-claims-toggle');
   tog.textContent = l.claimsVisible ? 'Skjul krav' : 'Vis krav';
   var tools = document.getElementById('dp-tools-toggle');
-  tools.setAttribute('aria-pressed', l.hideToolbar ? 'true' : 'false');
   tools.textContent = l.hideToolbar ? 'Vis PDF-verktøy' : 'Skjul PDF-verktøy';
   _dpApplyFocus();
   document.querySelectorAll('[data-dp-count]').forEach(function(b) {
@@ -343,11 +347,14 @@ function _dpSetFrame(frame, url) {
   // Samme fil med bare en annen #-del (verktøylinjen skjules eller vises) er for
   // nettleseren bare en hopp-til-sted i samme dokument, og leseren leser ikke
   // verktøylinje-valgene på nytt. Gå via en tom side, så filen lastes på nytt.
+  if (frame._dpLoad) { frame.removeEventListener('load', frame._dpLoad); frame._dpLoad = null; }
   if (old && old.split('#')[0] === url.split('#')[0]) {
-    frame.addEventListener('load', function go() {
-      frame.removeEventListener('load', go);
+    frame._dpLoad = function() {
+      frame.removeEventListener('load', frame._dpLoad);
+      frame._dpLoad = null;
       if (frame.dataset.url === url) frame.src = url;
-    });
+    };
+    frame.addEventListener('load', frame._dpLoad);
     frame.src = 'about:blank';
     return;
   }

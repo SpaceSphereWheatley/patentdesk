@@ -11,7 +11,8 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 - **Fokusmodus på fanen Dokumenter.** Knappen «Fokus» ved panelvalgene folder
   toppfeltet sammen til én stripe med saksnummer, status, faner og panelvalg,
   så dokumentene starter helt oppe (rundt 40 piksler fra toppen i stedet for
-  rundt 100) og fyller resten av vinduet. «Avslutt fokus» (samme knapp) henter
+  rundt 100, i vinduer fra ca. 1200 piksler bredde; i smalere vinduer kan
+  stripen bli to rader) og fyller resten av vinduet. «Avslutt fokus» (samme knapp) henter
   hele toppfeltet tilbake, og Oversikt har alltid hele toppfeltet. Valget
   huskes.
 - **«Skjul PDF-verktøy».** Ber PDF-leseren i panelene skjule sin egen

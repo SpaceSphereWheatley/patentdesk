@@ -664,14 +664,15 @@ e2e('PDF toolbar: off by default; the toggle puts the viewer parameters on every
   const s = await openDocs();
   const p = s.page;
   assert.doesNotMatch(await frameUrl(p, 0), /#toolbar=0/);
-  assert.equal(await p.locator('#dp-tools-toggle').getAttribute('aria-pressed'), 'false');
+  assert.match(await p.locator('#dp-tools-toggle').textContent(), /Skjul PDF-verktøy/);
+  assert.equal(await p.locator('#dp-tools-toggle').getAttribute('aria-pressed'), null, 'the label says it, no aria-pressed on top (screen readers would read it twice)');
   await p.waitForTimeout(300);
   const before = docRequests.length;
   await p.click('#dp-tools-toggle');
   await p.waitForTimeout(500);
   for (const i of [0, 1]) assert.match(await frameUrl(p, i), /#toolbar=0&navpanes=0$/);
   assert.ok(docRequests.length >= before + 2, 'both panes were requested again: ' + before + ' -> ' + docRequests.length);
-  assert.equal(await p.locator('#dp-tools-toggle').getAttribute('aria-pressed'), 'true');
+  assert.match(await p.locator('#dp-tools-toggle').textContent(), /Vis PDF-verktøy/);
   assert.equal(await p.evaluate(() => JSON.parse(localStorage.getItem('pt_doc_layout')).hideToolbar), true);
   await p.click('#dp-tools-toggle');
   await p.waitForTimeout(500);
@@ -682,5 +683,16 @@ e2e('PDF toolbar: off by default; the toggle puts the viewer parameters on every
 e2e('PDF toolbar: a remembered choice is applied when the tab opens', async () => {
   const s = await openDocs({ layout: JSON.stringify({ hideToolbar: true }) });
   assert.match(await frameUrl(s.page, 0), /#toolbar=0&navpanes=0$/);
+  await s.close();
+});
+
+e2e('focus: a remembered focus does nothing when the app is opened as a plain file (no toolbar to leave it with)', async () => {
+  const s = await openCase(pathToFileURL(APP_FILE).href, { layout: JSON.stringify({ focus: true }) });
+  await s.page.click('#sak-tab-docs');
+  await s.page.waitForTimeout(300);
+  assert.equal(await s.page.locator('#dp-notice').isVisible(), true, 'the explanation is shown');
+  assert.equal(await s.page.locator('#btn-sak-back').isVisible(), true, 'the normal header stays');
+  assert.equal(await s.page.locator('#btn-sak-docs').isVisible(), true, 'so the Dokumenter list the notice points to is reachable');
+  assert.equal(await s.page.evaluate(() => document.body.classList.contains('dp-focus-mode')), false);
   await s.close();
 });

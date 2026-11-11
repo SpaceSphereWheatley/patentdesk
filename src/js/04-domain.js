@@ -931,6 +931,9 @@ function claimOverviewRows(claims) {
 // Adressen et panel laster, eller null når appen ikke er åpnet via den lokale
 // serveren — da stopper nettleseren file:///-adresser i en iframe.
 // hideTools ber leseren (Edge/Chromium) skjule verktøylinje og sidepanel.
+// Merk: en senere lenke til en side (#page=N) må slås sammen med denne #-delen
+// (#page=3&toolbar=0&navpanes=0), og _dpSetFrame laster da ikke på nytt for et
+// sidebytte alene.
 function docPaneUrl(root, caseNumber, name, loc, hideTools) {
   if (!_docServedLocally(loc)) return null;
   return _docFileUrl(root, caseNumber, name, loc) + (hideTools ? '#toolbar=0&navpanes=0' : '');
