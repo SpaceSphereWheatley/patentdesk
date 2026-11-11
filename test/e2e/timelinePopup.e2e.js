@@ -190,10 +190,29 @@ e2e('every kind of bar gets a popup outside the track', async () => {
     await page.mouse.move(5, 5);
     await page.clock.runFor(400);
     assert.equal(await page.locator('#' + host + ' ' + sel).count() > 0, true, view + ' ' + sel + ' exists');
-    const p = await barCentre(page, '#' + host + ' ' + sel);
-    await page.mouse.move(p.x, p.y);
-    await page.clock.runFor(650);
-    assert.equal(await popupShown(page), true, 'popup for ' + view + ' ' + sel);
+    // Popupen skjules av rulling (det er meningen). Rullet siden under hoveren,
+    // prøves hoveren på nytt; uten rulling og uten popup er det en ekte feil.
+    let shown = false, scrolledDuring = false;
+    for (let attempt = 0; attempt < 4 && !shown; attempt++) {
+      const p = await barCentre(page, '#' + host + ' ' + sel);
+      await page.evaluate(() => {
+        window.__scrolled = false;
+        if (!window.__scrollSpy) {
+          window.__scrollSpy = true;
+          document.addEventListener('scroll', () => { window.__scrolled = true; }, true);
+        }
+      });
+      await page.mouse.move(p.x, p.y);
+      await page.clock.runFor(650);
+      shown = await popupShown(page);
+      scrolledDuring = await page.evaluate(() => window.__scrolled);
+      if (!shown) {
+        assert.equal(scrolledDuring, true, 'no popup for ' + view + ' ' + sel + ' and no scrolling to blame');
+        await page.mouse.move(5, 5);        // ut av tidslinjen, så neste hover er ny
+        await page.clock.runFor(400);
+      }
+    }
+    assert.equal(shown, true, 'popup for ' + view + ' ' + sel + ' (also after retries)');
     assertOutsideTrack(await geom(page, host));
   }
   await close();
