@@ -3,7 +3,7 @@
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.62.1';
+var APP_VERSION    = 'v4.63.0';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -27,6 +27,7 @@ var MEDLESERE_KEY     = 'pt_medlesere';
 var MEDL_LOG_KEY      = 'pt_medl_log';
 var SETTINGS_TAB_KEY  = 'pt_settings_tab';
 var TL_VIEW_KEY       = 'pt_tl_view';
+var MH_VIEW_KEY       = 'pt_mh_view';   // Detaljer | Rapport under Mothold
 var CASE_SOURCE_KEY   = 'pt_case_source';
 // EPO OPS-nøklene. Bare i denne nettleseren: de er bevisst utelatt fra
 // makeExportPayload(), så de havner aldri i eksport, backup eller arbeidsfil.

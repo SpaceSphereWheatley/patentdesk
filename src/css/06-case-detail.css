@@ -41,14 +41,12 @@
 
 /* ── Mothold ──────────────────────────────────────── */
 .mh-list            { display: flex; flex-direction: column; gap: var(--space-2); min-height: 1.5rem; }
-.mh-row             { display: grid; grid-template-columns: 2.5rem 13rem 1fr auto auto auto auto;
+.mh-row             { display: grid; grid-template-columns: 2.5rem 13rem 1fr auto auto auto;
                       align-items: center; gap: var(--space-4);
                       padding: var(--space-3) var(--space-4);
                       background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); }
-.mh-row-bg          { background: var(--surface); border-style: dashed; }
 .mh-id              { font-weight: var(--weight-bold); font-size: var(--text-base);
                       color: var(--primary); font-variant-numeric: tabular-nums; }
-.mh-row-bg .mh-id   { color: var(--muted-text); }
 .settings-label-sub a { color: var(--primary); text-decoration: none; }
 .settings-label-sub a:hover { text-decoration: underline; }
 .mh-row-withdrawn   { background: var(--surface); border-style: dashed; }
@@ -179,11 +177,32 @@
 .mh-cited-what      { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .mh-cited-gone      { color: var(--muted-text); font-style: italic; }
 
-.mh-bg-toggle       { font-size: var(--text-2xs); font-family: var(--font-body); white-space: nowrap;
+.mh-restore         { font-size: var(--text-2xs); font-family: var(--font-body); white-space: nowrap;
                       padding: 2px var(--space-3); border-radius: var(--radius-pill); cursor: pointer;
-                      background: var(--surface); border: 1px solid var(--border2); color: var(--muted-text);
-                      transition: color var(--dur-base), border-color var(--dur-base), background var(--dur-base); }
-.mh-bg-toggle[aria-pressed="true"] { background: var(--surface2); border-color: var(--muted); color: var(--text); }
+                      background: var(--surface); border: 1px solid var(--border2); color: var(--primary-dim);
+                      transition: border-color var(--dur-base); }
+.mh-restore:hover   { border-color: var(--primary); }
+.mh-row-flash       { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* Rapport-visningen: én linje per mothold */
+.mr-row             { display: grid; grid-template-columns: 2.5rem 12rem 6.5rem minmax(0, 1fr) auto;
+                      align-items: baseline; gap: var(--space-4);
+                      padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border);
+                      font-size: var(--text-sm); }
+.mr-row:last-child  { border-bottom: none; }
+.mr-id              { background: none; border: none; padding: 0; cursor: pointer; text-align: left;
+                      font-family: var(--font-body); font-size: var(--text-sm); font-weight: var(--weight-bold);
+                      color: var(--primary); font-variant-numeric: tabular-nums; }
+.mr-id:hover        { text-decoration: underline; }
+.mr-id:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; border-radius: var(--radius-sm); }
+.mr-ref             { font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-date            { font-variant-numeric: tabular-nums; font-size: var(--text-xs); white-space: nowrap; }
+.mr-app             { font-size: var(--text-xs); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-row .mh-v       { overflow-wrap: normal; }
+.mr-cats            { display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: flex-end; align-items: baseline; }
+.mr-row-withdrawn .mr-id  { color: var(--muted-text); }
+.mr-row-withdrawn .mr-ref { color: var(--muted-text); text-decoration: line-through; }
+
 .mh-add             { align-self: flex-start; margin-top: var(--space-3);
                       background: none; border: 1px dashed var(--border2); color: var(--muted-text);
                       font-family: var(--font-body); font-size: var(--text-xs);
@@ -251,10 +270,12 @@
 
 @media (max-width: 720px) {
   .mh-row           { grid-template-columns: 2.2rem 1fr; row-gap: var(--space-2); }
-  .mh-cats, .mh-flags, .mh-bg-toggle, .mh-edit, .mh-details { grid-column: 2; }
+  .mh-cats, .mh-flags, .mh-restore, .mh-edit, .mh-details { grid-column: 2; }
   .mh-read          { grid-template-columns: max-content minmax(0, 1fr); }
   .mh-v-wide        { grid-column: 2; }
   .mh-cited-list    { min-width: 16rem; }
+  .mr-row           { grid-template-columns: 2.2rem 1fr auto; row-gap: var(--space-1); }
+  .mr-app, .mr-cats { grid-column: 2 / -1; justify-content: flex-start; }
 }
 
 /* Kravstabell: gul rad for patenterbar med formelle feil */

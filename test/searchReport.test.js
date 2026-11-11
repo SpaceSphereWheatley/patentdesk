@@ -117,23 +117,18 @@ test('a dependent claim inheriting novelty and inventive step from its parent is
   assert.deepStrictEqual(plain(buildSearchReport(claims, [doc('D1')])), [{ docId: 'D1', X: [], Y: [], A: [1, 2] }]);
 });
 
-test('background documents are A on every assessed claim', () => {
+test('a document no claim is linked to is A on every assessed claim', () => {
   const { claims, docs } = workedExample();
   docs.push(doc('D3', { background: true }));
   const report = buildSearchReport(claims, docs);
   assert.deepStrictEqual(plain(report[2]), { docId: 'D3', X: [], Y: [], A: [1, 2, 3, 4, 5] });
 });
 
-test('a background document is A even where a claim still references it', () => {
-  const claims = [claim(1, { novelty: false, inventive: false, noveltyDoc: 'D1' })];
-  assert.strictEqual(claimDocCategory(claims, claims[0], doc('D1', { background: true })), 'A');
-});
-
-test('P and E flags prefix the category label', () => {
+test('P and E flags follow the category label (EPO style)', () => {
   assert.strictEqual(docCategoryLabel(doc('D1'), 'X'), 'X');
-  assert.strictEqual(docCategoryLabel(doc('D1', { p: true }), 'X'), 'P,X');
-  assert.strictEqual(docCategoryLabel(doc('D1', { e: true }), 'Y'), 'E,Y');
-  assert.strictEqual(docCategoryLabel(doc('D1', { p: true, e: true }), 'A'), 'P,E,A');
+  assert.strictEqual(docCategoryLabel(doc('D1', { p: true }), 'X'), 'X,P');
+  assert.strictEqual(docCategoryLabel(doc('D1', { e: true }), 'Y'), 'Y,E');
+  assert.strictEqual(docCategoryLabel(doc('D1', { p: true, e: true }), 'A'), 'A,P,E');
 });
 
 test('removing a document renumbers the rest and remaps claim references', () => {
@@ -202,14 +197,14 @@ test('ensureSakDocs renumbers documents by position', () => {
   assert.strictEqual(data.docs[0].ref, 'WO 1');
 });
 
-test('ensureSakDocs drops claim references to unknown and background documents', () => {
+test('ensureSakDocs drops claim references to unknown documents', () => {
   const data = {
-    docs: [doc('D1'), doc('D2', { background: true })],
-    claims: [claim(1, { noveltyDoc: 'D2', inventiveDocs: ['D1', 'D2', 'D9'] })],
+    docs: [doc('D1'), doc('D2')],
+    claims: [claim(1, { noveltyDoc: 'D9', inventiveDocs: ['D1', 'D2', 'D9'] })],
   };
   ensureSakDocs(data);
   assert.strictEqual(data.claims[0].noveltyDoc, null);
-  assert.deepStrictEqual(plain(data.claims[0].inventiveDocs), ['D1']);
+  assert.deepStrictEqual(plain(data.claims[0].inventiveDocs), ['D1', 'D2']);
 });
 
 test('ensureSakDocs deduplicates and caps inventive documents', () => {
