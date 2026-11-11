@@ -314,7 +314,9 @@ function normalizeFolderListing(raw) {
     if (typeof n !== 'string' || out.length >= FOLDER_LIST_MAX) return;
     var name = sanitizeText(n).replace(/\\/g, '/').trim();
     if (!name || name.length > 200 || name.charAt(0) === '/' || name.indexOf(':') !== -1) return;
-    if (name.split('/').some(function(seg) { return seg === '..' || seg === ''; })) return;
+    var segs = name.split('/');
+    // Én mappe ned, som serveren leser; ingen tomme, «.»- eller «..»-ledd
+    if (segs.length > 2 || segs.some(function(seg) { return seg === '..' || seg === '.' || seg === ''; })) return;
     var key = folderFileKey(name);
     if (seen[key]) return;
     seen[key] = true;

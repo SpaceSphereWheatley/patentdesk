@@ -441,7 +441,7 @@ function renderSakFileList(data) {
   // Mappen på disk (lest av serveren når saken ble åpnet): filer som ikke
   // finnes der merkes. Finnes ikke selve saksmappen, står det én melding i
   // stedet for en merking på hver fil.
-  var listing = cas && typeof _folderListing !== 'undefined' ? _folderListing[cas.id] : null;
+  var listing = cas && typeof dpFolderListing === 'function' ? dpFolderListing(cas) : null;
   var missing = {};
   if (listing && listing.exists) missingFileIndexes(files, listing.files).forEach(function(k) { missing[k] = true; });
   var note = (listing && !listing.exists)

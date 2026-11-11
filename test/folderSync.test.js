@@ -38,6 +38,11 @@ test('normalizeFolderListing: only safe, plain file names survive', () => {
   assert.deepStrictEqual(arr(r.files), ['ok.pdf', 'ctrl.pdf', 'Sub/Back.pdf']);
 });
 
+test('normalizeFolderListing: only one level of subfolder, and no "." segments', () => {
+  const r = normalizeFolderListing({ exists: true, files: ['Sub/ok.pdf', 'a/b/c.pdf', './x.pdf', 'sub/./y.pdf', 'Claims.pdf'] });
+  assert.deepStrictEqual(arr(r.files), ['Sub/ok.pdf', 'Claims.pdf']);
+});
+
 test('normalizeFolderListing: duplicates (ignoring case) are dropped and the list is capped', () => {
   const r = normalizeFolderListing({ exists: true, files: ['A.pdf', 'a.PDF', 'B.pdf'] });
   assert.deepStrictEqual(arr(r.files), ['A.pdf', 'B.pdf']);

@@ -31,7 +31,8 @@ before(async () => {
       state.requests.push({ root: url.searchParams.get('root'), case: url.searchParams.get('case'), site: req.headers['sec-fetch-site'] });
       const send = () => {
         res.writeHead(state.status, { 'Content-Type': 'application/json' });
-        res.end(typeof state.listing === 'string' ? state.listing : JSON.stringify(state.listing));
+        const l = typeof state.listing === 'function' ? state.listing(url.searchParams.get('case')) : state.listing;
+        res.end(typeof l === 'string' ? l : JSON.stringify(l));
       };
       if (state.delay) setTimeout(send, state.delay); else send();
     } else if (url.pathname === '/docs') {
@@ -221,5 +222,53 @@ e2e('hostile names from disk stay plain text', async () => {
   const names = await stored(s.page);
   assert.ok(!names.some((n) => /escape|evil/.test(n)), names.join('|'));
   assert.equal(await s.page.locator('#sak-docs-list img').count(), 0);
+  await s.close();
+});
+
+// ── Review round 2 ──────────────────────────────────
+
+const byNumber = { '20261400': { exists: true, files: ['Claims.pdf', 'Old1.pdf'] }, '20261401': { exists: true, files: ['Claims.pdf', 'New1.pdf', 'New2.pdf'] } };
+const editNumber = (p, n) => p.evaluate(([id, num]) => {
+  const c = cases.find((x) => x.id === id);
+  dispatch('CASE_EDIT', { id, caseNumber: num, dueDate: c.dueDate, title: c.title, status: c.status, type: c.type });
+  renderSak(id);
+}, [CASE_ID, n]);
+
+e2e('changing the case number re-reads the folder: marks and added files follow the new folder', async () => {
+  state.listing = (n) => byNumber[n] || { exists: false, files: [] };
+  const s = await open({ files: [{ name: 'Claims.pdf' }, { name: 'New1.pdf' }] });
+  assert.deepEqual(await stored(s.page), ['Claims.pdf', 'New1.pdf', 'Old1.pdf'], 'first folder read');
+  assert.equal((await rows(s.page)).find((r) => r.name === 'New1.pdf').missing, true, 'New1 is not in the first folder');
+  await editNumber(s.page, '20261401');
+  await s.page.waitForTimeout(400);
+  assert.equal(state.requests.length, 2, 'read again after the number changed');
+  assert.equal(state.requests[1].case, '20261401');
+  assert.deepEqual(await stored(s.page), ['Claims.pdf', 'New1.pdf', 'Old1.pdf', 'New2.pdf']);
+  const r = await rows(s.page);
+  assert.equal(r.find((x) => x.name === 'New1.pdf').missing, false, 'now found');
+  assert.equal(r.find((x) => x.name === 'Old1.pdf').missing, true, 'not in the new folder');
+  await s.close();
+});
+
+e2e('an answer for the old case number that arrives after the edit is dropped', async () => {
+  state.listing = (n) => byNumber[n] || { exists: false, files: [] };
+  state.delay = 500;
+  const s = await open({ files: [{ name: 'Claims.pdf' }], settle: 50 });
+  await editNumber(s.page, '20261401'); // while the first answer is still pending
+  await s.page.waitForTimeout(1200);
+  const names = await stored(s.page);
+  assert.ok(!names.includes('Old1.pdf'), 'the old folder\'s file did not leak in: ' + names.join('|'));
+  assert.ok(names.includes('New1.pdf') && names.includes('New2.pdf'), 'the new folder\'s files did: ' + names.join('|'));
+  state.delay = 0;
+  await s.close();
+});
+
+e2e('AC9: a sync changes nothing about the case itself (due date, status, history, other cases data)', async () => {
+  state.listing = { exists: true, files: ['D1.pdf', 'D2.pdf'] };
+  const s = await open({ settle: 0 });
+  const before = await s.page.evaluate(() => localStorage.getItem('pt_cases'));
+  await s.page.waitForTimeout(500);
+  assert.equal((await stored(s.page)).includes('D1.pdf'), true, 'the sync did run');
+  assert.equal(await s.page.evaluate(() => localStorage.getItem('pt_cases')), before, 'pt_cases is byte-for-byte unchanged');
   await s.close();
 });

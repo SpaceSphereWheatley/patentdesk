@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.64.0] - 2026-11-11
+Saksmappen leses når en sak åpnes, fanen Dokumenter har et kompakt toppfelt, og Tilbake virker alltid.
+
 ### Added
 - **Saksmappen leses når en sak åpnes.** Gjennom den lokale serveren hentes
   filene i saksmappen (`/docs/list`, én undermappe ned). Filer som ligger i
@@ -14,7 +17,8 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   plassreglene til dokumentpanelene. Filer i listen som ikke finnes på disk får
   merket «mangler» i fillisten og i panelvalget — ingenting slettes. Finnes ikke
   selve saksmappen, står det én melding i stedet for et merke på hver fil. Uten
-  serveren, eller ved feil, skjer ingenting. **Start `Start-PatentDesk.ps1` på
+  serveren, eller ved feil, skjer ingenting. Endrer du saksnummeret på en
+  åpen sak, leses den nye mappen. **Start `Start-PatentDesk.ps1` på
   nytt** for at serveren skal kunne liste mappen.
 
 ### Changed

@@ -15,7 +15,8 @@ function _dpActiveCase() {
 
 // Saksiden ble tegnet. Bytter vi sak, starter vi på Oversikt med tomme filvalg.
 function dpOnSakRendered(id) {
-  if (_folderSyncFor !== id) { _folderSyncFor = id; dpSyncFolder(id); }
+  var syncKey = _dpFolderKey(cases.find(function(c) { return c.id === id; }));
+  if (syncKey && _folderSyncKey !== syncKey) { _folderSyncKey = syncKey; dpSyncFolder(id); }
   if (id !== _dpCaseId) {
     _dpCaseId = id;
     _dpManual = [null, null, null];
@@ -83,7 +84,7 @@ document.getElementById('drawer-toggle-btn').addEventListener('click', function(
 // Forlot du saksiden (annen side)? Da er fanen Dokumenter ikke lenger åpen.
 function dpOnPageChange(page) {
   if (page === 'sak') return;
-  _folderSyncFor = null; // åpnes en sak igjen, leses mappen på nytt
+  _folderSyncKey = null; // åpnes en sak igjen, leses mappen på nytt
   document.body.classList.remove('dp-docs-mode');
   _dpDrawerSet(false);
   _dpWasDocs = false;
@@ -264,7 +265,7 @@ function renderDocPanes() {
     return null; // filen er slettet eller omdøpt: valget faller bort, regelen gjelder igjen
   });
   var assigned = docSlotAssign(files, docLayout.rules, docLayout.count, picks);
-  var listing = _folderListing[cas.id];
+  var listing = dpFolderListing(cas);
   var gone = {};
   if (listing && listing.exists) missingFileIndexes(files, listing.files).forEach(function(k) { gone[k] = true; });
   var root = loadDocRoot();
@@ -318,18 +319,34 @@ function _dpSetLayout(patch) {
 // finnes på disk merkes «mangler» (aldri slettet). Svaret lagres ikke — det
 // leses på nytt neste gang saken åpnes. Feil (server uten /docs/list, nettverk,
 // uventet svar) gjør ingenting.
-var _folderListing = {};   // saks-id → { exists, files } fra siste lesing
-var _folderSyncFor = null; // saken som er lest i denne åpningen
+var _folderListing = {};   // saks-id → { key, exists, files } fra siste lesing
+var _folderSyncKey = null; // nøkkelen til lesingen som er gjort i denne åpningen
+
+// Hva en lesing gjelder: saken, saksnummeret (mappenavnet) og dokumentroten.
+// Endres noe av det, er en gammel lesing ikke lenger riktig og leses på nytt.
+function _dpFolderKey(cas) {
+  return cas ? cas.id + '|' + cas.caseNumber + '|' + _docRootNormalize(loadDocRoot()) : null;
+}
+// Lesingen for saken slik den står nå, eller null hvis den gjelder noe annet.
+function dpFolderListing(cas) {
+  var l = cas ? _folderListing[cas.id] : null;
+  return (l && l.key === _dpFolderKey(cas)) ? l : null;
+}
 
 function dpSyncFolder(id) {
   if (!_docServedLocally(window.location) || typeof fetch !== 'function') return;
   var cas = cases.find(function(c) { return c.id === id; });
   if (!cas) return;
+  var key = _dpFolderKey(cas);
   var url = window.location.origin + '/docs/list?root=' + encodeURIComponent(_docRootNormalize(loadDocRoot())) +
     '&case=' + encodeURIComponent(cas.caseNumber);
   fetch(url, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(raw) {
     var listing = normalizeFolderListing(raw);
-    if (!listing || !cases.some(function(c) { return c.id === id; })) return; // saken er borte (slettet) mens vi ventet
+    if (!listing) return;
+    // Saken kan være slettet, ha fått nytt saksnummer eller ny dokumentrot mens vi
+    // ventet: da gjelder svaret en annen mappe, og skal ikke brukes.
+    if (_dpFolderKey(cases.find(function(c) { return c.id === id; })) !== key) return;
+    listing.key = key;
     _folderListing[id] = listing;
     var data = loadSakData(id);
     var current = (data && Array.isArray(data.files)) ? data.files : [];
