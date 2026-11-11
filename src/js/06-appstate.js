@@ -745,7 +745,28 @@ function _dispatch(action, payload) {
       fData.files.push({ name: sanitizeText(payload.name) });
       saveSakData(payload.id, fData);
       renderSakFileList(fData);
+      if (typeof renderDocPanes === 'function') renderDocPanes();
       showToast('✓ Fil lagt til');
+      break;
+    }
+
+    case 'FILES_SYNC': {
+      // Filer funnet i saksmappen legges til; allerede registrerte hoppes over
+      // Et sent svar for en sak som er slettet eller erstattet mens serveren
+      // leste mappen, skal ikke skrive noe.
+      var syCas  = cases.find(function(c) { return c.id === payload.id; });
+      var syData = syCas ? loadSakData(payload.id) : null;
+      if (!syCas || !syData) break;
+      ensureSakFiles(syData, syCas);
+      var syAdd = folderFilesToAdd(syData.files, payload.names);
+      if (!syAdd.length) break;
+      syAdd.forEach(function(n) { syData.files.push({ name: sanitizeText(n) }); });
+      saveSakData(payload.id, syData);
+      if (activeSakId === payload.id) {
+        renderSakFileList(syData);
+        if (typeof renderDocPanes === 'function') renderDocPanes();
+      }
+      if (activeSakId === payload.id) showToast('✓ ' + syAdd.length + (syAdd.length === 1 ? ' ny fil' : ' nye filer') + ' funnet i saksmappen');
       break;
     }
 
@@ -756,6 +777,7 @@ function _dispatch(action, payload) {
       if (fData.files[payload.idx]) fData.files[payload.idx] = applyFileEdit(fData.files[payload.idx], payload.name, payload.label);
       saveSakData(payload.id, fData);
       renderSakFileList(fData);
+      if (typeof renderDocPanes === 'function') renderDocPanes();
       showToast('✓ Navn endret');
       break;
     }
@@ -767,6 +789,7 @@ function _dispatch(action, payload) {
       fData.files.splice(payload.idx, 1);
       saveSakData(payload.id, fData);
       renderSakFileList(fData);
+      if (typeof renderDocPanes === 'function') renderDocPanes();
       showToast('✓ Fil slettet');
       break;
     }
@@ -901,6 +924,12 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'DOC_LAYOUT_SET': {
+      docLayout = normalizeDocLayout(payload.layout);
+      saveDocLayout(docLayout);
+      break;
+    }
+
     case 'SETTINGS_DOC_ROOT_CHANGE': {
       saveDocRoot(payload.value);
       showToast('✓ Saksmappe-rot lagret');
@@ -1007,6 +1036,7 @@ function _dispatch(action, payload) {
         Object.keys(sdWrite).forEach(function(id) { saveSakData(id, sdWrite[id]); });
       } else {
         cases = d.cases;
+        if (typeof dpReset === 'function') dpReset(); // saksvisningen starter på nytt, som etter «Slett alt»
         if (d.stats) stats = d.stats;
         saveCases(); saveStats();
         var sdAll = importSakDetailsToWrite(d.sakDetails, d.cases, 'replace');
@@ -1040,6 +1070,7 @@ function _dispatch(action, payload) {
         if ('deadlines' in s) { deadlines = s.deadlines; saveDeadlines(deadlines); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
+        if ('docLayout' in s) { docLayout = s.docLayout; saveDocLayout(docLayout); if (typeof renderDocPanes === 'function') renderDocPanes(); }
         if ('activeCase' in s) { activeCase = s.activeCase; saveActiveCase(activeCase); }
         if ('unassignedReminder' in s) { unassignedReminder = s.unassignedReminder; saveUnassignedReminder(unassignedReminder); }
         if ('medlesere' in s) { medleserList = s.medlesere; saveMedleserList(medleserList); }
@@ -1100,6 +1131,8 @@ function _dispatch(action, payload) {
       workWindows = normalizeWorkWindows(null);
       deadlines = normalizeDeadlines(null);
       homeDeadlineFilter = defaultHomeDeadlineFilter();
+      docLayout = defaultDocLayout();
+      if (typeof dpReset === 'function') dpReset();
       undoSnapshot = null; // en åpen «Angre» skal ikke kunne hente sakene tilbake
       closeBackdrop('delete-all-backdrop-2');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();

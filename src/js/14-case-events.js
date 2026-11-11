@@ -1,6 +1,10 @@
 // ── Saksdetaljer: event handlers ───────────────────
+// Tilbake går til siden du kom fra. Ble saken åpnet direkte (adresse, bokmerke,
+// ny fane) finnes ingen side i appen å gå tilbake til, og history.back() ville
+// enten ikke gjort noe eller forlatt appen — da åpnes Hjem.
 document.getElementById('btn-sak-back').addEventListener('click', function() {
-  history.back();
+  if (navDepth() > 0) history.back();
+  else navigateTo('hjem');
 });
 
 // ── Saksdetaljer: cases-felt (lagrer til cases[]) ──

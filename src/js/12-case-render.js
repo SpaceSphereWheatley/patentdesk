@@ -35,6 +35,7 @@ function renderSak(id) {
   renderSakActiveButton(cas);
   renderSakUnassigned(cas);
   renderSakMedl(cas);
+  if (typeof dpOnSakRendered === 'function') dpOnSakRendered(id);
 
   document.getElementById('btn-sak-back')._sakId = id;
 
@@ -406,6 +407,7 @@ function renderSakAssessment(data) {
   renderSakResultSummary(data);
   renderSakDocs(data);          // kategoriene per mothold er avledet av kravene
   updateSakProgress(data);
+  if (typeof dpRenderClaims === 'function') dpRenderClaims(data);
 }
 
 // Samme som over, men bytter bare ut de oppgitte kravradene. De avledede
@@ -415,12 +417,15 @@ function renderSakAssessmentRows(data, claimNums) {
   renderSakResultSummary(data);
   renderSakDocs(data);
   updateSakProgress(data);
+  if (typeof dpRenderClaims === 'function') dpRenderClaims(data);
 }
 
-// Én rad i dokumentlisten. Ren — se test/fileLabel.test.js.
-function sakFileRowHtml(f, i, fileUrl) {
-  return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
-    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span></a>' +
+// Én rad i dokumentlisten. Ren — se test/fileLabel.test.js. missing = filen
+// finnes ikke i saksmappen på disk (se test/folderSync.test.js).
+function sakFileRowHtml(f, i, fileUrl, missing) {
+  return '<div class="sak-docs-dropdown-row' + (missing ? ' sak-docs-missing' : '') + '" data-idx="' + i + '">' +
+    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span>' +
+      (missing ? '<span class="sak-docs-missing-tag" title="Filen finnes ikke i saksmappen">mangler</span>' : '') + '</a>' +
     '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
     '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
     '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
@@ -431,17 +436,26 @@ function renderSakFileList(data) {
   var list = document.getElementById('sak-docs-list');
   if (!list) return;
   var files = data.files || [];
-  if (!files.length) {
-    list.innerHTML = '<p class="sak-docs-empty">Ingen filer registrert.</p>';
-    return;
-  }
   var cas = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
   var root = loadDocRoot();
-  list.innerHTML = files.map(function(f, i) {
+  // Mappen på disk (lest av serveren når saken ble åpnet): filer som ikke
+  // finnes der merkes. Finnes ikke selve saksmappen, står det én melding i
+  // stedet for en merking på hver fil.
+  var listing = cas && typeof dpFolderListing === 'function' ? dpFolderListing(cas) : null;
+  var missing = {};
+  if (listing && listing.exists) missingFileIndexes(files, listing.files).forEach(function(k) { missing[k] = true; });
+  var note = (listing && !listing.exists)
+    ? '<p class="sak-docs-note">Saksmappen finnes ikke på disk (' + esc(_docRootJoin(root, cas.caseNumber, '').replace(/\\$/, '')) + ').</p>'
+    : '';
+  if (!files.length) {
+    list.innerHTML = note + '<p class="sak-docs-empty">Ingen filer registrert.</p>';
+    return;
+  }
+  list.innerHTML = note + files.map(function(f, i) {
     var fileUrl = cas
       ? _docFileUrl(root, cas.caseNumber, f.name, window.location)
       : '#';
-    return sakFileRowHtml(f, i, fileUrl);
+    return sakFileRowHtml(f, i, fileUrl, !!missing[i]);
   }).join('');
 }
 

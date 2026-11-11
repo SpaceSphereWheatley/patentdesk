@@ -235,38 +235,55 @@ var _sakActiveClaimNum = null;
 // Åpen mothold-velger i kravstabellen: { claimNum, field } eller null
 var _sakOpenDocPop = null;
 
+// Nyhet- og oppfinnelseshøyde-knappene til ett krav, med arv fra overordnet
+// krav og låsing når nyhet mangler. Felles for kravtabellen og kravpanelet på
+// fanen Dokumenter, så begge viser og endrer det samme på samme måte.
+function claimTriButtons(claims, c) {
+  var effNovelty   = effectiveClaimValue(claims, c, 'novelty');
+  var effInventive = effectiveClaimValue(claims, c, 'inventive');
+  var noveltyIsCascade   = c.novelty === null && effNovelty === true;
+  var inventiveIsCascade = c.inventive === null && effInventive === true;
+
+  // Knappene viser bare en glyf, så hver av dem må si hvilket krav og hvilken
+  // kolonne den hører til — ellers leser en skjermleser sju like knapper.
+  function ariaFor(field, val, isCascade, isLocked) {
+    return ' aria-label="' + esc(triAriaLabel(c.num, field, val, isCascade, isLocked)) + '"';
+  }
+
+  // Nyhet-knapp
+  var noveltyBtn;
+  if (noveltyIsCascade) {
+    noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + '>' + triLabel(true, false) + '</button>';
+  } else {
+    noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + '>' + triLabel(c.novelty, false) + '</button>';
+  }
+
+  // Oppfinnelseshøyde-knapp
+  var inventiveLocked = effNovelty === false;
+  var inventiveBtn;
+  if (inventiveLocked) {
+    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
+  } else if (inventiveIsCascade) {
+    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + '>' + triLabel(true, false) + '</button>';
+  } else {
+    inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + '>' + triLabel(c.inventive, false) + '</button>';
+  }
+
+  return { novelty: noveltyBtn, inventive: inventiveBtn, effNovelty: effNovelty, effInventive: effInventive };
+}
+
 // Én kravrad. Trukket ut som egen funksjon slik at en endring kan tegne bare
 // radene den faktisk påvirker, i stedet for å bytte ut hele tabellkroppen —
 // det siste tok fokus og markørposisjon fra notat- og etikettfeltene.
 function claimRowHtml(data, c) {
-    var effNovelty   = effectiveClaimValue(data.claims, c, 'novelty');
-    var effInventive = effectiveClaimValue(data.claims, c, 'inventive');
-    var noveltyIsCascade   = c.novelty === null && effNovelty === true;
-    var inventiveIsCascade = c.inventive === null && effInventive === true;
+    var tri = claimTriButtons(data.claims, c);
+    var effNovelty = tri.effNovelty, effInventive = tri.effInventive;
+    var noveltyBtn = tri.novelty, inventiveBtn = tri.inventive;
 
     // Knappene viser bare en glyf, så hver av dem må si hvilket krav og hvilken
     // kolonne den hører til — ellers leser en skjermleser sju like knapper.
     function ariaFor(field, val, isCascade, isLocked) {
       return ' aria-label="' + esc(triAriaLabel(c.num, field, val, isCascade, isLocked)) + '"';
-    }
-
-    // Nyhet-knapp
-    var noveltyBtn;
-    if (noveltyIsCascade) {
-      noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + '>' + triLabel(true, false) + '</button>';
-    } else {
-      noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + '>' + triLabel(c.novelty, false) + '</button>';
-    }
-
-    // Oppfinnelseshøyde-knapp
-    var inventiveLocked = effNovelty === false;
-    var inventiveBtn;
-    if (inventiveLocked) {
-      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
-    } else if (inventiveIsCascade) {
-      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + '>' + triLabel(true, false) + '</button>';
-    } else {
-      inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + '>' + triLabel(c.inventive, false) + '</button>';
     }
 
     // Radklasse basert på effektive verdier

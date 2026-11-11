@@ -290,6 +290,78 @@ function normalizeImportFiles(files) {
     return copy;
   });
 }
+// ── Saksmappen på disk ─────────────────────────────
+// Den lokale serveren lister filene i saksmappen (/docs/list). Svaret
+// sammenlignes med fillisten på saken: nye filer legges til, og filer i listen
+// som ikke finnes på disk merkes «mangler» (aldri slettet). Rene funksjoner —
+// se test/folderSync.test.js.
+var FOLDER_LIST_MAX = 500;
+
+// Navnet slik filer sammenlignes: uten forskjell på store/små bokstaver og
+// skråstrek, og et navn uten endelse betyr .pdf (som i fillisten).
+function folderFileKey(name) {
+  return _fileResolvedName(String(name)).replace(/\\/g, '/').toLowerCase();
+}
+
+// Serverens svar til { exists, files } med bare trygge, enkle filnavn, eller
+// null hvis det ikke har forventet form. Navnene kommer fra disk, så de
+// renses på samme måte som resten av det som havner i fillisten.
+function normalizeFolderListing(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (typeof raw.exists !== 'boolean' || !Array.isArray(raw.files)) return null;
+  var out = [], seen = {};
+  raw.files.forEach(function(n) {
+    if (typeof n !== 'string' || out.length >= FOLDER_LIST_MAX) return;
+    // Bare slutten trimmes: et mellomrom først er en del av filnavnet i Windows
+    var name = sanitizeText(n).replace(/\\/g, '/').replace(/\s+$/, '');
+    if (!name || name.length > 200 || name.charAt(0) === '/' || name.indexOf(':') !== -1) return;
+    var segs = name.split('/');
+    // Én mappe ned, som serveren leser; ingen tomme, «.»- eller «..»-ledd
+    if (segs.length > 2 || segs.some(function(seg) { return seg === '..' || seg === '.' || seg === ''; })) return;
+    var key = folderFileKey(name);
+    if (seen[key]) return;
+    seen[key] = true;
+    out.push(name);
+  });
+  return { exists: raw.exists, files: out };
+}
+
+function _folderKeys(names) {
+  var keys = {};
+  (Array.isArray(names) ? names : []).forEach(function(n) {
+    if (typeof n === 'string') keys[folderFileKey(n)] = true;
+  });
+  return keys;
+}
+function _registeredName(f) {
+  return (f && typeof f === 'object' && typeof f.name === 'string') ? f.name : null;
+}
+
+// Filene på disk som ikke står i fillisten, i mappens rekkefølge.
+function folderFilesToAdd(files, listed) {
+  var have = _folderKeys((Array.isArray(files) ? files : []).map(_registeredName));
+  var out = [];
+  (Array.isArray(listed) ? listed : []).forEach(function(n) {
+    if (typeof n !== 'string') return;
+    var key = folderFileKey(n);
+    if (have[key]) return;
+    have[key] = true;
+    out.push(n);
+  });
+  return out;
+}
+
+// Plassen til filene i fillisten som ikke finnes på disk.
+function missingFileIndexes(files, listed) {
+  var onDisk = _folderKeys(listed);
+  var out = [];
+  (Array.isArray(files) ? files : []).forEach(function(f, i) {
+    var n = _registeredName(f);
+    if (n !== null && !onDisk[folderFileKey(n)]) out.push(i);
+  });
+  return out;
+}
+
 function _fileExt(name) {
   var m = _fileResolvedName(name).match(/\.([a-zA-Z0-9]+)$/);
   return m ? m[1].toLowerCase() : '';
@@ -474,6 +546,13 @@ function loadHomeDeadlineFilter() {
 }
 function saveHomeDeadlineFilter(f) {
   lsSetSafe(HOME_DEADLINE_KEY, JSON.stringify(f));
+}
+function loadDocLayout() {
+  try { return normalizeDocLayout(JSON.parse(localStorage.getItem(DOC_LAYOUT_KEY))); }
+  catch(e) { return defaultDocLayout(); }
+}
+function saveDocLayout(l) {
+  lsSetSafe(DOC_LAYOUT_KEY, JSON.stringify(l));
 }
 function loadTlView() {
   try { return normalizeTlView(JSON.parse(localStorage.getItem(TL_VIEW_KEY))); }
@@ -1447,6 +1526,7 @@ var typeBuffers    = loadTypeBuffers();
 var workWindows    = loadWorkWindows();
 var deadlines      = loadDeadlines();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
+var docLayout = loadDocLayout();
 var activeCase = loadActiveCase();
 var unassignedReminder = loadUnassignedReminder();
 var medleserList = loadMedleserList();

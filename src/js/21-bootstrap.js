@@ -74,7 +74,7 @@ function init() {
   // Start på riktig side basert på URL-hash
   var entry = initialHistoryEntry(pageFromHash(), activeSakId, activeMedlesingId, location.hash.replace('#', '').trim());
   activePage = entry.page;
-  history.replaceState(entry.state, '', entry.url);
+  history.replaceState(Object.assign({}, entry.state, { idx: navDepth() }), '', entry.url);
   // Bygg tidslinje-widgets (må skje før render() så #home-timeline finnes i DOM)
   buildTimelineWidget(document.getElementById('home-tl-host'), {
     tlId:           'home-timeline',

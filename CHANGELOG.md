@@ -7,6 +7,63 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.64.1] - 2026-11-11
+Små rettelser på fanen Dokumenter og i mappelesingen.
+
+### Fixed
+- **Dokumentflaten fyller vinduet også når toppfeltet bytter linjer.** Høyden
+  måles nå på nytt hver gang toppfeltet endrer høyde (f.eks. når sidemenyen
+  glir inn på et smalt vindu), så det ikke blir et tomrom under dokumentene.
+- **Rundeskuffen følger sidemenyen.** Når sidemenyen trekkes inn eller ut av seg
+  selv mens fanen Dokumenter åpnes eller lukkes, tegnes en åpen rundeskuff på
+  nytt, som ved et vanlig trykk på menyknappen.
+- **Mellomrom først i et filnavn beholdes** når mappen leses. Windows tillater
+  det, og navnet ble ellers kuttet slik at lenken ikke traff filen.
+- **«Slett alle data» glemmer også mappelesingene** som er gjort for de slettede
+  sakene.
+
+## [4.64.0] - 2026-11-11
+Saksdokumentene kan vises side om side i én fane på saksiden, saksmappen leses når en sak åpnes, og Tilbake virker alltid.
+
+### Added
+- **Fanen «Dokumenter» på saksiden.** Saksfilene (PDF) vises side om side i
+  1–3 paneler, med kravoversikten (nyhet og oppfinnelseshøyde per krav) i et
+  eget panel. Kravpanelet kan stå til venstre eller høyre, og kan skjules helt.
+  Skillelinjene mellom panelene kan dras (dobbeltklikk nullstiller), og
+  oppsettet huskes og følger med i eksport og sikkerhetskopi. Du markerer i PDF-en
+  med Edges egne fargeverktøy. Fanen krever den lokale serveren
+  (`Start-PatentDesk.ps1`); åpnet som vanlig fil vises en forklaring.
+- **Plassregler for panelene** (Innstillinger → Saksbehandling). Hver plass har
+  en tekst, og første PDF der filnavnet inneholder teksten havner der — f.eks.
+  «claims» i panel 1 og «figures» i panel 2. Du kan alltid velge en annen fil
+  for hånd i et panel; «Automatisk» går tilbake til regelen.
+- **Saksmappen leses når en sak åpnes.** Gjennom den lokale serveren hentes
+  filene i saksmappen (`/docs/list`, én undermappe ned). Filer som ligger i
+  mappen, men ikke i fillisten, legges til av seg selv, og de går rett inn i
+  plassreglene til dokumentpanelene. Filer i listen som ikke finnes på disk får
+  merket «mangler» i fillisten og i panelvalget — ingenting slettes. Finnes ikke
+  selve saksmappen, står det én melding i stedet for et merke på hver fil. Uten
+  serveren, eller ved feil, skjer ingenting. Endrer du saksnummeret på en
+  åpen sak, leses den nye mappen. **Start `Start-PatentDesk.ps1` på
+  nytt** for at serveren skal kunne liste mappen.
+
+### Changed
+- **Fanen Dokumenter har et mye mindre toppfelt.** Saksnavn og knapper står på
+  én rad, og faner og panelvalg på én rad, slik at dokumentene starter rundt
+  100 piksler fra toppen i stedet for 240 og fyller resten av vinduet.
+  Sidemenyen trekkes inn mens fanen er åpen og kommer tilbake når du forlater
+  den (valget ditt i menyen endres ikke).
+
+### Fixed
+- **Tilbake på saksiden virker også når saken er åpnet direkte.** Åpnes en sak
+  fra en adresse, et bokmerke eller en ny fane, finnes ingen side i appen å gå
+  tilbake til, og knappen gjorde ingenting eller forlot appen. Da åpnes nå Hjem.
+- **Kravpanelet på fanen Dokumenter kan nå redigeres.** Nyhet og
+  oppfinnelseshøyde endres med de samme knappene som i kravtabellen (samme
+  regler: oppfinnelseshøyde er låst uten nyhet, og et trykk på en arvet verdi
+  overstyrer den). Panelet viser også verdiene som arves fra overordnet krav,
+  som før bare sto som tomme streker.
+
 ## [4.63.0] - 2026-11-11
 Motholdene kan vises som en kort rapport, D markerer dokumenter sitert av søker, og «Bakgrunn» er borte.
 

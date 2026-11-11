@@ -100,6 +100,37 @@ function Send-Message($response, [int]$status, [string]$title, [string]$detail) 
     $response.OutputStream.Write($bytes, 0, $bytes.Length)
 }
 
+function Send-Json($response, $object) {
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -InputObject $object -Depth 4 -Compress))
+    $response.StatusCode = 200
+    $response.ContentType = 'application/json; charset=utf-8'
+    $response.AddHeader('Cache-Control', 'no-store')
+    $response.ContentLength64 = $bytes.Length
+    $response.OutputStream.Write($bytes, 0, $bytes.Length)
+}
+
+# Filene i saksmappen som kan hentes (se $docTypes): i mappen selv og én
+# undermappe ned, som relative navn med /. Symbolske lenker og mappekoblinger
+# følges ikke, så listen aldri peker ut av saksmappen. (Filer i OneDrive/SharePoint
+# har også ReparsePoint-merket, men er vanlige filer, og tas med.) Høyst 500 filer.
+function Get-CaseFiles([string]$caseDir) {
+    $prefix = $caseDir.TrimEnd('\') + '\'
+    $links = @('SymbolicLink', 'Junction')
+    $dirs = @($caseDir) + @(Get-ChildItem -LiteralPath $caseDir -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $links -notcontains $_.LinkType } | Sort-Object Name | ForEach-Object { $_.FullName })
+    $names = @()
+    foreach ($dir in $dirs) {
+        foreach ($f in @(Get-ChildItem -LiteralPath $dir -File -ErrorAction SilentlyContinue | Sort-Object Name)) {
+            if ($names.Count -ge 500) { break }
+            if ($links -contains $f.LinkType) { continue }
+            if ($f.Name.StartsWith('~$') -or $f.Name.StartsWith('.')) { continue }
+            if (-not $docTypes.ContainsKey($f.Extension.ToLowerInvariant())) { continue }
+            $names += $f.FullName.Substring($prefix.Length).Replace('\', '/')
+        }
+    }
+    return ,$names
+}
+
 function Send-File($response, [string]$path, [string]$type, [bool]$download) {
     $stream = [System.IO.File]::OpenRead($path)
     try {
@@ -140,6 +171,26 @@ while ($listener.IsListening) {
 
         if ($segments.Count -eq 1 -and $segments[0] -eq 'docs' -and -not $fromPatentDesk) {
             Send-Message $response 403 'Ingen tilgang' 'Dokumenter kan bare åpnes fra PatentDesk.'
+        } elseif ($segments.Count -eq 2 -and $segments[0] -eq 'docs' -and $segments[1] -eq 'list' -and -not $fromPatentDesk) {
+            Send-Message $response 403 'Ingen tilgang' 'Mappen kan bare leses fra PatentDesk.'
+        } elseif ($segments.Count -eq 2 -and $segments[0] -eq 'docs' -and $segments[1] -eq 'list') {
+            # Filene i saksmappen. En mappe som ikke finnes er et vanlig svar, ikke en feil.
+            $root = Get-QueryValue $query 'root'
+            if ($root -match '^[A-Za-z]:$') { $root += '\' }
+            $caseParts = Split-PathParts (Get-QueryValue $query 'case')
+            if (-not ($root -match '^([A-Za-z]:\\|\\\\[^\\]+\\[^\\]+)') -or $caseParts.Count -eq 0) {
+                Send-Message $response 400 'Ugyldig forespørsel' `
+                    'Sjekk Dokumentrot under Innstillinger i PatentDesk (f.eks. C:\Saker).'
+            } else {
+                $caseDir = Resolve-Inside $root $caseParts
+                if (-not $caseDir) {
+                    Send-Message $response 403 'Ingen tilgang' 'Mappen ligger utenfor dokumentroten.'
+                } elseif (-not (Test-Path -LiteralPath $caseDir -PathType Container)) {
+                    Send-Json $response @{ exists = $false; files = @() }
+                } else {
+                    Send-Json $response @{ exists = $true; files = (Get-CaseFiles $caseDir) }
+                }
+            }
         } elseif ($segments.Count -eq 1 -and $segments[0] -eq 'docs') {
             $root = Get-QueryValue $query 'root'
             # En hel stasjon (S:\) kommer som S: - gjør den til en full sti.

@@ -60,9 +60,26 @@ async function openApp(viewport) {
 }
 const go = (p, name) => p.evaluate((n) => navigateTo(n), name).then(() => p.clock.runFor(200));
 
+// Venter (i virkelig tid) til siden og tidslinjene har sluttet å rulle. Popupen
+// skjules av alle scroll-hendelser (det er meningen), og en bjelke som må
+// rulles fram, ruller videre en stund etter at scrollIntoViewIfNeeded er
+// ferdig — rullingen går i virkelig tid, ikke på klokken testen styrer. Om en
+// bjelke må rulles avhenger av dagens dato, så testen feilet bare noen dager.
+async function settleScroll(page) {
+  let last = '', same = 0;
+  for (let i = 0; i < 50 && same < 3; i++) {
+    await page.waitForTimeout(40);
+    const cur = await page.evaluate(() => JSON.stringify([scrollX, scrollY].concat(
+      Array.from(document.querySelectorAll('[id$="tl-scroll"]')).map((e) => e.scrollLeft))));
+    same = cur === last ? same + 1 : 0;
+    last = cur;
+  }
+  await page.clock.runFor(100);
+}
 async function barCentre(page, sel) {
   const loc = page.locator(sel).first();
   await loc.scrollIntoViewIfNeeded();
+  await settleScroll(page);
   const b = await loc.boundingBox();
   return { x: b.x + Math.min(b.width / 2, 20), y: b.y + b.height / 2 };
 }
@@ -173,10 +190,29 @@ e2e('every kind of bar gets a popup outside the track', async () => {
     await page.mouse.move(5, 5);
     await page.clock.runFor(400);
     assert.equal(await page.locator('#' + host + ' ' + sel).count() > 0, true, view + ' ' + sel + ' exists');
-    const p = await barCentre(page, '#' + host + ' ' + sel);
-    await page.mouse.move(p.x, p.y);
-    await page.clock.runFor(650);
-    assert.equal(await popupShown(page), true, 'popup for ' + view + ' ' + sel);
+    // Popupen skjules av rulling (det er meningen). Rullet siden under hoveren,
+    // prøves hoveren på nytt; uten rulling og uten popup er det en ekte feil.
+    let shown = false, scrolledDuring = false;
+    for (let attempt = 0; attempt < 4 && !shown; attempt++) {
+      const p = await barCentre(page, '#' + host + ' ' + sel);
+      await page.evaluate(() => {
+        window.__scrolled = false;
+        if (!window.__scrollSpy) {
+          window.__scrollSpy = true;
+          document.addEventListener('scroll', () => { window.__scrolled = true; }, true);
+        }
+      });
+      await page.mouse.move(p.x, p.y);
+      await page.clock.runFor(650);
+      shown = await popupShown(page);
+      scrolledDuring = await page.evaluate(() => window.__scrolled);
+      if (!shown) {
+        assert.equal(scrolledDuring, true, 'no popup for ' + view + ' ' + sel + ' and no scrolling to blame');
+        await page.mouse.move(5, 5);        // ut av tidslinjen, så neste hover er ny
+        await page.clock.runFor(400);
+      }
+    }
+    assert.equal(shown, true, 'popup for ' + view + ' ' + sel + ' (also after retries)');
     assertOutsideTrack(await geom(page, host));
   }
   await close();

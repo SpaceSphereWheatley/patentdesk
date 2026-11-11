@@ -3,7 +3,7 @@
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.63.0';
+var APP_VERSION    = 'v4.64.1';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -21,6 +21,7 @@ var TYPE_BUFFER_KEY = 'pt_type_buffers';
 var WORK_WINDOW_KEY = 'pt_work_windows';
 var DEADLINES_KEY   = 'pt_deadlines';
 var HOME_DEADLINE_KEY = 'pt_home_frister';
+var DOC_LAYOUT_KEY    = 'pt_doc_layout';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
 var UNASSIGNED_REMINDER_KEY = 'pt_unassigned_reminder';
 var MEDLESERE_KEY     = 'pt_medlesere';

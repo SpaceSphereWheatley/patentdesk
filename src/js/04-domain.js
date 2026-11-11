@@ -251,6 +251,7 @@ function makeExportPayload() {
     workWindowUnit: 'workdays',
     deadlines:  deadlines,
     homeDeadlineFilter: homeDeadlineFilter,
+    docLayout:  docLayout,
     activeCase: activeCase,
     unassignedReminder: unassignedReminder,
     medlesing:  medlesing,
@@ -304,6 +305,9 @@ function readImportSettings(d) {
   }
   if (d.homeDeadlineFilter && typeof d.homeDeadlineFilter === 'object') {
     out.homeDeadlineFilter = normalizeHomeDeadlineFilter(d.homeDeadlineFilter);
+  }
+  if (d.docLayout && typeof d.docLayout === 'object' && !Array.isArray(d.docLayout)) {
+    out.docLayout = normalizeDocLayout(d.docLayout);
   }
   if (d.activeCase === null) out.activeCase = null;
   else if (d.activeCase !== undefined && normalizeActiveCase(d.activeCase)) out.activeCase = normalizeActiveCase(d.activeCase);
@@ -773,3 +777,155 @@ function buildCasePath(caseNumber) {
   return root + '\\' + caseNumber;
 }
 
+
+// ── Dokumentpaneler ────────────────────────────────
+// Visningen «Dokumenter» på saksiden: 1–3 paneler side om side med saksfilene
+// og et kravpanel som kan flyttes, byttes og skjules. Oppsettet er felles for
+// alle saker (localStorage, pt_doc_layout) og følger med i eksport og
+// sikkerhetskopi. Plassreglene bestemmer hvilken fil som havner i hvilket
+// panel: første PDF der filnavnet (uten .pdf) inneholder teksten. Rene
+// funksjoner — se test/docPanes.test.js.
+var DOC_PANE_MAX = 3;
+var DOC_PANE_MIN = 0.15;
+var DOC_CLAIMS_MODES = ['overview'];
+var DOC_CLAIMS_SIDES = ['left', 'right'];
+var DOC_RULE_MAX = 40;
+var DOC_CLAIMS_W_MIN = 160;
+var DOC_CLAIMS_W_MAX = 480;
+
+function defaultDocLayout() {
+  return {
+    count: 2,
+    claimsVisible: true,
+    claimsSide: 'left',
+    claimsMode: 'overview',
+    claimsWidth: 250,
+    rules: ['claims', 'figures', ''],
+    widths: { 1: [1], 2: [0.5, 0.5], 3: [1 / 3, 1 / 3, 1 / 3] }
+  };
+}
+
+// Bredder som andeler av panelflaten: n tall som summerer til 1, hver minst
+// DOC_PANE_MIN. Ugyldig inndata gir like brede paneler.
+function normalizePaneWidths(raw, count) {
+  var n = count;
+  if (n <= 1) return [1];
+  var equal = [];
+  for (var e = 0; e < n; e++) equal.push(1 / n);
+  if (!Array.isArray(raw) || raw.length !== n) return equal;
+  var total = 0;
+  for (var i = 0; i < n; i++) {
+    if (typeof raw[i] !== 'number' || !isFinite(raw[i]) || raw[i] <= 0) return equal;
+    total += raw[i];
+  }
+  if (!isFinite(total) || total <= 0) return equal; // summen kan flyte over selv om hvert tall er endelig
+  var w = raw.map(function(x) { return x / total; });
+  var out = w.slice(), fixed = [], rem = 1;
+  for (var pass = 0; pass <= n; pass++) {
+    var free = [], freeSum = 0;
+    for (var k = 0; k < n; k++) { if (!fixed[k]) { free.push(k); freeSum += w[k]; } }
+    if (!free.length) break;
+    var scale = rem / freeSum, again = false;
+    free.forEach(function(j) {
+      if (w[j] * scale < DOC_PANE_MIN - 1e-12) { out[j] = DOC_PANE_MIN; fixed[j] = true; rem -= DOC_PANE_MIN; again = true; }
+    });
+    if (!again) { free.forEach(function(j) { out[j] = w[j] * scale; }); break; }
+  }
+  return out;
+}
+
+// Skillelinje i mellom panel i og i+1 flyttes delta (andel). Ingen av de to
+// går under minstebredden; resten røres ikke.
+function dragPaneWidths(widths, i, delta) {
+  if (!Array.isArray(widths)) return [];
+  var w = widths.slice();
+  if (!Number.isInteger(i) || i < 0 || i + 1 >= w.length || typeof delta !== 'number' || !isFinite(delta)) return w;
+  var total = w[i] + w[i + 1];
+  var a = Math.min(Math.max(w[i] + delta, DOC_PANE_MIN), total - DOC_PANE_MIN);
+  w[i] = a;
+  w[i + 1] = total - a;
+  return w;
+}
+
+function normalizeDocLayout(raw) {
+  var d = defaultDocLayout();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return d;
+  if (Number.isInteger(raw.count) && raw.count >= 1 && raw.count <= DOC_PANE_MAX) d.count = raw.count;
+  if (typeof raw.claimsVisible === 'boolean') d.claimsVisible = raw.claimsVisible;
+  if (DOC_CLAIMS_SIDES.indexOf(raw.claimsSide) !== -1) d.claimsSide = raw.claimsSide;
+  if (DOC_CLAIMS_MODES.indexOf(raw.claimsMode) !== -1) d.claimsMode = raw.claimsMode;
+  if (typeof raw.claimsWidth === 'number' && isFinite(raw.claimsWidth)) {
+    d.claimsWidth = Math.round(Math.min(Math.max(raw.claimsWidth, DOC_CLAIMS_W_MIN), DOC_CLAIMS_W_MAX));
+  }
+  if (Array.isArray(raw.rules)) {
+    d.rules = [0, 1, 2].map(function(i) {
+      var r = raw.rules[i];
+      return typeof r === 'string' ? r.trim().slice(0, DOC_RULE_MAX) : '';
+    });
+  }
+  var rw = (raw.widths && typeof raw.widths === 'object' && !Array.isArray(raw.widths)) ? raw.widths : {};
+  [1, 2, 3].forEach(function(n) { d.widths[n] = normalizePaneWidths(rw[n], n); });
+  return d;
+}
+
+// Indeksen til første PDF i files der navnet (uten .pdf) inneholder regelen,
+// uten forskjell på store og små bokstaver. Filer i skip hoppes over. -1 = ingen.
+function docSlotMatch(files, rule, skip) {
+  var r = (typeof rule === 'string' ? rule : '').trim().toLowerCase();
+  if (!r || !Array.isArray(files)) return -1;
+  var skipped = Array.isArray(skip) ? skip : [];
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    if (skipped.indexOf(i) !== -1) continue;
+    if (!f || typeof f.name !== 'string' || !_fileIsPdf(f.name)) continue;
+    if (_fileDisplayName(f.name).toLowerCase().indexOf(r) !== -1) return i;
+  }
+  return -1;
+}
+
+// Filindeks per panel (-1 = tomt). manual[i] er et valg brukeren har gjort i
+// panel i og går foran regelen; regler plasserer aldri samme fil to ganger.
+function docSlotAssign(files, rules, count, manual) {
+  var n = (Number.isInteger(count) && count >= 1 && count <= DOC_PANE_MAX) ? count : 2;
+  var list = Array.isArray(files) ? files : [];
+  var picks = Array.isArray(manual) ? manual : [];
+  var rl = Array.isArray(rules) ? rules : [];
+  var out = [], used = [], pending = [];
+  for (var i = 0; i < n; i++) {
+    var m = picks[i], f = list[m];
+    if (Number.isInteger(m) && m >= 0 && m < list.length && f && typeof f.name === 'string' && _fileIsPdf(f.name)) {
+      out.push(m); used.push(m);
+    } else {
+      out.push(-1); pending.push(i);
+    }
+  }
+  pending.forEach(function(s) {
+    var hit = docSlotMatch(list, rl[s], used);
+    if (hit >= 0) { out[s] = hit; used.push(hit); }
+  });
+  return out;
+}
+
+// Raden per krav i kravpanelets oversikt: nummer, avhengighet, nyhet og
+// oppfinnelseshøyde (true / false / null = ikke vurdert).
+function claimOverviewRows(claims) {
+  if (!Array.isArray(claims)) return [];
+  var rows = [];
+  claims.forEach(function(c) {
+    if (!c || typeof c !== 'object' || Array.isArray(c)) return;
+    if (!Number.isInteger(c.num) || c.num < 1) return;
+    rows.push({
+      num: c.num,
+      dep: (Number.isInteger(c.dep) && c.dep >= 1) ? c.dep : null,
+      novelty: roundTriState(c.novelty),
+      inventive: roundTriState(c.inventive)
+    });
+  });
+  return rows.sort(function(a, b) { return a.num - b.num; });
+}
+
+// Adressen et panel laster, eller null når appen ikke er åpnet via den lokale
+// serveren — da stopper nettleseren file:///-adresser i en iframe.
+function docPaneUrl(root, caseNumber, name, loc) {
+  return _docServedLocally(loc) ? _docFileUrl(root, caseNumber, name, loc) : null;
+}
