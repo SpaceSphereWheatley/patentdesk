@@ -801,6 +801,8 @@ function defaultDocLayout() {
     claimsMode: 'overview',
     claimsWidth: 250,
     rules: ['claims', 'figures', ''],
+    focus: false,        // fokusmodus: toppfeltet foldes sammen til én stripe
+    hideToolbar: false,  // PDF-leserens egen verktøylinje og sidepanel skjules
     widths: { 1: [1], 2: [0.5, 0.5], 3: [1 / 3, 1 / 3, 1 / 3] }
   };
 }
@@ -852,6 +854,8 @@ function normalizeDocLayout(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return d;
   if (Number.isInteger(raw.count) && raw.count >= 1 && raw.count <= DOC_PANE_MAX) d.count = raw.count;
   if (typeof raw.claimsVisible === 'boolean') d.claimsVisible = raw.claimsVisible;
+  if (typeof raw.focus === 'boolean') d.focus = raw.focus;
+  if (typeof raw.hideToolbar === 'boolean') d.hideToolbar = raw.hideToolbar;
   if (DOC_CLAIMS_SIDES.indexOf(raw.claimsSide) !== -1) d.claimsSide = raw.claimsSide;
   if (DOC_CLAIMS_MODES.indexOf(raw.claimsMode) !== -1) d.claimsMode = raw.claimsMode;
   if (typeof raw.claimsWidth === 'number' && isFinite(raw.claimsWidth)) {
@@ -926,6 +930,8 @@ function claimOverviewRows(claims) {
 
 // Adressen et panel laster, eller null når appen ikke er åpnet via den lokale
 // serveren — da stopper nettleseren file:///-adresser i en iframe.
-function docPaneUrl(root, caseNumber, name, loc) {
-  return _docServedLocally(loc) ? _docFileUrl(root, caseNumber, name, loc) : null;
+// hideTools ber leseren (Edge/Chromium) skjule verktøylinje og sidepanel.
+function docPaneUrl(root, caseNumber, name, loc, hideTools) {
+  if (!_docServedLocally(loc)) return null;
+  return _docFileUrl(root, caseNumber, name, loc) + (hideTools ? '#toolbar=0&navpanes=0' : '');
 }

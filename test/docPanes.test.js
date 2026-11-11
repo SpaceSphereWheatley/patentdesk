@@ -33,6 +33,21 @@ test('defaultDocLayout: two panes, claims panel on the left, rules claims/figure
   assert.deepStrictEqual(Array.from(d.rules), ['claims', 'figures', '']);
 });
 
+test('defaultDocLayout: focus mode and hidden PDF toolbar are off', () => {
+  const d = defaultDocLayout();
+  assert.strictEqual(d.focus, false);
+  assert.strictEqual(d.hideToolbar, false);
+});
+
+test('normalizeDocLayout: focus and hideToolbar are kept only as booleans', () => {
+  assert.strictEqual(normalizeDocLayout({ focus: true }).focus, true);
+  assert.strictEqual(normalizeDocLayout({ hideToolbar: true }).hideToolbar, true);
+  ['ja', 1, null, {}, []].forEach(v => {
+    assert.strictEqual(normalizeDocLayout({ focus: v }).focus, false, JSON.stringify(v));
+    assert.strictEqual(normalizeDocLayout({ hideToolbar: v }).hideToolbar, false, JSON.stringify(v));
+  });
+});
+
 test('normalizeDocLayout: null, arrays and junk give the default', () => {
   const d = defaultDocLayout();
   [null, undefined, 'x', 7, [], true].forEach(v =>
@@ -232,6 +247,15 @@ test('docPaneUrl: needs the local server; without it there is no pane url', () =
   assert.strictEqual(docPaneUrl('C:\\Saker', 'NO1', 'Claims.pdf', { protocol: 'https:', hostname: 'example.com', origin: 'https://example.com' }), null);
 });
 
+test('docPaneUrl: with the PDF toolbar hidden the address asks the viewer to hide toolbar and side panel', () => {
+  assert.strictEqual(
+    docPaneUrl('C:\\Saker', 'NO1', 'Claims', LOCALHOST, true),
+    'http://localhost:8080/docs?root=C%3A%5CSaker&case=NO1&file=Claims.pdf#toolbar=0&navpanes=0'
+  );
+  assert.strictEqual(docPaneUrl('C:\\Saker', 'NO1', 'Claims', LOCALHOST, false), docPaneUrl('C:\\Saker', 'NO1', 'Claims', LOCALHOST));
+  assert.strictEqual(docPaneUrl('C:\\Saker', 'NO1', 'Claims', FILE_LOC, true), null, 'still no url without the server');
+});
+
 test('docPaneUrl: served locally it is the /docs url', () => {
   assert.strictEqual(
     docPaneUrl('C:\\Saker', 'NO1', 'Claims', LOCALHOST),
@@ -246,6 +270,12 @@ test('readImportSettings: docLayout is read and normalised', () => {
   assert.strictEqual(r.docLayout.count, 3);
   assert.strictEqual(r.docLayout.claimsSide, 'right');
   assert.strictEqual(r.docLayout.rules[0], 'x');
+});
+
+test('readImportSettings: focus and hideToolbar come through import cleaned up', () => {
+  const r = readImportSettings({ docLayout: { focus: true, hideToolbar: 'x' } });
+  assert.strictEqual(r.docLayout.focus, true);
+  assert.strictEqual(r.docLayout.hideToolbar, false);
 });
 
 test('readImportSettings: a bad or missing docLayout changes nothing', () => {

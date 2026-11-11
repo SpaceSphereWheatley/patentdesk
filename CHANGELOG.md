@@ -7,6 +7,19 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Added
+- **Fokusmodus på fanen Dokumenter.** Knappen «Fokus» ved panelvalgene folder
+  toppfeltet sammen til én stripe med saksnummer, status, faner og panelvalg,
+  så dokumentene starter helt oppe (rundt 40 piksler fra toppen i stedet for
+  rundt 100) og fyller resten av vinduet. «Avslutt fokus» (samme knapp) henter
+  hele toppfeltet tilbake, og Oversikt har alltid hele toppfeltet. Valget
+  huskes.
+- **«Skjul PDF-verktøy».** Ber PDF-leseren i panelene skjule sin egen
+  verktøylinje og sidepanel, så PDF-en får mer høyde. Verktøylinjen er også
+  der Edges uthevingsverktøy ligger, så valget er av som standard og kan slås
+  av og på; panelene lastes på nytt når du bytter. Valget huskes. Om leseren
+  følger ønsket, avhenger av Edge.
+
 ## [4.64.2] - 2026-11-11
 Fillisten i Dokumenter-nedtrekket er begrenset og ruller.
 

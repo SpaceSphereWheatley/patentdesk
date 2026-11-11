@@ -103,14 +103,26 @@ function dpOnPageChange(page) {
   if (page === 'sak') return;
   _folderSyncKey = null; // åpnes en sak igjen, leses mappen på nytt
   document.body.classList.remove('dp-docs-mode');
+  document.body.classList.remove('dp-focus-mode');
   _dpDrawerSet(false);
   _dpWasDocs = false;
+}
+
+// Fokusmodus gjelder bare på fanen Dokumenter; Oversikt har alltid hele toppfeltet.
+function _dpApplyFocus() {
+  var on = _dpTab === 'docs' && !!docLayout.focus;
+  var view = document.getElementById('view-sak');
+  if (view) view.classList.toggle('is-focus', on);
+  document.body.classList.toggle('dp-focus-mode', on);
+  var b = document.getElementById('dp-focus-toggle');
+  if (b) { b.textContent = docLayout.focus ? 'Avslutt fokus' : 'Fokus'; }
 }
 
 function dpApplyTab() {
   var docs = _dpTab === 'docs';
   var view = document.getElementById('view-sak');
   if (view) view.classList.toggle('is-docs-tab', docs);
+  _dpApplyFocus();
   document.body.classList.toggle('dp-docs-mode', docs);
   // Sidemenyen trekkes inn bare idet fanen åpnes (ikke ved hver omtegning), så
   // en meny du selv åpner blir stående.
@@ -216,6 +228,10 @@ function _dpApplyLayout() {
   claims.style.width = l.claimsWidth + 'px';
   var tog = document.getElementById('dp-claims-toggle');
   tog.textContent = l.claimsVisible ? 'Skjul krav' : 'Vis krav';
+  var tools = document.getElementById('dp-tools-toggle');
+  tools.setAttribute('aria-pressed', l.hideToolbar ? 'true' : 'false');
+  tools.textContent = l.hideToolbar ? 'Vis PDF-verktøy' : 'Skjul PDF-verktøy';
+  _dpApplyFocus();
   document.querySelectorAll('[data-dp-count]').forEach(function(b) {
     b.setAttribute('aria-pressed', Number(b.dataset.dpCount) === l.count ? 'true' : 'false');
   });
@@ -303,7 +319,7 @@ function renderDocPanes() {
     });
     sel.innerHTML = opts;
     pin.textContent = manual ? 'valgt for hånd' : (rule ? 'regel: ' + rule : '');
-    var url = idx >= 0 ? docPaneUrl(root, cas.caseNumber, files[idx].name, window.location) : '';
+    var url = idx >= 0 ? docPaneUrl(root, cas.caseNumber, files[idx].name, window.location, docLayout.hideToolbar) : '';
     _dpSetFrame(frame, url || '');
     if (url) {
       empty.hidden = true;
@@ -319,10 +335,23 @@ function renderDocPanes() {
 // leseren sted og zoom hver gang oppsettet endres.
 function _dpSetFrame(frame, url) {
   if (!frame) return;
-  if ((frame.dataset.url || '') === url) { frame.hidden = !url; return; }
+  var old = frame.dataset.url || '';
+  if (old === url) { frame.hidden = !url; return; }
   frame.dataset.url = url;
-  if (url) { frame.src = url; frame.hidden = false; }
-  else { frame.removeAttribute('src'); frame.hidden = true; }
+  if (!url) { frame.removeAttribute('src'); frame.hidden = true; return; }
+  frame.hidden = false;
+  // Samme fil med bare en annen #-del (verktøylinjen skjules eller vises) er for
+  // nettleseren bare en hopp-til-sted i samme dokument, og leseren leser ikke
+  // verktøylinje-valgene på nytt. Gå via en tom side, så filen lastes på nytt.
+  if (old && old.split('#')[0] === url.split('#')[0]) {
+    frame.addEventListener('load', function go() {
+      frame.removeEventListener('load', go);
+      if (frame.dataset.url === url) frame.src = url;
+    });
+    frame.src = 'about:blank';
+    return;
+  }
+  frame.src = url;
 }
 
 function _dpSetLayout(patch) {
@@ -390,6 +419,8 @@ document.getElementById('sak-tabs').addEventListener('keydown', function(e) {
 });
 
 document.getElementById('dp-toolbar').addEventListener('click', function(e) {
+  if (e.target.closest('#dp-focus-toggle')) { _dpSetLayout({ focus: !docLayout.focus }); return; }
+  if (e.target.closest('#dp-tools-toggle')) { _dpSetLayout({ hideToolbar: !docLayout.hideToolbar }); return; }
   var c = e.target.closest('[data-dp-count]');
   if (c) { _dpSetLayout({ count: Number(c.dataset.dpCount) }); return; }
   var s = e.target.closest('[data-dp-side]');

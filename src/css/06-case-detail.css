@@ -737,3 +737,17 @@ body.dp-docs-mode .main-content { padding-top: var(--space-5); padding-bottom: v
 /* Fillisten i Dokumenter-nedtrekket: høyst ca. ti rader, så ruller den. Feltet
    for å legge til filer og knappene under blir stående i vinduet. */
 #sak-docs-list { max-height: clamp(120px, calc(100vh - 300px), 340px); overflow-y: auto; overscroll-behavior: contain; }
+
+/* Fokusmodus på fanen Dokumenter: saksnummer, status, faner og panelvalg på én
+   stripe, så dokumentene starter helt oppe. Gjelder bare på denne fanen. */
+body.dp-focus-mode .main-content { padding-top: var(--space-2); padding-bottom: var(--space-2); gap: var(--space-2); }
+body[data-page="sak"] #view-sak.is-docs-tab.is-focus { display: grid !important; grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-6); align-items: end; }
+#view-sak.is-focus .top-bar { grid-column: 1; margin: 0; }
+#view-sak.is-focus .dp-bar { grid-column: 2; margin: 0; }
+#view-sak.is-focus .dp-viewer { grid-column: 1 / -1; }
+#view-sak.is-focus #btn-sak-back,
+#view-sak.is-focus .sak-meta-line,
+#view-sak.is-focus .sak-top-left + * { display: none !important; }
+#view-sak.is-focus .dp-toolbar { padding-bottom: 0; }
+#view-sak.is-focus .dp-tab { padding: var(--space-1) var(--space-5); }

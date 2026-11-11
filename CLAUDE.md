@@ -141,7 +141,11 @@ state it; the owner can override.
      solved smaller. ⏸ owner approves.
   2. If UI changes: a mockup (small standalone HTML in the scratchpad using
      the app's colours and CSS prefixes, or an ASCII sketch for small
-     changes). ⏸ owner approves.
+     changes). ⏸ owner approves. Mockups and sketches show a **Ny** case — a
+     new application at its first office action (runde 1, no earlier rounds)
+     — because that is what the owner mainly works on. Don't default to
+     Viderebehandling / runde 2 (round line, claim mapping, earlier-round
+     snapshots); show those only when the change is about them.
   3. Tests from the acceptance criteria first, then the code.
   4. `reviewer` agent (see below). ⏸ owner approves.
 - **Structural** — new stored data, `SCHEMA_VERSION` bump, import/export
