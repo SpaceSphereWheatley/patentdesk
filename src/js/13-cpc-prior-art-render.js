@@ -548,8 +548,7 @@ function mhCatsHtml(d, row) {
 }
 
 // ── Visning: Detaljer eller Rapport ──
-// Valget gjelder alle saker og huskes i pt_mh_view.
-var MH_VIEW_KEY = 'pt_mh_view';
+// Valget gjelder alle saker og huskes i pt_mh_view (MH_VIEW_KEY).
 function mhViewMode(v) { return v === 'report' ? 'report' : 'full'; }
 function loadMhView() {
   try { return mhViewMode(localStorage.getItem(MH_VIEW_KEY)); } catch (e) { return 'full'; }

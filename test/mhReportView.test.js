@@ -13,8 +13,10 @@ const F = loadFunctions([
   'ensureSakDocs', 'capPartyText', 'capCpcText', 'sanitizeText',
   'mhViewMode', 'mhReportHtml', 'mhCatsHtml', 'mhReadValueHtml', 'mhRoundBadgeHtml', 'docFirstRound',
   'mhFlagsHtml', 'mhFlagHtml', 'suggestDocFlags',
+  'normalizeImportSakDetails', 'normalizeClaimMapping', 'isPositiveInt',
   'esc', 'toDisplay',
-], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN', 'CPC_MAX_LEN', 'CPC_MAX_CLASSES'] });
+], { vars: ['MAX_INVENTIVE_DOCS', 'PARTY_MAX_LEN', 'CPC_MAX_LEN', 'CPC_MAX_CLASSES'],
+     globals: { normalizeRounds: () => [], normalizeObjections: (x) => x } });
 
 function doc(id, over) {
   return Object.assign({ id, ref: '', title: '', pubDate: '', effDate: '', applicants: '', inventors: '', cpc: '',
@@ -189,4 +191,16 @@ test('report: no rounds and missing rows do not throw', () => {
   const html = F.mhReportHtml([doc('D1', { ref: 'EP 1' })], [], undefined);
   assert.match(html, /ingen vurderte krav/);
   assert.strictEqual(F.mhReportHtml([], [], []), '');
+});
+
+// ── D overlever import ───────────────────────────────────────
+
+test('D survives import normalisation and ensureSakDocs', () => {
+  const imported = F.normalizeImportSakDetails({
+    docs: [{ id: 'D1', ref: 'EP 1', d: true, p: true }, { id: 'D2', ref: 'EP 2' }],
+    claims: [], rounds: [],
+  });
+  F.ensureSakDocs(imported);
+  assert.deepStrictEqual(imported.docs.map(d => d.d), [true, false]);
+  assert.strictEqual(F.docCategoryLabel(imported.docs[0], 'X'), 'X,P,D');
 });

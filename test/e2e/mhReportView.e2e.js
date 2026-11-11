@@ -57,6 +57,20 @@ e2e('valget huskes etter omlasting og gjelder andre saker', async () => {
   await page.evaluate((id) => { navigateTo('sak/' + id); }, h.CASE_ID);
   await page.waitForTimeout(150);
   assert.equal(await page.locator(LIST + ' .mr-row').count(), 2);
+  // En annen sak åpnes også i Rapport
+  await page.evaluate(() => {
+    const cs = JSON.parse(localStorage.getItem('pt_cases'));
+    cs.push(Object.assign({}, cs[0], { id: 'e2eother', caseNumber: '20261236' }));
+    localStorage.setItem('pt_cases', JSON.stringify(cs));
+    const sak = JSON.parse(localStorage.getItem('pt_sak_' + cs[0].id));
+    sak.docs = [{ id: 'D1', ref: 'US 1' }];
+    sak.claims.forEach((c) => { c.noveltyDoc = null; c.inventiveDocs = []; });
+    localStorage.setItem('pt_sak_e2eother', JSON.stringify(sak));
+    cases = loadCases(); navigateTo('sak/e2eother');
+  });
+  await page.waitForTimeout(150);
+  assert.equal(await page.locator(LIST + ' .mr-row').count(), 1);
+  assert.equal(await page.getAttribute(VIEW('report'), 'aria-pressed'), 'true');
   await close();
 });
 
