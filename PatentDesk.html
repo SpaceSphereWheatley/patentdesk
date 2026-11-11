@@ -2396,14 +2396,12 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 /* ── Mothold ──────────────────────────────────────── */
 .mh-list            { display: flex; flex-direction: column; gap: var(--space-2); min-height: 1.5rem; }
-.mh-row             { display: grid; grid-template-columns: 2.5rem 13rem 1fr auto auto auto auto;
+.mh-row             { display: grid; grid-template-columns: 2.5rem 13rem 1fr auto auto auto;
                       align-items: center; gap: var(--space-4);
                       padding: var(--space-3) var(--space-4);
                       background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); }
-.mh-row-bg          { background: var(--surface); border-style: dashed; }
 .mh-id              { font-weight: var(--weight-bold); font-size: var(--text-base);
                       color: var(--primary); font-variant-numeric: tabular-nums; }
-.mh-row-bg .mh-id   { color: var(--muted-text); }
 .settings-label-sub a { color: var(--primary); text-decoration: none; }
 .settings-label-sub a:hover { text-decoration: underline; }
 .mh-row-withdrawn   { background: var(--surface); border-style: dashed; }
@@ -2534,11 +2532,32 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .mh-cited-what      { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .mh-cited-gone      { color: var(--muted-text); font-style: italic; }
 
-.mh-bg-toggle       { font-size: var(--text-2xs); font-family: var(--font-body); white-space: nowrap;
+.mh-restore         { font-size: var(--text-2xs); font-family: var(--font-body); white-space: nowrap;
                       padding: 2px var(--space-3); border-radius: var(--radius-pill); cursor: pointer;
-                      background: var(--surface); border: 1px solid var(--border2); color: var(--muted-text);
-                      transition: color var(--dur-base), border-color var(--dur-base), background var(--dur-base); }
-.mh-bg-toggle[aria-pressed="true"] { background: var(--surface2); border-color: var(--muted); color: var(--text); }
+                      background: var(--surface); border: 1px solid var(--border2); color: var(--primary-dim);
+                      transition: border-color var(--dur-base); }
+.mh-restore:hover   { border-color: var(--primary); }
+.mh-row-flash       { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* Rapport-visningen: én linje per mothold */
+.mr-row             { display: grid; grid-template-columns: 2.5rem 12rem 6.5rem minmax(0, 1fr) auto;
+                      align-items: baseline; gap: var(--space-4);
+                      padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border);
+                      font-size: var(--text-sm); }
+.mr-row:last-child  { border-bottom: none; }
+.mr-id              { background: none; border: none; padding: 0; cursor: pointer; text-align: left;
+                      font-family: var(--font-body); font-size: var(--text-sm); font-weight: var(--weight-bold);
+                      color: var(--primary); font-variant-numeric: tabular-nums; }
+.mr-id:hover        { text-decoration: underline; }
+.mr-id:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; border-radius: var(--radius-sm); }
+.mr-ref             { font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-date            { font-variant-numeric: tabular-nums; font-size: var(--text-xs); white-space: nowrap; }
+.mr-app             { font-size: var(--text-xs); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-row .mh-v       { overflow-wrap: normal; }
+.mr-cats            { display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: flex-end; align-items: baseline; }
+.mr-row-withdrawn .mr-id  { color: var(--muted-text); }
+.mr-row-withdrawn .mr-ref { color: var(--muted-text); text-decoration: line-through; }
+
 .mh-add             { align-self: flex-start; margin-top: var(--space-3);
                       background: none; border: 1px dashed var(--border2); color: var(--muted-text);
                       font-family: var(--font-body); font-size: var(--text-xs);
@@ -2606,10 +2625,12 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 
 @media (max-width: 720px) {
   .mh-row           { grid-template-columns: 2.2rem 1fr; row-gap: var(--space-2); }
-  .mh-cats, .mh-flags, .mh-bg-toggle, .mh-edit, .mh-details { grid-column: 2; }
+  .mh-cats, .mh-flags, .mh-restore, .mh-edit, .mh-details { grid-column: 2; }
   .mh-read          { grid-template-columns: max-content minmax(0, 1fr); }
   .mh-v-wide        { grid-column: 2; }
   .mh-cited-list    { min-width: 16rem; }
+  .mr-row           { grid-template-columns: 2.2rem 1fr auto; row-gap: var(--space-1); }
+  .mr-app, .mr-cats { grid-column: 2 / -1; justify-content: flex-start; }
 }
 
 /* Kravstabell: gul rad for patenterbar med formelle feil */
@@ -4481,6 +4502,10 @@ button.ob-del:hover { color: var(--text-on-no); }
                 <span class="sak-section-title-left">Mothold og granskingsrapport</span>
                 <span class="sak-section-title-right">
                   <span class="gr-warn" id="sak-gr-warn" style="display:none;"></span>
+                  <span class="sak-seg" role="group" aria-label="Visning av mothold">
+                    <button type="button" class="sak-seg-btn is-on" data-mh-view="full" aria-pressed="true">Detaljer</button>
+                    <button type="button" class="sak-seg-btn" data-mh-view="report" aria-pressed="false">Rapport</button>
+                  </span>
                 </span>
               </h2>
               <div id="sak-docs-mothold" class="mh-list"></div>
@@ -5408,6 +5433,7 @@ var MEDLESERE_KEY     = 'pt_medlesere';
 var MEDL_LOG_KEY      = 'pt_medl_log';
 var SETTINGS_TAB_KEY  = 'pt_settings_tab';
 var TL_VIEW_KEY       = 'pt_tl_view';
+var MH_VIEW_KEY       = 'pt_mh_view';   // Detaljer | Rapport under Mothold
 var CASE_SOURCE_KEY   = 'pt_case_source';
 // EPO OPS-nøklene. Bare i denne nettleseren: de er bevisst utelatt fra
 // makeExportPayload(), så de havner aldri i eksport, backup eller arbeidsfil.
@@ -9979,8 +10005,9 @@ function _dispatch(action, payload) {
     case 'DOC_ADD': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       ensureSakDocs(data);
-      data.docs.push({ id: nextDocId(data.docs), ref: '', pubDate: '', effDate: '', p: false, e: false, background: false });
+      data.docs.push({ id: nextDocId(data.docs), ref: '', pubDate: '', effDate: '', p: false, e: false, d: false });
       saveSakData(payload.id, data);
+      saveMhView('full'); // et nytt mothold fylles ut i Detaljer
       renderSakDocs(data);
       break;
     }
@@ -10042,9 +10069,9 @@ function _dispatch(action, payload) {
                          : isText                  ? sanitizeText(payload.value)
                          : isDate                  ? String(payload.value || '')
                          : !!payload.value;
-      // Bakgrunnsmothold kan ikke være X eller Y, og E-dokumenter ikke Y/X for
-      // oppfinnelseshøyde — rydd bort kravsreferansene
-      if ((payload.field === 'background' || payload.field === 'e') && doc[payload.field]) ensureSakDocs(data);
+      // E-dokumenter kan ikke være Y/X for oppfinnelseshøyde — rydd bort
+      // kravsreferansene
+      if (payload.field === 'e' && doc.e) ensureSakDocs(data);
       saveSakData(payload.id, data);
       // Referansen skrives i feltet som allerede står i DOM-en; å tegne lista
       // på nytt midt i redigeringen ville flyttet markøren.
@@ -13323,17 +13350,17 @@ function effectiveClaimValue(claims, claim, field) {
 }
 
 // ── Mothold (prior art) og granskingsrapport ────────
-// Et mothold er { id:'D1', ref, title, p, e, background }. Per krav peker
+// Et mothold er { id:'D1', ref, title, p, e, d, withdrawn, … }. Per krav peker
 // noveltyDoc på det ene motholdet som tar nyheten, og inventiveDocs på det
 // ene eller de to som til sammen tar oppfinnelseshøyden.
 var MAX_INVENTIVE_DOCS = 2;
 
-// Motholdene som kan velges for nyhet eller oppfinnelseshøyde. Bakgrunns-
-// mothold er aldri X/Y. E-dokumenter (eldre søknader) teller bare for nyhet,
-// jf. patentloven § 2 tredje ledd — aldri mot oppfinnelseshøyden.
+// Motholdene som kan velges for nyhet eller oppfinnelseshøyde. E-dokumenter
+// (eldre søknader) teller bare for nyhet, jf. patentloven § 2 tredje ledd —
+// aldri mot oppfinnelseshøyden. D (sitert av søker) påvirker ikke valget.
 function claimDocSelectable(docs, field) {
   return (docs || []).filter(function(d) {
-    return !d.background && !d.withdrawn && !(field === 'inventive' && d.e);
+    return !d.withdrawn && !(field === 'inventive' && d.e);
   });
 }
 
@@ -13633,7 +13660,7 @@ function ensureSakDocs(data) {
              pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
              applicants: capPartyText(d.applicants), inventors: capPartyText(d.inventors),
              cpc: capCpcText(d.cpc),
-             p: !!d.p, e: !!d.e, background: !!d.background, withdrawn: !!d.withdrawn };
+             p: !!d.p, e: !!d.e, d: !!d.d, withdrawn: !!d.withdrawn };
   });
   var forNovelty = {}, forInventive = {};
   claimDocSelectable(data.docs, 'novelty').forEach(function(d) { forNovelty[d.id] = true; });
@@ -13754,7 +13781,6 @@ function claimDocCategory(claims, claim, doc) {
   var effInventive = effectiveClaimValue(claims, claim, 'inventive');
   if (doc.withdrawn) return null;
   if (effNovelty === null || effInventive === null) return null;
-  if (doc.background) return 'A';
   // Krav uten nyhet: bare nyhetsmotholdet er relevant. Oppfinnelseshøyden er
   // låst av for slike krav og arver nyhetsmotholdet, så øvrige mothold — og
   // en eventuell gammel OH-referanse — er bare bakgrunn for dette kravet.
@@ -13781,10 +13807,11 @@ function buildSearchReport(claims, docs) {
   });
 }
 
-// P (mellomliggende) og E (eldre søknad, publisert senere) prefikser
-// kategorien slik den skrives i granskingsrapporten: «P,X».
+// Kategorien slik den skrives i granskingsrapporten, i EPO-stil: hoved-
+// kategorien først, så P (mellomliggende), E (eldre søknad, publisert senere)
+// og D (sitert av søker): «X,P», «Y,P,D».
 function docCategoryLabel(doc, cat) {
-  return (doc.p ? 'P,' : '') + (doc.e ? 'E,' : '') + cat;
+  return cat + (doc.p ? ',P' : '') + (doc.e ? ',E' : '') + (doc.d ? ',D' : '');
 }
 
 // ── Mothold sitert i andre saker ─────────────────────
@@ -15412,6 +15439,8 @@ function renderSakDocs(data) {
   var el = document.getElementById('sak-docs-mothold');
   if (!el) return;
   var docs = data.docs || [];
+  var view = loadMhView();
+  syncMhViewControls(view);
 
   // Advarselen om uvurderte krav hører til hele seksjonen, ikke til én rad.
   var warn = document.getElementById('sak-gr-warn');
@@ -15440,6 +15469,7 @@ function renderSakDocs(data) {
   var docsCase = cases.find(function(c) { return c.id === activeSakId; });
   var locked = docRemoveWithdraws(docsCase);
   var docRounds = visibleRounds(docsCase, roundsOf(data));
+  if (view === 'report') { el.innerHTML = mhReportHtml(docs, rows, docRounds); return; }
   var cited = citationIndex();
   // Et mothold du står og skriver i, blir stående i redigering selv om det
   // nå har opplysninger — ellers ville feltet forsvinne under markøren.
@@ -15455,22 +15485,15 @@ function renderSakDocs(data) {
         '<span class="mh-id">' + esc(d.id) + '</span>' +
         '<span class="mh-ref"><span class="mh-ref-struck">' + esc(d.ref || '—') + '</span></span>' +
         '<span class="mh-cats"><span class="mh-withdrawn-label">Ikke lenger relevant</span></span>' +
-        '<span class="mh-flags"></span><span></span><span></span>' +
-        '<button type="button" class="mh-bg-toggle mh-restore" data-mh-restore="' + i + '"' +
+        '<span class="mh-flags"></span><span></span>' +
+        '<button type="button" class="mh-restore" data-mh-restore="' + i + '"' +
           ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt.">Gjenopprett</button>' +
       '</div>';
     }
 
     _mhEditing[i] = mhEditStateOnRender(d, _mhEditing[i]);
     var editing = i === focusIdx || mhIsEditing(d, _mhEditing[i]);
-    var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat].length; })
-      .map(function(cat) {
-        return '<span class="mh-cat mh-cat-' + cat.toLowerCase() + '">' +
-          '<b>' + esc(docCategoryLabel(d, cat)) + '</b> ' + esc(formatClaimRanges(row[cat])) +
-        '</span>';
-      }).join('');
-
-    return '<div class="mh-row' + (d.background ? ' mh-row-bg' : '') + '" data-idx="' + i + '">' +
+    return '<div class="mh-row" data-idx="' + i + '">' +
       '<span class="mh-id">' + esc(d.id) + '</span>' +
       '<span class="mh-ref">' +
         '<input class="mh-ref-inp" type="text" data-idx="' + i + '" value="' + esc(d.ref) + '" placeholder="f.eks. WO 2020/123456 A1" aria-label="Publikasjonsnummer for ' + esc(d.id) + '" />' +
@@ -15478,9 +15501,8 @@ function renderSakDocs(data) {
         mhOpsBtnHtml(d, i) +
       '</span>' +
       '<span class="mh-cats">' + '<span class="mh-cited-slot" data-idx="' + i + '">' + mhCitedHtml(citedElsewhere(cited, d.ref, activeSakId)) + '</span>' +
-        mhRoundBadgeHtml(docRounds, d.id) + (cats || '<span class="mh-cats-none">ingen vurderte krav</span>') + '</span>' +
+        mhRoundBadgeHtml(docRounds, d.id) + mhCatsHtml(d, row) + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
-      '<button class="mh-bg-toggle" data-bg="' + i + '" aria-pressed="' + (d.background ? 'true' : 'false') + '" title="Kun bakgrunn — gir A på alle vurderte krav">Bakgrunn</button>' +
       mhEditBtnHtml(d, i, editing) +
       '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
         ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
@@ -15491,6 +15513,61 @@ function renderSakDocs(data) {
     '</div>';
   }).join('');
   el.querySelectorAll('.mh-date-inp').forEach(autoFormatDateInput);
+}
+
+// Kategoriene for ett mothold: «X 1–3», «Y,P,D 4–5» … eller at ingen krav
+// er vurdert. Brukes i begge visningene.
+function mhCatsHtml(d, row) {
+  row = row || {};
+  var cats = ['X', 'Y', 'A'].filter(function(cat) { return row[cat] && row[cat].length; })
+    .map(function(cat) {
+      return '<span class="mh-cat mh-cat-' + cat.toLowerCase() + '">' +
+        '<b>' + esc(docCategoryLabel(d, cat)) + '</b> ' + esc(formatClaimRanges(row[cat])) +
+      '</span>';
+    }).join('');
+  return cats || '<span class="mh-cats-none">ingen vurderte krav</span>';
+}
+
+// ── Visning: Detaljer eller Rapport ──
+// Valget gjelder alle saker og huskes i pt_mh_view (MH_VIEW_KEY).
+function mhViewMode(v) { return v === 'report' ? 'report' : 'full'; }
+function loadMhView() {
+  try { return mhViewMode(localStorage.getItem(MH_VIEW_KEY)); } catch (e) { return 'full'; }
+}
+function saveMhView(v) {
+  try { localStorage.setItem(MH_VIEW_KEY, mhViewMode(v)); } catch (e) {}
+}
+// Velgeren i overskriften og «Legg til mothold» følger visningen.
+function syncMhViewControls(view) {
+  document.querySelectorAll('.sak-seg-btn[data-mh-view]').forEach(function(b) {
+    var on = b.dataset.mhView === view;
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  var add = document.getElementById('btn-mothold-add');
+  if (add) add.hidden = view === 'report';
+}
+
+// Rapport-visningen: én linje per mothold med nummer, publiseringsdato, søker
+// og kategoriene. Verdiene kopieres ved klikk; D-nummeret går til motholdet i
+// Detaljer. Ren — se test/mhReportView.test.js.
+function mhReportHtml(docs, rows, rounds) {
+  return (docs || []).map(function(d, i) {
+    var gone = !!d.withdrawn;
+    var idBtn = '<button type="button" class="mr-id" data-mh-goto="' + i + '"' +
+      ' title="' + esc('Vis ' + d.id + ' i Detaljer') + '">' + esc(d.id) + '</button>';
+    if (gone) {
+      return '<div class="mr-row mr-row-withdrawn">' + idBtn +
+        '<span class="mr-ref">' + esc(d.ref || '—') + '</span><span></span><span></span>' +
+        '<span class="mr-cats"><span class="mh-withdrawn-label">Ikke lenger relevant</span></span></div>';
+    }
+    return '<div class="mr-row">' + idBtn +
+      '<span class="mr-ref">' + mhReadValueHtml(d.ref, 'Publikasjonsnummer') + '</span>' +
+      '<span class="mr-date">' + mhReadValueHtml(toDisplay(d.pubDate), 'Publisert') + '</span>' +
+      '<span class="mr-app">' + mhReadValueHtml(d.applicants, 'Søker') + '</span>' +
+      '<span class="mr-cats">' + mhRoundBadgeHtml(rounds, d.id) + mhCatsHtml(d, (rows || [])[i]) + '</span>' +
+    '</div>';
+  }).join('');
 }
 
 // ── Motholdets opplysninger: tekst, eller felt etter «Rediger» ──
@@ -15713,12 +15790,14 @@ function mhRoundBadgeHtml(rounds, docId) {
     esc('ny i runde ' + first) + '</span>';
 }
 
-// P/E-knappene. Et forslag vises som stiplet kant med begrunnelsen i
+// P/E/D-knappene. Et forslag vises som stiplet kant med begrunnelsen i
 // verktøytipset, men bare så lenge flagget ikke er satt — klikk godtar det.
+// D (sitert av søker) kan ikke utledes av datoene og foreslås aldri.
 function mhFlagsHtml(d, i, app) {
   var sug = suggestDocFlags(d, app);
   return mhFlagHtml(i, 'p', d.p, sug.p, sug.pReason, 'P — mellomliggende dokument') +
-         mhFlagHtml(i, 'e', d.e, sug.e, sug.eReason, 'E — eldre søknad publisert på eller etter inngivelsesdagen');
+         mhFlagHtml(i, 'e', d.e, sug.e, sug.eReason, 'E — eldre søknad publisert på eller etter inngivelsesdagen') +
+         mhFlagHtml(i, 'd', d.d, false, '', 'D — dokument sitert av søker');
 }
 
 // En datoendring påvirker bare forslagene. Å tegne hele lista på nytt ville
@@ -16675,12 +16754,37 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
       field: flag.dataset.flag, value: flag.getAttribute('aria-pressed') !== 'true' });
     return;
   }
-  var bg = e.target.closest('.mh-bg-toggle');
-  if (bg) {
-    dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(bg.dataset.bg, 10),
-      field: 'background', value: bg.getAttribute('aria-pressed') !== 'true' });
-  }
+  var go = e.target.closest('[data-mh-goto]');
+  if (go) { mhGotoDetails(parseInt(go.dataset.mhGoto, 10)); return; }
 });
+
+// Detaljer | Rapport i overskriften
+document.querySelectorAll('.sak-seg-btn[data-mh-view]').forEach(function(b) {
+  b.addEventListener('click', function() {
+    saveMhView(b.dataset.mhView);
+    rerenderMhDocs();
+  });
+});
+
+function rerenderMhDocs() {
+  if (!activeSakId) return;
+  var data = loadSakData(activeSakId) || defaultSakData(0);
+  ensureSakDocs(data);
+  renderSakDocs(data);
+}
+
+// D-nummeret i Rapport: bytt til Detaljer og vis motholdet.
+function mhGotoDetails(idx) {
+  saveMhView('full');
+  rerenderMhDocs();
+  var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
+  if (!row) return;
+  row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  row.classList.add('mh-row-flash');
+  setTimeout(function() { row.classList.remove('mh-row-flash'); }, 1200);
+  var ref = row.querySelector('.mh-ref-inp, .mh-restore');
+  if (ref) ref.focus({ preventScroll: true });
+}
 
 // Henter opplysningene for mothold idx fra OPS. mode 'fill' fyller bare tomme
 // felt; 'replace' bytter ut alle (etter ja i «Erstatte opplysningene?»).

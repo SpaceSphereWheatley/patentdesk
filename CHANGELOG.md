@@ -23,9 +23,20 @@ Små rettelser på fanen Dokumenter og i mappelesingen.
   sakene.
 
 ## [4.64.0] - 2026-11-11
-Saksmappen leses når en sak åpnes, fanen Dokumenter har et kompakt toppfelt, og Tilbake virker alltid.
+Saksdokumentene kan vises side om side i én fane på saksiden, saksmappen leses når en sak åpnes, og Tilbake virker alltid.
 
 ### Added
+- **Fanen «Dokumenter» på saksiden.** Saksfilene (PDF) vises side om side i
+  1–3 paneler, med kravoversikten (nyhet og oppfinnelseshøyde per krav) i et
+  eget panel. Kravpanelet kan stå til venstre eller høyre, og kan skjules helt.
+  Skillelinjene mellom panelene kan dras (dobbeltklikk nullstiller), og
+  oppsettet huskes og følger med i eksport og sikkerhetskopi. Du markerer i PDF-en
+  med Edges egne fargeverktøy. Fanen krever den lokale serveren
+  (`Start-PatentDesk.ps1`); åpnet som vanlig fil vises en forklaring.
+- **Plassregler for panelene** (Innstillinger → Saksbehandling). Hver plass har
+  en tekst, og første PDF der filnavnet inneholder teksten havner der — f.eks.
+  «claims» i panel 1 og «figures» i panel 2. Du kan alltid velge en annen fil
+  for hånd i et panel; «Automatisk» går tilbake til regelen.
 - **Saksmappen leses når en sak åpnes.** Gjennom den lokale serveren hentes
   filene i saksmappen (`/docs/list`, én undermappe ned). Filer som ligger i
   mappen, men ikke i fillisten, legges til av seg selv, og de går rett inn i
@@ -54,20 +65,30 @@ Saksmappen leses når en sak åpnes, fanen Dokumenter har et kompakt toppfelt, o
   som før bare sto som tomme streker.
 
 ## [4.63.0] - 2026-11-11
-Saksdokumentene kan vises side om side i én fane på saksiden.
+Motholdene kan vises som en kort rapport, D markerer dokumenter sitert av søker, og «Bakgrunn» er borte.
 
 ### Added
-- **Fanen «Dokumenter» på saksiden.** Saksfilene (PDF) vises side om side i
-  1–3 paneler, med kravoversikten (nyhet og oppfinnelseshøyde per krav) i et
-  eget panel. Kravpanelet kan stå til venstre eller høyre, og kan skjules helt.
-  Skillelinjene mellom panelene kan dras (dobbeltklikk nullstiller), og
-  oppsettet huskes og følger med i eksport og sikkerhetskopi. Du markerer i PDF-en
-  med Edges egne fargeverktøy. Fanen krever den lokale serveren
-  (`Start-PatentDesk.ps1`); åpnet som vanlig fil vises en forklaring.
-- **Plassregler for panelene** (Innstillinger → Saksbehandling). Hver plass har
-  en tekst, og første PDF der filnavnet inneholder teksten havner der — f.eks.
-  «claims» i panel 1 og «figures» i panel 2. Du kan alltid velge en annen fil
-  for hånd i et panel; «Automatisk» går tilbake til regelen.
+- **Rapport-visning av motholdene.** «Detaljer | Rapport» i overskriften til
+  Mothold og granskingsrapport. Rapport viser én linje per mothold:
+  D-nummer, publikasjonsnummer, publiseringsdato, søker og kategoriene med
+  krav, som i granskingsrapporten. Knapper, felt og øvrige opplysninger er
+  skjult. Verdiene kopieres med et klikk, og et klikk på D-nummeret går til
+  motholdet i Detaljer. Valget gjelder alle saker og huskes. Et nytt mothold
+  åpner Detaljer, så det kan fylles ut.
+- **D — sitert av søker.** Ny knapp ved siden av P og E. Den endrer bare
+  kategorien slik den skrives («X,D»), ikke hvilke krav motholdet kan
+  brukes mot. D foreslås aldri automatisk.
+
+### Changed
+- **Kategoriene skrives i EPO-stil:** hovedkategorien først, så P, E og D —
+  «X,P», «Y,P,D», «X,E» (før «P,X» og «E,X»). Gjelder også «også i N saker».
+
+### Removed
+- **«Bakgrunn» er fjernet.** Et mothold som ikke er koblet til et krav, får
+  uansett A på alle vurderte krav. Tidligere bakgrunnsmothold kan nå velges
+  som nyhets- eller oppfinnelseshøydemothold i kravstabellen. Ingen
+  oppgradering av dataformatet er nødvendig (skjemaversjon er fortsatt 8);
+  det gamle bakgrunnsmerket forsvinner når saken lagres.
 
 ## [4.62.1] - 2026-11-10
 Popupen i tidslinjen dekker ikke lenger bjelkene og blafrer ikke.

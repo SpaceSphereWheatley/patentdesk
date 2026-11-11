@@ -511,8 +511,9 @@ function _dispatch(action, payload) {
     case 'DOC_ADD': {
       var data = loadSakData(payload.id) || defaultSakData(0);
       ensureSakDocs(data);
-      data.docs.push({ id: nextDocId(data.docs), ref: '', pubDate: '', effDate: '', p: false, e: false, background: false });
+      data.docs.push({ id: nextDocId(data.docs), ref: '', pubDate: '', effDate: '', p: false, e: false, d: false });
       saveSakData(payload.id, data);
+      saveMhView('full'); // et nytt mothold fylles ut i Detaljer
       renderSakDocs(data);
       break;
     }
@@ -574,9 +575,9 @@ function _dispatch(action, payload) {
                          : isText                  ? sanitizeText(payload.value)
                          : isDate                  ? String(payload.value || '')
                          : !!payload.value;
-      // Bakgrunnsmothold kan ikke være X eller Y, og E-dokumenter ikke Y/X for
-      // oppfinnelseshøyde — rydd bort kravsreferansene
-      if ((payload.field === 'background' || payload.field === 'e') && doc[payload.field]) ensureSakDocs(data);
+      // E-dokumenter kan ikke være Y/X for oppfinnelseshøyde — rydd bort
+      // kravsreferansene
+      if (payload.field === 'e' && doc.e) ensureSakDocs(data);
       saveSakData(payload.id, data);
       // Referansen skrives i feltet som allerede står i DOM-en; å tegne lista
       // på nytt midt i redigeringen ville flyttet markøren.

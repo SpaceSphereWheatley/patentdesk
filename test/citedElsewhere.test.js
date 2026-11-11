@@ -98,10 +98,10 @@ test('citedElsewhere gives the D-number and the category used in each case', () 
   assert.deepStrictEqual(byId.fa.cats, ['X']);
 });
 
-test('citedElsewhere gives the P/E prefix on the category', () => {
+test('citedElsewhere gives the P/E flag after the category', () => {
   const details = { a: assessed([{ id: 'D1', ref: 'EP 5 A1', p: true }]) };
   const idx = buildCitationIndex([{ id: 'a', caseNumber: '1', status: 'ny' }], (id) => details[id]);
-  assert.deepStrictEqual(plain(citedElsewhere(idx, 'EP 5 B1', 'x'))[0].cats, ['P,X']);
+  assert.deepStrictEqual(plain(citedElsewhere(idx, 'EP 5 B1', 'x'))[0].cats, ['X,P']);
 });
 
 test('a case citing the same number twice is listed once', () => {

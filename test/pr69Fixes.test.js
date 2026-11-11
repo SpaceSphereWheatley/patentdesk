@@ -182,19 +182,11 @@ test('F3: toggling after dirty data stores a clean list', () => {
 // ── F4: toggleClaimDoc uses the picker rule (claimDocSelectable) ────────────
 const docsF4 = [
   { id: 'D1', ref: 'A' },
-  { id: 'D2', ref: 'B', background: true },
+  { id: 'D2', ref: 'B' },
   { id: 'D3', ref: 'C', withdrawn: true },
   { id: 'D4', ref: 'D', e: true },
 ];
 const blank = () => ({ num: 1, dep: null, noveltyDoc: null, inventiveDocs: [] });
-
-test('F4: background citation refused for novelty and inventive step', () => {
-  const c = blank();
-  core.toggleClaimDoc(c, 'novelty', 'D2', docsF4);
-  core.toggleClaimDoc(c, 'inventive', 'D2', docsF4);
-  assert.strictEqual(c.noveltyDoc, null);
-  assert.deepStrictEqual(plain(c.inventiveDocs), []);
-});
 
 test('F4: withdrawn citation refused for novelty and inventive step', () => {
   const c = blank();
@@ -236,11 +228,11 @@ test('F4: plain citation still selectable and toggles off', () => {
 });
 
 test('F4: an existing pick can still be removed after the doc stops being selectable', () => {
-  // Kravet har allerede valgene; dokumentene blir senere bakgrunn/trukket/E.
+  // Kravet har allerede valgene; dokumentene blir senere trukket/E.
   const c = { num: 1, dep: null, noveltyDoc: 'D2', inventiveDocs: ['D2', 'D3', 'D4'] };
-  core.toggleClaimDoc(c, 'novelty', 'D2', docsF4);     // bakgrunn
+  core.toggleClaimDoc(c, 'novelty', 'D2', docsF4);     // vanlig, slås av
   assert.strictEqual(c.noveltyDoc, null);
-  core.toggleClaimDoc(c, 'inventive', 'D2', docsF4);   // bakgrunn
+  core.toggleClaimDoc(c, 'inventive', 'D2', docsF4);   // vanlig, slås av
   core.toggleClaimDoc(c, 'inventive', 'D3', docsF4);   // trukket
   core.toggleClaimDoc(c, 'inventive', 'D4', docsF4);   // E, ikke lov for oppfinnelseshøyde
   assert.deepStrictEqual(plain(c.inventiveDocs), []);
