@@ -7,6 +7,13 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Fixed
+- **Kravpanelet på fanen Dokumenter kan nå redigeres.** Nyhet og
+  oppfinnelseshøyde endres med de samme knappene som i kravtabellen (samme
+  regler: oppfinnelseshøyde er låst uten nyhet, og et trykk på en arvet verdi
+  overstyrer den). Panelet viser også verdiene som arves fra overordnet krav,
+  som før bare sto som tomme streker.
+
 ## [4.63.0] - 2026-11-11
 Saksdokumentene kan vises side om side i én fane på saksiden.
 

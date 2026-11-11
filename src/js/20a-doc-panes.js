@@ -93,23 +93,38 @@ function _dpFiles() {
   return (data && Array.isArray(data.files)) ? data.files : [];
 }
 
-function _dpMarkClaim(v) {
-  if (v === true)  return '<span class="dp-yes" aria-label="Ja">✓</span>';
-  if (v === false) return '<span class="dp-no" aria-label="Nei">✗</span>';
-  return '<span class="dp-unk" aria-label="Ikke vurdert">–</span>';
-}
-
-// Oversikten over kravene: samme data som kravtabellen, bare lesevisning.
+// Kravpanelet: samme knapper som kravtabellen (claimTriButtons), så arvede
+// verdier vises, oppfinnelseshøyde er låst uten nyhet, og et trykk gjør nøyaktig
+// det samme som i tabellen (CLAIM_TOGGLE).
 function dpClaimsHtml(claims) {
   var rows = claimOverviewRows(claims);
   var head = '<h3 class="dp-claims-title">Krav</h3>';
   if (!rows.length) return head + '<p class="dp-claims-empty">Ingen krav er lagt inn ennå.</p>';
+  var byNum = {};
+  (claims || []).forEach(function(c) { if (c && typeof c === 'object') byNum[c.num] = c; });
   return head + '<table class="dp-ov"><thead><tr><th scope="col">Krav</th><th scope="col">Nyhet</th>' +
     '<th scope="col">Oppf.høyde</th></tr></thead><tbody>' +
     rows.map(function(r) {
+      var tri = claimTriButtons(claims, byNum[r.num]);
       return '<tr><td>' + r.num + (r.dep ? ' <span class="dp-ov-dep">→ ' + r.dep + '</span>' : '') + '</td><td>' +
-        _dpMarkClaim(r.novelty) + '</td><td>' + _dpMarkClaim(r.inventive) + '</td></tr>';
+        tri.novelty + '</td><td>' + tri.inventive + '</td></tr>';
     }).join('') + '</tbody></table>';
+}
+
+// Tegner bare kravpanelet på nytt (kalles når et krav endres) og beholder fokus
+// på knappen du trykket på.
+function dpRenderClaims(data) {
+  if (_dpTab !== 'docs' || !_dpBuilt) return;
+  var el = document.getElementById('dp-claims');
+  if (!el || !data) return;
+  var a = document.activeElement;
+  var keep = (a && el.contains(a) && a.dataset && a.dataset.field) ? a.dataset.claim + ':' + a.dataset.field : null;
+  el.innerHTML = dpClaimsHtml(data.claims);
+  if (keep) {
+    var parts = keep.split(':');
+    var again = el.querySelector('[data-claim="' + parts[0] + '"][data-field="' + parts[1] + '"]');
+    if (again) again.focus();
+  }
 }
 
 function _dpPaneWidths() {
@@ -258,6 +273,12 @@ document.getElementById('dp-toolbar').addEventListener('click', function(e) {
   var s = e.target.closest('[data-dp-side]');
   if (s) { _dpSetLayout({ claimsSide: s.dataset.dpSide }); return; }
   if (e.target.closest('#dp-claims-toggle')) _dpSetLayout({ claimsVisible: !docLayout.claimsVisible });
+});
+
+document.getElementById('dp-claims').addEventListener('click', function(e) {
+  var btn = e.target.closest('.sak-tri-btn[data-field]');
+  if (!btn || btn.disabled || !activeSakId) return;
+  dispatch('CLAIM_TOGGLE', { id: activeSakId, claimNum: parseInt(btn.dataset.claim, 10), field: btn.dataset.field });
 });
 
 document.getElementById('dp-panes').addEventListener('change', function(e) {

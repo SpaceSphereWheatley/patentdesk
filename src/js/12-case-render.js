@@ -407,6 +407,7 @@ function renderSakAssessment(data) {
   renderSakResultSummary(data);
   renderSakDocs(data);          // kategoriene per mothold er avledet av kravene
   updateSakProgress(data);
+  if (typeof dpRenderClaims === 'function') dpRenderClaims(data);
 }
 
 // Samme som over, men bytter bare ut de oppgitte kravradene. De avledede
@@ -416,6 +417,7 @@ function renderSakAssessmentRows(data, claimNums) {
   renderSakResultSummary(data);
   renderSakDocs(data);
   updateSakProgress(data);
+  if (typeof dpRenderClaims === 'function') dpRenderClaims(data);
 }
 
 // Én rad i dokumentlisten. Ren — se test/fileLabel.test.js.

@@ -55,7 +55,7 @@ const CASE_ID = 'e2edocs';
 const FILES = [{ name: 'Description.pdf' }, { name: 'Claims.pdf' }, { name: 'Figures.pdf' }, { name: 'D1.pdf' }, { name: 'Notes.docx' }];
 
 function seedFor(opts) {
-  const claims = [
+  const claims = opts.claims || [
     { num: 1, novelty: false, inventive: false, formal: false, notes: '', independent: true, dep: null, depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] },
     { num: 2, novelty: true, inventive: false, formal: false, notes: '', independent: false, dep: 1, depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] },
     { num: 3, novelty: true, inventive: null, formal: false, notes: '', independent: false, dep: 2, depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] }
@@ -164,8 +164,9 @@ e2e('claims panel: overview shows novelty and inventive step; side and hide work
   assert.equal(rows.length, 3);
   assert.match(rows[0], /1/);
   assert.match(rows[1], /2.*→ 1/);
-  assert.equal(await p.locator('.dp-ov tbody tr').nth(0).locator('.dp-no').count(), 2, 'claim 1: no novelty, no inventive step');
-  assert.equal(await p.locator('.dp-ov tbody tr').nth(2).locator('.dp-unk').count(), 1, 'claim 3: inventive step not assessed');
+  assert.equal(await p.locator('.dp-ov tbody tr').nth(0).locator('.sak-tri-btn-no').count(), 2, 'claim 1: no novelty, so no inventive step either');
+  assert.equal(await p.locator('.dp-ov tbody tr').nth(0).locator('.sak-tri-locked').count(), 1, 'claim 1: inventive step is locked');
+  assert.equal(await p.locator('.dp-ov tbody tr').nth(2).locator('.sak-tri-btn-null').count() + await p.locator('.dp-ov tbody tr').nth(2).locator('.sak-tri-btn-cascade').count() >= 1, true, 'claim 3: inventive step not assessed');
   await p.waitForTimeout(300);
   const before = docRequests.length;
   let c = await box(p, '#dp-claims'), pn = await box(p, '#dp-panes');
@@ -408,5 +409,71 @@ e2e('import replace starts the case view fresh, like delete-all', async () => {
   await p.evaluate((d) => dispatch('DATA_IMPORT', { data: d, mode: 'replace' }), payload);
   assert.deepEqual(await p.evaluate(() => _dpManual), [null, null, null]);
   assert.equal(await p.evaluate(() => _dpTab), 'overview');
+  await s.close();
+});
+
+// ── Claims panel is editable ────────────────────────
+
+const storedClaim = (p, num) => p.evaluate(([id, n]) => JSON.parse(localStorage.getItem('pt_sak_' + id)).claims.find((c) => c.num === n), [CASE_ID, num]);
+const ovBtn = (p, num, field) => p.locator('#dp-claims .sak-tri-btn[data-claim="' + num + '"][data-field="' + field + '"]');
+
+e2e('claims panel: the novelty and inventive-step buttons edit the claim, same rules as the claims table', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  // claim 3 (dep 2): novelty true, inventive null. Claim 1: novelty false, inventive false (locked).
+  assert.equal(await p.locator('#dp-claims .sak-tri-locked').count() >= 1, true, 'inventive step is locked where novelty is missing');
+  // toggling novelty on claim 3 changes the stored claim, and the panel redraws
+  const before = (await storedClaim(p, 3)).novelty;
+  await ovBtn(p, 3, 'novelty').click();
+  const after = (await storedClaim(p, 3)).novelty;
+  assert.notEqual(after, before, 'novelty changed in storage');
+  // a novelty-less claim locks inventive step to false
+  for (let i = 0; i < 3 && (await storedClaim(p, 3)).novelty !== false; i++) await ovBtn(p, 3, 'novelty').click();
+  assert.equal((await storedClaim(p, 3)).novelty, false);
+  assert.equal((await storedClaim(p, 3)).inventive, false, 'no novelty means no inventive step');
+  assert.equal(await p.locator('#dp-claims .sak-tri-btn[data-claim="3"][data-field="inventive"]').count(), 0, 'locked button has no data-field, so it can not be clicked');
+  await s.close();
+});
+
+e2e('claims panel: an edit shows in the normal claims table, and focus stays on the button', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await ovBtn(p, 2, 'inventive').click();
+  const focused = await p.evaluate(() => { const e = document.activeElement; return e && e.dataset ? e.dataset.claim + ':' + e.dataset.field : null; });
+  assert.equal(focused, '2:inventive', 'focus restored after the redraw');
+  const v = (await storedClaim(p, 2)).inventive;
+  await p.click('#sak-tab-overview');
+  const cell = await p.locator('.sak-claims-table tr', { has: p.locator('[data-claim="2"][data-field="inventive"]') }).locator('[data-field="inventive"]').getAttribute('class');
+  assert.ok(cell, 'claims table row exists');
+  assert.notEqual(v, undefined);
+  await s.close();
+});
+
+e2e('claims panel: edits made in the claims table show up in the panel when the tab is opened', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.click('#sak-tab-overview');
+  await p.locator('.sak-claims-table [data-claim="3"][data-field="inventive"]').first().click();
+  const v = (await storedClaim(p, 3)).inventive;
+  await p.click('#sak-tab-docs');
+  const cls = await ovBtn(p, 3, 'inventive').getAttribute('class');
+  assert.equal(/sak-tri-btn-yes/.test(cls) || /sak-tri-btn-no/.test(cls) || /sak-tri-btn/.test(cls), true);
+  assert.notEqual(v, null, 'the table edit changed claim 3');
+  await s.close();
+});
+
+e2e('claims panel: inherited novelty and inventive step are shown, as in the claims table', async () => {
+  const mk = (num, over) => Object.assign({ num, novelty: null, inventive: null, formal: false, notes: '', independent: false, dep: 1, depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] }, over);
+  const s = await openDocs({ claims: [mk(1, { dep: null, independent: true, novelty: true, inventive: true }), mk(2), mk(3, { dep: 2 })] });
+  const p = s.page;
+  for (const n of [2, 3]) {
+    assert.equal(await ovBtn(p, n, 'novelty').getAttribute('class').then((c) => /cascade/.test(c)), true, 'claim ' + n + ' novelty inherited');
+    assert.equal(await ovBtn(p, n, 'inventive').getAttribute('class').then((c) => /cascade/.test(c)), true, 'claim ' + n + ' inventive step inherited');
+    assert.match(await ovBtn(p, n, 'novelty').getAttribute('title'), /Arvet/);
+  }
+  // overriding an inherited value works and does not touch the parent
+  await ovBtn(p, 2, 'novelty').click();
+  assert.equal((await storedClaim(p, 2)).novelty, false);
+  assert.equal((await storedClaim(p, 1)).novelty, true);
   await s.close();
 });

@@ -689,3 +689,4 @@ tr:hover .sak-tag-display.sak-tag-empty,
 #view-sak.is-docs-tab #sak-summary-sentinel,
 #view-sak.is-docs-tab .sak-phase,
 #view-sak.is-docs-tab #sak-sticky-bar { display: none !important; }
+.dp-ov .sak-tri-btn { margin: 0; }

@@ -3044,6 +3044,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 #view-sak.is-docs-tab #sak-summary-sentinel,
 #view-sak.is-docs-tab .sak-phase,
 #view-sak.is-docs-tab #sak-sticky-bar { display: none !important; }
+.dp-ov .sak-tri-btn { margin: 0; }
 /* ── Tidslinje-modal ──────────────────────────────── */
 
 /* axis toggle — shared between home and modal */
@@ -14145,6 +14146,7 @@ function renderSakAssessment(data) {
   renderSakResultSummary(data);
   renderSakDocs(data);          // kategoriene per mothold er avledet av kravene
   updateSakProgress(data);
+  if (typeof dpRenderClaims === 'function') dpRenderClaims(data);
 }
 
 // Samme som over, men bytter bare ut de oppgitte kravradene. De avledede
@@ -14154,6 +14156,7 @@ function renderSakAssessmentRows(data, claimNums) {
   renderSakResultSummary(data);
   renderSakDocs(data);
   updateSakProgress(data);
+  if (typeof dpRenderClaims === 'function') dpRenderClaims(data);
 }
 
 // Én rad i dokumentlisten. Ren — se test/fileLabel.test.js.
@@ -15041,38 +15044,55 @@ var _sakActiveClaimNum = null;
 // Åpen mothold-velger i kravstabellen: { claimNum, field } eller null
 var _sakOpenDocPop = null;
 
+// Nyhet- og oppfinnelseshøyde-knappene til ett krav, med arv fra overordnet
+// krav og låsing når nyhet mangler. Felles for kravtabellen og kravpanelet på
+// fanen Dokumenter, så begge viser og endrer det samme på samme måte.
+function claimTriButtons(claims, c) {
+  var effNovelty   = effectiveClaimValue(claims, c, 'novelty');
+  var effInventive = effectiveClaimValue(claims, c, 'inventive');
+  var noveltyIsCascade   = c.novelty === null && effNovelty === true;
+  var inventiveIsCascade = c.inventive === null && effInventive === true;
+
+  // Knappene viser bare en glyf, så hver av dem må si hvilket krav og hvilken
+  // kolonne den hører til — ellers leser en skjermleser sju like knapper.
+  function ariaFor(field, val, isCascade, isLocked) {
+    return ' aria-label="' + esc(triAriaLabel(c.num, field, val, isCascade, isLocked)) + '"';
+  }
+
+  // Nyhet-knapp
+  var noveltyBtn;
+  if (noveltyIsCascade) {
+    noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + '>' + triLabel(true, false) + '</button>';
+  } else {
+    noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + '>' + triLabel(c.novelty, false) + '</button>';
+  }
+
+  // Oppfinnelseshøyde-knapp
+  var inventiveLocked = effNovelty === false;
+  var inventiveBtn;
+  if (inventiveLocked) {
+    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
+  } else if (inventiveIsCascade) {
+    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + '>' + triLabel(true, false) + '</button>';
+  } else {
+    inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + '>' + triLabel(c.inventive, false) + '</button>';
+  }
+
+  return { novelty: noveltyBtn, inventive: inventiveBtn, effNovelty: effNovelty, effInventive: effInventive };
+}
+
 // Én kravrad. Trukket ut som egen funksjon slik at en endring kan tegne bare
 // radene den faktisk påvirker, i stedet for å bytte ut hele tabellkroppen —
 // det siste tok fokus og markørposisjon fra notat- og etikettfeltene.
 function claimRowHtml(data, c) {
-    var effNovelty   = effectiveClaimValue(data.claims, c, 'novelty');
-    var effInventive = effectiveClaimValue(data.claims, c, 'inventive');
-    var noveltyIsCascade   = c.novelty === null && effNovelty === true;
-    var inventiveIsCascade = c.inventive === null && effInventive === true;
+    var tri = claimTriButtons(data.claims, c);
+    var effNovelty = tri.effNovelty, effInventive = tri.effInventive;
+    var noveltyBtn = tri.novelty, inventiveBtn = tri.inventive;
 
     // Knappene viser bare en glyf, så hver av dem må si hvilket krav og hvilken
     // kolonne den hører til — ellers leser en skjermleser sju like knapper.
     function ariaFor(field, val, isCascade, isLocked) {
       return ' aria-label="' + esc(triAriaLabel(c.num, field, val, isCascade, isLocked)) + '"';
-    }
-
-    // Nyhet-knapp
-    var noveltyBtn;
-    if (noveltyIsCascade) {
-      noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + '>' + triLabel(true, false) + '</button>';
-    } else {
-      noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + '>' + triLabel(c.novelty, false) + '</button>';
-    }
-
-    // Oppfinnelseshøyde-knapp
-    var inventiveLocked = effNovelty === false;
-    var inventiveBtn;
-    if (inventiveLocked) {
-      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
-    } else if (inventiveIsCascade) {
-      inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + '>' + triLabel(true, false) + '</button>';
-    } else {
-      inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + '>' + triLabel(c.inventive, false) + '</button>';
     }
 
     // Radklasse basert på effektive verdier
@@ -21370,23 +21390,38 @@ function _dpFiles() {
   return (data && Array.isArray(data.files)) ? data.files : [];
 }
 
-function _dpMarkClaim(v) {
-  if (v === true)  return '<span class="dp-yes" aria-label="Ja">✓</span>';
-  if (v === false) return '<span class="dp-no" aria-label="Nei">✗</span>';
-  return '<span class="dp-unk" aria-label="Ikke vurdert">–</span>';
-}
-
-// Oversikten over kravene: samme data som kravtabellen, bare lesevisning.
+// Kravpanelet: samme knapper som kravtabellen (claimTriButtons), så arvede
+// verdier vises, oppfinnelseshøyde er låst uten nyhet, og et trykk gjør nøyaktig
+// det samme som i tabellen (CLAIM_TOGGLE).
 function dpClaimsHtml(claims) {
   var rows = claimOverviewRows(claims);
   var head = '<h3 class="dp-claims-title">Krav</h3>';
   if (!rows.length) return head + '<p class="dp-claims-empty">Ingen krav er lagt inn ennå.</p>';
+  var byNum = {};
+  (claims || []).forEach(function(c) { if (c && typeof c === 'object') byNum[c.num] = c; });
   return head + '<table class="dp-ov"><thead><tr><th scope="col">Krav</th><th scope="col">Nyhet</th>' +
     '<th scope="col">Oppf.høyde</th></tr></thead><tbody>' +
     rows.map(function(r) {
+      var tri = claimTriButtons(claims, byNum[r.num]);
       return '<tr><td>' + r.num + (r.dep ? ' <span class="dp-ov-dep">→ ' + r.dep + '</span>' : '') + '</td><td>' +
-        _dpMarkClaim(r.novelty) + '</td><td>' + _dpMarkClaim(r.inventive) + '</td></tr>';
+        tri.novelty + '</td><td>' + tri.inventive + '</td></tr>';
     }).join('') + '</tbody></table>';
+}
+
+// Tegner bare kravpanelet på nytt (kalles når et krav endres) og beholder fokus
+// på knappen du trykket på.
+function dpRenderClaims(data) {
+  if (_dpTab !== 'docs' || !_dpBuilt) return;
+  var el = document.getElementById('dp-claims');
+  if (!el || !data) return;
+  var a = document.activeElement;
+  var keep = (a && el.contains(a) && a.dataset && a.dataset.field) ? a.dataset.claim + ':' + a.dataset.field : null;
+  el.innerHTML = dpClaimsHtml(data.claims);
+  if (keep) {
+    var parts = keep.split(':');
+    var again = el.querySelector('[data-claim="' + parts[0] + '"][data-field="' + parts[1] + '"]');
+    if (again) again.focus();
+  }
 }
 
 function _dpPaneWidths() {
@@ -21535,6 +21570,12 @@ document.getElementById('dp-toolbar').addEventListener('click', function(e) {
   var s = e.target.closest('[data-dp-side]');
   if (s) { _dpSetLayout({ claimsSide: s.dataset.dpSide }); return; }
   if (e.target.closest('#dp-claims-toggle')) _dpSetLayout({ claimsVisible: !docLayout.claimsVisible });
+});
+
+document.getElementById('dp-claims').addEventListener('click', function(e) {
+  var btn = e.target.closest('.sak-tri-btn[data-field]');
+  if (!btn || btn.disabled || !activeSakId) return;
+  dispatch('CLAIM_TOGGLE', { id: activeSakId, claimNum: parseInt(btn.dataset.claim, 10), field: btn.dataset.field });
 });
 
 document.getElementById('dp-panes').addEventListener('change', function(e) {
