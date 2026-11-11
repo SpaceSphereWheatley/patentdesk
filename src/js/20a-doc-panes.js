@@ -48,6 +48,7 @@ function _dpResetFrames() {
 // du forlater den — bare hvis det var vi som trakk den inn. Valget i menyen
 // (pt_drawer_collapsed) røres ikke.
 var _dpDrawerAuto = false;
+var _dpWasDocs = false;
 function _dpDrawerSet(collapse) {
   var drawer = document.getElementById('main-drawer');
   var btn = document.getElementById('drawer-toggle-btn');
@@ -76,6 +77,8 @@ function _dpFitHeight() {
   body.style.height = Math.max(360, Math.floor(window.innerHeight - top - 16)) + 'px';
 }
 window.addEventListener('resize', _dpFitHeight);
+// Velger brukeren selv å åpne eller trekke inn menyen, er det hennes valg, ikke vårt.
+document.getElementById('drawer-toggle-btn').addEventListener('click', function() { _dpDrawerAuto = false; });
 
 // Forlot du saksiden (annen side)? Da er fanen Dokumenter ikke lenger åpen.
 function dpOnPageChange(page) {
@@ -83,6 +86,7 @@ function dpOnPageChange(page) {
   _folderSyncFor = null; // åpnes en sak igjen, leses mappen på nytt
   document.body.classList.remove('dp-docs-mode');
   _dpDrawerSet(false);
+  _dpWasDocs = false;
 }
 
 function dpApplyTab() {
@@ -90,7 +94,10 @@ function dpApplyTab() {
   var view = document.getElementById('view-sak');
   if (view) view.classList.toggle('is-docs-tab', docs);
   document.body.classList.toggle('dp-docs-mode', docs);
-  _dpDrawerSet(docs);
+  // Sidemenyen trekkes inn bare idet fanen åpnes (ikke ved hver omtegning), så
+  // en meny du selv åpner blir stående.
+  if (docs !== _dpWasDocs) _dpDrawerSet(docs);
+  _dpWasDocs = docs;
   var tb = document.getElementById('dp-toolbar');
   if (tb) tb.hidden = !docs || !_docServedLocally(window.location);
   var viewer = document.getElementById('sak-viewer');
@@ -322,7 +329,7 @@ function dpSyncFolder(id) {
     '&case=' + encodeURIComponent(cas.caseNumber);
   fetch(url, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(raw) {
     var listing = normalizeFolderListing(raw);
-    if (!listing) return;
+    if (!listing || !cases.some(function(c) { return c.id === id; })) return; // saken er borte (slettet) mens vi ventet
     _folderListing[id] = listing;
     var data = loadSakData(id);
     var current = (data && Array.isArray(data.files)) ? data.files : [];

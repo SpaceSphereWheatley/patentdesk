@@ -525,3 +525,19 @@ e2e('sidebar: a sidebar the user had folded stays folded', async () => {
   assert.equal(await p.evaluate(() => document.getElementById('main-drawer').classList.contains('collapsed')), true, 'still the user\'s choice');
   await s.close();
 });
+
+e2e('sidebar: opened by hand on the Dokumenter tab it stays open through redraws, and a fold the user makes is kept', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  const collapsed = () => p.evaluate(() => document.getElementById('main-drawer').classList.contains('collapsed'));
+  assert.equal(await collapsed(), true);
+  await p.click('#drawer-toggle-btn'); // the user opens it again
+  assert.equal(await collapsed(), false);
+  await p.evaluate((id) => { renderSak(id); renderSak(id); }, CASE_ID);
+  assert.equal(await collapsed(), false, 'a redraw does not fold it again');
+  await p.click('#drawer-toggle-btn'); // the user folds it: saved as their choice
+  assert.equal(await p.evaluate(() => localStorage.getItem('pt_drawer_collapsed')), '1');
+  await p.click('#sak-tab-overview');
+  assert.equal(await collapsed(), true, 'leaving the tab keeps what the user chose');
+  await s.close();
+});

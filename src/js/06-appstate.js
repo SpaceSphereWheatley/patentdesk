@@ -751,8 +751,11 @@ function _dispatch(action, payload) {
 
     case 'FILES_SYNC': {
       // Filer funnet i saksmappen legges til; allerede registrerte hoppes over
-      var syData = loadSakData(payload.id) || defaultSakData(0);
+      // Et sent svar for en sak som er slettet eller erstattet mens serveren
+      // leste mappen, skal ikke skrive noe.
       var syCas  = cases.find(function(c) { return c.id === payload.id; });
+      var syData = syCas ? loadSakData(payload.id) : null;
+      if (!syCas || !syData) break;
       ensureSakFiles(syData, syCas);
       var syAdd = folderFilesToAdd(syData.files, payload.names);
       if (!syAdd.length) break;
@@ -762,7 +765,7 @@ function _dispatch(action, payload) {
         renderSakFileList(syData);
         if (typeof renderDocPanes === 'function') renderDocPanes();
       }
-      showToast('✓ ' + syAdd.length + (syAdd.length === 1 ? ' ny fil' : ' nye filer') + ' funnet i saksmappen');
+      if (activeSakId === payload.id) showToast('✓ ' + syAdd.length + (syAdd.length === 1 ? ' ny fil' : ' nye filer') + ' funnet i saksmappen');
       break;
     }
 

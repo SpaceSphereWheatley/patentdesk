@@ -110,18 +110,19 @@ function Send-Json($response, $object) {
 }
 
 # Filene i saksmappen som kan hentes (se $docTypes): i mappen selv og én
-# undermappe ned, som relative navn med /. Snarveier og mappekoblinger følges
-# ikke, så listen aldri peker ut av saksmappen. Høyst 500 filer.
+# undermappe ned, som relative navn med /. Symbolske lenker og mappekoblinger
+# følges ikke, så listen aldri peker ut av saksmappen. (Filer i OneDrive/SharePoint
+# har også ReparsePoint-merket, men er vanlige filer, og tas med.) Høyst 500 filer.
 function Get-CaseFiles([string]$caseDir) {
     $prefix = $caseDir.TrimEnd('\') + '\'
-    $reparse = [System.IO.FileAttributes]::ReparsePoint
+    $links = @('SymbolicLink', 'Junction')
     $dirs = @($caseDir) + @(Get-ChildItem -LiteralPath $caseDir -Directory -ErrorAction SilentlyContinue |
-        Where-Object { -not ($_.Attributes -band $reparse) } | Sort-Object Name | ForEach-Object { $_.FullName })
+        Where-Object { $links -notcontains $_.LinkType } | Sort-Object Name | ForEach-Object { $_.FullName })
     $names = @()
     foreach ($dir in $dirs) {
         foreach ($f in @(Get-ChildItem -LiteralPath $dir -File -ErrorAction SilentlyContinue | Sort-Object Name)) {
             if ($names.Count -ge 500) { break }
-            if ($f.Attributes -band $reparse) { continue }
+            if ($links -contains $f.LinkType) { continue }
             if ($f.Name.StartsWith('~$') -or $f.Name.StartsWith('.')) { continue }
             if (-not $docTypes.ContainsKey($f.Extension.ToLowerInvariant())) { continue }
             $names += $f.FullName.Substring($prefix.Length).Replace('\', '/')

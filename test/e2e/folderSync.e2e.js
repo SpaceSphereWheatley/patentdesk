@@ -16,7 +16,7 @@ try { ({ chromium } = require('playwright')); } catch (e) { skipReason = 'playwr
 const APP_FILE = process.env.E2E_APP_FILE || path.join(__dirname, '..', '..', 'PatentDesk.html');
 
 let server = null, base = '';
-const state = { listing: null, status: 200, requests: [] };
+const state = { listing: null, status: 200, requests: [], delay: 0 };
 
 before(async () => {
   if (skipReason) return;
@@ -29,8 +29,11 @@ before(async () => {
       res.end(fs.readFileSync(APP_FILE));
     } else if (url.pathname === '/docs/list') {
       state.requests.push({ root: url.searchParams.get('root'), case: url.searchParams.get('case'), site: req.headers['sec-fetch-site'] });
-      res.writeHead(state.status, { 'Content-Type': 'application/json' });
-      res.end(typeof state.listing === 'string' ? state.listing : JSON.stringify(state.listing));
+      const send = () => {
+        res.writeHead(state.status, { 'Content-Type': 'application/json' });
+        res.end(typeof state.listing === 'string' ? state.listing : JSON.stringify(state.listing));
+      };
+      if (state.delay) setTimeout(send, state.delay); else send();
     } else if (url.pathname === '/docs') {
       res.writeHead(200, { 'Content-Type': 'application/pdf' });
       res.end('%PDF-1.1');
@@ -69,7 +72,7 @@ async function open(opts) {
   }, [kase(opts.caseOver), sak, opts.root || null]);
   await page.goto(opts.url);
   await page.evaluate((id) => navigateTo('sak/' + id), CASE_ID);
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(opts.settle === undefined ? 300 : opts.settle);
   return { page, close: () => ctx.close() };
 }
 const stored = (p) => p.evaluate((id) => JSON.parse(localStorage.getItem('pt_sak_' + id)).files.map((f) => f.name), CASE_ID);
@@ -167,13 +170,36 @@ e2e('it works the same for every status and for an Oppdrag', async () => {
   }
 });
 
-e2e('files found in the folder go through the slot rules at once', async () => {
+e2e('files found in the folder go through the slot rules at once, also with the tab already open', async () => {
   state.listing = { exists: true, files: ['Claims_v2.pdf', 'Figures.pdf'] };
-  const s = await open({ files: [] });
-  await s.page.click('#sak-tab-docs');
-  await s.page.waitForTimeout(300);
-  assert.match(await s.page.evaluate(() => document.getElementById('dp-frame-0').getAttribute('src')), /file=Claims_v2\.pdf/);
+  state.delay = 500;
+  const s = await open({ files: [], settle: 50 });
+  await s.page.click('#sak-tab-docs'); // the tab is open before the folder answer arrives
+  await s.page.waitForTimeout(100);
+  assert.equal(await s.page.evaluate(() => document.getElementById('dp-frame-0').getAttribute('src')), null, 'nothing yet');
+  await s.page.waitForFunction(() => /Claims_v2/.test(document.getElementById('dp-frame-0').getAttribute('src') || ''), null, { timeout: 3000 });
   assert.match(await s.page.evaluate(() => document.getElementById('dp-frame-1').getAttribute('src')), /file=Figures\.pdf/);
+  state.delay = 0;
+  await s.close();
+});
+
+e2e('a late answer for a case that was deleted meanwhile writes nothing', async () => {
+  state.listing = { exists: true, files: ['D1.pdf', 'D2.pdf'] };
+  state.delay = 500;
+  const s = await open({ settle: 50 });
+  await s.page.evaluate((id) => dispatch('CASE_DELETE', { id }), CASE_ID);
+  await s.page.waitForTimeout(900);
+  assert.equal(await s.page.evaluate((id) => localStorage.getItem('pt_sak_' + id), CASE_ID), null, 'no orphaned case details');
+  assert.equal(await s.page.locator('.save-toast').allTextContents().then((a) => a.some((t) => /funnet i saksmappen/.test(t))), false, 'no toast about a deleted case');
+  state.delay = 0;
+  await s.close();
+});
+
+e2e('the "folder not found" note also shows when the file list is empty (an Oppdrag)', async () => {
+  state.listing = { exists: false, files: [] };
+  const s = await open({ files: [], caseOver: { type: 'oppdrag', duration: 3 } });
+  assert.match(await s.page.locator('#sak-docs-list').textContent(), /Saksmappen finnes ikke på disk/);
+  assert.match(await s.page.locator('#sak-docs-list').textContent(), /Ingen filer registrert/);
   await s.close();
 });
 

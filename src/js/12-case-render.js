@@ -436,10 +436,6 @@ function renderSakFileList(data) {
   var list = document.getElementById('sak-docs-list');
   if (!list) return;
   var files = data.files || [];
-  if (!files.length) {
-    list.innerHTML = '<p class="sak-docs-empty">Ingen filer registrert.</p>';
-    return;
-  }
   var cas = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
   var root = loadDocRoot();
   // Mappen på disk (lest av serveren når saken ble åpnet): filer som ikke
@@ -451,6 +447,10 @@ function renderSakFileList(data) {
   var note = (listing && !listing.exists)
     ? '<p class="sak-docs-note">Saksmappen finnes ikke på disk (' + esc(_docRootJoin(root, cas.caseNumber, '').replace(/\\$/, '')) + ').</p>'
     : '';
+  if (!files.length) {
+    list.innerHTML = note + '<p class="sak-docs-empty">Ingen filer registrert.</p>';
+    return;
+  }
   list.innerHTML = note + files.map(function(f, i) {
     var fileUrl = cas
       ? _docFileUrl(root, cas.caseNumber, f.name, window.location)
