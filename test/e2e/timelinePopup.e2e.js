@@ -60,14 +60,26 @@ async function openApp(viewport) {
 }
 const go = (p, name) => p.evaluate((n) => navigateTo(n), name).then(() => p.clock.runFor(200));
 
+// Venter (i virkelig tid) til siden og tidslinjene har sluttet å rulle. Popupen
+// skjules av alle scroll-hendelser (det er meningen), og en bjelke som må
+// rulles fram, ruller videre en stund etter at scrollIntoViewIfNeeded er
+// ferdig — rullingen går i virkelig tid, ikke på klokken testen styrer. Om en
+// bjelke må rulles avhenger av dagens dato, så testen feilet bare noen dager.
+async function settleScroll(page) {
+  let last = '', same = 0;
+  for (let i = 0; i < 50 && same < 3; i++) {
+    await page.waitForTimeout(40);
+    const cur = await page.evaluate(() => JSON.stringify([scrollX, scrollY].concat(
+      Array.from(document.querySelectorAll('[id$="tl-scroll"]')).map((e) => e.scrollLeft))));
+    same = cur === last ? same + 1 : 0;
+    last = cur;
+  }
+  await page.clock.runFor(100);
+}
 async function barCentre(page, sel) {
   const loc = page.locator(sel).first();
   await loc.scrollIntoViewIfNeeded();
-  // Popupen skjules av alle scroll-hendelser (det er meningen), og en bjelke som
-  // må rulles fram, ruller videre en stund. Uten å vente hoverer testen mens
-  // rullingen pågår, og popupen blir avbrutt. Om en bjelke må rulles avhenger av
-  // dagens dato, så testen feilet bare på noen dager.
-  await page.clock.runFor(1000);
+  await settleScroll(page);
   const b = await loc.boundingBox();
   return { x: b.x + Math.min(b.width / 2, 20), y: b.y + b.height / 2 };
 }
