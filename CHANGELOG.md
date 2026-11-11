@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.63.0] - 2026-11-11
+Saksdokumentene kan vises side om side i én fane på saksiden.
+
 ### Added
 - **Fanen «Dokumenter» på saksiden.** Saksfilene (PDF) vises side om side i
   1–3 paneler, med kravoversikten (nyhet og oppfinnelseshøyde per krav) i et
