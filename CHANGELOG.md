@@ -6,6 +6,10 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+
+## [4.63.0] - 2026-11-11
+Motholdene kan vises som en kort rapport, D markerer dokumenter sitert av søker, og «Bakgrunn» er borte.
+
 ### Added
 - **Rapport-visning av motholdene.** «Detaljer | Rapport» i overskriften til
   Mothold og granskingsrapport. Rapport viser én linje per mothold:
