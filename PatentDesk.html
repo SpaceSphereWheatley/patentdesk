@@ -3088,6 +3088,10 @@ body.dp-docs-mode .main-content { padding-top: var(--space-5); padding-bottom: v
                         background: var(--badge-urgent-bg); color: var(--badge-urgent-text); border: 1px solid var(--badge-urgent-border); }
 .sak-docs-note { margin: 0; padding: var(--space-3) var(--space-4); font-size: var(--text-xs); color: var(--notice-warn-text);
                  background: var(--notice-warn-bg); border-bottom: 1px solid var(--badge-urgent-border); }
+
+/* Fillisten i Dokumenter-nedtrekket: høyst ca. ti rader, så ruller den. Feltet
+   for å legge til filer og knappene under blir stående i vinduet. */
+#sak-docs-list { max-height: clamp(120px, calc(100vh - 300px), 340px); overflow-y: auto; overscroll-behavior: contain; }
 /* ── Tidslinje-modal ──────────────────────────────── */
 
 /* axis toggle — shared between home and modal */
