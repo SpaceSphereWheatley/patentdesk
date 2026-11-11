@@ -538,12 +538,37 @@ document.getElementById('sak-docs-mothold').addEventListener('click', function(e
       field: flag.dataset.flag, value: flag.getAttribute('aria-pressed') !== 'true' });
     return;
   }
-  var bg = e.target.closest('.mh-bg-toggle');
-  if (bg) {
-    dispatch('DOC_FIELD_CHANGE', { id: id, idx: parseInt(bg.dataset.bg, 10),
-      field: 'background', value: bg.getAttribute('aria-pressed') !== 'true' });
-  }
+  var go = e.target.closest('[data-mh-goto]');
+  if (go) { mhGotoDetails(parseInt(go.dataset.mhGoto, 10)); return; }
 });
+
+// Detaljer | Rapport i overskriften
+document.querySelectorAll('.sak-seg-btn[data-mh-view]').forEach(function(b) {
+  b.addEventListener('click', function() {
+    saveMhView(b.dataset.mhView);
+    rerenderMhDocs();
+  });
+});
+
+function rerenderMhDocs() {
+  if (!activeSakId) return;
+  var data = loadSakData(activeSakId) || defaultSakData(0);
+  ensureSakDocs(data);
+  renderSakDocs(data);
+}
+
+// D-nummeret i Rapport: bytt til Detaljer og vis motholdet.
+function mhGotoDetails(idx) {
+  saveMhView('full');
+  rerenderMhDocs();
+  var row = document.querySelector('#sak-docs-mothold .mh-row[data-idx="' + idx + '"]');
+  if (!row) return;
+  row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  row.classList.add('mh-row-flash');
+  setTimeout(function() { row.classList.remove('mh-row-flash'); }, 1200);
+  var ref = row.querySelector('.mh-ref-inp, .mh-restore');
+  if (ref) ref.focus({ preventScroll: true });
+}
 
 // Henter opplysningene for mothold idx fra OPS. mode 'fill' fyller bare tomme
 // felt; 'replace' bytter ut alle (etter ja i «Erstatte opplysningene?»).

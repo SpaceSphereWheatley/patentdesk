@@ -65,17 +65,17 @@ function effectiveClaimValue(claims, claim, field) {
 }
 
 // ── Mothold (prior art) og granskingsrapport ────────
-// Et mothold er { id:'D1', ref, title, p, e, background }. Per krav peker
+// Et mothold er { id:'D1', ref, title, p, e, d, withdrawn, … }. Per krav peker
 // noveltyDoc på det ene motholdet som tar nyheten, og inventiveDocs på det
 // ene eller de to som til sammen tar oppfinnelseshøyden.
 var MAX_INVENTIVE_DOCS = 2;
 
-// Motholdene som kan velges for nyhet eller oppfinnelseshøyde. Bakgrunns-
-// mothold er aldri X/Y. E-dokumenter (eldre søknader) teller bare for nyhet,
-// jf. patentloven § 2 tredje ledd — aldri mot oppfinnelseshøyden.
+// Motholdene som kan velges for nyhet eller oppfinnelseshøyde. E-dokumenter
+// (eldre søknader) teller bare for nyhet, jf. patentloven § 2 tredje ledd —
+// aldri mot oppfinnelseshøyden. D (sitert av søker) påvirker ikke valget.
 function claimDocSelectable(docs, field) {
   return (docs || []).filter(function(d) {
-    return !d.background && !d.withdrawn && !(field === 'inventive' && d.e);
+    return !d.withdrawn && !(field === 'inventive' && d.e);
   });
 }
 
@@ -375,7 +375,7 @@ function ensureSakDocs(data) {
              pubDate: d.pubDate || '', effDate: d.effDate || '', title: d.title || '',
              applicants: capPartyText(d.applicants), inventors: capPartyText(d.inventors),
              cpc: capCpcText(d.cpc),
-             p: !!d.p, e: !!d.e, background: !!d.background, withdrawn: !!d.withdrawn };
+             p: !!d.p, e: !!d.e, d: !!d.d, withdrawn: !!d.withdrawn };
   });
   var forNovelty = {}, forInventive = {};
   claimDocSelectable(data.docs, 'novelty').forEach(function(d) { forNovelty[d.id] = true; });
@@ -496,7 +496,6 @@ function claimDocCategory(claims, claim, doc) {
   var effInventive = effectiveClaimValue(claims, claim, 'inventive');
   if (doc.withdrawn) return null;
   if (effNovelty === null || effInventive === null) return null;
-  if (doc.background) return 'A';
   // Krav uten nyhet: bare nyhetsmotholdet er relevant. Oppfinnelseshøyden er
   // låst av for slike krav og arver nyhetsmotholdet, så øvrige mothold — og
   // en eventuell gammel OH-referanse — er bare bakgrunn for dette kravet.
@@ -523,10 +522,11 @@ function buildSearchReport(claims, docs) {
   });
 }
 
-// P (mellomliggende) og E (eldre søknad, publisert senere) prefikser
-// kategorien slik den skrives i granskingsrapporten: «P,X».
+// Kategorien slik den skrives i granskingsrapporten, i EPO-stil: hoved-
+// kategorien først, så P (mellomliggende), E (eldre søknad, publisert senere)
+// og D (sitert av søker): «X,P», «Y,P,D».
 function docCategoryLabel(doc, cat) {
-  return (doc.p ? 'P,' : '') + (doc.e ? 'E,' : '') + cat;
+  return cat + (doc.p ? ',P' : '') + (doc.e ? ',E' : '') + (doc.d ? ',D' : '');
 }
 
 // ── Mothold sitert i andre saker ─────────────────────

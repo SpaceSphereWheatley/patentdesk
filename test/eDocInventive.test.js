@@ -74,7 +74,7 @@ test('a dependent claim overridden to no novelty is locked even when its parent 
 // ── E-dokumenter og oppfinnelseshøyde ──
 
 test('claimDocSelectable offers E documents for novelty but not for inventive step', () => {
-  const docs = [doc('D1'), doc('D2', { e: true }), doc('D3', { background: true })];
+  const docs = [doc('D1'), doc('D2', { e: true }), doc('D3', { withdrawn: true })];
   assert.deepStrictEqual(plain(claimDocSelectable(docs, 'novelty').map(d => d.id)), ['D1', 'D2']);
   assert.deepStrictEqual(plain(claimDocSelectable(docs, 'inventive').map(d => d.id)), ['D1']);
   assert.deepStrictEqual(plain(claimDocSelectable(null, 'inventive')), []);

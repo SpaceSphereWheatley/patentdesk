@@ -6,6 +6,28 @@ Formatet er basert på [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
+### Added
+- **Rapport-visning av motholdene.** «Detaljer | Rapport» i overskriften til
+  Mothold og granskingsrapport. Rapport viser én linje per mothold:
+  D-nummer, publikasjonsnummer, publiseringsdato, søker og kategoriene med
+  krav, som i granskingsrapporten. Knapper, felt og øvrige opplysninger er
+  skjult. Verdiene kopieres med et klikk, og et klikk på D-nummeret går til
+  motholdet i Detaljer. Valget gjelder alle saker og huskes. Et nytt mothold
+  åpner Detaljer, så det kan fylles ut.
+- **D — sitert av søker.** Ny knapp ved siden av P og E. Den endrer bare
+  kategorien slik den skrives («X,D»), ikke hvilke krav motholdet kan
+  brukes mot. D foreslås aldri automatisk.
+
+### Changed
+- **Kategoriene skrives i EPO-stil:** hovedkategorien først, så P, E og D —
+  «X,P», «Y,P,D», «X,E» (før «P,X» og «E,X»). Gjelder også «også i N saker».
+
+### Removed
+- **«Bakgrunn» er fjernet.** Et mothold som ikke er koblet til et krav, får
+  uansett A på alle vurderte krav. Tidligere bakgrunnsmothold kan nå velges
+  som nyhets- eller oppfinnelseshøydemothold i kravstabellen. Ingen
+  oppgradering av dataformatet er nødvendig (skjemaversjon er fortsatt 8);
+  det gamle bakgrunnsmerket forsvinner når saken lagres.
 
 ## [4.62.1] - 2026-11-10
 Popupen i tidslinjen dekker ikke lenger bjelkene og blafrer ikke.
