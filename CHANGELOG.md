@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.64.2] - 2026-11-11
+Fillisten i Dokumenter-nedtrekket er begrenset og ruller.
+
 ### Changed
 - **Fillisten i «Dokumenter»-nedtrekket er begrenset til ca. ti rader og
   ruller.** Har en sak mange filer (f.eks. etter at saksmappen er lest), vokser
