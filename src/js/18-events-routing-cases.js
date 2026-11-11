@@ -52,6 +52,14 @@ document.addEventListener('visibilitychange', function() {
   if (document.hidden) flushPendingSakEdits();
 });
 
+// Hvor mange sider i appen som ligger bak denne i historikken. Hver historikk-
+// oppføring appen skriver bærer tallet (første er 0), så det overlever en
+// omlasting. 0 = ingen side i appen å gå tilbake til (siden ble åpnet direkte).
+function navDepth() {
+  var s = history.state;
+  return (s && typeof s === 'object' && Number.isInteger(s.idx) && s.idx > 0) ? s.idx : 0;
+}
+
 function navigateTo(page, addToHistory) {
   flushPendingSakEdits();
   if (activePage === 'sak') document.title = 'PatentDesk — Sakslogg';
@@ -69,7 +77,7 @@ function navigateTo(page, addToHistory) {
     var slug  = cas ? caseNumberToSlug(cas.caseNumber) : sakId;
     AppState.activeSakId = sakId;
     AppState.activePage  = 'sak';
-    if (addToHistory !== false) history.pushState({ page: 'sak', sakId: sakId }, '', '#sak/' + slug);
+    if (addToHistory !== false) history.pushState({ page: 'sak', sakId: sakId, idx: navDepth() + 1 }, '', '#sak/' + slug);
     render();
     return;
   }
@@ -77,7 +85,7 @@ function navigateTo(page, addToHistory) {
     var medlesingId = page.slice(10);
     AppState.activeMedlesingId = medlesingId;
     AppState.activePage        = 'medlesing';
-    if (addToHistory !== false) history.pushState({ page: 'medlesing', medlesingId: medlesingId }, '', '#medlesing/' + medlesingId);
+    if (addToHistory !== false) history.pushState({ page: 'medlesing', medlesingId: medlesingId, idx: navDepth() + 1 }, '', '#medlesing/' + medlesingId);
     render();
     return;
   }
@@ -87,7 +95,7 @@ function navigateTo(page, addToHistory) {
   AppState.activeMedlesingId = null;
   if (addToHistory !== false) {
     var urlSlug = page === 'avsluttet' ? 'alle-saker' : page;
-    history.pushState({ page: page }, '', '#' + urlSlug);
+    history.pushState({ page: page, idx: navDepth() + 1 }, '', '#' + urlSlug);
   }
   render();
 }

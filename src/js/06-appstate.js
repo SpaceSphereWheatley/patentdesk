@@ -749,6 +749,23 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'FILES_SYNC': {
+      // Filer funnet i saksmappen legges til; allerede registrerte hoppes over
+      var syData = loadSakData(payload.id) || defaultSakData(0);
+      var syCas  = cases.find(function(c) { return c.id === payload.id; });
+      ensureSakFiles(syData, syCas);
+      var syAdd = folderFilesToAdd(syData.files, payload.names);
+      if (!syAdd.length) break;
+      syAdd.forEach(function(n) { syData.files.push({ name: sanitizeText(n) }); });
+      saveSakData(payload.id, syData);
+      if (activeSakId === payload.id) {
+        renderSakFileList(syData);
+        if (typeof renderDocPanes === 'function') renderDocPanes();
+      }
+      showToast('✓ ' + syAdd.length + (syAdd.length === 1 ? ' ny fil' : ' nye filer') + ' funnet i saksmappen');
+      break;
+    }
+
     case 'FILE_RENAME': {
       var fData = loadSakData(payload.id) || defaultSakData(0);
       var fCas  = cases.find(function(c) { return c.id === payload.id; });

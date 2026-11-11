@@ -61,6 +61,7 @@ function showView(page) {
   document.getElementById('view-sak').style.display           = isSak      ? 'block' : 'none';
   document.getElementById('view-medlesing').style.display     = isMedlesing? 'block' : 'none';
   document.body.setAttribute('data-page', page);
+  if (typeof dpOnPageChange === 'function') dpOnPageChange(page);
   syncToastLift();
   // Close any open history rows when navigating away
   document.querySelectorAll('.hist-row.hist-open').forEach(function(r) { r.classList.remove('hist-open'); });

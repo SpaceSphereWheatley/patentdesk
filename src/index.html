@@ -920,12 +920,12 @@
         </section>
 
         <!-- Faner: Oversikt (hele saksiden) | Dokumenter (paneler side om side) -->
-        <div class="dp-tabstrip" id="sak-tabs" role="tablist" aria-label="Visning">
-          <button type="button" class="dp-tab is-on" role="tab" id="sak-tab-overview" data-sak-tab="overview" aria-selected="true">Oversikt</button>
-          <button type="button" class="dp-tab" role="tab" id="sak-tab-docs" data-sak-tab="docs" aria-selected="false" aria-controls="sak-viewer">Dokumenter</button>
-        </div>
-        <div class="dp-viewer" id="sak-viewer" role="tabpanel" aria-labelledby="sak-tab-docs" hidden>
-          <div class="dp-toolbar" id="dp-toolbar">
+        <div class="dp-bar">
+          <div class="dp-tabstrip" id="sak-tabs" role="tablist" aria-label="Visning">
+            <button type="button" class="dp-tab is-on" role="tab" id="sak-tab-overview" data-sak-tab="overview" aria-selected="true">Oversikt</button>
+            <button type="button" class="dp-tab" role="tab" id="sak-tab-docs" data-sak-tab="docs" aria-selected="false" aria-controls="sak-viewer">Dokumenter</button>
+          </div>
+          <div class="dp-toolbar" id="dp-toolbar" hidden>
             <div class="dp-seg" role="group" aria-label="Antall paneler">
               <button type="button" class="dp-seg-btn" data-dp-count="1" aria-pressed="false">1</button>
               <button type="button" class="dp-seg-btn" data-dp-count="2" aria-pressed="false">2</button>
@@ -937,6 +937,8 @@
             </div>
             <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle">Skjul krav</button>
           </div>
+        </div>
+        <div class="dp-viewer" id="sak-viewer" role="tabpanel" aria-labelledby="sak-tab-docs" hidden>
           <div class="dp-notice" id="dp-notice" role="status" hidden></div>
           <div class="dp-body" id="dp-body">
             <aside class="dp-claims" id="dp-claims" aria-label="Kravoversikt"></aside>

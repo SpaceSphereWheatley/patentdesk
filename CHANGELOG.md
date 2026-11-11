@@ -7,7 +7,27 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Added
+- **Saksmappen leses når en sak åpnes.** Gjennom den lokale serveren hentes
+  filene i saksmappen (`/docs/list`, én undermappe ned). Filer som ligger i
+  mappen, men ikke i fillisten, legges til av seg selv, og de går rett inn i
+  plassreglene til dokumentpanelene. Filer i listen som ikke finnes på disk får
+  merket «mangler» i fillisten og i panelvalget — ingenting slettes. Finnes ikke
+  selve saksmappen, står det én melding i stedet for et merke på hver fil. Uten
+  serveren, eller ved feil, skjer ingenting. **Start `Start-PatentDesk.ps1` på
+  nytt** for at serveren skal kunne liste mappen.
+
+### Changed
+- **Fanen Dokumenter har et mye mindre toppfelt.** Saksnavn og knapper står på
+  én rad, og faner og panelvalg på én rad, slik at dokumentene starter rundt
+  100 piksler fra toppen i stedet for 240 og fyller resten av vinduet.
+  Sidemenyen trekkes inn mens fanen er åpen og kommer tilbake når du forlater
+  den (valget ditt i menyen endres ikke).
+
 ### Fixed
+- **Tilbake på saksiden virker også når saken er åpnet direkte.** Åpnes en sak
+  fra en adresse, et bokmerke eller en ny fane, finnes ingen side i appen å gå
+  tilbake til, og knappen gjorde ingenting eller forlot appen. Da åpnes nå Hjem.
 - **Kravpanelet på fanen Dokumenter kan nå redigeres.** Nyhet og
   oppfinnelseshøyde endres med de samme knappene som i kravtabellen (samme
   regler: oppfinnelseshøyde er låst uten nyhet, og et trykk på en arvet verdi

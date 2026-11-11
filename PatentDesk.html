@@ -2968,8 +2968,10 @@ tr:hover .sak-tag-display.sak-tag-empty,
    Fanen «Dokumenter» på saksiden: kravpanel + 1–3 PDF-paneler i én rad.
    Rekkefølgen venstre/høyre styres med order, så iframene aldri flyttes
    (og lastes på nytt) når kravpanelet bytter side. */
-.dp-tabstrip { display: flex; gap: var(--space-1); margin: var(--space-3) 0 var(--space-5);
-               border-bottom: 1px solid var(--border); }
+.dp-bar      { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+                gap: var(--space-3) var(--space-6); margin: var(--space-3) 0 var(--space-5);
+                border-bottom: 1px solid var(--border); }
+.dp-tabstrip { display: flex; gap: var(--space-1); }
 .dp-tab       { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent;
                 margin-bottom: -1px; padding: var(--space-3) var(--space-6); font: inherit;
                 font-size: var(--text-sm); font-weight: 600; color: var(--muted-text); cursor: pointer; }
@@ -2979,7 +2981,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 
 .dp-viewer[hidden], .dp-notice[hidden], .dp-toolbar[hidden], .dp-body[hidden] { display: none; }
 .dp-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4);
-              margin-bottom: var(--space-4); }
+              padding-bottom: var(--space-2); }
 .dp-seg     { display: inline-flex; }
 .dp-seg-btn { appearance: none; background: var(--surface); border: 1px solid var(--border2); font: inherit;
               font-size: var(--text-sm); color: var(--text); padding: var(--space-2) var(--space-5); cursor: pointer; }
@@ -2993,7 +2995,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .dp-notice { background: var(--notice-warn-bg); color: var(--notice-warn-text); border: 1px solid var(--badge-urgent-border);
              border-radius: var(--radius); padding: var(--space-5) var(--space-6); font-size: var(--text-sm); }
 
-.dp-body   { display: flex; height: calc(100vh - 250px); min-height: 420px; background: var(--surface);
+.dp-body   { display: flex; height: calc(100vh - 150px); min-height: 420px; background: var(--surface);
              border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .dp-body.is-dragging iframe { pointer-events: none; }  /* ellers sluker PDF-visningen musehendelsene */
 .dp-body.is-dragging { user-select: none; cursor: col-resize; }
@@ -3045,6 +3047,26 @@ tr:hover .sak-tag-display.sak-tag-empty,
 #view-sak.is-docs-tab .sak-phase,
 #view-sak.is-docs-tab #sak-sticky-bar { display: none !important; }
 .dp-ov .sak-tri-btn { margin: 0; }
+
+/* Kompakt toppfelt på fanen Dokumenter: alt over dokumentene på to tynne rader
+   (saksnavn og knapper; faner og panelvalg), så PDF-ene får høyden. */
+body.dp-docs-mode .main-content { padding-top: var(--space-5); padding-bottom: var(--space-5); gap: var(--space-4); }
+#view-sak.is-docs-tab .top-bar { flex-wrap: nowrap; gap: var(--space-5); }
+#view-sak.is-docs-tab .sak-top-left { gap: var(--space-4); min-width: 0; flex: 1 1 auto; }
+#view-sak.is-docs-tab .sak-top-left > div { display: flex; align-items: center; gap: var(--space-5); min-width: 0; }
+#view-sak.is-docs-tab .sak-top-left .page-title { font-size: var(--text-lg); }
+#view-sak.is-docs-tab .sak-meta-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#view-sak.is-docs-tab .sak-meta-line > span:not(.sak-meta-title) { display: none; }
+#view-sak.is-docs-tab .sak-round-line { display: none; }
+#view-sak.is-docs-tab .dp-bar { margin: var(--space-2) 0 var(--space-3); }
+#view-sak.is-docs-tab .dp-tab { padding: var(--space-2) var(--space-5); }
+
+/* Fil i fillisten som ikke finnes i saksmappen */
+.sak-docs-missing .sak-docs-open-label { color: var(--muted-text); }
+.sak-docs-missing-tag { margin-left: var(--space-3); padding: 0 var(--space-3); border-radius: 99px; font-size: var(--text-2xs);
+                        background: var(--badge-urgent-bg); color: var(--badge-urgent-text); border: 1px solid var(--badge-urgent-border); }
+.sak-docs-note { margin: 0; padding: var(--space-3) var(--space-4); font-size: var(--text-xs); color: var(--notice-warn-text);
+                 background: var(--notice-warn-bg); border-bottom: 1px solid var(--badge-urgent-border); }
 /* ── Tidslinje-modal ──────────────────────────────── */
 
 /* axis toggle — shared between home and modal */
@@ -4330,12 +4352,12 @@ button.ob-del:hover { color: var(--text-on-no); }
         </section>
 
         <!-- Faner: Oversikt (hele saksiden) | Dokumenter (paneler side om side) -->
-        <div class="dp-tabstrip" id="sak-tabs" role="tablist" aria-label="Visning">
-          <button type="button" class="dp-tab is-on" role="tab" id="sak-tab-overview" data-sak-tab="overview" aria-selected="true">Oversikt</button>
-          <button type="button" class="dp-tab" role="tab" id="sak-tab-docs" data-sak-tab="docs" aria-selected="false" aria-controls="sak-viewer">Dokumenter</button>
-        </div>
-        <div class="dp-viewer" id="sak-viewer" role="tabpanel" aria-labelledby="sak-tab-docs" hidden>
-          <div class="dp-toolbar" id="dp-toolbar">
+        <div class="dp-bar">
+          <div class="dp-tabstrip" id="sak-tabs" role="tablist" aria-label="Visning">
+            <button type="button" class="dp-tab is-on" role="tab" id="sak-tab-overview" data-sak-tab="overview" aria-selected="true">Oversikt</button>
+            <button type="button" class="dp-tab" role="tab" id="sak-tab-docs" data-sak-tab="docs" aria-selected="false" aria-controls="sak-viewer">Dokumenter</button>
+          </div>
+          <div class="dp-toolbar" id="dp-toolbar" hidden>
             <div class="dp-seg" role="group" aria-label="Antall paneler">
               <button type="button" class="dp-seg-btn" data-dp-count="1" aria-pressed="false">1</button>
               <button type="button" class="dp-seg-btn" data-dp-count="2" aria-pressed="false">2</button>
@@ -4347,6 +4369,8 @@ button.ob-del:hover { color: var(--text-on-no); }
             </div>
             <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle">Skjul krav</button>
           </div>
+        </div>
+        <div class="dp-viewer" id="sak-viewer" role="tabpanel" aria-labelledby="sak-tab-docs" hidden>
           <div class="dp-notice" id="dp-notice" role="status" hidden></div>
           <div class="dp-body" id="dp-body">
             <aside class="dp-claims" id="dp-claims" aria-label="Kravoversikt"></aside>
@@ -8184,6 +8208,75 @@ function normalizeImportFiles(files) {
     return copy;
   });
 }
+// ── Saksmappen på disk ─────────────────────────────
+// Den lokale serveren lister filene i saksmappen (/docs/list). Svaret
+// sammenlignes med fillisten på saken: nye filer legges til, og filer i listen
+// som ikke finnes på disk merkes «mangler» (aldri slettet). Rene funksjoner —
+// se test/folderSync.test.js.
+var FOLDER_LIST_MAX = 500;
+
+// Navnet slik filer sammenlignes: uten forskjell på store/små bokstaver og
+// skråstrek, og et navn uten endelse betyr .pdf (som i fillisten).
+function folderFileKey(name) {
+  return _fileResolvedName(String(name)).replace(/\\/g, '/').toLowerCase();
+}
+
+// Serverens svar til { exists, files } med bare trygge, enkle filnavn, eller
+// null hvis det ikke har forventet form. Navnene kommer fra disk, så de
+// renses på samme måte som resten av det som havner i fillisten.
+function normalizeFolderListing(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (typeof raw.exists !== 'boolean' || !Array.isArray(raw.files)) return null;
+  var out = [], seen = {};
+  raw.files.forEach(function(n) {
+    if (typeof n !== 'string' || out.length >= FOLDER_LIST_MAX) return;
+    var name = sanitizeText(n).replace(/\\/g, '/').trim();
+    if (!name || name.length > 200 || name.charAt(0) === '/' || name.indexOf(':') !== -1) return;
+    if (name.split('/').some(function(seg) { return seg === '..' || seg === ''; })) return;
+    var key = folderFileKey(name);
+    if (seen[key]) return;
+    seen[key] = true;
+    out.push(name);
+  });
+  return { exists: raw.exists, files: out };
+}
+
+function _folderKeys(names) {
+  var keys = {};
+  (Array.isArray(names) ? names : []).forEach(function(n) {
+    if (typeof n === 'string') keys[folderFileKey(n)] = true;
+  });
+  return keys;
+}
+function _registeredName(f) {
+  return (f && typeof f === 'object' && typeof f.name === 'string') ? f.name : null;
+}
+
+// Filene på disk som ikke står i fillisten, i mappens rekkefølge.
+function folderFilesToAdd(files, listed) {
+  var have = _folderKeys((Array.isArray(files) ? files : []).map(_registeredName));
+  var out = [];
+  (Array.isArray(listed) ? listed : []).forEach(function(n) {
+    if (typeof n !== 'string') return;
+    var key = folderFileKey(n);
+    if (have[key]) return;
+    have[key] = true;
+    out.push(n);
+  });
+  return out;
+}
+
+// Plassen til filene i fillisten som ikke finnes på disk.
+function missingFileIndexes(files, listed) {
+  var onDisk = _folderKeys(listed);
+  var out = [];
+  (Array.isArray(files) ? files : []).forEach(function(f, i) {
+    var n = _registeredName(f);
+    if (n !== null && !onDisk[folderFileKey(n)]) out.push(i);
+  });
+  return out;
+}
+
 function _fileExt(name) {
   var m = _fileResolvedName(name).match(/\.([a-zA-Z0-9]+)$/);
   return m ? m[1].toLowerCase() : '';
@@ -10121,6 +10214,23 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'FILES_SYNC': {
+      // Filer funnet i saksmappen legges til; allerede registrerte hoppes over
+      var syData = loadSakData(payload.id) || defaultSakData(0);
+      var syCas  = cases.find(function(c) { return c.id === payload.id; });
+      ensureSakFiles(syData, syCas);
+      var syAdd = folderFilesToAdd(syData.files, payload.names);
+      if (!syAdd.length) break;
+      syAdd.forEach(function(n) { syData.files.push({ name: sanitizeText(n) }); });
+      saveSakData(payload.id, syData);
+      if (activeSakId === payload.id) {
+        renderSakFileList(syData);
+        if (typeof renderDocPanes === 'function') renderDocPanes();
+      }
+      showToast('✓ ' + syAdd.length + (syAdd.length === 1 ? ' ny fil' : ' nye filer') + ' funnet i saksmappen');
+      break;
+    }
+
     case 'FILE_RENAME': {
       var fData = loadSakData(payload.id) || defaultSakData(0);
       var fCas  = cases.find(function(c) { return c.id === payload.id; });
@@ -10671,6 +10781,7 @@ function showView(page) {
   document.getElementById('view-sak').style.display           = isSak      ? 'block' : 'none';
   document.getElementById('view-medlesing').style.display     = isMedlesing? 'block' : 'none';
   document.body.setAttribute('data-page', page);
+  if (typeof dpOnPageChange === 'function') dpOnPageChange(page);
   syncToastLift();
   // Close any open history rows when navigating away
   document.querySelectorAll('.hist-row.hist-open').forEach(function(r) { r.classList.remove('hist-open'); });
@@ -14159,10 +14270,12 @@ function renderSakAssessmentRows(data, claimNums) {
   if (typeof dpRenderClaims === 'function') dpRenderClaims(data);
 }
 
-// Én rad i dokumentlisten. Ren — se test/fileLabel.test.js.
-function sakFileRowHtml(f, i, fileUrl) {
-  return '<div class="sak-docs-dropdown-row" data-idx="' + i + '">' +
-    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span></a>' +
+// Én rad i dokumentlisten. Ren — se test/fileLabel.test.js. missing = filen
+// finnes ikke i saksmappen på disk (se test/folderSync.test.js).
+function sakFileRowHtml(f, i, fileUrl, missing) {
+  return '<div class="sak-docs-dropdown-row' + (missing ? ' sak-docs-missing' : '') + '" data-idx="' + i + '">' +
+    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span>' +
+      (missing ? '<span class="sak-docs-missing-tag" title="Filen finnes ikke i saksmappen">mangler</span>' : '') + '</a>' +
     '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
     '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
     '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
@@ -14179,11 +14292,20 @@ function renderSakFileList(data) {
   }
   var cas = activeSakId && cases.find(function(c) { return c.id === activeSakId; });
   var root = loadDocRoot();
-  list.innerHTML = files.map(function(f, i) {
+  // Mappen på disk (lest av serveren når saken ble åpnet): filer som ikke
+  // finnes der merkes. Finnes ikke selve saksmappen, står det én melding i
+  // stedet for en merking på hver fil.
+  var listing = cas && typeof _folderListing !== 'undefined' ? _folderListing[cas.id] : null;
+  var missing = {};
+  if (listing && listing.exists) missingFileIndexes(files, listing.files).forEach(function(k) { missing[k] = true; });
+  var note = (listing && !listing.exists)
+    ? '<p class="sak-docs-note">Saksmappen finnes ikke på disk (' + esc(_docRootJoin(root, cas.caseNumber, '').replace(/\\$/, '')) + ').</p>'
+    : '';
+  list.innerHTML = note + files.map(function(f, i) {
     var fileUrl = cas
       ? _docFileUrl(root, cas.caseNumber, f.name, window.location)
       : '#';
-    return sakFileRowHtml(f, i, fileUrl);
+    return sakFileRowHtml(f, i, fileUrl, !!missing[i]);
   }).join('');
 }
 
@@ -16004,8 +16126,12 @@ function initSakStickyBar(hideBar) {
 }
 
 // ── Saksdetaljer: event handlers ───────────────────
+// Tilbake går til siden du kom fra. Ble saken åpnet direkte (adresse, bokmerke,
+// ny fane) finnes ingen side i appen å gå tilbake til, og history.back() ville
+// enten ikke gjort noe eller forlatt appen — da åpnes Hjem.
 document.getElementById('btn-sak-back').addEventListener('click', function() {
-  history.back();
+  if (navDepth() > 0) history.back();
+  else navigateTo('hjem');
 });
 
 // ── Saksdetaljer: cases-felt (lagrer til cases[]) ──
@@ -19551,6 +19677,14 @@ document.addEventListener('visibilitychange', function() {
   if (document.hidden) flushPendingSakEdits();
 });
 
+// Hvor mange sider i appen som ligger bak denne i historikken. Hver historikk-
+// oppføring appen skriver bærer tallet (første er 0), så det overlever en
+// omlasting. 0 = ingen side i appen å gå tilbake til (siden ble åpnet direkte).
+function navDepth() {
+  var s = history.state;
+  return (s && typeof s === 'object' && Number.isInteger(s.idx) && s.idx > 0) ? s.idx : 0;
+}
+
 function navigateTo(page, addToHistory) {
   flushPendingSakEdits();
   if (activePage === 'sak') document.title = 'PatentDesk — Sakslogg';
@@ -19568,7 +19702,7 @@ function navigateTo(page, addToHistory) {
     var slug  = cas ? caseNumberToSlug(cas.caseNumber) : sakId;
     AppState.activeSakId = sakId;
     AppState.activePage  = 'sak';
-    if (addToHistory !== false) history.pushState({ page: 'sak', sakId: sakId }, '', '#sak/' + slug);
+    if (addToHistory !== false) history.pushState({ page: 'sak', sakId: sakId, idx: navDepth() + 1 }, '', '#sak/' + slug);
     render();
     return;
   }
@@ -19576,7 +19710,7 @@ function navigateTo(page, addToHistory) {
     var medlesingId = page.slice(10);
     AppState.activeMedlesingId = medlesingId;
     AppState.activePage        = 'medlesing';
-    if (addToHistory !== false) history.pushState({ page: 'medlesing', medlesingId: medlesingId }, '', '#medlesing/' + medlesingId);
+    if (addToHistory !== false) history.pushState({ page: 'medlesing', medlesingId: medlesingId, idx: navDepth() + 1 }, '', '#medlesing/' + medlesingId);
     render();
     return;
   }
@@ -19586,7 +19720,7 @@ function navigateTo(page, addToHistory) {
   AppState.activeMedlesingId = null;
   if (addToHistory !== false) {
     var urlSlug = page === 'avsluttet' ? 'alle-saker' : page;
-    history.pushState({ page: page }, '', '#' + urlSlug);
+    history.pushState({ page: page, idx: navDepth() + 1 }, '', '#' + urlSlug);
   }
   render();
 }
@@ -21312,6 +21446,7 @@ function _dpActiveCase() {
 
 // Saksiden ble tegnet. Bytter vi sak, starter vi på Oversikt med tomme filvalg.
 function dpOnSakRendered(id) {
+  if (_folderSyncFor !== id) { _folderSyncFor = id; dpSyncFolder(id); }
   if (id !== _dpCaseId) {
     _dpCaseId = id;
     _dpManual = [null, null, null];
@@ -21340,10 +21475,55 @@ function _dpResetFrames() {
   });
 }
 
+// Sidemenyen trekkes inn mens fanen Dokumenter er åpen, og kommer tilbake når
+// du forlater den — bare hvis det var vi som trakk den inn. Valget i menyen
+// (pt_drawer_collapsed) røres ikke.
+var _dpDrawerAuto = false;
+function _dpDrawerSet(collapse) {
+  var drawer = document.getElementById('main-drawer');
+  var btn = document.getElementById('drawer-toggle-btn');
+  if (!drawer) return;
+  if (collapse && !drawer.classList.contains('collapsed')) {
+    drawer.classList.add('collapsed');
+    _dpDrawerAuto = true;
+  } else if (!collapse && _dpDrawerAuto) {
+    drawer.classList.remove('collapsed');
+    _dpDrawerAuto = false;
+  } else {
+    return;
+  }
+  if (btn) {
+    var c = drawer.classList.contains('collapsed');
+    btn.innerHTML = c ? '&#8250;' : '&#8249;';
+    btn.title = c ? 'Vis navigasjon' : 'Skjul navigasjon';
+  }
+}
+
+// Dokumentflaten får resten av vinduet under toppfeltet.
+function _dpFitHeight() {
+  var body = document.getElementById('dp-body');
+  if (!body || body.hidden || _dpTab !== 'docs') return;
+  var top = body.getBoundingClientRect().top;
+  body.style.height = Math.max(360, Math.floor(window.innerHeight - top - 16)) + 'px';
+}
+window.addEventListener('resize', _dpFitHeight);
+
+// Forlot du saksiden (annen side)? Da er fanen Dokumenter ikke lenger åpen.
+function dpOnPageChange(page) {
+  if (page === 'sak') return;
+  _folderSyncFor = null; // åpnes en sak igjen, leses mappen på nytt
+  document.body.classList.remove('dp-docs-mode');
+  _dpDrawerSet(false);
+}
+
 function dpApplyTab() {
   var docs = _dpTab === 'docs';
   var view = document.getElementById('view-sak');
   if (view) view.classList.toggle('is-docs-tab', docs);
+  document.body.classList.toggle('dp-docs-mode', docs);
+  _dpDrawerSet(docs);
+  var tb = document.getElementById('dp-toolbar');
+  if (tb) tb.hidden = !docs || !_docServedLocally(window.location);
   var viewer = document.getElementById('sak-viewer');
   if (viewer) viewer.hidden = !docs;
   [['overview', 'sak-tab-overview'], ['docs', 'sak-tab-docs']].forEach(function(t) {
@@ -21496,6 +21676,7 @@ function renderDocPanes() {
   body.hidden = false;
   _dpShowNotice('');
   _dpApplyLayout();
+  _dpFitHeight();
 
   var data = loadSakData(cas.id);
   document.getElementById('dp-claims').innerHTML = dpClaimsHtml(data && data.claims);
@@ -21507,6 +21688,9 @@ function renderDocPanes() {
     return null; // filen er slettet eller omdøpt: valget faller bort, regelen gjelder igjen
   });
   var assigned = docSlotAssign(files, docLayout.rules, docLayout.count, picks);
+  var listing = _folderListing[cas.id];
+  var gone = {};
+  if (listing && listing.exists) missingFileIndexes(files, listing.files).forEach(function(k) { gone[k] = true; });
   var root = loadDocRoot();
   for (var i = 0; i < DOC_PANE_MAX; i++) {
     var visible = i < docLayout.count;
@@ -21521,7 +21705,7 @@ function renderDocPanes() {
     var opts = '<option value="">' + (manual ? 'Automatisk' : (idx >= 0 ? 'Automatisk: ' + esc(_fileDisplayName(files[idx].name)) : 'Velg fil …')) + '</option>';
     files.forEach(function(f, k) {
       if (!_fileIsPdf(f.name)) return;
-      opts += '<option value="' + k + '"' + (manual && k === idx ? ' selected' : '') + '>' + esc(fileListLabel(f)) + '</option>';
+      opts += '<option value="' + k + '"' + (manual && k === idx ? ' selected' : '') + '>' + esc(fileListLabel(f)) + (gone[k] ? ' (mangler)' : '') + '</option>';
     });
     sel.innerHTML = opts;
     pin.textContent = manual ? 'valgt for hånd' : (rule ? 'regel: ' + rule : '');
@@ -21550,6 +21734,37 @@ function _dpSetFrame(frame, url) {
 function _dpSetLayout(patch) {
   dispatch('DOC_LAYOUT_SET', { layout: Object.assign({}, docLayout, patch) });
   renderDocPanes();
+}
+
+// ── Saksmappen på disk ─────────────────────────────
+// Når en sak åpnes via den lokale serveren, leses filene i saksmappen
+// (/docs/list). Nye filer legges til i fillisten; filer i listen som ikke
+// finnes på disk merkes «mangler» (aldri slettet). Svaret lagres ikke — det
+// leses på nytt neste gang saken åpnes. Feil (server uten /docs/list, nettverk,
+// uventet svar) gjør ingenting.
+var _folderListing = {};   // saks-id → { exists, files } fra siste lesing
+var _folderSyncFor = null; // saken som er lest i denne åpningen
+
+function dpSyncFolder(id) {
+  if (!_docServedLocally(window.location) || typeof fetch !== 'function') return;
+  var cas = cases.find(function(c) { return c.id === id; });
+  if (!cas) return;
+  var url = window.location.origin + '/docs/list?root=' + encodeURIComponent(_docRootNormalize(loadDocRoot())) +
+    '&case=' + encodeURIComponent(cas.caseNumber);
+  fetch(url, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(raw) {
+    var listing = normalizeFolderListing(raw);
+    if (!listing) return;
+    _folderListing[id] = listing;
+    var data = loadSakData(id);
+    var current = (data && Array.isArray(data.files)) ? data.files : [];
+    var add = listing.exists ? folderFilesToAdd(current, listing.files) : [];
+    if (add.length) {
+      dispatch('FILES_SYNC', { id: id, names: add });
+    } else if (activeSakId === id && data) {
+      renderSakFileList(Object.assign({}, data, { files: current }));
+      renderDocPanes();
+    }
+  }).catch(function() {});
 }
 
 // ── Hendelser ──────────────────────────────────────
@@ -21746,7 +21961,7 @@ function init() {
   // Start på riktig side basert på URL-hash
   var entry = initialHistoryEntry(pageFromHash(), activeSakId, activeMedlesingId, location.hash.replace('#', '').trim());
   activePage = entry.page;
-  history.replaceState(entry.state, '', entry.url);
+  history.replaceState(Object.assign({}, entry.state, { idx: navDepth() }), '', entry.url);
   // Bygg tidslinje-widgets (må skje før render() så #home-timeline finnes i DOM)
   buildTimelineWidget(document.getElementById('home-tl-host'), {
     tlId:           'home-timeline',

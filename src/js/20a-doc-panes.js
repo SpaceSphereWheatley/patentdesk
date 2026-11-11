@@ -15,6 +15,7 @@ function _dpActiveCase() {
 
 // Saksiden ble tegnet. Bytter vi sak, starter vi på Oversikt med tomme filvalg.
 function dpOnSakRendered(id) {
+  if (_folderSyncFor !== id) { _folderSyncFor = id; dpSyncFolder(id); }
   if (id !== _dpCaseId) {
     _dpCaseId = id;
     _dpManual = [null, null, null];
@@ -43,10 +44,55 @@ function _dpResetFrames() {
   });
 }
 
+// Sidemenyen trekkes inn mens fanen Dokumenter er åpen, og kommer tilbake når
+// du forlater den — bare hvis det var vi som trakk den inn. Valget i menyen
+// (pt_drawer_collapsed) røres ikke.
+var _dpDrawerAuto = false;
+function _dpDrawerSet(collapse) {
+  var drawer = document.getElementById('main-drawer');
+  var btn = document.getElementById('drawer-toggle-btn');
+  if (!drawer) return;
+  if (collapse && !drawer.classList.contains('collapsed')) {
+    drawer.classList.add('collapsed');
+    _dpDrawerAuto = true;
+  } else if (!collapse && _dpDrawerAuto) {
+    drawer.classList.remove('collapsed');
+    _dpDrawerAuto = false;
+  } else {
+    return;
+  }
+  if (btn) {
+    var c = drawer.classList.contains('collapsed');
+    btn.innerHTML = c ? '&#8250;' : '&#8249;';
+    btn.title = c ? 'Vis navigasjon' : 'Skjul navigasjon';
+  }
+}
+
+// Dokumentflaten får resten av vinduet under toppfeltet.
+function _dpFitHeight() {
+  var body = document.getElementById('dp-body');
+  if (!body || body.hidden || _dpTab !== 'docs') return;
+  var top = body.getBoundingClientRect().top;
+  body.style.height = Math.max(360, Math.floor(window.innerHeight - top - 16)) + 'px';
+}
+window.addEventListener('resize', _dpFitHeight);
+
+// Forlot du saksiden (annen side)? Da er fanen Dokumenter ikke lenger åpen.
+function dpOnPageChange(page) {
+  if (page === 'sak') return;
+  _folderSyncFor = null; // åpnes en sak igjen, leses mappen på nytt
+  document.body.classList.remove('dp-docs-mode');
+  _dpDrawerSet(false);
+}
+
 function dpApplyTab() {
   var docs = _dpTab === 'docs';
   var view = document.getElementById('view-sak');
   if (view) view.classList.toggle('is-docs-tab', docs);
+  document.body.classList.toggle('dp-docs-mode', docs);
+  _dpDrawerSet(docs);
+  var tb = document.getElementById('dp-toolbar');
+  if (tb) tb.hidden = !docs || !_docServedLocally(window.location);
   var viewer = document.getElementById('sak-viewer');
   if (viewer) viewer.hidden = !docs;
   [['overview', 'sak-tab-overview'], ['docs', 'sak-tab-docs']].forEach(function(t) {
@@ -199,6 +245,7 @@ function renderDocPanes() {
   body.hidden = false;
   _dpShowNotice('');
   _dpApplyLayout();
+  _dpFitHeight();
 
   var data = loadSakData(cas.id);
   document.getElementById('dp-claims').innerHTML = dpClaimsHtml(data && data.claims);
@@ -210,6 +257,9 @@ function renderDocPanes() {
     return null; // filen er slettet eller omdøpt: valget faller bort, regelen gjelder igjen
   });
   var assigned = docSlotAssign(files, docLayout.rules, docLayout.count, picks);
+  var listing = _folderListing[cas.id];
+  var gone = {};
+  if (listing && listing.exists) missingFileIndexes(files, listing.files).forEach(function(k) { gone[k] = true; });
   var root = loadDocRoot();
   for (var i = 0; i < DOC_PANE_MAX; i++) {
     var visible = i < docLayout.count;
@@ -224,7 +274,7 @@ function renderDocPanes() {
     var opts = '<option value="">' + (manual ? 'Automatisk' : (idx >= 0 ? 'Automatisk: ' + esc(_fileDisplayName(files[idx].name)) : 'Velg fil …')) + '</option>';
     files.forEach(function(f, k) {
       if (!_fileIsPdf(f.name)) return;
-      opts += '<option value="' + k + '"' + (manual && k === idx ? ' selected' : '') + '>' + esc(fileListLabel(f)) + '</option>';
+      opts += '<option value="' + k + '"' + (manual && k === idx ? ' selected' : '') + '>' + esc(fileListLabel(f)) + (gone[k] ? ' (mangler)' : '') + '</option>';
     });
     sel.innerHTML = opts;
     pin.textContent = manual ? 'valgt for hånd' : (rule ? 'regel: ' + rule : '');
@@ -253,6 +303,37 @@ function _dpSetFrame(frame, url) {
 function _dpSetLayout(patch) {
   dispatch('DOC_LAYOUT_SET', { layout: Object.assign({}, docLayout, patch) });
   renderDocPanes();
+}
+
+// ── Saksmappen på disk ─────────────────────────────
+// Når en sak åpnes via den lokale serveren, leses filene i saksmappen
+// (/docs/list). Nye filer legges til i fillisten; filer i listen som ikke
+// finnes på disk merkes «mangler» (aldri slettet). Svaret lagres ikke — det
+// leses på nytt neste gang saken åpnes. Feil (server uten /docs/list, nettverk,
+// uventet svar) gjør ingenting.
+var _folderListing = {};   // saks-id → { exists, files } fra siste lesing
+var _folderSyncFor = null; // saken som er lest i denne åpningen
+
+function dpSyncFolder(id) {
+  if (!_docServedLocally(window.location) || typeof fetch !== 'function') return;
+  var cas = cases.find(function(c) { return c.id === id; });
+  if (!cas) return;
+  var url = window.location.origin + '/docs/list?root=' + encodeURIComponent(_docRootNormalize(loadDocRoot())) +
+    '&case=' + encodeURIComponent(cas.caseNumber);
+  fetch(url, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(raw) {
+    var listing = normalizeFolderListing(raw);
+    if (!listing) return;
+    _folderListing[id] = listing;
+    var data = loadSakData(id);
+    var current = (data && Array.isArray(data.files)) ? data.files : [];
+    var add = listing.exists ? folderFilesToAdd(current, listing.files) : [];
+    if (add.length) {
+      dispatch('FILES_SYNC', { id: id, names: add });
+    } else if (activeSakId === id && data) {
+      renderSakFileList(Object.assign({}, data, { files: current }));
+      renderDocPanes();
+    }
+  }).catch(function() {});
 }
 
 // ── Hendelser ──────────────────────────────────────

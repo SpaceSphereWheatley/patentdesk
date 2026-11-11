@@ -93,7 +93,7 @@ const openDocs = async (opts) => {
   docRequests = [];
   const s = await openCase(base + '/PatentDesk.html', opts);
   await s.page.click('#sak-tab-docs');
-  await s.page.waitForTimeout(100);
+  await s.page.waitForTimeout(600); // the sidebar folds in with a transition; positions settle after it
   return s;
 };
 const frameUrl = (p, i) => p.evaluate((k) => document.getElementById('dp-frame-' + k).getAttribute('src'), i);
@@ -475,5 +475,53 @@ e2e('claims panel: inherited novelty and inventive step are shown, as in the cla
   await ovBtn(p, 2, 'novelty').click();
   assert.equal((await storedClaim(p, 2)).novelty, false);
   assert.equal((await storedClaim(p, 1)).novelty, true);
+  await s.close();
+});
+
+// ── Compact header and sidebar ──────────────────────
+
+e2e('compact header: the documents start high on the screen and fill the window height', async () => {
+  const s = await openDocs({ status: 'viderebehandling' });
+  const p = s.page;
+  const b = await p.evaluate(() => { const r = document.getElementById('dp-body').getBoundingClientRect(); return { top: r.top, bottom: r.bottom, scroll: document.documentElement.scrollHeight, h: innerHeight }; });
+  assert.ok(b.top < 130, 'documents start at ' + b.top);
+  assert.ok(b.bottom <= b.h, 'no page scrolling needed: bottom ' + b.bottom + ' of ' + b.h);
+  assert.ok(b.h - b.bottom < 40, 'uses the available height: ' + (b.h - b.bottom) + ' px left');
+  assert.equal(await p.locator('#sak-page-round').isVisible(), false, 'the round line is folded away');
+  assert.equal(await p.locator('#sak-tabs').isVisible() && await p.locator('#dp-toolbar').isVisible(), true);
+  // tabs and pane controls share a row
+  const t = await box(p, '#sak-tabs'), tb = await box(p, '#dp-toolbar');
+  assert.ok(Math.abs((await p.evaluate(() => document.getElementById('sak-tabs').getBoundingClientRect().bottom)) - (await p.evaluate(() => document.getElementById('dp-toolbar').getBoundingClientRect().bottom))) < 12, 'same row');
+  assert.ok(t.h > 0 && tb.h > 0);
+  // back on Oversikt the normal header returns
+  await p.click('#sak-tab-overview');
+  assert.equal(await p.locator('#sak-page-round').isVisible(), true);
+  await s.close();
+});
+
+e2e('sidebar: it folds in while Dokumenter is open and comes back afterwards', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  const collapsed = () => p.evaluate(() => document.getElementById('main-drawer').classList.contains('collapsed'));
+  assert.equal(await collapsed(), true, 'folded on the Dokumenter tab');
+  assert.equal(await p.evaluate(() => localStorage.getItem('pt_drawer_collapsed')), null, 'the saved choice is untouched');
+  await p.click('#sak-tab-overview');
+  assert.equal(await collapsed(), false, 'back on Oversikt');
+  await p.click('#sak-tab-docs');
+  assert.equal(await collapsed(), true);
+  await p.evaluate(() => navigateTo('hjem'));
+  assert.equal(await collapsed(), false, 'leaving the case brings it back');
+  await s.close();
+});
+
+e2e('sidebar: a sidebar the user had folded stays folded', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.click('#sak-tab-overview');
+  await p.click('#drawer-toggle-btn'); // the user folds it
+  assert.equal(await p.evaluate(() => localStorage.getItem('pt_drawer_collapsed')), '1');
+  await p.click('#sak-tab-docs');
+  await p.click('#sak-tab-overview');
+  assert.equal(await p.evaluate(() => document.getElementById('main-drawer').classList.contains('collapsed')), true, 'still the user\'s choice');
   await s.close();
 });
