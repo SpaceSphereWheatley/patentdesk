@@ -696,3 +696,61 @@ e2e('focus: a remembered focus does nothing when the app is opened as a plain fi
   assert.equal(await s.page.evaluate(() => document.body.classList.contains('dp-focus-mode')), false);
   await s.close();
 });
+
+// ── Review round 2 (focus mode) ─────────────────────
+
+e2e('focus and toolbar buttons: the tooltip follows the label', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  const title = (id) => p.locator(id).getAttribute('title');
+  const t0 = await title('#dp-tools-toggle'), f0 = await title('#dp-focus-toggle');
+  assert.match(t0, /Skjuler/);
+  await p.click('#dp-tools-toggle');
+  await p.waitForTimeout(300);
+  const t1 = await title('#dp-tools-toggle');
+  assert.match(t1, /Viser/);
+  assert.notEqual(t1, t0);
+  await p.click('#dp-focus-toggle');
+  await p.waitForTimeout(300);
+  const f1 = await title('#dp-focus-toggle');
+  assert.notEqual(f1, f0);
+  assert.match(f1, /tilbake|hele toppfeltet/i);
+  await s.close();
+});
+
+e2e('focus: a case without files says how to add one (the Dokumenter list is hidden in focus)', async () => {
+  const s = await openDocs({ files: [], layout: JSON.stringify({ focus: true }) });
+  assert.match(await s.page.locator('#dp-empty-0').textContent(), /Avslutt fokus/);
+  await s.close();
+  const s2 = await openDocs({ files: [] });
+  assert.doesNotMatch(await s2.page.locator('#dp-empty-0').textContent(), /Avslutt fokus/, 'only when focus hides the list');
+  await s2.close();
+});
+
+e2e('focus: survives a real reload, and pane and claims widths are the same with and without it', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  const widths = () => p.evaluate(() => ['#dp-claims', '.dp-pane[data-dp-pane="0"]', '.dp-pane[data-dp-pane="1"]'].map((q) => Math.round(document.querySelector(q).getBoundingClientRect().width)));
+  const before = await widths();
+  await p.click('#dp-focus-toggle');
+  await p.waitForTimeout(300);
+  assert.deepEqual(await widths(), before, 'widths unchanged by focus mode');
+  await p.reload();
+  await p.waitForTimeout(300);
+  await p.click('#sak-tab-docs');
+  await p.waitForTimeout(700);
+  assert.equal(await p.locator('#btn-sak-back').isVisible(), false, 'still in focus after a real reload');
+  assert.match(await p.locator('#dp-focus-toggle').textContent(), /Avslutt fokus/);
+  await s.close();
+});
+
+e2e('export: the layout carries focus and hideToolbar', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.click('#dp-focus-toggle');
+  await p.click('#dp-tools-toggle');
+  const ex = await p.evaluate(() => JSON.parse(JSON.stringify(makeExportPayload().docLayout)));
+  assert.equal(ex.focus, true);
+  assert.equal(ex.hideToolbar, true);
+  await s.close();
+});

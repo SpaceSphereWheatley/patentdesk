@@ -748,6 +748,6 @@ body[data-page="sak"] #view-sak.is-docs-tab.is-focus { display: grid !important;
 #view-sak.is-focus .dp-viewer { grid-column: 1 / -1; }
 #view-sak.is-focus #btn-sak-back,
 #view-sak.is-focus .sak-meta-line,
-#view-sak.is-focus .sak-top-left + * { display: none !important; }
+#view-sak.is-focus .sak-topbar-right { display: none !important; }
 #view-sak.is-focus .dp-toolbar { padding-bottom: 0; }
 #view-sak.is-focus .dp-tab { padding: var(--space-1) var(--space-5); }

@@ -3103,7 +3103,7 @@ body[data-page="sak"] #view-sak.is-docs-tab.is-focus { display: grid !important;
 #view-sak.is-focus .dp-viewer { grid-column: 1 / -1; }
 #view-sak.is-focus #btn-sak-back,
 #view-sak.is-focus .sak-meta-line,
-#view-sak.is-focus .sak-top-left + * { display: none !important; }
+#view-sak.is-focus .sak-topbar-right { display: none !important; }
 #view-sak.is-focus .dp-toolbar { padding-bottom: 0; }
 #view-sak.is-focus .dp-tab { padding: var(--space-1) var(--space-5); }
 /* ── Tidslinje-modal ──────────────────────────────── */
@@ -5428,7 +5428,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.64.2';
+var APP_VERSION    = 'v4.65.0';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -21690,7 +21690,10 @@ function _dpApplyFocus() {
   if (view) view.classList.toggle('is-focus', on);
   document.body.classList.toggle('dp-focus-mode', on);
   var b = document.getElementById('dp-focus-toggle');
-  if (b) { b.textContent = docLayout.focus ? 'Avslutt fokus' : 'Fokus'; }
+  if (b) {
+    b.textContent = docLayout.focus ? 'Avslutt fokus' : 'Fokus';
+    b.title = docLayout.focus ? 'Gå tilbake til hele toppfeltet' : 'Fold sammen toppfeltet så dokumentene får mest mulig høyde';
+  }
 }
 
 function dpApplyTab() {
@@ -21805,6 +21808,7 @@ function _dpApplyLayout() {
   tog.textContent = l.claimsVisible ? 'Skjul krav' : 'Vis krav';
   var tools = document.getElementById('dp-tools-toggle');
   tools.textContent = l.hideToolbar ? 'Vis PDF-verktøy' : 'Skjul PDF-verktøy';
+  tools.title = l.hideToolbar ? 'Viser PDF-leserens verktøylinje og sidepanel igjen' : 'Skjuler PDF-leserens verktøylinje og sidepanel (også uthevingsverktøyene)';
   _dpApplyFocus();
   document.querySelectorAll('[data-dp-count]').forEach(function(b) {
     b.setAttribute('aria-pressed', Number(b.dataset.dpCount) === l.count ? 'true' : 'false');
@@ -21899,7 +21903,8 @@ function renderDocPanes() {
       empty.hidden = true;
     } else {
       empty.hidden = false;
-      empty.textContent = !files.length ? 'Ingen filer registrert på saken.'
+      empty.textContent = !files.length ? 'Ingen filer registrert på saken.' +
+          (document.body.classList.contains('dp-focus-mode') ? ' Avslutt fokus for å legge til filer.' : '')
         : (rule && !manual ? 'Ingen fil passer regelen «' + rule + '». Velg en fil over.' : 'Velg en fil over.');
     }
   }

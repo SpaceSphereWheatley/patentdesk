@@ -120,7 +120,10 @@ function _dpApplyFocus() {
   if (view) view.classList.toggle('is-focus', on);
   document.body.classList.toggle('dp-focus-mode', on);
   var b = document.getElementById('dp-focus-toggle');
-  if (b) { b.textContent = docLayout.focus ? 'Avslutt fokus' : 'Fokus'; }
+  if (b) {
+    b.textContent = docLayout.focus ? 'Avslutt fokus' : 'Fokus';
+    b.title = docLayout.focus ? 'Gå tilbake til hele toppfeltet' : 'Fold sammen toppfeltet så dokumentene får mest mulig høyde';
+  }
 }
 
 function dpApplyTab() {
@@ -235,6 +238,7 @@ function _dpApplyLayout() {
   tog.textContent = l.claimsVisible ? 'Skjul krav' : 'Vis krav';
   var tools = document.getElementById('dp-tools-toggle');
   tools.textContent = l.hideToolbar ? 'Vis PDF-verktøy' : 'Skjul PDF-verktøy';
+  tools.title = l.hideToolbar ? 'Viser PDF-leserens verktøylinje og sidepanel igjen' : 'Skjuler PDF-leserens verktøylinje og sidepanel (også uthevingsverktøyene)';
   _dpApplyFocus();
   document.querySelectorAll('[data-dp-count]').forEach(function(b) {
     b.setAttribute('aria-pressed', Number(b.dataset.dpCount) === l.count ? 'true' : 'false');
@@ -329,7 +333,8 @@ function renderDocPanes() {
       empty.hidden = true;
     } else {
       empty.hidden = false;
-      empty.textContent = !files.length ? 'Ingen filer registrert på saken.'
+      empty.textContent = !files.length ? 'Ingen filer registrert på saken.' +
+          (document.body.classList.contains('dp-focus-mode') ? ' Avslutt fokus for å legge til filer.' : '')
         : (rule && !manual ? 'Ingen fil passer regelen «' + rule + '». Velg en fil over.' : 'Velg en fil over.');
     }
   }

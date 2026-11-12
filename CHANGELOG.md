@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.65.0] - 2026-11-12
+Fokusmodus og «Skjul PDF-verktøy» gir dokumentene mer høyde på fanen Dokumenter.
+
 ### Added
 - **Fokusmodus på fanen Dokumenter.** Knappen «Fokus» ved panelvalgene folder
   toppfeltet sammen til én stripe med saksnummer, status, faner og panelvalg,
