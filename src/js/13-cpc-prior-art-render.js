@@ -262,7 +262,7 @@ function claimTriButtons(claims, c) {
   var inventiveLocked = effNovelty === false;
   var inventiveBtn;
   if (inventiveLocked) {
-    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + ' data-feature="claim-inventive-locked">' + triLabel(false, false) + '</button>';
+    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
   } else if (inventiveIsCascade) {
     inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + ' data-feature="claim-inventive-inherited">' + triLabel(true, false) + '</button>';
   } else {
@@ -540,7 +540,7 @@ function renderSakDocs(data) {
         mhRoundBadgeHtml(docRounds, d.id) + mhCatsHtml(d, row) + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       mhEditBtnHtml(d, i, editing) +
-      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
+      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '" data-feature="priorart-delete"' +
         ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
         ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
       '<div class="mh-details" data-idx="' + i + '">' +

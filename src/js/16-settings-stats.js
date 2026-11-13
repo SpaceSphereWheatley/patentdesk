@@ -464,7 +464,7 @@ function renderEventLog() {
       '<span class="case-card-title">' + esc(lookupTitle(e)) + '</span>' +
       '<span class="case-card-notes">' + esc(notes) + '</span>' +
       '<div class="case-card-menu">' +
-        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
+        '<button class="btn-card-more btn-log-edit" data-feature="log-edit-date" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
       '</div>' +
     '</div>';
   }).join('');

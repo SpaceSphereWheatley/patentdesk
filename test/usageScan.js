@@ -2,6 +2,18 @@
 // Finds the interactive elements the JS draws (HTML template strings and
 // createElement calls) and the feature key each one would get. Shared by the
 // usage-tracker tests; not itself a test.
+//
+// What this scan cannot see (so a drawn element built that way is NOT guarded):
+//  - tag names built from code ('<' + tag), createElement with double quotes,
+//    a variable or 'summary', and role="tab" elements drawn by JS
+//  - elements made with cloneNode, <template>, DOMParser, or attributes set
+//    later (setAttribute('id' | 'data-feature', …), .href = …)
+//  - a template window ends at the first '>', so a '=>' or 'a > b' inside an
+//    attribute expression cuts it short and later attributes are ignored
+//  - only comment lines starting with // or * are skipped; 09a-usage-tracker.js
+//    itself is skipped
+// Static disabled buttons and the date picker's filler cells are skipped on
+// purpose: they can never be clicked / are not features.
 const fs = require('fs');
 const path = require('path');
 const { loadFunctions } = require('./extractFunctions');
@@ -24,6 +36,24 @@ function keyFor(win) {
     type: attr(win, 'type'), name: attr(win, 'name'), value: attr(win, 'value') });
 }
 
+// Attributes that decide the feature key. If one is built from code (an id
+// with a case id in it, say) the key would carry case data at runtime while
+// the scan only sees the static fallback, so the scan reports it.
+const KEY_ATTRS = ['id', 'data-page', 'data-settings-tab', 'data-sak-section', 'data-goto-settings-tab',
+  'data-anchor', 'data-status', 'data-kind', 'data-when'];
+
+function unsafeAttrs(win) {
+  if (attr(win, 'data-feature') !== undefined) return []; // wins at runtime
+  const names = KEY_ATTRS.slice();
+  if (/\stype=\\?"radio/.test(win)) names.push('name', 'value');
+  const bad = [];
+  if (/\sdata-feature=/.test(win)) bad.push('data-feature'); // present but not a plain string
+  for (const n of names) {
+    if (new RegExp('\\s' + n + '=\\\\?"').test(win) && attr(win, n) === undefined) bad.push(n);
+  }
+  return bad;
+}
+
 function lineOf(text, idx) { return text.slice(0, idx).split('\n').length; }
 
 // Returns [{ file, line, what, key }] — key is null when none can be derived.
@@ -42,17 +72,26 @@ function scanDrawn() {
       const win = rest.slice(0, rest.indexOf('>') === -1 ? 900 : rest.indexOf('>'));
       if (m[1] === 'a' && !/\shref=/.test(win)) continue;
       if (m[1] === 'input' && !/\stype=\\?"(checkbox|radio)/.test(win)) continue;
-      out.push({ file, line, index: m.index, what: '<' + m[1] + '>', key: keyFor(win) });
+      if (/"\s+disabled[\s>/]/.test(win)) continue; // always disabled: can never be clicked
+      if (/class=\\?"[^"]*\bdp-day-empty\b/.test(win)) continue; // date picker filler cell
+      out.push({ file, line, index: m.index, what: '<' + m[1] + '>', key: keyFor(win), unsafe: unsafeAttrs(win) });
     }
     const cre = /createElement\('(button|a|select|input)'\)/g;
     while ((m = cre.exec(text))) {
       const line = lineOf(text, m.index);
-      const after = text.slice(m.index, m.index + 700);
+      let after = text.slice(m.index, m.index + 400);
+      const nextEl = after.indexOf('createElement(', 10);
+      if (nextEl !== -1) after = after.slice(0, nextEl); // never read the next element's lines
       if (/\.download\s*=|createObjectURL/.test(after)) continue; // file download, not UI
       if (m[1] === 'input' && /\.type\s*=\s*'text'/.test(after)) continue; // text field, not clicked
       const f = /dataset\.feature\s*=\s*'([^']+)'/.exec(after);
       const id = /\.id\s*=\s*'([^']+)'/.exec(after);
-      out.push({ file, line, index: m.index, what: 'createElement(' + m[1] + ')', key: f ? f[1] : id ? id[1] : null });
+      const unsafe = [];
+      const rhs = (name) => { const r = new RegExp('\\.' + name + '\\s*=\\s*([^;\\n]+)').exec(after); return r ? r[1].trim() : null; };
+      const featRhs = rhs('dataset\\.feature'), idRhs = rhs('id');
+      if (featRhs && !/^'[^'+]*'$/.test(featRhs)) unsafe.push('data-feature');
+      if (!f && idRhs && !/^'[^'+]*'$/.test(idRhs)) unsafe.push('id');
+      out.push({ file, line, index: m.index, what: 'createElement(' + m[1] + ')', key: f ? f[1] : id ? id[1] : null, unsafe });
     }
   }
   return out;

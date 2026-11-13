@@ -225,7 +225,7 @@ function renderHomeDeadlines() {
       vacBadge +
       trackHtml(c, true) +
       '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:var(--space-1);">' +
-        '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
+        '<button class="btn-card-more home-row-more-btn" data-feature="home-row-more" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
       '</div>' +
     '</div>';
   }

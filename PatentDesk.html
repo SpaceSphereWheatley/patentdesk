@@ -6786,7 +6786,7 @@ var _dp = (function() {
     var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     var cells = '';
     for (var i = 0; i < firstDow; i++)
-      cells += '<button type="button" class="dp-day dp-day-empty" tabindex="-1" data-feature="datepicker-empty-day"></button>';
+      cells += '<button type="button" class="dp-day dp-day-empty" tabindex="-1"></button>';
     for (var d = 1; d <= daysInMonth; d++) {
       var isSel   = (d === sD && viewMonth === sM && viewYear === sY);
       var isToday = (d === tD && viewMonth === tM && viewYear === tY);
@@ -12547,12 +12547,15 @@ var _USAGE_FLUSH_MS   = 5000;
 // test/usage.test.js: en ny tegnet knapp uten oppføring (eller en oppføring uten
 // knapp) stopper testene. Nøkkelen er funksjons-ID-en, verdien visningsnavnet.
 var USAGE_DYNAMIC_FEATURES = {
+  'home-row-more': 'Hjem: Flere handlinger (⋯)',
+  'log-edit-date': 'Sakslogg: Endre dato',
+  'priorart-delete': 'Mothold: Merk ikke lenger relevant (slett)',
   'backup-restore-snapshot': 'Gjenopprett øyeblikksbilde',
   'btn-cpc-empty-add': 'CPC: Legg til klasse (tom liste)',
   'btn-cpc-notice-dismiss': 'CPC-varsel: Lukk',
   'btn-cpc-notice-load': 'CPC-varsel: Last inn',
   'btn-cpc-reload': 'CPC: Last inn på nytt',
-  'btn-empty-clear-filter': 'Tom liste: Fjern filter',
+  'btn-empty-clear-filter': 'Tom liste: Tøm filter',
   'btn-mh-empty-add': 'Mothold: Legg til (tom liste)',
   'btn-undo-action': 'Angre',
   'bulk-delete-row': 'Bulk-import: Fjern rad',
@@ -12570,12 +12573,11 @@ var USAGE_DYNAMIC_FEATURES = {
   'claim-formal': 'Krav: Formell vurdering',
   'claim-inventive': 'Krav: Oppfinnelseshøyde',
   'claim-inventive-inherited': 'Krav: Oppfinnelseshøyde (arvet)',
-  'claim-inventive-locked': 'Krav: Oppfinnelseshøyde (låst)',
   'claim-novelty': 'Krav: Nyhet',
   'claim-novelty-inherited': 'Krav: Nyhet (arvet)',
   'claim-origin': 'Krav: Opphav i brev',
   'claim-p13': 'Krav: § 13-grunnlag',
-  'class:btn-active-toggle': 'Kortmeny: Aktiv/inaktiv',
+  'class:btn-active-toggle': 'Meny: Marker som pågående / fjern markering',
   'class:btn-card-hist': 'Sakskort: Historikk',
   'class:btn-card-more': 'Sakskort: Flere handlinger (⋯)',
   'class:btn-copy-path': 'Meny: Kopier sti',
@@ -12586,8 +12588,8 @@ var USAGE_DYNAMIC_FEATURES = {
   'class:btn-medl-return': 'Medlesing: Tilbake fra medlesing',
   'class:btn-medl-send': 'Medlesing: Send/endre medlesing',
   'class:btn-medleser-del': 'Medlesere: Fjern fra lista',
-  'class:btn-row-action': 'Liste: Radhandling',
-  'class:btn-row-outcome': 'Liste: Utfall',
+  'class:btn-row-action': 'Kortmeny: Statushandling (Brev sendt / Svar mottatt / Avgjør / Utført)',
+  'class:btn-row-outcome': 'Kortmeny: Endre utfall',
   'class:btn-sak-class-del': 'Saken: Fjern CPC-klasse',
   'class:btn-sak-copy-path': 'Saken: Kopier sti',
   'class:btn-sak-del': 'Saken: Slett',
@@ -12599,7 +12601,6 @@ var USAGE_DYNAMIC_FEATURES = {
   'class:btn-vac-del': 'Ferie: Slett',
   'class:btn-vac-edit': 'Ferie: Rediger',
   'cpc-in-use': 'CPC: I bruk',
-  'datepicker-empty-day': 'Datovelger: Tom celle',
   'datepicker-next-month': 'Datovelger: Neste måned',
   'datepicker-open': 'Datovelger: Åpne',
   'datepicker-pick-day': 'Datovelger: Velg dag',
@@ -12626,17 +12627,17 @@ var USAGE_DYNAMIC_FEATURES = {
   'priorart-cited-elsewhere': 'Mothold: Også mothold i andre saker',
   'priorart-cited-open': 'Mothold: Åpne sak der det er mothold',
   'priorart-edit': 'Mothold: Rediger',
-  'priorart-flag': 'Mothold: Flagg',
+  'priorart-flag': 'Mothold: P/E/D-markering',
   'priorart-goto-details': 'Mothold: Vis i Detaljer',
-  'priorart-ops': 'Mothold: Operasjoner',
+  'priorart-ops': 'Mothold: Hent fra EPO OPS',
   'priorart-restore': 'Mothold: Gjenopprett',
   'reply-toggle-item': 'Svar: Kryss av punkt',
-  'sak-frist-unpostpone': 'Saken: Angre utsettelse',
+  'sak-frist-unpostpone': 'Saken: Fjern utsettelse',
   'section-fold': 'Saken: Brett ut/sammen seksjon',
   'tag-remove': 'Stikkord: Fjern',
   'timeline-chip': 'Tidslinje: Filterchip',
   'timeline-horizon': 'Tidslinje: Horisont',
-  'timeline-pin': 'Tidslinje: Fest sak',
+  'timeline-pin': 'Tidslinje: Forfalte saker utenfor bildet',
   'update-download-link': 'Oppdatering: Last ned',
   'workfile-grant-access': 'Arbeidsfil: Gi tilgang',
   'workfile-grant-later': 'Arbeidsfil: Senere',
@@ -15756,7 +15757,7 @@ function claimTriButtons(claims, c) {
   var inventiveLocked = effNovelty === false;
   var inventiveBtn;
   if (inventiveLocked) {
-    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + ' data-feature="claim-inventive-locked">' + triLabel(false, false) + '</button>';
+    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
   } else if (inventiveIsCascade) {
     inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + ' data-feature="claim-inventive-inherited">' + triLabel(true, false) + '</button>';
   } else {
@@ -16034,7 +16035,7 @@ function renderSakDocs(data) {
         mhRoundBadgeHtml(docRounds, d.id) + mhCatsHtml(d, row) + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       mhEditBtnHtml(d, i, editing) +
-      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
+      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '" data-feature="priorart-delete"' +
         ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
         ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
       '<div class="mh-details" data-idx="' + i + '">' +
@@ -18300,7 +18301,7 @@ function renderHomeDeadlines() {
       vacBadge +
       trackHtml(c, true) +
       '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:var(--space-1);">' +
-        '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
+        '<button class="btn-card-more home-row-more-btn" data-feature="home-row-more" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
       '</div>' +
     '</div>';
   }
@@ -19536,7 +19537,7 @@ function renderEventLog() {
       '<span class="case-card-title">' + esc(lookupTitle(e)) + '</span>' +
       '<span class="case-card-notes">' + esc(notes) + '</span>' +
       '<div class="case-card-menu">' +
-        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
+        '<button class="btn-card-more btn-log-edit" data-feature="log-edit-date" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
       '</div>' +
     '</div>';
   }).join('');

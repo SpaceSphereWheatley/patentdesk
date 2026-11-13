@@ -76,7 +76,7 @@ var _dp = (function() {
     var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     var cells = '';
     for (var i = 0; i < firstDow; i++)
-      cells += '<button type="button" class="dp-day dp-day-empty" tabindex="-1" data-feature="datepicker-empty-day"></button>';
+      cells += '<button type="button" class="dp-day dp-day-empty" tabindex="-1"></button>';
     for (var d = 1; d <= daysInMonth; d++) {
       var isSel   = (d === sD && viewMonth === sM && viewYear === sY);
       var isToday = (d === tD && viewMonth === tM && viewYear === tY);

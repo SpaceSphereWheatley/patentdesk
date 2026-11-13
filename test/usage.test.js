@@ -173,6 +173,11 @@ test('every interactive element drawn by src/js has a feature key', () => {
   assert.deepStrictEqual(unkeyed, [], 'Give these elements data-feature="name" (or an id / btn-… class), then list the name in USAGE_DYNAMIC_FEATURES.');
 });
 
+test('no drawn element builds a feature-key attribute from code (it could carry case data)', () => {
+  const bad = scanDrawn().filter((x) => x.unsafe && x.unsafe.length).map((x) => x.file + ':' + x.line + ' ' + x.what + ' ' + x.unsafe.join(','));
+  assert.deepStrictEqual(bad, [], 'Use a fixed data-feature="name" instead; ids/data-* built from case data must never decide the key.');
+});
+
 test('USAGE_DYNAMIC_FEATURES lists exactly the drawn features that are not in the static markup', () => {
   const listed = Object.keys(F.USAGE_DYNAMIC_FEATURES).sort();
   const found = dynamicKeys();
