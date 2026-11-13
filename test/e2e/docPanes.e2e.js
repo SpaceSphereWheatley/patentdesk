@@ -781,3 +781,48 @@ e2e('export: the layout carries focus and hideToolbar', async () => {
   assert.equal(ex.hideToolbar, true);
   await s.close();
 });
+
+// Headless Chromium downloads a PDF instead of showing it, so the frame never
+// commits a navigation and no history entry can appear. Serve the documents as
+// small HTML pages here, so every pane load is a real navigation.
+const openDocsAsPages = async () => {
+  const s = await openCase(base + '/PatentDesk.html');
+  await s.page.route('**/docs?**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>' + new URL(r.request().url()).searchParams.get('file') + '</p>' }));
+  await s.page.click('#sak-tab-docs');
+  await s.page.waitForTimeout(600);
+  return s;
+};
+
+// Loading a file into a pane must not add a step to the tab's history: an
+// iframe that gets a new src adds one, and then Tilbake (history.back) moved
+// the panes back to earlier files instead of leaving the case — or, on
+// Oversikt where the panes are hidden, seemed to do nothing.
+e2e('Tilbake: changing files in the panes adds no history, so Tilbake leaves the case from Dokumenter', async () => {
+  const s = await openDocsAsPages();
+  const p = s.page;
+  const len0 = await p.evaluate(() => history.length);
+  await p.selectOption('[data-dp-pick="0"]', { label: 'D1' });
+  await p.waitForTimeout(200);
+  await p.selectOption('[data-dp-pick="1"]', { label: 'Description' });
+  await p.waitForTimeout(200);
+  await p.click('#dp-tools-toggle'); // same file, other #-part: reloads via about:blank
+  await p.waitForTimeout(400);
+  assert.equal(await p.evaluate(() => history.length), len0, 'loading files into the panes adds no history entries');
+  await p.click('#btn-sak-back');
+  await p.waitForTimeout(300);
+  assert.equal(await p.evaluate(() => activePage), 'hjem', 'Tilbake left the case');
+  await s.close();
+});
+
+e2e('Tilbake: after using Dokumenter, Tilbake on Oversikt leaves the case at the first press', async () => {
+  const s = await openDocsAsPages();
+  const p = s.page;
+  await p.selectOption('[data-dp-pick="0"]', { label: 'D1' });
+  await p.waitForTimeout(200);
+  await p.click('#sak-tab-overview');
+  await p.click('#btn-sak-back');
+  await p.waitForTimeout(300);
+  assert.equal(await p.evaluate(() => activePage), 'hjem', 'Tilbake left the case');
+  assert.equal(await p.locator('#view-sak').isVisible(), false);
+  await s.close();
+});
