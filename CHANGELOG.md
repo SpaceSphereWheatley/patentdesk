@@ -7,6 +7,20 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Added
+- **Mappesynk uten lokal server.** Åpnes PatentDesk direkte som fil, kan
+  nettleseren (Chrome/Edge) lese saksmappen selv. Knappen «Velg mappe» i
+  «Dokumenter»-nedtrekket velger dokumentroten én gang; «Synk mappe» legger til
+  nye filer og merker filer som mangler på disk, som med serveren. Saken
+  synkes av seg selv når nettleseren allerede har lesetilgang, ellers må
+  tillatelsen gis med et klikk. «Bytt mappe» velger en annen dokumentrot. Mappen
+  huskes i IndexedDB. Nettlesere uten mappevelger får ingen knapp.
+
+### Changed
+- **Uten lokal server skjules det som krever den.** Fanen «Dokumenter»
+  (dokumentpanelene) og innstillingene for dokumentpaneler vises bare når
+  appen åpnes via `Start-PatentDesk.ps1`. Forklaringsvarselet er fjernet.
+
 ## [4.64.2] - 2026-11-11
 Fillisten i Dokumenter-nedtrekket er begrenset og ruller.
 

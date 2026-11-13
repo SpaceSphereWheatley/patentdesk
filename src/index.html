@@ -904,6 +904,10 @@
                   <input class="field-input sak-docs-add-input" id="sak-docs-add-input" type="text" placeholder="Filnavn (f.eks. Vedlegg.pdf)" maxlength="80" />
                   <button class="s-btn s-btn-accent" id="btn-sak-docs-add">+ Legg til</button>
                 </div>
+                <div class="sak-docs-footer-row" id="sak-docs-sync-row" hidden>
+                  <button class="sak-docs-folder" id="btn-sak-docs-sync" title="Les saksmappen og legg til nye filer"><svg class="ti" aria-hidden="true"><use href="#ti-refresh"/></svg> <span id="btn-sak-docs-sync-label">Velg mappe</span></button>
+                  <button class="sak-docs-folder" id="btn-sak-docs-repick" title="Velg en annen dokumentrot" hidden>Bytt mappe</button>
+                </div>
                 <div class="sak-docs-footer-row">
                   <button class="sak-docs-folder" id="btn-sak-docs-folder" title="Kopier sti til sakmappen"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier mappe-sti</button>
                   <button class="sak-docs-folder" id="btn-sak-docs-openall" title="Åpne alle PDF-dokumenter i bakgrunnsfaner"><svg class="ti" aria-hidden="true"><use href="#ti-folder-open"/></svg> Åpne alle PDF-er</button>
@@ -920,7 +924,7 @@
         </section>
 
         <!-- Faner: Oversikt (hele saksiden) | Dokumenter (paneler side om side) -->
-        <div class="dp-bar">
+        <div class="dp-bar" id="dp-bar">
           <div class="dp-tabstrip" id="sak-tabs" role="tablist" aria-label="Visning">
             <button type="button" class="dp-tab is-on" role="tab" id="sak-tab-overview" data-sak-tab="overview" aria-selected="true">Oversikt</button>
             <button type="button" class="dp-tab" role="tab" id="sak-tab-docs" data-sak-tab="docs" aria-selected="false" aria-controls="sak-viewer">Dokumenter</button>
@@ -939,7 +943,6 @@
           </div>
         </div>
         <div class="dp-viewer" id="sak-viewer" role="tabpanel" aria-labelledby="sak-tab-docs" hidden>
-          <div class="dp-notice" id="dp-notice" role="status" hidden></div>
           <div class="dp-body" id="dp-body">
             <aside class="dp-claims" id="dp-claims" aria-label="Kravoversikt"></aside>
             <div class="dp-split dp-csplit" id="dp-csplit" role="separator" aria-orientation="vertical" aria-label="Bredde på kravpanelet" tabindex="0"></div>

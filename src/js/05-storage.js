@@ -362,6 +362,123 @@ function missingFileIndexes(files, listed) {
   return out;
 }
 
+// ── Saksmappen uten server: nettleserens mappevelger ─
+// Uten den lokale serveren kan nettleseren lese saksmappen selv
+// (File System Access, bare Chrome/Edge). Brukeren velger dokumentroten én
+// gang; svaret får samme form som serverens /docs/list og går gjennom de
+// samme funksjonene (normalizeFolderListing, folderFilesToAdd). Rene
+// funksjoner og løfter uten DOM — se test/folderPicker.test.js.
+
+// Samme filtyper som serveren ($docTypes i Start-PatentDesk.ps1).
+var FOLDER_DOC_EXTS = ['.pdf', '.doc', '.docx', '.odt', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv', '.png', '.jpg', '.jpeg'];
+
+// 'server' når appen åpnes via den lokale serveren, 'picker' når nettleseren
+// kan lese mappen selv, ellers 'none' (ingen mappesynk).
+function docFolderSyncMode(serverUp, pickerOk) {
+  return serverUp ? 'server' : (pickerOk ? 'picker' : 'none');
+}
+function folderPickerSupported(win) {
+  return !!win && typeof win.showDirectoryPicker === 'function' && win.isSecureContext !== false;
+}
+
+// Knappen «Velg mappe» / «Synk mappe». Bare i mappevelger-modus. Saken synkes
+// av seg selv først når tillatelsen allerede er gitt; nettleseren åpner aldri
+// en tillatelsesdialog av at en sak åpnes, bare av et klikk.
+function folderSyncButton(mode, hasHandle, granted) {
+  if (mode !== 'picker') return { visible: false, label: '', autoSync: false };
+  return { visible: true, label: hasHandle ? 'Synk mappe' : 'Velg mappe', autoSync: !!(hasHandle && granted) };
+}
+
+// Som serveren: ikke midlertidige (~$) eller skjulte (.) filer, og bare kjente filtyper.
+function folderEntryAccepted(name) {
+  name = String(name == null ? '' : name);
+  if (name.indexOf('~$') === 0 || name.charAt(0) === '.') return false;
+  var m = /\.[a-zA-Z0-9]+$/.exec(name);
+  return !!m && FOLDER_DOC_EXTS.indexOf(m[0].toLowerCase()) >= 0;
+}
+
+// Saksnummeret som mappenavn, delt på / og \ som serveren gjør. Tomt navn,
+// «.» og «..» avvises, så vi aldri forlater dokumentroten.
+function folderCaseParts(caseNumber) {
+  if (caseNumber == null) return null;
+  var parts = String(caseNumber).split(/[\\/]/).filter(function(p) { return p !== ''; });
+  if (!parts.length) return null;
+  for (var i = 0; i < parts.length; i++) {
+    if (!parts[i].trim() || parts[i] === '.' || parts[i] === '..') return null;
+  }
+  return parts;
+}
+
+function _sortedByName(list) {
+  return list.slice().sort(function(a, b) {
+    var x = a.name.toLowerCase(), y = b.name.toLowerCase();
+    return x < y ? -1 : (x > y ? 1 : 0);
+  });
+}
+
+// Alle oppføringene i en mappe (FileSystemDirectoryHandle.values()).
+function _collectDirEntries(dirHandle) {
+  return new Promise(function(resolve, reject) {
+    var out = [], it;
+    try { it = dirHandle.values(); } catch (e) { reject(e); return; }
+    (function step() {
+      it.next().then(function(r) {
+        if (r.done) { resolve(out); return; }
+        out.push(r.value);
+        step();
+      }, reject);
+    })();
+  });
+}
+
+// Filene i saksmappen, på samme form som serverens /docs/list:
+// { exists, files } med relative navn og /. Mappen selv først, så én
+// undermappe ned (sortert på navn), høyst FOLDER_LIST_MAX filer.
+// null når mappen ikke kan leses (tillatelse mistet, ugyldig saksnummer):
+// det skal aldri bli til «saksmappen mangler».
+function readCaseFolder(rootHandle, caseNumber) {
+  var parts = folderCaseParts(caseNumber);
+  if (!rootHandle || !parts) return Promise.resolve(null);
+  function walk(h, i) {
+    if (i >= parts.length) return Promise.resolve(h);
+    return Promise.resolve().then(function() { return h.getDirectoryHandle(parts[i]); })
+      .then(function(next) { return walk(next, i + 1); });
+  }
+  function read(caseDir) {
+    var files = [];
+    return _collectDirEntries(caseDir).then(function(entries) {
+      _sortedByName(entries.filter(function(e) { return e.kind === 'file' && folderEntryAccepted(e.name); }))
+        .forEach(function(e) { files.push(e.name); });
+      var subs = _sortedByName(entries.filter(function(e) { return e.kind === 'directory'; }));
+      return subs.reduce(function(chain, sub) {
+        return chain.then(function() {
+          if (files.length >= FOLDER_LIST_MAX) return null;
+          return _collectDirEntries(sub).then(function(se) {
+            _sortedByName(se.filter(function(e) { return e.kind === 'file' && folderEntryAccepted(e.name); }))
+              .forEach(function(e) { files.push(sub.name + '/' + e.name); });
+          }, function() { /* én utilgjengelig undermappe stopper ikke resten */ });
+        });
+      }, Promise.resolve());
+    }).then(function() { return { exists: true, files: files.slice(0, FOLDER_LIST_MAX) }; });
+  }
+  return walk(rootHandle, 0).then(function(caseDir) {
+    return read(caseDir).catch(function() { return null; });
+  }, function(e) {
+    return (e && (e.name === 'NotFoundError' || e.name === 'TypeMismatchError')) ? { exists: false, files: [] } : null;
+  });
+}
+
+// Har vi lesetilgang til den lagrede mappen? ask = true åpner nettleserens
+// tillatelsesdialog (må skje i et klikk); ellers spørres det bare stille.
+function folderPermissionGranted(handle, ask) {
+  if (!handle || typeof handle.queryPermission !== 'function') return Promise.resolve(false);
+  return Promise.resolve().then(function() { return handle.queryPermission({ mode: 'read' }); }).then(function(s) {
+    if (s === 'granted') return true;
+    if (!ask || typeof handle.requestPermission !== 'function') return false;
+    return Promise.resolve(handle.requestPermission({ mode: 'read' })).then(function(r) { return r === 'granted'; });
+  }).catch(function() { return false; });
+}
+
 function _fileExt(name) {
   var m = _fileResolvedName(name).match(/\.([a-zA-Z0-9]+)$/);
   return m ? m[1].toLowerCase() : '';

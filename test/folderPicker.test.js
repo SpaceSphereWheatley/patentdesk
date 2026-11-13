@@ -6,15 +6,15 @@ const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
 const {
-  docServerProbeUrl, docServerProbeOk, docFolderSyncMode, folderPickerSupported,
+  docFolderSyncMode, folderPickerSupported,
   folderEntryAccepted, folderCaseParts, readCaseFolder, folderPermissionGranted,
   folderSyncButton, normalizeFolderListing, folderFilesToAdd
 } = loadFunctions(
-  ['docServerProbeUrl', 'docServerProbeOk', 'docFolderSyncMode', 'folderPickerSupported',
+  ['docFolderSyncMode', 'folderPickerSupported',
     'folderEntryAccepted', 'folderCaseParts', 'readCaseFolder', 'folderPermissionGranted',
     'folderSyncButton', '_collectDirEntries', '_sortedByName',
     'normalizeFolderListing', 'folderFilesToAdd', 'folderFileKey', '_folderKeys',
-    '_fileHasExt', '_fileResolvedName'],
+    '_fileHasExt', '_fileResolvedName', 'sanitizeText', '_registeredName'],
   { vars: ['FOLDER_LIST_MAX', 'FOLDER_DOC_EXTS'] }
 );
 const arr = (a) => Array.from(a);
@@ -39,27 +39,7 @@ function dir(name, children) {
   };
 }
 
-// ── Servermodus og synkvalg ─────────────────────────
-
-test('docServerProbeUrl: a valid, harmless listing request on the same origin', () => {
-  const u = docServerProbeUrl({ protocol: 'http:', origin: 'http://127.0.0.1:8080' });
-  assert.ok(u.startsWith('http://127.0.0.1:8080/docs/list?'), u);
-  assert.ok(/root=C%3A%5C/.test(u), 'a full drive path, so the server answers 200 instead of 400');
-  assert.ok(/case=/.test(u));
-});
-
-test('docServerProbeUrl: file:// and missing location give no probe', () => {
-  assert.strictEqual(docServerProbeUrl({ protocol: 'file:', origin: 'null' }), null);
-  assert.strictEqual(docServerProbeUrl(null), null);
-  assert.strictEqual(docServerProbeUrl(undefined), null);
-});
-
-test('docServerProbeOk: only a real listing answer counts as the PatentDesk server', () => {
-  assert.strictEqual(docServerProbeOk({ exists: false, files: [] }), true);
-  assert.strictEqual(docServerProbeOk({ exists: true, files: ['a.pdf'] }), true);
-  [null, undefined, 'x', 5, [], {}, '<html>404</html>', { error: 'x' }].forEach((v) =>
-    assert.strictEqual(docServerProbeOk(v), false, JSON.stringify(v)));
-});
+// ── Synkvalg ────────────────────────────────────────
 
 test('docFolderSyncMode: server first, picker as fallback, otherwise none', () => {
   assert.strictEqual(docFolderSyncMode(true, true), 'server');

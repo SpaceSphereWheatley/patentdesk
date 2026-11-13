@@ -71,6 +71,7 @@ async function open(opts) {
     localStorage.setItem('pt_sak_' + c.id, JSON.stringify(s));
     if (root) localStorage.setItem('pt_doc_root', root);
   }, [kase(opts.caseOver), sak, opts.root || null]);
+  if (opts.init) await page.addInitScript(opts.init);
   await page.goto(opts.url);
   await page.evaluate((id) => navigateTo('sak/' + id), CASE_ID);
   await page.waitForTimeout(opts.settle === undefined ? 300 : opts.settle);
@@ -270,5 +271,64 @@ e2e('AC9: a sync changes nothing about the case itself (due date, status, histor
   await s.page.waitForTimeout(500);
   assert.equal((await stored(s.page)).includes('D1.pdf'), true, 'the sync did run');
   assert.equal(await s.page.evaluate(() => localStorage.getItem('pt_cases')), before, 'pt_cases is byte-for-byte unchanged');
+  await s.close();
+});
+
+// ── Uten server: nettleserens mappevelger ───────────
+// showDirectoryPicker byttes ut med en falsk dokumentrot, så testen trenger
+// ingen mappevelger-dialog. (Håndtaket kan ikke lagres i IndexedDB her.)
+const FILE_URL = pathToFileURL(APP_FILE).href;
+const fakePicker = ({ files, ok }) => {
+  const dir = (name, kids) => ({
+    kind: 'directory', name,
+    values() { let i = 0; return { next: () => Promise.resolve(i < kids.length ? { done: false, value: kids[i++] } : { done: true }) }; },
+    getDirectoryHandle(n) {
+      const k = kids.find((c) => c.name === n && c.kind === 'directory');
+      return k ? Promise.resolve(k) : Promise.reject(Object.assign(new Error('nf'), { name: 'NotFoundError' }));
+    }
+  });
+  const root = dir('Saker', [dir('20261400', files.map((n) => ({ kind: 'file', name: n })))]);
+  window.__pickerCalls = 0;
+  if (ok) window.showDirectoryPicker = () => { window.__pickerCalls++; return Promise.resolve(root); };
+  else delete window.showDirectoryPicker;
+};
+const initPicker = (files) => ({ init: `(${fakePicker.toString()})(${JSON.stringify({ files, ok: true })})` });
+const syncRowVisible = async (p) => {
+  await p.click('#btn-sak-docs');
+  return p.locator('#sak-docs-sync-row').isVisible();
+};
+
+e2e('no server: the button "Velg mappe" is shown, and nothing is read before it is clicked', async () => {
+  const s = await open(Object.assign({ url: FILE_URL }, initPicker(['Claims.pdf', 'New.pdf'])));
+  assert.equal(await syncRowVisible(s.page), true);
+  assert.equal((await s.page.locator('#btn-sak-docs-sync-label').textContent()).trim(), 'Velg mappe');
+  assert.deepEqual(await stored(s.page), ['Claims.pdf', 'Description.pdf'], 'no sync without a click');
+  assert.equal(await s.page.evaluate(() => window.__pickerCalls), 0);
+  await s.close();
+});
+
+e2e('no server: picking the folder reads the case folder, adds new files and marks missing ones', async () => {
+  const s = await open(Object.assign({ url: FILE_URL }, initPicker(['Claims.pdf', 'New.pdf'])));
+  await s.page.click('#btn-sak-docs');
+  await s.page.click('#btn-sak-docs-sync');
+  await s.page.waitForTimeout(300);
+  assert.deepEqual(await stored(s.page), ['Claims.pdf', 'Description.pdf', 'New.pdf']);
+  assert.deepEqual(await rows(s.page), [
+    { name: 'Claims.pdf', missing: false }, { name: 'Description.pdf', missing: true }, { name: 'New.pdf', missing: false }]);
+  assert.equal((await s.page.locator('#btn-sak-docs-sync-label').textContent()).trim(), 'Synk mappe');
+  assert.equal(await s.page.locator('#btn-sak-docs-repick').isVisible(), true);
+  await s.close();
+});
+
+e2e('no server: a browser without the folder picker shows no button at all', async () => {
+  const s = await open({ url: FILE_URL, init: `(${fakePicker.toString()})(${JSON.stringify({ files: [], ok: false })})` });
+  assert.equal(await syncRowVisible(s.page), false);
+  await s.close();
+});
+
+e2e('with the local server the picker button is never shown', async () => {
+  state.listing = { exists: true, files: ['Claims.pdf'] };
+  const s = await open(initPicker(['Claims.pdf']));
+  assert.equal(await syncRowVisible(s.page), false);
   await s.close();
 });
