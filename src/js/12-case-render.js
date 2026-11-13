@@ -445,7 +445,7 @@ function renderSakFileList(data) {
   var missing = {};
   if (listing && listing.exists) missingFileIndexes(files, listing.files).forEach(function(k) { missing[k] = true; });
   var note = (listing && !listing.exists)
-    ? '<p class="sak-docs-note">Saksmappen finnes ikke på disk (' + esc(_docRootJoin(root, cas.caseNumber, '').replace(/\\$/, '')) + ').</p>'
+    ? '<p class="sak-docs-note">Saksmappen finnes ikke på disk (' + esc(_docRootJoin((typeof dpFolderRootName === 'function' && dpFolderRootName()) || root, cas.caseNumber, '').replace(/\\$/, '')) + ').</p>'
     : '';
   if (!files.length) {
     list.innerHTML = note + '<p class="sak-docs-empty">Ingen filer registrert.</p>';

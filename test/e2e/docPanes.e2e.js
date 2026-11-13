@@ -266,14 +266,41 @@ e2e('settings: a slot rule changes which file the panel gets', async () => {
   await s.close();
 });
 
-e2e('AC2: opened as a plain file, the tab explains that the server is needed', async () => {
+e2e('AC2: opened as a plain file, the Dokumenter tab and its settings are gone (no notice), the rest works', async () => {
   docRequests = [];
   const s = await openCase(pathToFileURL(APP_FILE).href);
-  await s.page.click('#sak-tab-docs');
-  assert.equal(await s.page.locator('#dp-notice').isVisible(), true);
-  assert.match(await s.page.locator('#dp-notice').textContent(), /Start-PatentDesk/);
-  assert.equal(await s.page.locator('#dp-body').isVisible(), false);
-  assert.equal(await s.page.locator('iframe.dp-frame:visible').count(), 0);
+  const p = s.page;
+  assert.equal(await p.locator('#dp-bar').isVisible(), false, 'tab strip and toolbar hidden');
+  assert.equal(await p.locator('#sak-tab-docs').isVisible(), false);
+  assert.equal(await p.locator('#sak-viewer').isVisible(), false);
+  assert.equal(await p.locator('#dp-notice').count(), 0, 'no explanation is shown');
+  await p.evaluate(() => setSakTab('docs'));
+  assert.equal(await p.locator('#sak-viewer').isVisible(), false, 'cannot be forced open');
+  await p.evaluate(() => navigateTo('innstillinger'));
+  await p.click('#settings-tab-saksbehandling');
+  assert.equal(await p.locator('#settings-dp-rules').isVisible(), false);
+  assert.equal(await p.locator('iframe.dp-frame:visible').count(), 0);
+  await s.close();
+});
+
+e2e('AC2: as a plain file the panel settings are hidden from the start, before any case has been opened', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const p = await ctx.newPage();
+  await p.addInitScript(() => { localStorage.setItem('pt_onboarding_completed', '1'); });
+  await p.goto(pathToFileURL(APP_FILE).href);
+  await p.evaluate(() => navigateTo('innstillinger'));
+  await p.click('#settings-tab-saksbehandling');
+  assert.equal(await p.locator('#settings-dp-rules').isVisible(), false);
+  await ctx.close();
+});
+
+e2e('AC1: the Dokumenter tab and the panel settings are visible through the local server', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  assert.equal(await p.locator('#dp-bar').isVisible(), true);
+  await p.evaluate(() => navigateTo('innstillinger'));
+  await p.click('#settings-tab-saksbehandling');
+  assert.equal(await p.locator('#settings-dp-rules').isVisible(), true);
   await s.close();
 });
 
@@ -686,13 +713,13 @@ e2e('PDF toolbar: a remembered choice is applied when the tab opens', async () =
   await s.close();
 });
 
-e2e('focus: a remembered focus does nothing when the app is opened as a plain file (no toolbar to leave it with)', async () => {
+e2e('focus: a remembered focus does nothing when the app is opened as a plain file (no tab or toolbar to leave it with)', async () => {
   const s = await openCase(pathToFileURL(APP_FILE).href, { layout: JSON.stringify({ focus: true }) });
-  await s.page.click('#sak-tab-docs');
+  assert.equal(await s.page.locator('#sak-tab-docs').isVisible(), false, 'no Dokumenter tab without the server');
+  await s.page.evaluate(() => setSakTab('docs'));   // kan ikke tvinges åpen
   await s.page.waitForTimeout(300);
-  assert.equal(await s.page.locator('#dp-notice').isVisible(), true, 'the explanation is shown');
   assert.equal(await s.page.locator('#btn-sak-back').isVisible(), true, 'the normal header stays');
-  assert.equal(await s.page.locator('#btn-sak-docs').isVisible(), true, 'so the Dokumenter list the notice points to is reachable');
+  assert.equal(await s.page.locator('#btn-sak-docs').isVisible(), true, 'and the Dokumenter list is reachable');
   assert.equal(await s.page.evaluate(() => document.body.classList.contains('dp-focus-mode')), false);
   await s.close();
 });

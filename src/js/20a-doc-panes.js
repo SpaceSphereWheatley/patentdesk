@@ -24,6 +24,7 @@ function dpOnSakRendered(id) {
     _dpResetFrames();
   }
   dpApplyTab();
+  dpUpdateFolderButton();
   if (_dpTab === 'docs') renderDocPanes();
 }
 
@@ -108,6 +109,19 @@ function dpOnPageChange(page) {
   _dpWasDocs = false;
 }
 
+// Uten den lokale serveren finnes ikke fanen Dokumenter (panelene kan ikke
+// vise filer fra disk), og heller ikke innstillingene for den. Kjøres også ved
+// oppstart, så innstillingene er skjult før noen sak er åpnet.
+function dpApplyServerChrome() {
+  var served = _docServedLocally(window.location);
+  if (!served && _dpTab === 'docs') _dpTab = 'overview';
+  var bar = document.getElementById('dp-bar');
+  if (bar) bar.hidden = !served;
+  var rulesRow = document.getElementById('settings-dp-rules');
+  if (rulesRow) rulesRow.hidden = !served;
+  return served;
+}
+
 // Fokusmodus gjelder bare på fanen Dokumenter; Oversikt har alltid hele toppfeltet.
 function _dpApplyFocus() {
   // Uten serveren er panelvalgene (og dermed «Avslutt fokus») skjult, så fokus
@@ -124,6 +138,7 @@ function _dpApplyFocus() {
 }
 
 function dpApplyTab() {
+  var served = dpApplyServerChrome();
   var docs = _dpTab === 'docs';
   var view = document.getElementById('view-sak');
   if (view) view.classList.toggle('is-docs-tab', docs);
@@ -134,7 +149,7 @@ function dpApplyTab() {
   if (docs !== _dpWasDocs) _dpDrawerSet(docs);
   _dpWasDocs = docs;
   var tb = document.getElementById('dp-toolbar');
-  if (tb) tb.hidden = !docs || !_docServedLocally(window.location);
+  if (tb) tb.hidden = !docs || !served;
   var viewer = document.getElementById('sak-viewer');
   if (viewer) viewer.hidden = !docs;
   [['overview', 'sak-tab-overview'], ['docs', 'sak-tab-docs']].forEach(function(t) {
@@ -267,29 +282,15 @@ function _dpFillRuleInputs() {
   });
 }
 
-function _dpShowNotice(text) {
-  var n = document.getElementById('dp-notice');
-  if (!n) return;
-  n.hidden = !text;
-  n.innerHTML = text || '';
-}
-
 function renderDocPanes() {
   _dpFillRuleInputs();
   if (_dpTab !== 'docs') return;
   var cas = _dpActiveCase();
   if (!cas) return;
   _dpBuild();
-  var served = _docServedLocally(window.location);
-  var body = document.getElementById('dp-body');
-  document.getElementById('dp-toolbar').hidden = !served;
-  if (!served) {
-    body.hidden = true;
-    _dpShowNotice('Dokumentpaneler krever den lokale serveren. Start <strong>Start-PatentDesk.ps1</strong> og åpne PatentDesk via <strong>http://localhost:8080</strong>. Filene kan fortsatt åpnes fra listen «Dokumenter» øverst.');
-    return;
-  }
-  body.hidden = false;
-  _dpShowNotice('');
+  if (!_docServedLocally(window.location)) return;
+  document.getElementById('dp-toolbar').hidden = false;
+  document.getElementById('dp-body').hidden = false;
   _dpApplyLayout();
   _dpFitHeight();
 
@@ -374,7 +375,7 @@ var _folderSyncKey = null; // nøkkelen til lesingen som er gjort i denne åpnin
 // Hva en lesing gjelder: saken, saksnummeret (mappenavnet) og dokumentroten.
 // Endres noe av det, er en gammel lesing ikke lenger riktig og leses på nytt.
 function _dpFolderKey(cas) {
-  return cas ? cas.id + '|' + cas.caseNumber + '|' + _docRootNormalize(loadDocRoot()) : null;
+  return cas ? cas.id + '|' + cas.caseNumber + '|' + _docRootNormalize(loadDocRoot()) + '|' + _folderGen : null;
 }
 // Lesingen for saken slik den står nå, eller null hvis den gjelder noe annet.
 function dpFolderListing(cas) {
@@ -383,30 +384,157 @@ function dpFolderListing(cas) {
 }
 
 function dpSyncFolder(id) {
-  if (!_docServedLocally(window.location) || typeof fetch !== 'function') return;
   var cas = cases.find(function(c) { return c.id === id; });
   if (!cas) return;
+  var mode = _dpSyncMode();
   var key = _dpFolderKey(cas);
-  var url = window.location.origin + '/docs/list?root=' + encodeURIComponent(_docRootNormalize(loadDocRoot())) +
-    '&case=' + encodeURIComponent(cas.caseNumber);
-  fetch(url, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(raw) {
-    var listing = normalizeFolderListing(raw);
-    if (!listing) return;
-    // Saken kan være slettet, ha fått nytt saksnummer eller ny dokumentrot mens vi
-    // ventet: da gjelder svaret en annen mappe, og skal ikke brukes.
-    if (_dpFolderKey(cases.find(function(c) { return c.id === id; })) !== key) return;
-    listing.key = key;
-    _folderListing[id] = listing;
-    var data = loadSakData(id);
-    var current = (data && Array.isArray(data.files)) ? data.files : [];
-    var add = listing.exists ? folderFilesToAdd(current, listing.files) : [];
-    if (add.length) {
-      dispatch('FILES_SYNC', { id: id, names: add });
-    } else if (activeSakId === id && data) {
-      renderSakFileList(Object.assign({}, data, { files: current }));
-      renderDocPanes();
-    }
-  }).catch(function() {});
+  var read;
+  if (mode === 'server') {
+    if (typeof fetch !== 'function') return;
+    var url = window.location.origin + '/docs/list?root=' + encodeURIComponent(_docRootNormalize(loadDocRoot())) +
+      '&case=' + encodeURIComponent(cas.caseNumber);
+    read = fetch(url, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; });
+  } else if (mode === 'picker' && folderSyncButton(mode, !!_folderHandle, _folderGranted).autoSync) {
+    read = readCaseFolder(_folderHandle, cas.caseNumber);
+  } else {
+    return;
+  }
+  read.then(function(raw) { _dpApplyListing(id, key, raw); }).catch(function() {});
+}
+
+function _dpApplyListing(id, key, raw) {
+  var listing = normalizeFolderListing(raw);
+  if (!listing) return;
+  // Saken kan være slettet, ha fått nytt saksnummer eller ny dokumentrot mens vi
+  // ventet: da gjelder svaret en annen mappe, og skal ikke brukes.
+  if (_dpFolderKey(cases.find(function(c) { return c.id === id; })) !== key) return;
+  listing.key = key;
+  _folderListing[id] = listing;
+  var data = loadSakData(id);
+  var current = (data && Array.isArray(data.files)) ? data.files : [];
+  var add = listing.exists ? folderFilesToAdd(current, listing.files) : [];
+  if (add.length) {
+    dispatch('FILES_SYNC', { id: id, names: add });
+  } else if (activeSakId === id && data) {
+    renderSakFileList(Object.assign({}, data, { files: current }));
+    renderDocPanes();
+  }
+}
+
+// ── Mappevelger uten server ────────────────────────
+// Uten den lokale serveren leser nettleseren saksmappen selv (Chrome/Edge).
+// Brukeren velger dokumentroten én gang; mappehåndtaket huskes i IndexedDB.
+// Tillatelsen må ofte gis på nytt i en ny økt, og bare et klikk kan be om den.
+var _folderHandle = null;    // dokumentroten brukeren har valgt, eller null
+var _folderGranted = false;  // har vi lesetilgang nå, uten å spørre?
+var _folderGen = 0;          // øker hver gang mappen byttes, så svar fra den forrige mappen forkastes
+var _folderLoaded = false;   // er det lagrede håndtaket lest ferdig (så knappen ikke viser feil tekst først)?
+var _FH_DB_NAME = 'patentdesk_folder';
+var _FH_STORE = 'handles';
+var _FH_KEY = 'docroot';
+
+function _fhOpenDb(cb) {
+  var req;
+  // indexedDB.open kan kaste synkront (privat modus, blokkert lagring)
+  try { req = indexedDB.open(_FH_DB_NAME, 1); }
+  catch(e) { cb(e); return; }
+  req.onupgradeneeded = function(e) {
+    var db = e.target.result;
+    if (!db.objectStoreNames.contains(_FH_STORE)) db.createObjectStore(_FH_STORE);
+  };
+  req.onsuccess = function(e) { cb(null, e.target.result); };
+  req.onerror   = function()  { cb(req.error || new Error('IndexedDB utilgjengelig')); };
+}
+// handle = null fjerner det lagrede håndtaket.
+function _fhSave(handle, cb) {
+  _fhOpenDb(function(err, db) {
+    if (err) { cb(err); return; }
+    var tx;
+    try {
+      tx = db.transaction(_FH_STORE, 'readwrite');
+      if (handle) tx.objectStore(_FH_STORE).put(handle, _FH_KEY);
+      else tx.objectStore(_FH_STORE).delete(_FH_KEY);
+    } catch(e) { db.close(); cb(e); return; }
+    tx.oncomplete = function() { db.close(); cb(null); };
+    tx.onerror    = function() { db.close(); cb(tx.error || new Error('Kunne ikke lagre mappen')); };
+  });
+}
+function _fhLoad(cb) {
+  _fhOpenDb(function(err, db) {
+    if (err) { cb(err); return; }
+    var req;
+    try { req = db.transaction(_FH_STORE, 'readonly').objectStore(_FH_STORE).get(_FH_KEY); }
+    catch(e) { db.close(); cb(e); return; }
+    req.onsuccess = function() { db.close(); cb(null, req.result || null); };
+    req.onerror   = function() { db.close(); cb(req.error || new Error('Kunne ikke lese mappen')); };
+  });
+}
+
+function _dpSyncMode() {
+  return docFolderSyncMode(_docServedLocally(window.location), folderPickerSupported(window));
+}
+
+function dpUpdateFolderButton() {
+  var st = folderSyncButton(_dpSyncMode(), !!_folderHandle, _folderGranted);
+  var row = document.getElementById('sak-docs-sync-row');
+  if (!row) return;
+  row.hidden = !st.visible || !_folderLoaded;
+  document.getElementById('btn-sak-docs-sync-label').textContent = st.label;
+  document.getElementById('btn-sak-docs-repick').hidden = !_folderHandle;
+}
+
+// Les saksmappen på nytt for saken som er åpen (nytt håndtak, ny tillatelse).
+function _dpResync() {
+  _folderSyncKey = null;
+  var c = _dpActiveCase();
+  if (c) dpOnSakRendered(c.id);
+}
+
+function dpPickFolder() {
+  var p;
+  try { p = window.showDirectoryPicker({ id: 'patentdesk-docroot', mode: 'read' }); }
+  catch(e) { return; }
+  p.then(function(h) {
+    _folderHandle = h;
+    _folderGen++;
+    _folderLoaded = true;
+    _folderGranted = true;
+    _fhSave(h, function() {});
+    dpUpdateFolderButton();
+    _dpResync();
+  }, function() { /* avbrutt, eller avvist av nettleseren */ });
+}
+
+function dpFolderButtonClick() {
+  if (!_folderHandle) { dpPickFolder(); return; }
+  folderPermissionGranted(_folderHandle, true).then(function(ok) {
+    _folderGranted = ok;
+    dpUpdateFolderButton();
+    if (ok) _dpResync();
+  });
+}
+
+// load: hvor det lagrede håndtaket hentes fra (standard IndexedDB).
+function dpInitFolderHandle(load) {
+  if (_dpSyncMode() !== 'picker') return;
+  (load || _fhLoad)(function(err, h) {
+    _folderLoaded = true;
+    // Valgte brukeren en mappe mens vi leste, gjelder den, ikke den gamle.
+    if (err || !h || _folderHandle) { dpUpdateFolderButton(); return; }
+    _folderHandle = h;
+    _folderGen++;
+    folderPermissionGranted(h, false).then(function(ok) {
+      if (_folderHandle !== h) return;
+      _folderGranted = ok;
+      dpUpdateFolderButton();
+      if (ok) _dpResync();
+    });
+  });
+}
+
+// Mappenavnet som faktisk leses, til meldingen «Saksmappen finnes ikke».
+function dpFolderRootName() {
+  return (_dpSyncMode() === 'picker' && _folderHandle && _folderHandle.name) ? String(_folderHandle.name) : null;
 }
 
 // ── Hendelser ──────────────────────────────────────
@@ -420,6 +548,9 @@ document.getElementById('sak-tabs').addEventListener('keydown', function(e) {
   var b = document.getElementById(_dpTab === 'docs' ? 'sak-tab-docs' : 'sak-tab-overview');
   if (b) b.focus();
 });
+
+document.getElementById('btn-sak-docs-sync').addEventListener('click', dpFolderButtonClick);
+document.getElementById('btn-sak-docs-repick').addEventListener('click', dpPickFolder);
 
 document.getElementById('dp-toolbar').addEventListener('click', function(e) {
   if (e.target.closest('#dp-focus-toggle')) { _dpSetLayout({ focus: !docLayout.focus }); return; }
@@ -529,3 +660,5 @@ document.getElementById('dp-body').addEventListener('keydown', function(e) {
 });
 
 _dpFillRuleInputs();
+dpApplyServerChrome();
+dpInitFolderHandle();
