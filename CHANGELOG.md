@@ -7,6 +7,10 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Added
+- **Bruksstatistikk (Innstillinger → Bruk).** Valgfri og avslått som standard. Når den er på, telles klikk per knapp og side, per dag, og tellerne skrives til `usage.json` i datamappen (ingen saksinnhold, bare funksjons-ID, antall og appversjon). Visningen i appen kan filtreres på 7, 30 og 90 dager eller alt, og viser hva som er brukt, hva som ikke er brukt i perioden og hva som aldri er brukt. Funksjons-ID-ene utledes fra markeringen, så nye knapper kommer med uten eget register. Uten tilgang til datamappen venter tellerne i nettleseren til tilgang er gitt. Eksport til JSON og nullstilling finnes. Filen er ikke en del av saksdataene og er ikke med i eksport/import.
+- **Tegnede knapper i bruksstatistikken.** Knapper og avkrysninger som koden tegner underveis (kravvurdering, innvendinger, dokumentknapper, sakskort-menyer, datovelger m.fl.) får faste navn (`data-feature`) og telles nå, og står i «Aldri brukt» med norsk visningsnavn selv om de ikke er på skjermen. Listen (`USAGE_DYNAMIC_FEATURES`) holdes i takt med koden av testene: en ny tegnet knapp uten navn eller oppføring stopper `npm test`.
+
 ### Removed
 - Ubrukt kode og ubrukte stiler ryddet bort (ca. 11 KB mindre fil): funksjonen `sakSubtitle` (undertittelen i sakshodet er for lengst fjernet fra visningen) og 102 CSS-velgere for klasser som ingen skjerm bruker lenger (bl.a. gamle bulk-, historikk- og diagramstiler). Ingen synlig endring.
 

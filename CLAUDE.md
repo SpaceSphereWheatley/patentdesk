@@ -44,6 +44,11 @@ imports, modules, external dependencies or CDN links; the owner downloads
   Only `{code, inUse}` is persisted per case; descriptions are looked up live
   from `_cpcDb` and never stored.
 
+Separately, the optional usage tracker (`src/js/09a-usage-tracker.js`, off by
+default via `pt_usage_enabled`) writes per-day click counters to `usage.json`
+in the data folder (not part of export/import, no `SCHEMA_VERSION` impact),
+buffering unwritten counts in `pt_usage_buf`. It never stores case content.
+
 These two stores have distinct responsibilities. Do not conflate them.
 
 ### CSS conventions

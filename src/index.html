@@ -160,9 +160,9 @@
 
       <div class="drawer-footer">
         <div class="drawer-date" id="current-date"></div>
-        <a class="nipo-badge nipo-link" href="https://www.patentstyret.no" target="_blank" rel="noopener">Patentstyret</a>
+        <a class="nipo-badge nipo-link" data-feature="link-patentstyret" href="https://www.patentstyret.no" target="_blank" rel="noopener">Patentstyret</a>
         <span class="drawer-version logo-version"></span>
-        <a class="upd-btn changelog-link" href="https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
+        <a class="upd-btn changelog-link" data-feature="link-changelog" href="https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
           <svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg>
           Endringslogg
         </a>
@@ -455,6 +455,7 @@
             <button class="settings-nav-item" id="settings-tab-frister" data-settings-tab="frister" role="tab" aria-controls="settings-pane-frister">Frister</button>
             <button class="settings-nav-item" id="settings-tab-saksbehandling" data-settings-tab="saksbehandling" role="tab" aria-controls="settings-pane-saksbehandling">Saksbehandling</button>
             <button class="settings-nav-item" id="settings-tab-data" data-settings-tab="data" role="tab" aria-controls="settings-pane-data">Data</button>
+            <button class="settings-nav-item" id="settings-tab-bruk" data-settings-tab="bruk" role="tab" aria-controls="settings-pane-bruk">Bruk</button>
           </nav>
           <div class="settings-panes">
             <div class="settings-pane" id="settings-pane-arbeidsmengde" data-settings-pane="arbeidsmengde" role="tabpanel" aria-labelledby="settings-tab-arbeidsmengde">
@@ -826,6 +827,31 @@
                 </div>
               </section>
             </div>
+
+            <div class="settings-pane" id="settings-pane-bruk" data-settings-pane="bruk" role="tabpanel" aria-labelledby="settings-tab-bruk">
+              <section class="settings-section">
+                <h2 class="settings-section-title">Bruk av funksjoner</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Registrer bruk av funksjoner</span>
+                      <span class="settings-label-sub">Teller klikk per knapp og side, per dag. Lagres i usage.json i <a href="#" data-goto-settings-tab="data">datamappen</a>. Aldri saksinnhold.</span>
+                    </div>
+                    <input type="checkbox" class="settings-checkbox" id="usage-enabled-cb" title="Slå registrering av bruk på/av" />
+                  </div>
+                </div>
+                <div class="us-range" role="group" aria-label="Periode">
+                  <button class="s-btn" id="usage-range-7" data-usage-range="7">7 dager</button>
+                  <button class="s-btn" id="usage-range-30" data-usage-range="30">30 dager</button>
+                  <button class="s-btn" id="usage-range-90" data-usage-range="90">90 dager</button>
+                  <button class="s-btn" id="usage-range-all" data-usage-range="all">Alt</button>
+                  <span class="us-spacer"></span>
+                  <button class="s-btn" id="usage-export">Eksporter JSON</button>
+                  <button class="s-btn s-btn-danger" id="usage-reset">Nullstill</button>
+                </div>
+                <div id="usage-view" class="us-view"></div>
+              </section>
+            </div>
           </div>
         </div>
 
@@ -921,13 +947,13 @@
           </div>
           <div class="dp-toolbar" id="dp-toolbar" hidden>
             <div class="dp-seg" role="group" aria-label="Antall paneler">
-              <button type="button" class="dp-seg-btn" data-dp-count="1" aria-pressed="false">1</button>
-              <button type="button" class="dp-seg-btn" data-dp-count="2" aria-pressed="false">2</button>
-              <button type="button" class="dp-seg-btn" data-dp-count="3" aria-pressed="false">3</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-count-1" data-dp-count="1" aria-pressed="false">1</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-count-2" data-dp-count="2" aria-pressed="false">2</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-count-3" data-dp-count="3" aria-pressed="false">3</button>
             </div>
             <div class="dp-seg" role="group" aria-label="Kravpanelets plassering">
-              <button type="button" class="dp-seg-btn" data-dp-side="left" aria-pressed="false">Krav til venstre</button>
-              <button type="button" class="dp-seg-btn" data-dp-side="right" aria-pressed="false">Krav til høyre</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-side-left" data-dp-side="left" aria-pressed="false">Krav til venstre</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-side-right" data-dp-side="right" aria-pressed="false">Krav til høyre</button>
             </div>
             <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle">Skjul krav</button>
             <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-tools-toggle" title="Skjuler PDF-leserens verktøylinje (og dermed uthevingsverktøyene)">Skjul PDF-verktøy</button>
@@ -1045,8 +1071,8 @@
                 <span class="sak-section-title-right">
                   <span class="gr-warn" id="sak-gr-warn" style="display:none;"></span>
                   <span class="sak-seg" role="group" aria-label="Visning av mothold">
-                    <button type="button" class="sak-seg-btn is-on" data-mh-view="full" aria-pressed="true">Detaljer</button>
-                    <button type="button" class="sak-seg-btn" data-mh-view="report" aria-pressed="false">Rapport</button>
+                    <button type="button" class="sak-seg-btn is-on" data-feature="mh-view-full" data-mh-view="full" aria-pressed="true">Detaljer</button>
+                    <button type="button" class="sak-seg-btn" data-feature="mh-view-report" data-mh-view="report" aria-pressed="false">Rapport</button>
                   </span>
                 </span>
               </h2>
@@ -1158,8 +1184,8 @@
                 <span class="sak-section-title-left">Notater</span>
                 <span class="sak-section-title-right">
                   <span class="sak-seg" role="group" aria-label="Notattype">
-                    <button type="button" class="sak-seg-btn is-on" data-notes="vis" aria-pressed="true">Synlig i oversikten</button>
-                    <button type="button" class="sak-seg-btn" data-notes="int" aria-pressed="false">Intern</button>
+                    <button type="button" class="sak-seg-btn is-on" data-feature="notes-vis" data-notes="vis" aria-pressed="true">Synlig i oversikten</button>
+                    <button type="button" class="sak-seg-btn" data-feature="notes-int" data-notes="int" aria-pressed="false">Intern</button>
                   </span>
                 </span>
               </h2>
@@ -1329,9 +1355,9 @@
           <span class="modal-tl-label">Arbeidsplan — forhåndsvisning</span>
           <div class="modal-tl-controls">
             <div class="tl-header" style="margin-bottom:0;">
-              <button class="tl-horizon-btn active" data-modal-horizon="90">3 mnd</button>
-              <button class="tl-horizon-btn" data-modal-horizon="180">6 mnd</button>
-              <button class="tl-horizon-btn" data-modal-horizon="365">1 år</button>
+              <button class="tl-horizon-btn active" data-feature="horizon-90" data-modal-horizon="90">3 mnd</button>
+              <button class="tl-horizon-btn" data-feature="horizon-180" data-modal-horizon="180">6 mnd</button>
+              <button class="tl-horizon-btn" data-feature="horizon-365" data-modal-horizon="365">1 år</button>
             </div>
             <div class="tl-axis-toggle">
               <span class="tl-axis-lbl active" id="modal-lbl-mnd">mnd</span>
@@ -1941,6 +1967,7 @@
 <!-- @include js/07-ui-nav-lists.js -->
 <!-- @include js/08-ui-dialogs-status.js -->
 <!-- @include js/09-ui-backup-workfile.js -->
+<!-- @include js/09a-usage-tracker.js -->
 <!-- @include js/10-ui-import-export-belegg.js -->
 <!-- @include js/11-case-helpers-ops.js -->
 <!-- @include js/12-case-render.js -->

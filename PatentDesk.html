@@ -1017,6 +1017,21 @@ a:focus-visible,
 .cases-tl-dock.is-collapsed #cases-tl-host { display: none; }
 .chart-empty { margin: 0; padding: var(--space-8) var(--space-6); text-align: center; color: var(--muted-text); font-size: var(--text-sm); }
 .chart-empty[hidden], .chart-canvas-wrap[hidden] { display: none; }
+
+/* Bruksstatistikk (Innstillinger → Bruk) */
+.us-range   { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); align-items: center; }
+.us-range .s-btn.is-active { color: var(--primary); border-color: var(--primary); background: rgba(37,99,235,0.08); }
+.us-spacer  { flex: 1; }
+.us-view    { margin-top: var(--space-6); }
+.us-note    { font-size: var(--text-sm); color: var(--muted-text); margin-bottom: var(--space-4); }
+.us-title   { font-family: var(--font-head); font-size: var(--text-sm); font-weight: normal; color: var(--muted-text); letter-spacing: var(--tracking-label); text-transform: uppercase; margin: var(--space-7) 0 var(--space-3); }
+.us-count   { color: var(--muted-text); }
+.us-row     { display: flex; align-items: baseline; gap: var(--space-6); padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
+.us-name    { flex: 1; min-width: 0; }
+.us-id      { margin-left: var(--space-4); font-size: var(--text-sm); color: var(--muted-text); font-family: ui-monospace, monospace; }
+.us-num     { min-width: 3em; text-align: right; font-variant-numeric: tabular-nums; }
+.us-last    { min-width: 7em; text-align: right; color: var(--muted-text); font-variant-numeric: tabular-nums; }
+.us-empty   { font-size: var(--text-sm); color: var(--muted-text); }
 /* ── Hjem-side ────────────────────────────────────── */
 .drawer-logo:hover { opacity: 0.8; }
 
@@ -3482,9 +3497,9 @@ button.ob-del:hover { color: var(--text-on-no); }
 
       <div class="drawer-footer">
         <div class="drawer-date" id="current-date"></div>
-        <a class="nipo-badge nipo-link" href="https://www.patentstyret.no" target="_blank" rel="noopener">Patentstyret</a>
+        <a class="nipo-badge nipo-link" data-feature="link-patentstyret" href="https://www.patentstyret.no" target="_blank" rel="noopener">Patentstyret</a>
         <span class="drawer-version logo-version"></span>
-        <a class="upd-btn changelog-link" href="https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
+        <a class="upd-btn changelog-link" data-feature="link-changelog" href="https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
           <svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg>
           Endringslogg
         </a>
@@ -3777,6 +3792,7 @@ button.ob-del:hover { color: var(--text-on-no); }
             <button class="settings-nav-item" id="settings-tab-frister" data-settings-tab="frister" role="tab" aria-controls="settings-pane-frister">Frister</button>
             <button class="settings-nav-item" id="settings-tab-saksbehandling" data-settings-tab="saksbehandling" role="tab" aria-controls="settings-pane-saksbehandling">Saksbehandling</button>
             <button class="settings-nav-item" id="settings-tab-data" data-settings-tab="data" role="tab" aria-controls="settings-pane-data">Data</button>
+            <button class="settings-nav-item" id="settings-tab-bruk" data-settings-tab="bruk" role="tab" aria-controls="settings-pane-bruk">Bruk</button>
           </nav>
           <div class="settings-panes">
             <div class="settings-pane" id="settings-pane-arbeidsmengde" data-settings-pane="arbeidsmengde" role="tabpanel" aria-labelledby="settings-tab-arbeidsmengde">
@@ -4148,6 +4164,31 @@ button.ob-del:hover { color: var(--text-on-no); }
                 </div>
               </section>
             </div>
+
+            <div class="settings-pane" id="settings-pane-bruk" data-settings-pane="bruk" role="tabpanel" aria-labelledby="settings-tab-bruk">
+              <section class="settings-section">
+                <h2 class="settings-section-title">Bruk av funksjoner</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Registrer bruk av funksjoner</span>
+                      <span class="settings-label-sub">Teller klikk per knapp og side, per dag. Lagres i usage.json i <a href="#" data-goto-settings-tab="data">datamappen</a>. Aldri saksinnhold.</span>
+                    </div>
+                    <input type="checkbox" class="settings-checkbox" id="usage-enabled-cb" title="Slå registrering av bruk på/av" />
+                  </div>
+                </div>
+                <div class="us-range" role="group" aria-label="Periode">
+                  <button class="s-btn" id="usage-range-7" data-usage-range="7">7 dager</button>
+                  <button class="s-btn" id="usage-range-30" data-usage-range="30">30 dager</button>
+                  <button class="s-btn" id="usage-range-90" data-usage-range="90">90 dager</button>
+                  <button class="s-btn" id="usage-range-all" data-usage-range="all">Alt</button>
+                  <span class="us-spacer"></span>
+                  <button class="s-btn" id="usage-export">Eksporter JSON</button>
+                  <button class="s-btn s-btn-danger" id="usage-reset">Nullstill</button>
+                </div>
+                <div id="usage-view" class="us-view"></div>
+              </section>
+            </div>
           </div>
         </div>
 
@@ -4243,13 +4284,13 @@ button.ob-del:hover { color: var(--text-on-no); }
           </div>
           <div class="dp-toolbar" id="dp-toolbar" hidden>
             <div class="dp-seg" role="group" aria-label="Antall paneler">
-              <button type="button" class="dp-seg-btn" data-dp-count="1" aria-pressed="false">1</button>
-              <button type="button" class="dp-seg-btn" data-dp-count="2" aria-pressed="false">2</button>
-              <button type="button" class="dp-seg-btn" data-dp-count="3" aria-pressed="false">3</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-count-1" data-dp-count="1" aria-pressed="false">1</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-count-2" data-dp-count="2" aria-pressed="false">2</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-count-3" data-dp-count="3" aria-pressed="false">3</button>
             </div>
             <div class="dp-seg" role="group" aria-label="Kravpanelets plassering">
-              <button type="button" class="dp-seg-btn" data-dp-side="left" aria-pressed="false">Krav til venstre</button>
-              <button type="button" class="dp-seg-btn" data-dp-side="right" aria-pressed="false">Krav til høyre</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-side-left" data-dp-side="left" aria-pressed="false">Krav til venstre</button>
+              <button type="button" class="dp-seg-btn" data-feature="dp-side-right" data-dp-side="right" aria-pressed="false">Krav til høyre</button>
             </div>
             <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle">Skjul krav</button>
             <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-tools-toggle" title="Skjuler PDF-leserens verktøylinje (og dermed uthevingsverktøyene)">Skjul PDF-verktøy</button>
@@ -4367,8 +4408,8 @@ button.ob-del:hover { color: var(--text-on-no); }
                 <span class="sak-section-title-right">
                   <span class="gr-warn" id="sak-gr-warn" style="display:none;"></span>
                   <span class="sak-seg" role="group" aria-label="Visning av mothold">
-                    <button type="button" class="sak-seg-btn is-on" data-mh-view="full" aria-pressed="true">Detaljer</button>
-                    <button type="button" class="sak-seg-btn" data-mh-view="report" aria-pressed="false">Rapport</button>
+                    <button type="button" class="sak-seg-btn is-on" data-feature="mh-view-full" data-mh-view="full" aria-pressed="true">Detaljer</button>
+                    <button type="button" class="sak-seg-btn" data-feature="mh-view-report" data-mh-view="report" aria-pressed="false">Rapport</button>
                   </span>
                 </span>
               </h2>
@@ -4480,8 +4521,8 @@ button.ob-del:hover { color: var(--text-on-no); }
                 <span class="sak-section-title-left">Notater</span>
                 <span class="sak-section-title-right">
                   <span class="sak-seg" role="group" aria-label="Notattype">
-                    <button type="button" class="sak-seg-btn is-on" data-notes="vis" aria-pressed="true">Synlig i oversikten</button>
-                    <button type="button" class="sak-seg-btn" data-notes="int" aria-pressed="false">Intern</button>
+                    <button type="button" class="sak-seg-btn is-on" data-feature="notes-vis" data-notes="vis" aria-pressed="true">Synlig i oversikten</button>
+                    <button type="button" class="sak-seg-btn" data-feature="notes-int" data-notes="int" aria-pressed="false">Intern</button>
                   </span>
                 </span>
               </h2>
@@ -4651,9 +4692,9 @@ button.ob-del:hover { color: var(--text-on-no); }
           <span class="modal-tl-label">Arbeidsplan — forhåndsvisning</span>
           <div class="modal-tl-controls">
             <div class="tl-header" style="margin-bottom:0;">
-              <button class="tl-horizon-btn active" data-modal-horizon="90">3 mnd</button>
-              <button class="tl-horizon-btn" data-modal-horizon="180">6 mnd</button>
-              <button class="tl-horizon-btn" data-modal-horizon="365">1 år</button>
+              <button class="tl-horizon-btn active" data-feature="horizon-90" data-modal-horizon="90">3 mnd</button>
+              <button class="tl-horizon-btn" data-feature="horizon-180" data-modal-horizon="180">6 mnd</button>
+              <button class="tl-horizon-btn" data-feature="horizon-365" data-modal-horizon="365">1 år</button>
             </div>
             <div class="tl-axis-toggle">
               <span class="tl-axis-lbl active" id="modal-lbl-mnd">mnd</span>
@@ -6694,9 +6735,9 @@ var _dp = (function() {
     popup.setAttribute('aria-label', 'Kalender');
     popup.innerHTML =
       '<div class="dp-header">' +
-        '<button type="button" class="dp-nav dp-prev" title="Forrige måned">&#8249;</button>' +
+        '<button type="button" class="dp-nav dp-prev" title="Forrige måned" data-feature="datepicker-prev-month">&#8249;</button>' +
         '<span class="dp-heading"></span>' +
-        '<button type="button" class="dp-nav dp-next" title="Neste måned">&#8250;</button>' +
+        '<button type="button" class="dp-nav dp-next" title="Neste måned" data-feature="datepicker-next-month">&#8250;</button>' +
       '</div>' +
       '<div class="dp-weekdays">' +
         NB_DAYS.map(function(d){ return '<span>' + d + '</span>'; }).join('') +
@@ -6751,7 +6792,7 @@ var _dp = (function() {
       var isToday = (d === tD && viewMonth === tM && viewYear === tY);
       cells += '<button type="button" class="dp-day' +
         (isSel ? ' dp-day-sel' : '') + (isToday ? ' dp-day-today' : '') +
-        '" data-day="' + d + '">' + d + '</button>';
+        '" data-day="' + d + '" data-feature="datepicker-pick-day">' + d + '</button>';
     }
     popup.querySelector('.dp-grid').innerHTML = cells;
   }
@@ -6795,7 +6836,7 @@ var _dp = (function() {
       w.appendChild(el);
       wrap = w;
     }
-    var triggerBtn = document.createElement('button');
+    var triggerBtn = document.createElement('button'); if (triggerBtn.dataset) triggerBtn.dataset.feature = 'datepicker-open';
     triggerBtn.type = 'button';
     triggerBtn.className = 'dp-trigger';
     triggerBtn.title = 'Velg dato';
@@ -10722,7 +10763,7 @@ function renderAllSortHead(show) {
     var dirTxt = cur.dir === 'asc' ? 'stigende' : 'synkende';
     return '<button type="button" class="clh clh-' + col[0] + (on ? ' is-on' : '') + '" data-sort="' + col[0] + '"' +
       ' aria-pressed="' + (on ? 'true' : 'false') + '"' +
-      ' title="Sorter på ' + col[1].toLowerCase() + (on ? ' (nå ' + dirTxt + ')' : '') + '">' + col[1] +
+      ' title="Sorter på ' + col[1].toLowerCase() + (on ? ' (nå ' + dirTxt + ')' : '') + '" data-feature="list-sort-column">' + col[1] +
       (on ? '<span class="clh-arrow" aria-hidden="true">' + (cur.dir === 'asc' ? '\u25B2' : '\u25BC') + '</span>' : '') +
       '</button>';
   }).join('') + '<span class="clh-menu" aria-hidden="true"></span>';
@@ -10913,11 +10954,11 @@ function openHistoryModal(id) {
           '<div class="hist-modal-main">' + mainHtml + '</div>' +
           '<div class="hist-modal-date">' +
             '<span class="hist-date-display">' + displayDate + '</span>' +
-            ' <button class="hist-date-edit-btn" data-idx="' + origIdx + '" title="Endre dato">✎</button>' +
+            ' <button class="hist-date-edit-btn" data-idx="' + origIdx + '" title="Endre dato" data-feature="history-edit-date">✎</button>' +
             '<span class="hist-date-input-wrap" style="display:none;">' +
               '<input class="field-input hist-date-input" type="text" placeholder="åååå.mm.dd" maxlength="10" value="' + (isoDate ? toDisplay(isoDate) : '') + '" data-idx="' + origIdx + '" />' +
-              '<button class="hist-date-save-btn btn-secondary btn-sm" data-idx="' + origIdx + '">Lagre</button>' +
-              '<button class="hist-date-cancel-btn btn-secondary btn-sm" data-idx="' + origIdx + '">Avbryt</button>' +
+              '<button class="hist-date-save-btn btn-secondary btn-sm" data-idx="' + origIdx + '" data-feature="history-save-date">Lagre</button>' +
+              '<button class="hist-date-cancel-btn btn-secondary btn-sm" data-idx="' + origIdx + '" data-feature="history-cancel-date">Avbryt</button>' +
             '</span>' +
           '</div>' +
         '</div>' +
@@ -11143,7 +11184,7 @@ function medlOutHtml(entry, withCase) {
   return '<div class="medl-out" data-id="' + esc(entry.caseId) + '">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg>' +
     '<span class="medl-out-text">Hos medleser: ' +
-      (withCase ? '<a href="#" class="medl-out-case" data-id="' + esc(entry.caseId) + '">' + esc(entry.caseNumber) + '</a> – ' : '') +
+      (withCase ? '<a href="#" class="medl-out-case" data-id="' + esc(entry.caseId) + '" data-feature="medlesing-open-case">' + esc(entry.caseNumber) + '</a> – ' : '') +
       '<strong>' + esc(entry.reader) + '</strong> · ' + esc(_medlSinceTxt(entry)) + '</span>' +
     '<span class="medl-out-actions">' +
       (withCase ? '' : '<button class="s-btn btn-medl-send" data-id="' + esc(entry.caseId) + '">Endre</button>') +
@@ -11172,7 +11213,7 @@ function renderMedlOutList() {
   tbody.innerHTML = rows.map(function(r) {
     var exists = cases.some(function(c) { return c.id === r.caseId; });
     var cn = exists
-      ? '<a href="#" class="medl-out-case" data-id="' + esc(r.caseId) + '">' + esc(r.caseNumber) + '</a>'
+      ? '<a href="#" class="medl-out-case" data-id="' + esc(r.caseId) + '" data-feature="medlesing-open-case">' + esc(r.caseNumber) + '</a>'
       : esc(r.caseNumber);
     var status = r.open
       ? '<span class="medl-status-pill">Hos medleser</span>'
@@ -11265,7 +11306,7 @@ function renderMedleserList() {
   el.innerHTML = medleserList.map(function(m, i) {
     return '<div class="vac-row medleser-row' + (m.active ? '' : ' medleser-inactive') + '">' +
       '<span class="vac-label">' + esc(m.name) + '</span>' +
-      '<label class="medleser-active"><input type="checkbox" class="medleser-toggle" data-idx="' + i + '"' + (m.active ? ' checked' : '') + ' /> aktiv</label>' +
+      '<label class="medleser-active"><input type="checkbox" class="medleser-toggle" data-idx="' + i + '"' + (m.active ? ' checked' : '') + '  data-feature="medlesing-reader-active"/> aktiv</label>' +
       '<button class="btn-icon btn-medleser-del" data-idx="' + i + '" title="Fjern fra lista" aria-label="Fjern ' + esc(m.name) + '">✕</button>' +
     '</div>';
   }).join('');
@@ -11913,7 +11954,7 @@ function renderCle() {
     var itemsHtml = phase.items.map(function(item) {
       return '<div class="cle-item" data-pi="' + pi + '" data-id="' + esc(item.id) + '">' +
         '<input class="cle-item-label" type="text" value="' + esc(item.label) + '" placeholder="Punkt…" />' +
-        '<button class="cle-btn-del-item" title="Slett punkt">✕</button>' +
+        '<button class="cle-btn-del-item" title="Slett punkt" data-feature="checklist-delete-item">✕</button>' +
       '</div>';
     }).join('');
     return '<div class="cle-phase" data-pi="' + pi + '">' +
@@ -11923,7 +11964,7 @@ function renderCle() {
       '<div class="cle-items">' + itemsHtml + '</div>' +
       '<div class="cle-add-item-row">' +
         '<input class="cle-add-item-input" type="text" placeholder="Legg til punkt…" />' +
-        '<button class="cle-btn-add-item">+ Legg til</button>' +
+        '<button class="cle-btn-add-item" data-feature="checklist-add-item">+ Legg til</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -11943,7 +11984,7 @@ function renderCle() {
       div.dataset.pi = pi;
       div.dataset.id = newId;
       div.innerHTML = '<input class="cle-item-label" type="text" value="' + esc(label) + '" placeholder="Punkt…" />' +
-        '<button class="cle-btn-del-item" title="Slett punkt">✕</button>';
+        '<button class="cle-btn-del-item" title="Slett punkt" data-feature="checklist-delete-item">✕</button>';
       div.querySelector('.cle-btn-del-item').addEventListener('click', function() { div.remove(); });
       itemsEl.appendChild(div);
       inp.value = '';
@@ -12432,9 +12473,9 @@ function _wfShowPermBar() {
   bar.setAttribute('role', 'status');
   var span = document.createElement('span');
   span.textContent = 'Datamappen er ikke tilkoblet';
-  var grant = document.createElement('button');
+  var grant = document.createElement('button'); if (grant.dataset) grant.dataset.feature = 'workfile-grant-access';
   grant.textContent = 'Gi tilgang';
-  var later = document.createElement('button');
+  var later = document.createElement('button'); if (later.dataset) later.dataset.feature = 'workfile-grant-later';
   later.className = 'wf-later';
   later.textContent = 'Senere';
   bar.appendChild(span);
@@ -12457,6 +12498,7 @@ function _wfRequestAccess() {
     if (p !== 'granted') { showToast('Tilgang ble ikke gitt'); return; }
     _wfHidePermBar();
     _bkUpdateSettingsUI();
+    usageScheduleFlush();
     _wfSync();
   }).catch(function() {});
 }
@@ -12487,6 +12529,501 @@ function _wfAutoAskOnClick(e) {
 }
 document.addEventListener('click', _wfAutoAskOnClick, true);
 
+// ── Bruksstatistikk ────────────────────────────────
+// Valgfri (av som standard): teller klikk per funksjon og dag, og skriver
+// tellerne til usage.json i datamappen. Bare funksjons-ID og antall lagres —
+// aldri saksinnhold. Funksjons-ID-en utledes fra markeringen (data-feature,
+// id, data-page, data-settings-tab, data-sak-section m.fl.), så nye knapper blir
+// med uten et eget register. Tellere som ikke kan skrives ennå (ingen
+// datamappe eller tilgang) venter i localStorage (pt_usage_buf).
+var USAGE_ENABLED_KEY = 'pt_usage_enabled';
+var USAGE_BUF_KEY     = 'pt_usage_buf';
+var USAGE_INFLIGHT_KEY = 'pt_usage_inflight'; // det som skrives akkurat nå, til skrivingen er bekreftet
+var USAGE_FILE_NAME   = 'usage.json';
+var USAGE_STATIC_SEL  = 'button, a[href], select, summary, [role="tab"], input[type="checkbox"], input[type="radio"], [data-feature]';
+var _USAGE_FLUSH_MS   = 5000;
+// Funksjoner som tegnes av koden og derfor ikke finnes i markeringen når «Bruk»
+// åpnes. Listen gir dem et navn i «Aldri brukt». Den holdes i takt med koden av
+// test/usage.test.js: en ny tegnet knapp uten oppføring (eller en oppføring uten
+// knapp) stopper testene. Nøkkelen er funksjons-ID-en, verdien visningsnavnet.
+var USAGE_DYNAMIC_FEATURES = {
+  'home-row-more': 'Hjem: Flere handlinger (⋯)',
+  'log-edit-date': 'Sakslogg: Endre dato',
+  'priorart-delete': 'Mothold: Merk ikke lenger relevant (slett)',
+  'backup-restore-snapshot': 'Gjenopprett øyeblikksbilde',
+  'btn-cpc-empty-add': 'CPC: Legg til klasse (tom liste)',
+  'btn-cpc-notice-dismiss': 'CPC-varsel: Lukk',
+  'btn-cpc-notice-load': 'CPC-varsel: Last inn',
+  'btn-cpc-reload': 'CPC: Last inn på nytt',
+  'btn-empty-clear-filter': 'Tom liste: Tøm filter',
+  'btn-mh-empty-add': 'Mothold: Legg til (tom liste)',
+  'btn-undo-action': 'Angre',
+  'bulk-delete-row': 'Bulk-import: Fjern rad',
+  'bulk-select-row': 'Bulk-import: Velg rad',
+  'checklist-add-item': 'Sjekkliste: Legg til punkt',
+  'checklist-delete-item': 'Sjekkliste: Slett punkt',
+  'checklist-toggle-item': 'Sjekkliste: Kryss av punkt',
+  'claim-change-changed': 'Krav: Endret',
+  'claim-change-unchanged': 'Krav: Uendret',
+  'claim-dependency-reset': 'Krav: Tilbake til automatisk tilhørighet',
+  'claim-dependency-toggle': 'Krav: Selvstendig/uselvstendig',
+  'claim-doc-popover': 'Krav: Velg mothold',
+  'claim-doc-popover-copy': 'Krav: Kopier mothold fra forrige krav',
+  'claim-doc-popover-option': 'Krav: Velg ett mothold i listen',
+  'claim-formal': 'Krav: Formell vurdering',
+  'claim-inventive': 'Krav: Oppfinnelseshøyde',
+  'claim-inventive-inherited': 'Krav: Oppfinnelseshøyde (arvet)',
+  'claim-novelty': 'Krav: Nyhet',
+  'claim-novelty-inherited': 'Krav: Nyhet (arvet)',
+  'claim-origin': 'Krav: Opphav i brev',
+  'claim-p13': 'Krav: § 13-grunnlag',
+  'class:btn-active-toggle': 'Meny: Marker som pågående / fjern markering',
+  'class:btn-card-hist': 'Sakskort: Historikk',
+  'class:btn-card-more': 'Sakskort: Flere handlinger (⋯)',
+  'class:btn-copy-path': 'Meny: Kopier sti',
+  'class:btn-del': 'Meny: Slett sak',
+  'class:btn-edit': 'Meny: Rediger sak',
+  'class:btn-home-del': 'Hjem: Slett',
+  'class:btn-home-edit': 'Hjem: Rediger',
+  'class:btn-medl-return': 'Medlesing: Tilbake fra medlesing',
+  'class:btn-medl-send': 'Medlesing: Send/endre medlesing',
+  'class:btn-medleser-del': 'Medlesere: Fjern fra lista',
+  'class:btn-row-action': 'Kortmeny: Statushandling (Brev sendt / Svar mottatt / Avgjør / Utført)',
+  'class:btn-row-outcome': 'Kortmeny: Endre utfall',
+  'class:btn-sak-class-del': 'Saken: Fjern CPC-klasse',
+  'class:btn-sak-copy-path': 'Saken: Kopier sti',
+  'class:btn-sak-del': 'Saken: Slett',
+  'class:btn-sak-edit': 'Saken: Rediger',
+  'class:btn-sak-outcome': 'Saken: Utfall',
+  'class:btn-unassigned-drop': 'Ikke fordelt: Fikk den ikke (slett)',
+  'class:btn-unassigned-off': 'Ikke fordelt: Bekreft fordelt',
+  'class:btn-unassigned-on': 'Ikke fordelt: Marker som ikke fordelt',
+  'class:btn-vac-del': 'Ferie: Slett',
+  'class:btn-vac-edit': 'Ferie: Rediger',
+  'cpc-in-use': 'CPC: I bruk',
+  'datepicker-next-month': 'Datovelger: Neste måned',
+  'datepicker-open': 'Datovelger: Åpne',
+  'datepicker-pick-day': 'Datovelger: Velg dag',
+  'datepicker-prev-month': 'Datovelger: Forrige måned',
+  'doc-copy-path': 'Dokument: Kopier sti',
+  'doc-delete': 'Dokument: Slett',
+  'doc-open': 'Dokument: Åpne',
+  'doc-rename': 'Dokument: Endre navn',
+  'docpane-file-pick': 'Dokumentpanel: Velg fil',
+  'history-cancel-date': 'Historikk: Avbryt datoendring',
+  'history-edit-date': 'Historikk: Endre dato',
+  'history-save-date': 'Historikk: Lagre dato',
+  'list-sort-column': 'Liste: Sorter kolonne',
+  'medlesing-open-case': 'Medlesing: Åpne sak',
+  'medlesing-reader-active': 'Medlesere: Aktiv',
+  'medlesing-toggle-item': 'Medlesing: Kryss av punkt',
+  'objection-add': 'Innvending: Legg til',
+  'objection-backfill': 'Innvending: Lagre nåværende vurdering som runde',
+  'objection-cancel': 'Innvending: Avbryt',
+  'objection-delete': 'Innvending: Slett',
+  'objection-is-new': 'Innvending: Ny i denne runden',
+  'objection-state': 'Innvending: Endre status',
+  'objection-submit': 'Innvending: Legg til (send skjema)',
+  'priorart-cited-elsewhere': 'Mothold: Også mothold i andre saker',
+  'priorart-cited-open': 'Mothold: Åpne sak der det er mothold',
+  'priorart-edit': 'Mothold: Rediger',
+  'priorart-flag': 'Mothold: P/E/D-markering',
+  'priorart-goto-details': 'Mothold: Vis i Detaljer',
+  'priorart-ops': 'Mothold: Hent fra EPO OPS',
+  'priorart-restore': 'Mothold: Gjenopprett',
+  'reply-toggle-item': 'Svar: Kryss av punkt',
+  'sak-frist-unpostpone': 'Saken: Fjern utsettelse',
+  'section-fold': 'Saken: Brett ut/sammen seksjon',
+  'tag-remove': 'Stikkord: Fjern',
+  'timeline-chip': 'Tidslinje: Filterchip',
+  'timeline-horizon': 'Tidslinje: Horisont',
+  'timeline-pin': 'Tidslinje: Forfalte saker utenfor bildet',
+  'update-download-link': 'Oppdatering: Last ned',
+  'workfile-grant-access': 'Arbeidsfil: Gi tilgang',
+  'workfile-grant-later': 'Arbeidsfil: Senere',
+};
+var _usageTimer    = null;
+var _usageFlushing = false;
+var _usageRange    = '30';
+var _usageResetArmed = null;
+var _usageRenderSeq = 0;
+
+// ── Rene funksjoner ────────────────────────────────
+// Funksjons-ID for ett element, eller null. Aldri innhold fra saker: bare
+// faste navn og verdier fra markeringen. Se test/usage.test.js.
+function usageFeatureKey(el) {
+  if (!el) return null;
+  var ds = el.dataset || {};
+  if (ds.feature) return String(ds.feature);
+  if (el.id) return String(el.id);
+  if (ds.page) return 'page:' + ds.page;
+  if (ds.settingsTab) return 'tab:' + ds.settingsTab;
+  if (ds.sakSection) return 'section:' + ds.sakSection;
+  if (ds.gotoSettingsTab) return 'goto-tab:' + ds.gotoSettingsTab;
+  if (ds.anchor) return 'anchor:' + ds.anchor;
+  if (ds.status) return 'status:' + ds.status;
+  if (ds.kind && ds.when) return 'filter:' + ds.kind + ':' + ds.when;
+  if (el.type === 'radio' && el.name) return 'radio:' + el.name + ':' + el.value;
+  // Dynamisk tegnede knapper bærer saksdata i data-attributtene (data-id,
+  // data-cn …) — de brukes ALDRI. Klassen btn-… er innholdsfri og skiller dem.
+  // Generelle stilklasser (btn-primary …) slår mange ulike knapper sammen og teller ikke.
+  var cls = typeof el.className === 'string' ? el.className.split(/\s+/) : [];
+  for (var i = 0; i < cls.length; i++) {
+    if (/^btn-[a-z0-9-]+$/.test(cls[i]) && !/^btn-(primary|secondary|danger|icon|sm)$/.test(cls[i])) return 'class:' + cls[i];
+  }
+  return null;
+}
+
+function usageIsEmpty(log) {
+  return !log || !log.days || Object.keys(log.days).length === 0;
+}
+
+// Nøkler som finnes på alle objekter ('constructor', '__proto__' …) kan ikke
+// brukes som teller-ID.
+function _usageBadKey(k) { return k in Object.prototype; }
+
+// Gyldig logg ut, eller null hvis innholdet ikke er en bruksfil. Ugyldige
+// datoer og tellere (ikke-heltall, ≤ 0) kastes bort.
+function usageNormalizeLog(p) {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+  if (!p.days || typeof p.days !== 'object' || Array.isArray(p.days)) return null;
+  var re = /^\d{4}-\d{2}-\d{2}$/;
+  var out = { v: 1, days: {}, versions: {} };
+  Object.keys(p.days).forEach(function(day) {
+    if (!re.test(day) || !p.days[day] || typeof p.days[day] !== 'object') return;
+    Object.keys(p.days[day]).forEach(function(id) {
+      var n = p.days[day][id];
+      if (_usageBadKey(id) || typeof n !== 'number' || n < 1 || Math.floor(n) !== n) return;
+      if (!out.days[day]) out.days[day] = {};
+      out.days[day][id] = n;
+    });
+  });
+  if (p.versions && typeof p.versions === 'object' && !Array.isArray(p.versions)) {
+    Object.keys(p.versions).forEach(function(ver) {
+      if (!_usageBadKey(ver) && typeof p.versions[ver] === 'string' && re.test(p.versions[ver])) out.versions[ver] = p.versions[ver];
+    });
+  }
+  return out;
+}
+
+// Sant hvis normaliseringen ikke kaster bort noe: ukjent versjon, ukjente felt
+// eller ugyldige oppføringer gjør at filen må sikkerhetskopieres før den skrives om.
+function usageIsLossless(p) {
+  var n = usageNormalizeLog(p);
+  if (!n || p.v !== 1) return false;
+  if (Object.keys(p).some(function(k) { return k !== 'v' && k !== 'days' && k !== 'versions'; })) return false;
+  return JSON.stringify(n.days) === JSON.stringify(p.days) &&
+    JSON.stringify(n.versions) === JSON.stringify(p.versions || {});
+}
+
+// Summerer to logger uten å endre dem; versjonsdatoen er den tidligste.
+function usageMerge(a, b) {
+  var out = { v: 1, days: {}, versions: {} };
+  [a, b].forEach(function(log) {
+    if (!log) return;
+    Object.keys(log.days || {}).forEach(function(day) {
+      if (!out.days[day]) out.days[day] = {};
+      Object.keys(log.days[day]).forEach(function(id) {
+        if (_usageBadKey(id)) return;
+        out.days[day][id] = (out.days[day][id] || 0) + log.days[day][id];
+      });
+    });
+    Object.keys(log.versions || {}).forEach(function(ver) {
+      if (_usageBadKey(ver)) return;
+      if (!out.versions[ver] || log.versions[ver] < out.versions[ver]) out.versions[ver] = log.versions[ver];
+    });
+  });
+  return out;
+}
+
+function usageBump(log, day, id, version) {
+  if (_usageBadKey(id)) return log;
+  if (!log.days[day]) log.days[day] = {};
+  log.days[day][id] = (log.days[day][id] || 0) + 1;
+  if (version && !_usageBadKey(version) && !log.versions[version]) log.versions[version] = day;
+  return log;
+}
+
+// Første dag i vinduet (inkludert i dag), eller '' for «alt».
+function usageRangeStart(today, range) {
+  var n = parseInt(range, 10);
+  if (!(n > 0)) return '';
+  var p = today.split('-');
+  var d = new Date(+p[0], +p[1] - 1, +p[2] - (n - 1));
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// used: brukt i perioden (flest først). idle: brukt tidligere, men ikke i
+// perioden. never: kjent funksjon som aldri er logget.
+function usageSummarize(log, ids, today, range) {
+  var start = usageRangeStart(today, range);
+  var inWin = Object.create(null), lastIn = Object.create(null), lastAll = Object.create(null);
+  Object.keys(log.days || {}).forEach(function(day) {
+    Object.keys(log.days[day]).forEach(function(id) {
+      if (!lastAll[id] || day > lastAll[id]) lastAll[id] = day;
+      if (day < start) return;
+      inWin[id] = (inWin[id] || 0) + log.days[day][id];
+      if (!lastIn[id] || day > lastIn[id]) lastIn[id] = day;
+    });
+  });
+  var used = Object.keys(inWin).map(function(id) { return { id: id, count: inWin[id], last: lastIn[id] }; });
+  used.sort(function(a, b) { return b.count - a.count || (a.id < b.id ? -1 : 1); });
+  var idle = Object.keys(lastAll).filter(function(id) { return !inWin[id]; })
+    .map(function(id) { return { id: id, last: lastAll[id] }; });
+  idle.sort(function(a, b) { return a.last < b.last ? 1 : a.last > b.last ? -1 : (a.id < b.id ? -1 : 1); });
+  var never = (ids || []).filter(function(id, i, arr) { return !_usageBadKey(id) && !lastAll[id] && arr.indexOf(id) === i; }).sort();
+  return { used: used, idle: idle, never: never };
+}
+
+// ── Innstilling og innsamling ──────────────────────
+// Tellerne leses fra og skrives til localStorage hver gang (ingen kopi i
+// minnet), så flere faner ikke overskriver hverandres tellere.
+function usageEnabled() {
+  try { return localStorage.getItem(USAGE_ENABLED_KEY) === '1'; } catch(e) { return false; }
+}
+
+function _usageEmpty() { return { v: 1, days: {}, versions: {} }; }
+
+function _usageBufRead(key) {
+  var raw = null, parsed = null;
+  try { raw = localStorage.getItem(key); } catch(e) { raw = null; }
+  try { parsed = raw ? usageNormalizeLog(JSON.parse(raw)) : null; } catch(e) { parsed = null; }
+  return parsed || _usageEmpty();
+}
+
+function _usageBufWrite(key, log) {
+  try {
+    if (usageIsEmpty(log)) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(log));
+  } catch(e) {}
+}
+
+function usageRecord(id) {
+  if (!usageEnabled()) return;
+  var d = _usageBufRead(USAGE_BUF_KEY);
+  usageBump(d, todayStr(), id, APP_VERSION);
+  _usageBufWrite(USAGE_BUF_KEY, d);
+  usageScheduleFlush();
+}
+
+// Sidevisning, kalt fra navigateTo. Bare sidetypen (sak/<id> blir «sak»).
+function usageRecordNav(page) {
+  if (typeof page !== 'string' || !page) return;
+  try { usageRecord('page:' + page.split('/')[0]); } catch(e) {}
+}
+
+function usageSetEnabled(on) {
+  try { localStorage.setItem(USAGE_ENABLED_KEY, on ? '1' : '0'); } catch(e) {}
+  return on ? Promise.resolve() : usageFlush(); // det som er talt hittil, skal ikke gå tapt
+}
+
+document.addEventListener('click', function(e) {
+  if (!usageEnabled() || e.isTrusted === false) return; // skript-klikk er ikke bruk
+  try {
+    var t = e.target && e.target.closest ? e.target.closest(USAGE_STATIC_SEL) : null;
+    var key = usageFeatureKey(t);
+    // Sidevisninger telles i navigateTo (også saker som åpnes fra kort og rader)
+    if (key && key.indexOf('usage-') !== 0 && key.indexOf('page:') !== 0) usageRecord(key);
+  } catch(err) {}
+}, true);
+
+// ── Fil ────────────────────────────────────────────
+function usageScheduleFlush() {
+  if (_usageTimer) return;
+  _usageTimer = setTimeout(function() { _usageTimer = null; usageFlush(); }, _USAGE_FLUSH_MS);
+}
+
+function _usageDirReady() {
+  if (!_bkDirHandle || !_bkFsaSupported()) return Promise.resolve(false);
+  return _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(p) { return p === 'granted'; }).catch(function() { return false; });
+}
+
+// Filskriving går i kø på tvers av faner når nettleseren har Web Locks
+function _usageWithLock(fn) {
+  if (typeof navigator !== 'undefined' && navigator.locks && navigator.locks.request) {
+    return navigator.locks.request('pt_usage_file', fn);
+  }
+  return new Promise(function(resolve) { resolve(fn()); });
+}
+
+// Filens logg (tom hvis den ikke finnes). Bare for skriving (forFlush) legges
+// en ulesbar eller delvis ugyldig fil i backup/ før den skrives om; visningen
+// leser stille og skriver aldri.
+function _usageReadFile(dir, forFlush) {
+  return _fsReadText(dir, USAGE_FILE_NAME).then(function(text) {
+    if (!text || !text.trim()) return _usageEmpty();
+    var parsed = null, log = null;
+    try { parsed = JSON.parse(text); log = usageNormalizeLog(parsed); } catch(e) { log = null; }
+    if (!forFlush) return log || _usageEmpty();
+    if (log && usageIsLossless(parsed)) return log;
+    return dir.getDirectoryHandle(DAILY_BACKUP_DIR, { create: true }).then(function(bdir) {
+      return _fsWriteText(bdir, 'usage-ulesbar-' + todayStr() + '-' + Date.now() + '.json', text);
+    }).then(function() {
+      showToast('✗ usage.json hadde uventet innhold — kopi er lagt i backup/', true);
+      return log || _usageEmpty();
+    });
+  });
+}
+
+var _usageFlushing = false;
+function usageFlush() {
+  if (_usageFlushing) return Promise.resolve();
+  if (usageIsEmpty(_usageBufRead(USAGE_BUF_KEY)) && usageIsEmpty(_usageBufRead(USAGE_INFLIGHT_KEY))) return Promise.resolve();
+  _usageFlushing = true;
+  return _usageWithLock(_usageFlushLocked).then(function(written) {
+    _usageFlushing = false;
+    // Telt noe under skrivingen, kommer en ny runde. Etter en feil venter vi
+    // på neste klikk, oppstart eller tilgang i stedet for å prøve i ring.
+    if (written && !usageIsEmpty(_usageBufRead(USAGE_BUF_KEY))) usageScheduleFlush();
+  }, function() { _usageFlushing = false; });
+}
+
+function _usageFlushLocked() {
+  return _usageDirReady().then(function(ok) {
+    if (!ok) return false;
+    var dir = _bkDirHandle;
+    // Det som venter, flyttes til «under skriving» og blir der til filen er
+    // bekreftet skrevet (en avbrutt skriving plukkes opp igjen neste gang)
+    var snap = usageMerge(_usageBufRead(USAGE_INFLIGHT_KEY), _usageBufRead(USAGE_BUF_KEY));
+    if (usageIsEmpty(snap)) return false;
+    _usageBufWrite(USAGE_INFLIGHT_KEY, snap);
+    _usageBufWrite(USAGE_BUF_KEY, _usageEmpty());
+    return _usageReadFile(dir, true).then(function(base) {
+      return _fsWriteText(dir, USAGE_FILE_NAME, JSON.stringify(usageMerge(base, snap), null, 1));
+    }).then(function() {
+      _usageBufWrite(USAGE_INFLIGHT_KEY, _usageEmpty());
+      return true;
+    }, function() {
+      _usageBufWrite(USAGE_BUF_KEY, usageMerge(_usageBufRead(USAGE_INFLIGHT_KEY), _usageBufRead(USAGE_BUF_KEY)));
+      _usageBufWrite(USAGE_INFLIGHT_KEY, _usageEmpty());
+      return false;
+    });
+  });
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden') usageFlush();
+});
+
+// Hele loggen: filen pluss det som venter. hasFile er false uten datamappe.
+function usageLoadAll() {
+  return _usageDirReady().then(function(ok) {
+    return ok ? _usageReadFile(_bkDirHandle, false) : null;
+  }).catch(function() { return null; }).then(function(file) {
+    var waiting = usageMerge(_usageBufRead(USAGE_INFLIGHT_KEY), _usageBufRead(USAGE_BUF_KEY));
+    return { log: usageMerge(file, waiting), hasFile: !!file };
+  });
+}
+
+// ── Visning ────────────────────────────────────────
+function _usageCollectIds() {
+  var ids = [], labels = {};
+  document.querySelectorAll(USAGE_STATIC_SEL).forEach(function(el) {
+    var key = usageFeatureKey(el);
+    if (!key || key.indexOf('usage-') === 0) return;
+    if (ids.indexOf(key) === -1) ids.push(key);
+    if (labels[key]) return;
+    var txt = (el.getAttribute('aria-label') || el.textContent || el.getAttribute('title') || el.getAttribute('data-tooltip') || '').replace(/\s+/g, ' ').trim();
+    if (txt) labels[key] = txt.length > 48 ? txt.slice(0, 47) + '…' : txt;
+  });
+  return usageWithRegistry({ ids: ids, labels: labels }, USAGE_DYNAMIC_FEATURES);
+}
+
+// Legger de tegnede funksjonene til DOM-funksjonene. Listens navn går foran
+// teksten i DOM-en (som for tegnede lenker kan være et saksnummer).
+function usageWithRegistry(reg, registry) {
+  var ids = reg.ids.slice(), labels = {};
+  Object.keys(reg.labels).forEach(function(k) { labels[k] = reg.labels[k]; });
+  Object.keys(registry).forEach(function(k) {
+    if (ids.indexOf(k) === -1) ids.push(k);
+    labels[k] = registry[k];
+  });
+  return { ids: ids, labels: labels };
+}
+
+function _usageRow(id, labels, right) {
+  var label = labels[id] && labels[id] !== id ? labels[id] : id;
+  return '<div class="us-row"><span class="us-name">' + esc(label) + '<span class="us-id">' + esc(id) + '</span></span>' + right + '</div>';
+}
+
+function renderUsageView() {
+  var host = document.getElementById('usage-view');
+  if (!host) return;
+  var cb = document.getElementById('usage-enabled-cb');
+  if (cb) cb.checked = usageEnabled();
+  document.querySelectorAll('[data-usage-range]').forEach(function(b) {
+    var on = b.dataset.usageRange === _usageRange;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  var seq = ++_usageRenderSeq;
+  usageLoadAll().then(function(res) {
+    if (seq !== _usageRenderSeq) return; // et nyere valg er allerede tegnet
+    var reg = _usageCollectIds();
+    var s = usageSummarize(res.log, reg.ids, todayStr(), _usageRange);
+    var html = '';
+    if (!res.hasFile) html += '<div class="us-note">Ingen tilgang til datamappen — tellerne vises fra nettleseren og skrives til usage.json når tilgang er gitt.</div>';
+    var vers = Object.keys(res.log.versions).sort(function(a, b) { return res.log.versions[a] < res.log.versions[b] ? -1 : 1; });
+    if (vers.length) html += '<div class="us-note">Logg siden ' + esc(formatDate(res.log.versions[vers[0]])) + ' · versjoner: ' +
+      esc(vers.map(function(v) { return v + ' (fra ' + formatDate(res.log.versions[v]) + ')'; }).join(', ')) + '</div>';
+    function section(title, rows, empty) {
+      return '<h3 class="us-title">' + esc(title) + ' <span class="us-count">' + rows.length + '</span></h3>' +
+        (rows.length ? rows.join('') : '<div class="us-empty">' + esc(empty) + '</div>');
+    }
+    html += section('Brukt i perioden', s.used.map(function(u) {
+      return _usageRow(u.id, reg.labels, '<span class="us-num">' + u.count + '</span><span class="us-last">' + esc(formatDate(u.last)) + '</span>');
+    }), 'Ingen data ennå');
+    html += section('Ikke brukt i perioden', s.idle.map(function(u) {
+      return _usageRow(u.id, reg.labels, '<span class="us-num"></span><span class="us-last">sist ' + esc(formatDate(u.last)) + '</span>');
+    }), 'Ingen');
+    html += section('Aldri brukt', s.never.map(function(id) { return _usageRow(id, reg.labels, ''); }), 'Ingen');
+    host.innerHTML = html;
+  });
+}
+
+function _usageDownload(log) {
+  var blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'patentdesk-bruk-' + todayStr() + '.json'; a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('✓ Lagret til ' + a.download);
+}
+
+// Nullstilling går i kø bak en skriving som pågår, og nekter heller enn å late
+// som når datamappen ikke kan nås (da ville den gamle filen dukket opp igjen).
+function _usageReset() {
+  if (_usageFlushing) { showToast('Vent et øyeblikk — tellerne skrives akkurat nå'); return Promise.resolve(); }
+  return _usageWithLock(function() {
+    function clearBuffers() { _usageBufWrite(USAGE_BUF_KEY, _usageEmpty()); _usageBufWrite(USAGE_INFLIGHT_KEY, _usageEmpty()); }
+    if (!_bkDirHandle || !_bkFsaSupported()) { clearBuffers(); return true; } // ingen fil å tømme
+    return _usageDirReady().then(function(ok) {
+      if (!ok) { showToast('✗ Ingen tilgang til datamappen — usage.json kan ikke nullstilles nå', true); return false; }
+      return _fsWriteText(_bkDirHandle, USAGE_FILE_NAME, JSON.stringify(_usageEmpty())).then(function() { clearBuffers(); return true; });
+    });
+  }).then(function(done) {
+    if (done) showToast('✓ Bruksstatistikken er nullstilt');
+    renderUsageView();
+  }, function() { showToast('✗ Kunne ikke nullstille usage.json', true); });
+}
+
+(function() {
+  var cb = document.getElementById('usage-enabled-cb');
+  if (!cb) return;
+  cb.addEventListener('change', function() { usageSetEnabled(this.checked); renderUsageView(); });
+  document.querySelectorAll('[data-usage-range]').forEach(function(b) {
+    b.addEventListener('click', function() { _usageRange = this.dataset.usageRange; renderUsageView(); });
+  });
+  document.getElementById('usage-export').addEventListener('click', function() {
+    usageLoadAll().then(function(res) { _usageDownload(res.log); });
+  });
+  var reset = document.getElementById('usage-reset');
+  reset.addEventListener('click', function() {
+    // To trykk: første trykk ber om bekreftelse, så slipper vi en egen dialog
+    if (_usageResetArmed) { clearTimeout(_usageResetArmed); _usageResetArmed = null; reset.textContent = 'Nullstill'; _usageReset(); return; }
+    reset.textContent = 'Trykk igjen for å bekrefte';
+    _usageResetArmed = setTimeout(function() { _usageResetArmed = null; reset.textContent = 'Nullstill'; }, 4000);
+  });
+})();
 // ── UI ─────────────────────────────────────────────
 function _bkFmtTime(iso) {
   var d = new Date(iso);
@@ -12574,7 +13111,7 @@ function _bkOpenRestoreModal() {
       return '<div class="bk-snap-row">' +
         '<span class="bk-snap-time">' + esc(_bkFmtTime(s.exported)) + '</span>' +
         '<span class="bk-snap-count">' + n + ' sak' + (n !== 1 ? 'er' : '') + '</span>' +
-        '<button class="s-btn" data-bk-key="' + esc(s.exported) + '">Gjenopprett</button>' +
+        '<button class="s-btn" data-bk-key="' + esc(s.exported) + '" data-feature="backup-restore-snapshot">Gjenopprett</button>' +
       '</div>';
     }).join('');
   });
@@ -12656,6 +13193,7 @@ document.addEventListener('visibilitychange', function() {
 function _bkInit() {
   _bkLoadDirHandle(function() {
     _bkUpdateSettingsUI();
+    usageScheduleFlush(); // tellere som ventet på datamappen
     if (backupEnabled()) scheduleAutoBackup();
     if (!_bkDirHandle || !_bkFsaSupported()) return;
     // Arbeidsfilen avstemmes mot nettleseren før noe skrives til den
@@ -13245,7 +13783,7 @@ function depResetHtml(c) {
   if (!c || !c.depManual || c.num === 1) return '';
   return '<button type="button" class="sak-dep-reset" data-claim-dep-reset="' + esc(c.num) + '" tabindex="-1"' +
     ' aria-label="' + esc(depResetAriaLabel(c.num)) + '"' +
-    ' title="Manuelt satt — klikk for automatisk tilhørighet">↺</button>';
+    ' title="Manuelt satt — klikk for automatisk tilhørighet" data-feature="claim-dependency-reset">↺</button>';
 }
 
 // Visningen av etiketten er en knapp som åpner redigering. Et rent «Krav 2 —
@@ -14300,11 +14838,11 @@ function renderSakAssessmentRows(data, claimNums) {
 // finnes ikke i saksmappen på disk (se test/folderSync.test.js).
 function sakFileRowHtml(f, i, fileUrl, missing) {
   return '<div class="sak-docs-dropdown-row' + (missing ? ' sak-docs-missing' : '') + '" data-idx="' + i + '">' +
-    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span>' +
+    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '" data-feature="doc-open"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span>' +
       (missing ? '<span class="sak-docs-missing-tag" title="Filen finnes ikke i saksmappen">mangler</span>' : '') + '</a>' +
-    '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
-    '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
-    '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
+    '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti" data-feature="doc-copy-path"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
+    '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn" data-feature="doc-rename"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
+    '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett" data-feature="doc-delete"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
   '</div>';
 }
 
@@ -14417,7 +14955,7 @@ function _checklistItemsHtml(data, group) {
   return group.items.map(function(item) {
     var checked = data.checklist[item.id] === true;
     return '<label class="sak-check-row sak-check-clickable' + (checked ? ' sak-check-done' : '') + '">' +
-      '<input type="checkbox" class="sak-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + ' />' +
+      '<input type="checkbox" class="sak-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + '  data-feature="checklist-toggle-item"/>' +
       '<span class="sak-check-label">' + esc(item.label) + '</span>' +
     '</label>';
   }).join('');
@@ -14431,7 +14969,7 @@ function _checklistFoldHtml(data, g, titleHtml, bodyHtml, open) {
   var bodyId = 'sak-fold-body-' + key.replace(/[^a-z0-9]+/g, '-');
   var pct = c.total ? Math.round(c.done / c.total * 100) : 0;
   return '<section class="sak-section sak-fold' + (open ? ' is-open' : '') + '" data-sak-section="checklist" data-fold="' + key + '">' +
-    '<h2 class="sak-fold-h"><button type="button" class="sak-fold-head" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + bodyId + '">' +
+    '<h2 class="sak-fold-h"><button type="button" class="sak-fold-head" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + bodyId + '" data-feature="section-fold">' +
       '<span class="sak-fold-title">' + titleHtml + '</span>' +
       '<span class="sak-fold-bar" aria-hidden="true"><span style="width:' + pct + '%"></span></span>' +
       '<span class="sak-fold-count">' + c.done + ' / ' + c.total + '</span>' +
@@ -14656,7 +15194,7 @@ function sakObjectionsHtml(cas, data) {
   var sent = lettersSent(cas.history);
   if (!L) {
     var link = canBackfillRound(cas, visibleRounds(cas, rounds))
-      ? '<button type="button" class="ob-link" data-ob-backfill="1">Lagre nåværende vurdering som runde ' + sent + '</button>' : '';
+      ? '<button type="button" class="ob-link" data-ob-backfill="1" data-feature="objection-backfill">Lagre nåværende vurdering som runde ' + sent + '</button>' : '';
     return '<div class="ob-list"><div class="ob-head"><span class="ob-title">Innvendinger fra brev ' + sent + '</span></div>' +
       '<p class="ob-empty">Ingen lagret runde for brev ' + sent + link + '</p></div>';
   }
@@ -14678,10 +15216,10 @@ function sakObjectionsHtml(cas, data) {
     var ctrl = g.isNew
       ? '<span class="ob-new">Ny – tas med i brev ' + k + '</span>'
       : '<span class="ob-seg ob-state" role="group" aria-label="Vurdering">' + OBJECTION_STATES.map(function(s) {
-          return '<button type="button" class="ob-st ob-st-' + s + '" data-state="' + s + '" aria-pressed="' + (g.state === s ? 'true' : 'false') + '">' +
+          return '<button type="button" class="ob-st ob-st-' + s + '" data-state="' + s + '" aria-pressed="' + (g.state === s ? 'true' : 'false') + '" data-feature="objection-state">' +
             OBJECTION_STATE_LABEL[s] + '</button>';
         }).join('') + '</span>';
-    var del = g.manual ? '<button type="button" class="ob-del" aria-label="Slett innvending" title="Slett innvending">×</button>' : '<span class="ob-del"></span>';
+    var del = g.manual ? '<button type="button" class="ob-del" aria-label="Slett innvending" title="Slett innvending" data-feature="objection-delete">×</button>' : '<span class="ob-del"></span>';
     return '<div class="' + cls + '" data-obj-ids="' + esc(ids.join(' ')) + '">' +
       '<span class="ob-text">' + text + '</span>' + (g.manual ? '<span class="ob-tag">Egen</span>' : '') + ctrl + del + '</div>';
   }).join('');
@@ -14692,15 +15230,15 @@ function sakObjectionsHtml(cas, data) {
         prog.x + ' / ' + prog.y + ' vurdert</span>' : '') + '</div>' +
     (L.backfilled ? '<p class="ob-note ob-backfilled">Runden er lagret i ettertid – innvendingene kan avvike fra brevet som ble sendt.</p>' : '') +
     empty + rowsHtml +
-    '<button type="button" class="ob-add">+ Innvending</button>' +
+    '<button type="button" class="ob-add" data-feature="objection-add">+ Innvending</button>' +
     '<form class="ob-form" hidden novalidate>' +
       '<label class="field-label" for="ob-input">Innvending</label>' +
       '<input class="field-input ob-input" id="ob-input" type="text" maxlength="' + OBJECTION_TEXT_MAX + '" autocomplete="off" />' +
       '<div class="ob-form-foot">' +
-        '<label class="svar-change"><input type="checkbox" class="ob-isnew" /> Ny i denne runden</label>' +
+        '<label class="svar-change"><input type="checkbox" class="ob-isnew"  data-feature="objection-is-new"/> Ny i denne runden</label>' +
         '<span class="ob-count">0 / ' + OBJECTION_TEXT_MAX + '</span><span class="ob-spacer"></span>' +
-        '<button type="button" class="btn-secondary ob-cancel">Avbryt</button>' +
-        '<button type="submit" class="btn-primary ob-submit">Legg til</button>' +
+        '<button type="button" class="btn-secondary ob-cancel" data-feature="objection-cancel">Avbryt</button>' +
+        '<button type="submit" class="btn-primary ob-submit" data-feature="objection-submit">Legg til</button>' +
       '</div>' +
     '</form>' +
   '</div>';
@@ -14735,7 +15273,7 @@ function renderSakResponse(cas, data, opts) {
   var rows = RESPONSE_CHECKLIST.map(function(item) {
     var on = done.indexOf(item.id) !== -1;
     return '<label class="sak-check-row sak-check-clickable' + (on ? ' sak-check-done' : '') + '">' +
-      '<input type="checkbox" class="sak-checkbox" data-svar-id="' + item.id + '"' + (on ? ' checked' : '') + ' />' +
+      '<input type="checkbox" class="sak-checkbox" data-svar-id="' + item.id + '"' + (on ? ' checked' : '') + '  data-feature="reply-toggle-item"/>' +
       '<span class="sak-check-label">' + esc(item.label) + '</span>' +
     '</label>';
   }).join('');
@@ -14911,7 +15449,7 @@ function renderMedlesingDetail(id) {
       lastGroup = item.group || null;
       return groupHtml +
         '<label class="medl-check-row' + (item.group ? ' medl-check-sub' : '') + (checked ? ' medl-check-done' : '') + (missingItem ? ' medl-check-missing' : '') + '">' +
-          '<input type="checkbox" class="medl-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + ' />' +
+          '<input type="checkbox" class="medl-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + '  data-feature="medlesing-toggle-item"/>' +
           '<span class="medl-check-label">' + esc(item.label) + '</span>' +
           (missingItem ? '<span class="medl-check-missing-tag">Mangler</span>' : '') +
         '</label>';
@@ -15094,7 +15632,7 @@ function cpcRowHtml(cls, i, desc, tooltipHtml) {
   return '<div class="sak-class-row">' +
     (tooltipHtml || '') +
     '<label class="sak-class-inuse-label" title="I bruk">' +
-      '<input type="checkbox" class="sak-class-inuse-cb" data-idx="' + i + '"' + (cls.inUse ? ' checked' : '') + ' />' +
+      '<input type="checkbox" class="sak-class-inuse-cb" data-idx="' + i + '"' + (cls.inUse ? ' checked' : '') + '  data-feature="cpc-in-use"/>' +
     '</label>' +
     '<span class="sak-class-tag' + (cls.inUse ? ' sak-class-tag-active' : '') + '">' + esc(cls.code) + '</span>' +
     descHtml +
@@ -15210,9 +15748,9 @@ function claimTriButtons(claims, c) {
   // Nyhet-knapp
   var noveltyBtn;
   if (noveltyIsCascade) {
-    noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + '>' + triLabel(true, false) + '</button>';
+    noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + ' data-feature="claim-novelty-inherited">' + triLabel(true, false) + '</button>';
   } else {
-    noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + '>' + triLabel(c.novelty, false) + '</button>';
+    noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + ' data-feature="claim-novelty">' + triLabel(c.novelty, false) + '</button>';
   }
 
   // Oppfinnelseshøyde-knapp
@@ -15221,9 +15759,9 @@ function claimTriButtons(claims, c) {
   if (inventiveLocked) {
     inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
   } else if (inventiveIsCascade) {
-    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + '>' + triLabel(true, false) + '</button>';
+    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + ' data-feature="claim-inventive-inherited">' + triLabel(true, false) + '</button>';
   } else {
-    inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + '>' + triLabel(c.inventive, false) + '</button>';
+    inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + ' data-feature="claim-inventive">' + triLabel(c.inventive, false) + '</button>';
   }
 
   return { novelty: noveltyBtn, inventive: inventiveBtn, effNovelty: effNovelty, effInventive: effInventive };
@@ -15272,7 +15810,7 @@ function claimRowHtml(data, c) {
     var numCell = '<button type="button" class="sak-num-tog' + (isIndependent ? ' is-indep' : '') + '" data-claim-dep-tog=\"' + esc(c.num) + '\"' +
       (c.num === 1 ? ' disabled' : '') +
       ' aria-label="' + esc(depToggleAriaLabel(c.num, isIndependent, c.depManual)) + '"' +
-      ' title="' + esc(c.num === 1 ? 'Selvstendig' : isIndependent ? 'Selvstendig — klikk (eller S) for uselvstendig' : 'Uselvstendig — klikk (eller S) for selvstendig') + '">' +
+      ' title="' + esc(c.num === 1 ? 'Selvstendig' : isIndependent ? 'Selvstendig — klikk (eller S) for uselvstendig' : 'Uselvstendig — klikk (eller S) for selvstendig') + '" data-feature="claim-dependency-toggle">' +
       esc(c.num) + '</button>';
 
     // Label cell
@@ -15287,7 +15825,7 @@ function claimRowHtml(data, c) {
       '<td class="sak-td-check sak-td-dep">' + depCell + '</td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + noveltyBtn + claimDocChipHtml(data, c, 'novelty', effNovelty) + '</span></td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + inventiveBtn + claimDocChipHtml(data, c, 'inventive', effNovelty) + '</span></td>' +
-      '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim=\"' + esc(c.num) + '\" data-field="formal"' + ariaFor('formal', c.formal, false, false) + '>' + triLabel(c.formal,   true)  + '</button></td>' +
+      '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim=\"' + esc(c.num) + '\" data-field="formal"' + ariaFor('formal', c.formal, false, false) + ' data-feature="claim-formal">' + triLabel(c.formal,   true)  + '</button></td>' +
       '<td class="sak-td-notes"><input class="sak-claim-note" type="text" data-claim=\"' + esc(c.num) + '\" value="' + esc(c.notes || '') + '" placeholder="Notat…" aria-label="' + esc(claimFieldAriaLabel(c.num, 'note')) + '" /></td>' +
     '</tr>' + kmSub;
 }
@@ -15318,16 +15856,16 @@ function claimMappingRowHtml(data, c, round, m, stateCls, verdictCls) {
       ' aria-label="Opphav i brev ' + rn + ', krav ' + nh + '"' + (err ? ' aria-invalid="true"' : '') + ' />' +
       (err ? '<span class="km-err" role="alert">' + esc(err) + '</span>' : '');
   } else if (!m) {
-    html += '<button class="km-origin km-origin-unset" data-claim-origin="' + nh + '" title="Angi hvilket krav i brev ' + rn + ' dette kom fra">← ?</button>' +
+    html += '<button class="km-origin km-origin-unset" data-claim-origin="' + nh + '" title="Angi hvilket krav i brev ' + rn + ' dette kom fra" data-feature="claim-origin">← ?</button>' +
       '<span class="km-prev">angi opphav</span>';
   } else {
-    html += '<button class="km-origin" data-claim-origin="' + nh + '" title="' + esc(claimOriginHint(c, round, data.docs || [])) + ' — klikk for å endre opphav">' + esc(claimOriginLabel(m)) + '</button>';
+    html += '<button class="km-origin" data-claim-origin="' + nh + '" title="' + esc(claimOriginHint(c, round, data.docs || [])) + ' — klikk for å endre opphav" data-feature="claim-origin">' + esc(claimOriginLabel(m)) + '</button>';
   }
   if (m && !(_kmEditingOrigin && _kmEditingOrigin.num === n)) {
     if (m.origin.length === 1) {
       html += '<span class="km-seg" role="group" aria-label="Endring, krav ' + nh + '">' +
-        '<button type="button" data-claim-change="' + nh + '" data-change="endret" aria-pressed="' + (m.change === 'endret') + '">Endret</button>' +
-        '<button type="button" data-claim-change="' + nh + '" data-change="uendret" aria-pressed="' + (m.change === 'uendret') + '">Uendret</button>' +
+        '<button type="button" data-claim-change="' + nh + '" data-change="endret" aria-pressed="' + (m.change === 'endret') + '" data-feature="claim-change-changed">Endret</button>' +
+        '<button type="button" data-claim-change="' + nh + '" data-change="uendret" aria-pressed="' + (m.change === 'uendret') + '" data-feature="claim-change-unchanged">Uendret</button>' +
         '</span>';
     } else if (m.origin.length > 1) {
       html += '<span class="km-chip km-chip-endret">Endret</span>';
@@ -15338,7 +15876,7 @@ function claimMappingRowHtml(data, c, round, m, stateCls, verdictCls) {
       var p13Cls = m.p13 === true ? 'sak-tri-btn-ok' : m.p13 === false ? 'sak-tri-btn-no' : 'sak-tri-btn-null';
       var p13Txt = m.p13 === true ? '§13 ✓' : m.p13 === false ? '§13 ✗ mangler grunnlag' : '§13 —';
       html += '<button type="button" class="sak-tri-btn ' + p13Cls + ' km-p13-btn" data-claim-p13="' + nh + '" title="' + KM_P13_TITLE + '"' +
-        ' aria-label="§ 13-grunnlag, krav ' + nh + ': ' + p13Txt + '">' + p13Txt + '</button>' +
+        ' aria-label="§ 13-grunnlag, krav ' + nh + ': ' + p13Txt + '" data-feature="claim-p13">' + p13Txt + '</button>' +
         '<input class="km-basis" type="text" maxlength="' + CLAIM_MAPPING_BASIS_MAX + '" data-claim-basis="' + nh + '" value="' + esc(m.basis) + '"' +
         ' placeholder="Grunnlag (side, linje) …" aria-label="Grunnlag § 13, krav ' + nh + '" />';
     }
@@ -15480,7 +16018,7 @@ function renderSakDocs(data) {
         '<span class="mh-cats"><span class="mh-withdrawn-label">Ikke lenger relevant</span></span>' +
         '<span class="mh-flags"></span><span></span>' +
         '<button type="button" class="mh-restore" data-mh-restore="' + i + '"' +
-          ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt.">Gjenopprett</button>' +
+          ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt." data-feature="priorart-restore">Gjenopprett</button>' +
       '</div>';
     }
 
@@ -15497,7 +16035,7 @@ function renderSakDocs(data) {
         mhRoundBadgeHtml(docRounds, d.id) + mhCatsHtml(d, row) + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       mhEditBtnHtml(d, i, editing) +
-      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
+      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '" data-feature="priorart-delete"' +
         ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
         ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
       '<div class="mh-details" data-idx="' + i + '">' +
@@ -15548,7 +16086,7 @@ function mhReportHtml(docs, rows, rounds) {
   return (docs || []).map(function(d, i) {
     var gone = !!d.withdrawn;
     var idBtn = '<button type="button" class="mr-id" data-mh-goto="' + i + '"' +
-      ' title="' + esc('Vis ' + d.id + ' i Detaljer') + '">' + esc(d.id) + '</button>';
+      ' title="' + esc('Vis ' + d.id + ' i Detaljer') + '" data-feature="priorart-goto-details">' + esc(d.id) + '</button>';
     if (gone) {
       return '<div class="mr-row mr-row-withdrawn">' + idBtn +
         '<span class="mr-ref">' + esc(d.ref || '—') + '</span><span></span><span></span>' +
@@ -15644,7 +16182,7 @@ function mhIsEditing(d, explicit) {
 function mhEditBtnHtml(d, i, editing) {
   return '<button type="button" class="mh-edit" data-mh-edit="' + i + '" aria-pressed="' + (editing ? 'true' : 'false') + '"' +
     ' title="' + (editing ? 'Vis opplysningene som tekst (Esc)' : 'Rediger datoer, søker, oppfinner og tittel') + '"' +
-    ' aria-label="' + esc((editing ? 'Ferdig med ' : 'Rediger ') + d.id) + '">' +
+    ' aria-label="' + esc((editing ? 'Ferdig med ' : 'Rediger ') + d.id) + '" data-feature="priorart-edit">' +
     (editing ? '✓ Ferdig' : '✎ Rediger') + '</button>';
 }
 
@@ -15751,11 +16289,11 @@ function citedEntryWhat(e) {
 
 function mhCitedHtml(entries) {
   if (!entries.length) return '';
-  return '<details class="mh-cited"><summary title="Dokumentet er også mothold i andre saker">' +
+  return '<details class="mh-cited"><summary title="Dokumentet er også mothold i andre saker" data-feature="priorart-cited-elsewhere">' +
     esc(citedBadgeText(entries.length)) + '</summary>' +
     '<ul class="mh-cited-list">' + entries.map(function(e) {
       var status = citedStatusLabel(e);
-      return '<li><button type="button" class="mh-cited-open" data-cited-open="' + esc(e.caseId) + '">' +
+      return '<li><button type="button" class="mh-cited-open" data-cited-open="' + esc(e.caseId) + '" data-feature="priorart-cited-open">' +
         '<span class="mh-cited-cn">' + esc(e.caseNumber) + '</span>' +
         '<span class="mh-cited-t">' + esc(e.title) + '</span>' +
         '<span class="mh-cited-st">' + esc(status) + '</span>' +
@@ -15807,7 +16345,7 @@ function mhFlagHtml(i, flag, pressed, suggested, reason, title) {
   var hint = suggested && !pressed;
   return '<button class="mh-flag' + (hint ? ' mh-flag-suggest' : '') + '" data-flag="' + flag + '" data-idx="' + i + '"' +
     ' aria-pressed="' + (pressed ? 'true' : 'false') + '"' +
-    ' title="' + esc(hint ? 'Foreslått ' + flag.toUpperCase() + ': ' + reason : title) + '">' + flag.toUpperCase() + '</button>';
+    ' title="' + esc(hint ? 'Foreslått ' + flag.toUpperCase() + ': ' + reason : title) + '" data-feature="priorart-flag">' + flag.toUpperCase() + '</button>';
 }
 
 function mhDateHtml(d, i, field, label) {
@@ -15847,7 +16385,7 @@ function mhOpsBtnHtml(d, i) {
     (why ? ' aria-disabled="true"' : '') +
     (_mhOpsBusy[mhOpsBusyKey(i)] ? ' aria-busy="true"' : '') +
     ' title="' + esc(why || 'Hent datoer, søker, oppfinner og tittel fra EPO OPS igjen (fyller bare tomme felt). Skjer av seg selv når du fører inn et nytt nummer.') + '"' +
-    ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS">' +
+    ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS" data-feature="priorart-ops">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg></button>';
 }
 
@@ -15896,7 +16434,7 @@ function claimDocChipHtml(data, c, field, effNovelty) {
   var open = _sakOpenDocPop && _sakOpenDocPop.claimNum === c.num && _sakOpenDocPop.field === field;
   var cls  = 'claim-doc-chip' + (ids.length ? '' : ' claim-doc-chip-empty');
   return '<span class="claim-doc-wrap">' +
-    '<button class="' + cls + '" data-doc-pop=\"' + esc(c.num) + '\" data-field="' + field + '" title="Velg mothold">' +
+    '<button class="' + cls + '" data-doc-pop=\"' + esc(c.num) + '\" data-field="' + field + '" title="Velg mothold" data-feature="claim-doc-popover">' +
       (ids.length ? esc(ids.join('+')) : 'velg') +
     '</button>' +
     (open ? claimDocPopHtml(data, c, field, ids) : '') +
@@ -15917,7 +16455,7 @@ function claimDocPopHtml(data, c, field, ids) {
     var full = !isNovelty && !on && ids.length >= MAX_INVENTIVE_DOCS;
     return '<button class="doc-pop-opt" role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '"' +
       (full ? ' disabled' : '') +
-      ' data-doc-pick="' + esc(d.id) + '" data-claim=\"' + esc(c.num) + '\" data-field="' + field + '">' +
+      ' data-doc-pick="' + esc(d.id) + '" data-claim=\"' + esc(c.num) + '\" data-field="' + field + '" data-feature="claim-doc-popover-option">' +
       '<span class="doc-pop-box">' + (on ? '✓' : '') + '</span>' +
       '<strong>' + esc(d.id) + '</strong><span>' + esc(d.ref || '') + '</span>' +
     '</button>';
@@ -15925,7 +16463,7 @@ function claimDocPopHtml(data, c, field, ids) {
   var copyIds = claimDocCopySource(data.claims, c.num, field, data.docs);
   var copy = copyIds
     ? '<button class="doc-pop-copy" data-doc-copy=\"' + esc(c.num) + '\" data-field="' + field + '"' +
-        ' title="Erstatt valget med motholdene fra krav ' + esc(c.num - 1) + ' (hurtigtast C)">' +
+        ' title="Erstatt valget med motholdene fra krav ' + esc(c.num - 1) + ' (hurtigtast C)" data-feature="claim-doc-popover-copy">' +
         '⧉ Som krav ' + esc(c.num - 1) + ' (' + esc(copyIds.join('+')) + ')</button>'
     : '';
   return '<span class="doc-pop">' + copy +
@@ -16244,7 +16782,7 @@ function addTagPill(tag) {
   var pill = document.createElement('span');
   pill.className = 'tag-pill-item';
   pill.dataset.tag = tag;
-  pill.innerHTML = esc(tag) + '<button class="tag-pill-del" title="Fjern" tabindex="-1">✕</button>';
+  pill.innerHTML = esc(tag) + '<button class="tag-pill-del" title="Fjern" tabindex="-1" data-feature="tag-remove">✕</button>';
   pill.querySelector('.tag-pill-del').addEventListener('click', function(e) {
     e.stopPropagation();
     pill.remove();
@@ -17763,7 +18301,7 @@ function renderHomeDeadlines() {
       vacBadge +
       trackHtml(c, true) +
       '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:var(--space-1);">' +
-        '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
+        '<button class="btn-card-more home-row-more-btn" data-feature="home-row-more" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
       '</div>' +
     '</div>';
   }
@@ -18240,7 +18778,7 @@ function _updateOverduePin(scrollEl) {
   if (!anchor) {
     anchor = document.createElement('div');
     anchor.className = 'tl-pin-anchor';
-    var pin = document.createElement('button');
+    var pin = document.createElement('button'); if (pin.dataset) pin.dataset.feature = 'timeline-pin';
     pin.type = 'button';
     pin.className = 'tl-overdue-pin';
     anchor.appendChild(pin);
@@ -18320,7 +18858,7 @@ function buildTimelineWidget(hostEl, opts) {
   typeWrap.setAttribute('aria-label', 'Filtrer sakstyper');
   TIMELINE_TYPES.forEach(function(t) {
     var meta = TIMELINE_TYPE_META[t];
-    var chip = document.createElement('button');
+    var chip = document.createElement('button'); if (chip.dataset) chip.dataset.feature = 'timeline-chip';
     chip.type = 'button';
     chip.className = 'tl-type-chip';
     chip.dataset.type = t;
@@ -18337,7 +18875,7 @@ function buildTimelineWidget(hostEl, opts) {
   var horizonWrap = document.createElement('div');
   horizonWrap.className = 'tl-horizon-group';
   TL_HORIZONS.forEach(function(h) {
-    var btn = document.createElement('button');
+    var btn = document.createElement('button'); if (btn.dataset) btn.dataset.feature = 'timeline-horizon';
     btn.className = 'tl-horizon-btn';
     btn.dataset.tlHorizon = String(h);
     btn.textContent = h === 90 ? '3 mnd' : h === 180 ? '6 mnd' : '1 år';
@@ -18536,7 +19074,7 @@ function showBufferLegend(list) {
 // ── Innstillinger ──────────────────────────────────
 // ── Innstillinger: venstremeny ─────────────────────
 // Rekkefølgen følger menyen; piltastene går i denne rekkefølgen.
-var SETTINGS_TABS = ['arbeidsmengde', 'frister', 'saksbehandling', 'data'];
+var SETTINGS_TABS = ['arbeidsmengde', 'frister', 'saksbehandling', 'data', 'bruk'];
 // v4.35.0 lagret underseksjonen; den åpner nå hovedseksjonen den hører til.
 var SETTINGS_TAB_LEGACY = { produksjon: 'arbeidsmengde', sakstype: 'arbeidsmengde', ferie: 'arbeidsmengde', medlesere: 'saksbehandling', sjekkliste: 'saksbehandling', saksmappe: 'saksbehandling', cpc: 'saksbehandling', sikkerhetskopi: 'data', eksport: 'data', faresone: 'data', om: 'data' };
 
@@ -18569,6 +19107,7 @@ function showSettingsTab(id, focus) {
   document.querySelectorAll('[data-settings-pane]').forEach(function(pane) {
     pane.classList.toggle('is-active', pane.dataset.settingsPane === id);
   });
+  if (id === 'bruk') renderUsageView();
 }
 
 (function() {
@@ -18998,7 +19537,7 @@ function renderEventLog() {
       '<span class="case-card-title">' + esc(lookupTitle(e)) + '</span>' +
       '<span class="case-card-notes">' + esc(notes) + '</span>' +
       '<div class="case-card-menu">' +
-        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
+        '<button class="btn-card-more btn-log-edit" data-feature="log-edit-date" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -19604,7 +20143,7 @@ function saveAppFile(text) {
 }
 
 function githubLink(href) {
-  var a = document.createElement('a');
+  var a = document.createElement('a'); if (a.dataset) a.dataset.feature = 'update-download-link';
   a.href = href || UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
   return a;
 }
@@ -19789,6 +20328,7 @@ function navDepth() {
 }
 
 function navigateTo(page, addToHistory) {
+  usageRecordNav(page);
   flushPendingSakEdits();
   if (activePage === 'sak') document.title = 'PatentDesk — Sakslogg';
   // Saksliste-filteret nullstilles ved sidebytte (gjelder nå alle sakslister).
@@ -20598,11 +21138,11 @@ function _renderModalBulkPreview() {
       : '<div class="bulk-preview-cell">' + esc(row.title || '') + '</div>';
     var checkLabel = row.dup ? 'Legg inn ' + (row.cn || '') + ' likevel' : 'Velg ' + (row.cn || 'rad');
     return '<div class="bulk-preview-row' + (row.dup ? ' is-dup' : '') + '" data-rid="' + row.id + '">' +
-      '<div class="bulk-check-cell"><input type="checkbox" class="bulk-check" data-rid="' + row.id + '"' + (row.checked ? ' checked' : '') + ' aria-label="' + esc(checkLabel) + '"/></div>' +
+      '<div class="bulk-check-cell"><input type="checkbox" class="bulk-check" data-rid="' + row.id + '"' + (row.checked ? ' checked' : '') + ' aria-label="' + esc(checkLabel) + '" data-feature="bulk-select-row"/></div>' +
       '<div class="bulk-preview-cell' + (cnOk ? '' : ' err') + '">' + esc(row.cn || '—') + '</div>' +
       titleHtml +
       '<div class="bulk-preview-cell' + (dateOk ? '' : ' err') + '">' + esc(dateDisp) + '</div>' +
-      '<button class="bulk-del" data-rid="' + row.id + '" title="Fjern rad">×</button>' +
+      '<button class="bulk-del" data-rid="' + row.id + '" title="Fjern rad" data-feature="bulk-delete-row">×</button>' +
     '</div>';
   }).join('');
   container.innerHTML = hdr + rows;
@@ -21714,7 +22254,7 @@ function _dpBuild() {
     if (i > 0) html += '<div class="dp-split" role="separator" aria-orientation="vertical" tabindex="0" data-dp-split="' + (i - 1) + '" aria-label="Bredde på panel ' + i + ' og ' + (i + 1) + '"></div>';
     html += '<section class="dp-pane" data-dp-pane="' + i + '" aria-label="Panel ' + (i + 1) + '">' +
       '<div class="dp-phead"><span class="dp-slot">' + (i + 1) + '</span>' +
-      '<select class="dp-pick" data-dp-pick="' + i + '" aria-label="Fil i panel ' + (i + 1) + '"></select>' +
+      '<select class="dp-pick" data-dp-pick="' + i + '" aria-label="Fil i panel ' + (i + 1) + '" data-feature="docpane-file-pick"></select>' +
       '<span class="dp-pin" id="dp-pin-' + i + '"></span></div>' +
       '<iframe class="dp-frame" id="dp-frame-' + i + '" title="Dokument i panel ' + (i + 1) + '" hidden></iframe>' +
       '<div class="dp-empty" id="dp-empty-' + i + '"></div>' +

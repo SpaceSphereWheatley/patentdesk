@@ -137,7 +137,7 @@ function cpcRowHtml(cls, i, desc, tooltipHtml) {
   return '<div class="sak-class-row">' +
     (tooltipHtml || '') +
     '<label class="sak-class-inuse-label" title="I bruk">' +
-      '<input type="checkbox" class="sak-class-inuse-cb" data-idx="' + i + '"' + (cls.inUse ? ' checked' : '') + ' />' +
+      '<input type="checkbox" class="sak-class-inuse-cb" data-idx="' + i + '"' + (cls.inUse ? ' checked' : '') + '  data-feature="cpc-in-use"/>' +
     '</label>' +
     '<span class="sak-class-tag' + (cls.inUse ? ' sak-class-tag-active' : '') + '">' + esc(cls.code) + '</span>' +
     descHtml +
@@ -253,9 +253,9 @@ function claimTriButtons(claims, c) {
   // Nyhet-knapp
   var noveltyBtn;
   if (noveltyIsCascade) {
-    noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + '>' + triLabel(true, false) + '</button>';
+    noveltyBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="novelty" title="Arvet fra overordnet krav"' + ariaFor('novelty', true, true, false) + ' data-feature="claim-novelty-inherited">' + triLabel(true, false) + '</button>';
   } else {
-    noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + '>' + triLabel(c.novelty, false) + '</button>';
+    noveltyBtn = '<button class="' + triButtonClass(c.novelty, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="novelty"' + ariaFor('novelty', c.novelty, false, false) + ' data-feature="claim-novelty">' + triLabel(c.novelty, false) + '</button>';
   }
 
   // Oppfinnelseshøyde-knapp
@@ -264,9 +264,9 @@ function claimTriButtons(claims, c) {
   if (inventiveLocked) {
     inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-no sak-tri-locked" disabled title="Låst: krav mangler nyhet"' + ariaFor('inventive', false, false, true) + '>' + triLabel(false, false) + '</button>';
   } else if (inventiveIsCascade) {
-    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + '>' + triLabel(true, false) + '</button>';
+    inventiveBtn = '<button class="sak-tri-btn sak-tri-btn-cascade" data-claim=\"' + esc(c.num) + '\" data-field="inventive" title="Arvet fra overordnet krav"' + ariaFor('inventive', true, true, false) + ' data-feature="claim-inventive-inherited">' + triLabel(true, false) + '</button>';
   } else {
-    inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + '>' + triLabel(c.inventive, false) + '</button>';
+    inventiveBtn = '<button class="' + triButtonClass(c.inventive, false) + '" data-claim=\"' + esc(c.num) + '\" data-field="inventive"' + ariaFor('inventive', c.inventive, false, false) + ' data-feature="claim-inventive">' + triLabel(c.inventive, false) + '</button>';
   }
 
   return { novelty: noveltyBtn, inventive: inventiveBtn, effNovelty: effNovelty, effInventive: effInventive };
@@ -315,7 +315,7 @@ function claimRowHtml(data, c) {
     var numCell = '<button type="button" class="sak-num-tog' + (isIndependent ? ' is-indep' : '') + '" data-claim-dep-tog=\"' + esc(c.num) + '\"' +
       (c.num === 1 ? ' disabled' : '') +
       ' aria-label="' + esc(depToggleAriaLabel(c.num, isIndependent, c.depManual)) + '"' +
-      ' title="' + esc(c.num === 1 ? 'Selvstendig' : isIndependent ? 'Selvstendig — klikk (eller S) for uselvstendig' : 'Uselvstendig — klikk (eller S) for selvstendig') + '">' +
+      ' title="' + esc(c.num === 1 ? 'Selvstendig' : isIndependent ? 'Selvstendig — klikk (eller S) for uselvstendig' : 'Uselvstendig — klikk (eller S) for selvstendig') + '" data-feature="claim-dependency-toggle">' +
       esc(c.num) + '</button>';
 
     // Label cell
@@ -330,7 +330,7 @@ function claimRowHtml(data, c) {
       '<td class="sak-td-check sak-td-dep">' + depCell + '</td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + noveltyBtn + claimDocChipHtml(data, c, 'novelty', effNovelty) + '</span></td>' +
       '<td class="sak-td-check"><span class="claim-doc-wrap">' + inventiveBtn + claimDocChipHtml(data, c, 'inventive', effNovelty) + '</span></td>' +
-      '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim=\"' + esc(c.num) + '\" data-field="formal"' + ariaFor('formal', c.formal, false, false) + '>' + triLabel(c.formal,   true)  + '</button></td>' +
+      '<td class="sak-td-check"><button class="' + triButtonClass(c.formal, true)    + '" data-claim=\"' + esc(c.num) + '\" data-field="formal"' + ariaFor('formal', c.formal, false, false) + ' data-feature="claim-formal">' + triLabel(c.formal,   true)  + '</button></td>' +
       '<td class="sak-td-notes"><input class="sak-claim-note" type="text" data-claim=\"' + esc(c.num) + '\" value="' + esc(c.notes || '') + '" placeholder="Notat…" aria-label="' + esc(claimFieldAriaLabel(c.num, 'note')) + '" /></td>' +
     '</tr>' + kmSub;
 }
@@ -361,16 +361,16 @@ function claimMappingRowHtml(data, c, round, m, stateCls, verdictCls) {
       ' aria-label="Opphav i brev ' + rn + ', krav ' + nh + '"' + (err ? ' aria-invalid="true"' : '') + ' />' +
       (err ? '<span class="km-err" role="alert">' + esc(err) + '</span>' : '');
   } else if (!m) {
-    html += '<button class="km-origin km-origin-unset" data-claim-origin="' + nh + '" title="Angi hvilket krav i brev ' + rn + ' dette kom fra">← ?</button>' +
+    html += '<button class="km-origin km-origin-unset" data-claim-origin="' + nh + '" title="Angi hvilket krav i brev ' + rn + ' dette kom fra" data-feature="claim-origin">← ?</button>' +
       '<span class="km-prev">angi opphav</span>';
   } else {
-    html += '<button class="km-origin" data-claim-origin="' + nh + '" title="' + esc(claimOriginHint(c, round, data.docs || [])) + ' — klikk for å endre opphav">' + esc(claimOriginLabel(m)) + '</button>';
+    html += '<button class="km-origin" data-claim-origin="' + nh + '" title="' + esc(claimOriginHint(c, round, data.docs || [])) + ' — klikk for å endre opphav" data-feature="claim-origin">' + esc(claimOriginLabel(m)) + '</button>';
   }
   if (m && !(_kmEditingOrigin && _kmEditingOrigin.num === n)) {
     if (m.origin.length === 1) {
       html += '<span class="km-seg" role="group" aria-label="Endring, krav ' + nh + '">' +
-        '<button type="button" data-claim-change="' + nh + '" data-change="endret" aria-pressed="' + (m.change === 'endret') + '">Endret</button>' +
-        '<button type="button" data-claim-change="' + nh + '" data-change="uendret" aria-pressed="' + (m.change === 'uendret') + '">Uendret</button>' +
+        '<button type="button" data-claim-change="' + nh + '" data-change="endret" aria-pressed="' + (m.change === 'endret') + '" data-feature="claim-change-changed">Endret</button>' +
+        '<button type="button" data-claim-change="' + nh + '" data-change="uendret" aria-pressed="' + (m.change === 'uendret') + '" data-feature="claim-change-unchanged">Uendret</button>' +
         '</span>';
     } else if (m.origin.length > 1) {
       html += '<span class="km-chip km-chip-endret">Endret</span>';
@@ -381,7 +381,7 @@ function claimMappingRowHtml(data, c, round, m, stateCls, verdictCls) {
       var p13Cls = m.p13 === true ? 'sak-tri-btn-ok' : m.p13 === false ? 'sak-tri-btn-no' : 'sak-tri-btn-null';
       var p13Txt = m.p13 === true ? '§13 ✓' : m.p13 === false ? '§13 ✗ mangler grunnlag' : '§13 —';
       html += '<button type="button" class="sak-tri-btn ' + p13Cls + ' km-p13-btn" data-claim-p13="' + nh + '" title="' + KM_P13_TITLE + '"' +
-        ' aria-label="§ 13-grunnlag, krav ' + nh + ': ' + p13Txt + '">' + p13Txt + '</button>' +
+        ' aria-label="§ 13-grunnlag, krav ' + nh + ': ' + p13Txt + '" data-feature="claim-p13">' + p13Txt + '</button>' +
         '<input class="km-basis" type="text" maxlength="' + CLAIM_MAPPING_BASIS_MAX + '" data-claim-basis="' + nh + '" value="' + esc(m.basis) + '"' +
         ' placeholder="Grunnlag (side, linje) …" aria-label="Grunnlag § 13, krav ' + nh + '" />';
     }
@@ -523,7 +523,7 @@ function renderSakDocs(data) {
         '<span class="mh-cats"><span class="mh-withdrawn-label">Ikke lenger relevant</span></span>' +
         '<span class="mh-flags"></span><span></span>' +
         '<button type="button" class="mh-restore" data-mh-restore="' + i + '"' +
-          ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt.">Gjenopprett</button>' +
+          ' title="Gjør motholdet relevant igjen. Kravkoblingene må settes på nytt." data-feature="priorart-restore">Gjenopprett</button>' +
       '</div>';
     }
 
@@ -540,7 +540,7 @@ function renderSakDocs(data) {
         mhRoundBadgeHtml(docRounds, d.id) + mhCatsHtml(d, row) + '</span>' +
       '<span class="mh-flags">' + mhFlagsHtml(d, i, app) + '</span>' +
       mhEditBtnHtml(d, i, editing) +
-      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '"' +
+      '<button class="btn-icon btn-sak-class-del" data-mh-del="' + i + '" data-feature="priorart-delete"' +
         ' title="' + (locked ? 'Ikke lenger relevant – brev er sendt, motholdet beholder nummeret sitt' : 'Fjern') + '"' +
         ' aria-label="' + esc((locked ? 'Merk ikke lenger relevant: ' : 'Fjern ') + d.id) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
       '<div class="mh-details" data-idx="' + i + '">' +
@@ -591,7 +591,7 @@ function mhReportHtml(docs, rows, rounds) {
   return (docs || []).map(function(d, i) {
     var gone = !!d.withdrawn;
     var idBtn = '<button type="button" class="mr-id" data-mh-goto="' + i + '"' +
-      ' title="' + esc('Vis ' + d.id + ' i Detaljer') + '">' + esc(d.id) + '</button>';
+      ' title="' + esc('Vis ' + d.id + ' i Detaljer') + '" data-feature="priorart-goto-details">' + esc(d.id) + '</button>';
     if (gone) {
       return '<div class="mr-row mr-row-withdrawn">' + idBtn +
         '<span class="mr-ref">' + esc(d.ref || '—') + '</span><span></span><span></span>' +
@@ -687,7 +687,7 @@ function mhIsEditing(d, explicit) {
 function mhEditBtnHtml(d, i, editing) {
   return '<button type="button" class="mh-edit" data-mh-edit="' + i + '" aria-pressed="' + (editing ? 'true' : 'false') + '"' +
     ' title="' + (editing ? 'Vis opplysningene som tekst (Esc)' : 'Rediger datoer, søker, oppfinner og tittel') + '"' +
-    ' aria-label="' + esc((editing ? 'Ferdig med ' : 'Rediger ') + d.id) + '">' +
+    ' aria-label="' + esc((editing ? 'Ferdig med ' : 'Rediger ') + d.id) + '" data-feature="priorart-edit">' +
     (editing ? '✓ Ferdig' : '✎ Rediger') + '</button>';
 }
 
@@ -794,11 +794,11 @@ function citedEntryWhat(e) {
 
 function mhCitedHtml(entries) {
   if (!entries.length) return '';
-  return '<details class="mh-cited"><summary title="Dokumentet er også mothold i andre saker">' +
+  return '<details class="mh-cited"><summary title="Dokumentet er også mothold i andre saker" data-feature="priorart-cited-elsewhere">' +
     esc(citedBadgeText(entries.length)) + '</summary>' +
     '<ul class="mh-cited-list">' + entries.map(function(e) {
       var status = citedStatusLabel(e);
-      return '<li><button type="button" class="mh-cited-open" data-cited-open="' + esc(e.caseId) + '">' +
+      return '<li><button type="button" class="mh-cited-open" data-cited-open="' + esc(e.caseId) + '" data-feature="priorart-cited-open">' +
         '<span class="mh-cited-cn">' + esc(e.caseNumber) + '</span>' +
         '<span class="mh-cited-t">' + esc(e.title) + '</span>' +
         '<span class="mh-cited-st">' + esc(status) + '</span>' +
@@ -850,7 +850,7 @@ function mhFlagHtml(i, flag, pressed, suggested, reason, title) {
   var hint = suggested && !pressed;
   return '<button class="mh-flag' + (hint ? ' mh-flag-suggest' : '') + '" data-flag="' + flag + '" data-idx="' + i + '"' +
     ' aria-pressed="' + (pressed ? 'true' : 'false') + '"' +
-    ' title="' + esc(hint ? 'Foreslått ' + flag.toUpperCase() + ': ' + reason : title) + '">' + flag.toUpperCase() + '</button>';
+    ' title="' + esc(hint ? 'Foreslått ' + flag.toUpperCase() + ': ' + reason : title) + '" data-feature="priorart-flag">' + flag.toUpperCase() + '</button>';
 }
 
 function mhDateHtml(d, i, field, label) {
@@ -890,7 +890,7 @@ function mhOpsBtnHtml(d, i) {
     (why ? ' aria-disabled="true"' : '') +
     (_mhOpsBusy[mhOpsBusyKey(i)] ? ' aria-busy="true"' : '') +
     ' title="' + esc(why || 'Hent datoer, søker, oppfinner og tittel fra EPO OPS igjen (fyller bare tomme felt). Skjer av seg selv når du fører inn et nytt nummer.') + '"' +
-    ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS">' +
+    ' aria-label="Hent opplysninger for ' + esc(d.id) + ' fra EPO OPS" data-feature="priorart-ops">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-download"/></svg></button>';
 }
 
@@ -939,7 +939,7 @@ function claimDocChipHtml(data, c, field, effNovelty) {
   var open = _sakOpenDocPop && _sakOpenDocPop.claimNum === c.num && _sakOpenDocPop.field === field;
   var cls  = 'claim-doc-chip' + (ids.length ? '' : ' claim-doc-chip-empty');
   return '<span class="claim-doc-wrap">' +
-    '<button class="' + cls + '" data-doc-pop=\"' + esc(c.num) + '\" data-field="' + field + '" title="Velg mothold">' +
+    '<button class="' + cls + '" data-doc-pop=\"' + esc(c.num) + '\" data-field="' + field + '" title="Velg mothold" data-feature="claim-doc-popover">' +
       (ids.length ? esc(ids.join('+')) : 'velg') +
     '</button>' +
     (open ? claimDocPopHtml(data, c, field, ids) : '') +
@@ -960,7 +960,7 @@ function claimDocPopHtml(data, c, field, ids) {
     var full = !isNovelty && !on && ids.length >= MAX_INVENTIVE_DOCS;
     return '<button class="doc-pop-opt" role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '"' +
       (full ? ' disabled' : '') +
-      ' data-doc-pick="' + esc(d.id) + '" data-claim=\"' + esc(c.num) + '\" data-field="' + field + '">' +
+      ' data-doc-pick="' + esc(d.id) + '" data-claim=\"' + esc(c.num) + '\" data-field="' + field + '" data-feature="claim-doc-popover-option">' +
       '<span class="doc-pop-box">' + (on ? '✓' : '') + '</span>' +
       '<strong>' + esc(d.id) + '</strong><span>' + esc(d.ref || '') + '</span>' +
     '</button>';
@@ -968,7 +968,7 @@ function claimDocPopHtml(data, c, field, ids) {
   var copyIds = claimDocCopySource(data.claims, c.num, field, data.docs);
   var copy = copyIds
     ? '<button class="doc-pop-copy" data-doc-copy=\"' + esc(c.num) + '\" data-field="' + field + '"' +
-        ' title="Erstatt valget med motholdene fra krav ' + esc(c.num - 1) + ' (hurtigtast C)">' +
+        ' title="Erstatt valget med motholdene fra krav ' + esc(c.num - 1) + ' (hurtigtast C)" data-feature="claim-doc-popover-copy">' +
         '⧉ Som krav ' + esc(c.num - 1) + ' (' + esc(copyIds.join('+')) + ')</button>'
     : '';
   return '<span class="doc-pop">' + copy +

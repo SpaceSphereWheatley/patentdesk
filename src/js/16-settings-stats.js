@@ -1,7 +1,7 @@
 // ── Innstillinger ──────────────────────────────────
 // ── Innstillinger: venstremeny ─────────────────────
 // Rekkefølgen følger menyen; piltastene går i denne rekkefølgen.
-var SETTINGS_TABS = ['arbeidsmengde', 'frister', 'saksbehandling', 'data'];
+var SETTINGS_TABS = ['arbeidsmengde', 'frister', 'saksbehandling', 'data', 'bruk'];
 // v4.35.0 lagret underseksjonen; den åpner nå hovedseksjonen den hører til.
 var SETTINGS_TAB_LEGACY = { produksjon: 'arbeidsmengde', sakstype: 'arbeidsmengde', ferie: 'arbeidsmengde', medlesere: 'saksbehandling', sjekkliste: 'saksbehandling', saksmappe: 'saksbehandling', cpc: 'saksbehandling', sikkerhetskopi: 'data', eksport: 'data', faresone: 'data', om: 'data' };
 
@@ -34,6 +34,7 @@ function showSettingsTab(id, focus) {
   document.querySelectorAll('[data-settings-pane]').forEach(function(pane) {
     pane.classList.toggle('is-active', pane.dataset.settingsPane === id);
   });
+  if (id === 'bruk') renderUsageView();
 }
 
 (function() {
@@ -463,7 +464,7 @@ function renderEventLog() {
       '<span class="case-card-title">' + esc(lookupTitle(e)) + '</span>' +
       '<span class="case-card-notes">' + esc(notes) + '</span>' +
       '<div class="case-card-menu">' +
-        '<button class="btn-card-more btn-log-edit" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
+        '<button class="btn-card-more btn-log-edit" data-feature="log-edit-date" data-log-id="' + (e.id || item.origIdx) + '" title="Endre dato" aria-label="Endre dato"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
       '</div>' +
     '</div>';
   }).join('');
