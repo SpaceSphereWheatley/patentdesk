@@ -502,7 +502,6 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .about-name    { font-family: var(--font-head); font-size: 1.4rem; color: var(--text); }
 .about-version { font-size: var(--text-2xs); color: var(--muted-text); letter-spacing: var(--tracking-wide); }
 .about-desc    { font-size: var(--text-sm); color: var(--muted-text); margin-top: 0.15rem; }
-.about-author  { font-size: var(--text-base); color: var(--text); margin-top: var(--space-5); }
 .about-year    { font-size: var(--text-xs); color: var(--muted-text); }
 .about-fact-wrap {
   margin-top: 1.1rem;
