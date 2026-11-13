@@ -308,9 +308,18 @@ e2e('the popup follows the track when its height changes (rows follow the view)'
     tr.style.transition = 'none';
     tr.style.height = (tr.getBoundingClientRect().height + 60) + 'px';
   });
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r())));
+  // Popupen flyttes av en ResizeObserver, som kjører i nettleserens neste
+  // virkelige bildeoppdatering. Den går i virkelig tid, ikke på klokken testen
+  // styrer, så én requestAnimationFrame på den falske klokken kunne komme før
+  // den, og testen målte da popupen før den var flyttet (feilet ca. 1 av 7).
+  // Vent i virkelig tid til popupen har flyttet seg (høyst ca. 1 s).
+  let after = before;
+  for (let i = 0; i < 50 && after.pTop === before.pTop; i++) {
+    await page.waitForTimeout(20);
+    after = await geom(page, 'home-timeline');
+  }
   await page.clock.runFor(50);
-  const after = await geom(page, 'home-timeline');
+  after = await geom(page, 'home-timeline');
   assert.notEqual(after.tTop + after.tBottom, before.tTop + before.tBottom, 'the track moved or grew');
   assertOutsideTrack(after);
   assert.deepEqual(errors, []);
