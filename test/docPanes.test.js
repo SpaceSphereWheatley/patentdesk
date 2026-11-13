@@ -73,7 +73,9 @@ test('normalizeDocLayout: rules are three trimmed, length-limited strings', () =
   assert.strictEqual(r.length, 3);
   assert.strictEqual(r[0], 'Claims');
   assert.strictEqual(r[1], '');
-  assert.ok(r[2].length <= 40);
+  assert.ok(r[2].length <= 120);
+  const long = 'patentkrav, claims, krav, kravsett, endrede krav, nye krav, patent claims, amended claims';
+  assert.strictEqual(normalizeDocLayout({ rules: [long] }).rules[0], long, 'a list of several words fits');
   assert.deepStrictEqual(Array.from(normalizeDocLayout({ rules: 'x' }).rules), ['claims', 'figures', '']);
   assert.strictEqual(normalizeDocLayout({ rules: ['a'] }).rules.length, 3);
 });
@@ -150,8 +152,45 @@ test('docSlotMatch: contains, ignoring case and extension', () => {
   assert.strictEqual(docSlotMatch(f, 'pdf', []), -1, 'the extension is not part of the name');
 });
 
-test('docSlotMatch: first file in the list wins', () => {
-  assert.strictEqual(docSlotMatch(names(['Claims_new.pdf', 'Claims.pdf']), 'claims', []), 0);
+test('docSlotMatch: among partial matches, the first file in the list wins', () => {
+  assert.strictEqual(docSlotMatch(names(['Claims_new.pdf', 'Claims_old.pdf']), 'claims', []), 0);
+});
+
+// ── docSlotMatch: several words (comma-separated) ───
+
+test('docSlotMatch: a name equal to the word beats one that only contains it', () => {
+  assert.strictEqual(docSlotMatch(names(['Kravbrev.pdf', 'Krav.pdf']), 'krav', []), 1);
+  assert.strictEqual(docSlotMatch(names(['Claims_new.pdf', 'claims.PDF']), 'Claims', []), 1);
+});
+
+test('docSlotMatch: falls back to the next word when the first matches nothing', () => {
+  const f = names(['Description.pdf', 'NO2024-claims.pdf', 'Figures.pdf']);
+  assert.strictEqual(docSlotMatch(f, 'patentkrav, claims, krav', []), 1);
+});
+
+test('docSlotMatch: the first word that matches wins, whatever the file order', () => {
+  const f = names(['XXX-claims.pdf', 'Svar_krav.pdf', 'Patentkrav.pdf']);
+  assert.strictEqual(docSlotMatch(f, 'patentkrav, claims, krav', []), 2);
+  assert.strictEqual(docSlotMatch(f, 'claims, patentkrav', []), 0);
+  assert.strictEqual(docSlotMatch(f, 'krav, claims', []), 1, 'no name equals "krav", so the first file containing it wins');
+});
+
+test('docSlotMatch: blank words, extra spaces and case are ignored', () => {
+  const f = names(['Description.pdf', 'Figures.pdf']);
+  assert.strictEqual(docSlotMatch(f, ' , ,  FIGUR ,', []), 1);
+  assert.strictEqual(docSlotMatch(f, ' , , ', []), -1);
+  assert.strictEqual(docSlotMatch(f, 'krav, claims', []), -1);
+});
+
+test('docSlotMatch: skipped files are passed over for every word', () => {
+  const f = names(['Patentkrav.pdf', 'XXX-claims.pdf']);
+  assert.strictEqual(docSlotMatch(f, 'patentkrav, claims', [0]), 1);
+  assert.strictEqual(docSlotMatch(f, 'patentkrav, claims', [0, 1]), -1);
+});
+
+test('docSlotMatch: a semicolon is part of the word, not a separator', () => {
+  const f = names(['Claims.pdf']);
+  assert.strictEqual(docSlotMatch(f, 'krav; claims', []), -1);
 });
 
 test('docSlotMatch: empty or blank rule never matches; no files gives -1', () => {
@@ -178,6 +217,16 @@ test('docSlotMatch: malformed file entries are ignored', () => {
 });
 
 // ── docSlotAssign (AC 4, 5, 7) ──────────────────────
+
+test('docSlotAssign: word lists never put the same file in two panes', () => {
+  const f = names(['Patentkrav.pdf', 'Figurer.pdf']);
+  assert.deepStrictEqual(Array.from(docSlotAssign(f, ['patentkrav, claims', 'patentkrav, figur', ''], 2, [])), [0, 1]);
+});
+
+test('docSlotAssign: a manual pick still beats a word list', () => {
+  const f = names(['Patentkrav.pdf', 'Other.pdf']);
+  assert.deepStrictEqual(Array.from(docSlotAssign(f, ['patentkrav, claims', '', ''], 2, [1])), [1, -1]);
+});
 
 test('docSlotAssign: fills each slot from its rule, up to the pane count', () => {
   const f = names(['Description.pdf', 'Claims.pdf', 'Figures.pdf']);

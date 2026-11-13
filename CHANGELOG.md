@@ -7,6 +7,14 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Changed
+- **Plassreglene for dokumentpanelene tar flere søkeord.** Skriv ord skilt med
+  komma, f.eks. «patentkrav, claims, krav»: ordene prøves i rekkefølge, og
+  første ord som treffer en PDF bestemmer filen. Et filnavn som er lik ordet
+  går nå foran ett som bare inneholder det («krav» velger Krav.pdf framfor
+  Kravbrev.pdf). Feltet tar opptil 120 tegn (før 40). Eksisterende regler med
+  ett ord virker som før.
+
 ## [4.65.0] - 2026-11-12
 Fokusmodus og «Skjul PDF-verktøy» gir dokumentene mer høyde på fanen Dokumenter.
 
