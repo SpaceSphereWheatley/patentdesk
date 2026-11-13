@@ -7,6 +7,14 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Fixed
+- **«Tilbake» på saksiden virker igjen etter at fanen Dokumenter er brukt.**
+  Hver fil som ble lastet i et dokumentpanel, la et steg i nettleserens
+  historikk, så «Tilbake» byttet filene i panelene bakover i stedet for å gå ut
+  av saken — og på Oversikt, der panelene er skjult, så det ut som knappen ikke
+  gjorde noe. Panelene laster nå filer uten å legge igjen historikk. Gjelder
+  bare når appen kjøres via Start-PatentDesk.ps1.
+
 ## [4.65.0] - 2026-11-12
 Fokusmodus og «Skjul PDF-verktøy» gir dokumentene mer høyde på fanen Dokumenter.
 
