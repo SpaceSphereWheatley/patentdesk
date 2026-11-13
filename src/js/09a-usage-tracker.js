@@ -7,18 +7,19 @@
 // datamappe eller tilgang) venter i localStorage (pt_usage_buf).
 var USAGE_ENABLED_KEY = 'pt_usage_enabled';
 var USAGE_BUF_KEY     = 'pt_usage_buf';
+var USAGE_INFLIGHT_KEY = 'pt_usage_inflight'; // det som skrives akkurat nå, til skrivingen er bekreftet
 var USAGE_FILE_NAME   = 'usage.json';
 var USAGE_STATIC_SEL  = 'button, a[href], select, summary, [role="tab"], input[type="checkbox"], input[type="radio"], [data-feature]';
 var _USAGE_FLUSH_MS   = 5000;
-var _usageEnabledCache = null;
-var _usageDelta    = null;
 var _usageTimer    = null;
 var _usageFlushing = false;
 var _usageRange    = '30';
 var _usageResetArmed = null;
+var _usageRenderSeq = 0;
 
 // ── Rene funksjoner ────────────────────────────────
-// Funksjons-ID for ett element, eller null. Se test/usage.test.js.
+// Funksjons-ID for ett element, eller null. Aldri innhold fra saker: bare
+// faste navn og verdier fra markeringen. Se test/usage.test.js.
 function usageFeatureKey(el) {
   if (!el) return null;
   var ds = el.dataset || {};
@@ -32,15 +33,22 @@ function usageFeatureKey(el) {
   if (ds.status) return 'status:' + ds.status;
   if (ds.kind && ds.when) return 'filter:' + ds.kind + ':' + ds.when;
   if (el.type === 'radio' && el.name) return 'radio:' + el.name + ':' + el.value;
-  // Øvrige data-attributter (f.eks. data-mh-view="full"): første som ikke bare er hjelpetekst
-  var keys = Object.keys(ds).filter(function(k) { return k !== 'tooltip'; });
-  if (keys.length) return 'data:' + keys[0] + ':' + ds[keys[0]];
+  // Dynamisk tegnede knapper bærer saksdata i data-attributtene (data-id,
+  // data-cn …) — de brukes ALDRI. Klassen btn-… er innholdsfri og skiller dem.
+  var cls = typeof el.className === 'string' ? el.className.split(/\s+/) : [];
+  for (var i = 0; i < cls.length; i++) {
+    if (/^btn-[a-z0-9-]+$/.test(cls[i])) return 'class:' + cls[i];
+  }
   return null;
 }
 
 function usageIsEmpty(log) {
   return !log || !log.days || Object.keys(log.days).length === 0;
 }
+
+// Nøkler som finnes på alle objekter ('constructor', '__proto__' …) kan ikke
+// brukes som teller-ID.
+function _usageBadKey(k) { return k in Object.prototype; }
 
 // Gyldig logg ut, eller null hvis innholdet ikke er en bruksfil. Ugyldige
 // datoer og tellere (ikke-heltall, ≤ 0) kastes bort.
@@ -53,17 +61,27 @@ function usageNormalizeLog(p) {
     if (!re.test(day) || !p.days[day] || typeof p.days[day] !== 'object') return;
     Object.keys(p.days[day]).forEach(function(id) {
       var n = p.days[day][id];
-      if (typeof n !== 'number' || n < 1 || Math.floor(n) !== n) return;
+      if (_usageBadKey(id) || typeof n !== 'number' || n < 1 || Math.floor(n) !== n) return;
       if (!out.days[day]) out.days[day] = {};
       out.days[day][id] = n;
     });
   });
   if (p.versions && typeof p.versions === 'object' && !Array.isArray(p.versions)) {
     Object.keys(p.versions).forEach(function(ver) {
-      if (typeof p.versions[ver] === 'string' && re.test(p.versions[ver])) out.versions[ver] = p.versions[ver];
+      if (!_usageBadKey(ver) && typeof p.versions[ver] === 'string' && re.test(p.versions[ver])) out.versions[ver] = p.versions[ver];
     });
   }
   return out;
+}
+
+// Sant hvis normaliseringen ikke kaster bort noe: ukjent versjon, ukjente felt
+// eller ugyldige oppføringer gjør at filen må sikkerhetskopieres før den skrives om.
+function usageIsLossless(p) {
+  var n = usageNormalizeLog(p);
+  if (!n || p.v !== 1) return false;
+  if (Object.keys(p).some(function(k) { return k !== 'v' && k !== 'days' && k !== 'versions'; })) return false;
+  return JSON.stringify(n.days) === JSON.stringify(p.days) &&
+    JSON.stringify(n.versions) === JSON.stringify(p.versions || {});
 }
 
 // Summerer to logger uten å endre dem; versjonsdatoen er den tidligste.
@@ -74,10 +92,12 @@ function usageMerge(a, b) {
     Object.keys(log.days || {}).forEach(function(day) {
       if (!out.days[day]) out.days[day] = {};
       Object.keys(log.days[day]).forEach(function(id) {
+        if (_usageBadKey(id)) return;
         out.days[day][id] = (out.days[day][id] || 0) + log.days[day][id];
       });
     });
     Object.keys(log.versions || {}).forEach(function(ver) {
+      if (_usageBadKey(ver)) return;
       if (!out.versions[ver] || log.versions[ver] < out.versions[ver]) out.versions[ver] = log.versions[ver];
     });
   });
@@ -85,9 +105,10 @@ function usageMerge(a, b) {
 }
 
 function usageBump(log, day, id, version) {
+  if (_usageBadKey(id)) return log;
   if (!log.days[day]) log.days[day] = {};
   log.days[day][id] = (log.days[day][id] || 0) + 1;
-  if (version && !log.versions[version]) log.versions[version] = day;
+  if (version && !_usageBadKey(version) && !log.versions[version]) log.versions[version] = day;
   return log;
 }
 
@@ -104,7 +125,7 @@ function usageRangeStart(today, range) {
 // perioden. never: kjent funksjon som aldri er logget.
 function usageSummarize(log, ids, today, range) {
   var start = usageRangeStart(today, range);
-  var inWin = {}, lastIn = {}, lastAll = {};
+  var inWin = Object.create(null), lastIn = Object.create(null), lastAll = Object.create(null);
   Object.keys(log.days || {}).forEach(function(day) {
     Object.keys(log.days[day]).forEach(function(id) {
       if (!lastAll[id] || day > lastAll[id]) lastAll[id] = day;
@@ -118,44 +139,50 @@ function usageSummarize(log, ids, today, range) {
   var idle = Object.keys(lastAll).filter(function(id) { return !inWin[id]; })
     .map(function(id) { return { id: id, last: lastAll[id] }; });
   idle.sort(function(a, b) { return a.last < b.last ? 1 : a.last > b.last ? -1 : (a.id < b.id ? -1 : 1); });
-  var never = (ids || []).filter(function(id, i, arr) { return !lastAll[id] && arr.indexOf(id) === i; }).sort();
+  var never = (ids || []).filter(function(id, i, arr) { return !_usageBadKey(id) && !lastAll[id] && arr.indexOf(id) === i; }).sort();
   return { used: used, idle: idle, never: never };
 }
 
 // ── Innstilling og innsamling ──────────────────────
+// Tellerne leses fra og skrives til localStorage hver gang (ingen kopi i
+// minnet), så flere faner ikke overskriver hverandres tellere.
 function usageEnabled() {
-  if (_usageEnabledCache === null) _usageEnabledCache = _lsGet(USAGE_ENABLED_KEY) === '1';
-  return _usageEnabledCache;
+  try { return localStorage.getItem(USAGE_ENABLED_KEY) === '1'; } catch(e) { return false; }
 }
 
 function _usageEmpty() { return { v: 1, days: {}, versions: {} }; }
 
-function _usageLoadDelta() {
-  if (_usageDelta) return _usageDelta;
-  var raw = _lsGet(USAGE_BUF_KEY), parsed = null;
+function _usageBufRead(key) {
+  var raw = null, parsed = null;
+  try { raw = localStorage.getItem(key); } catch(e) { raw = null; }
   try { parsed = raw ? usageNormalizeLog(JSON.parse(raw)) : null; } catch(e) { parsed = null; }
-  _usageDelta = parsed || _usageEmpty();
-  return _usageDelta;
+  return parsed || _usageEmpty();
 }
 
-function _usageSaveBuf() {
+function _usageBufWrite(key, log) {
   try {
-    if (usageIsEmpty(_usageDelta)) localStorage.removeItem(USAGE_BUF_KEY);
-    else localStorage.setItem(USAGE_BUF_KEY, JSON.stringify(_usageDelta));
+    if (usageIsEmpty(log)) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(log));
   } catch(e) {}
 }
 
 function usageRecord(id) {
   if (!usageEnabled()) return;
-  usageBump(_usageLoadDelta(), todayStr(), id, APP_VERSION);
-  _usageSaveBuf();
+  var d = _usageBufRead(USAGE_BUF_KEY);
+  usageBump(d, todayStr(), id, APP_VERSION);
+  _usageBufWrite(USAGE_BUF_KEY, d);
   usageScheduleFlush();
 }
 
+// Sidevisning, kalt fra navigateTo. Bare sidetypen (sak/<id> blir «sak»).
+function usageRecordNav(page) {
+  if (typeof page !== 'string' || !page) return;
+  try { usageRecord('page:' + page.split('/')[0]); } catch(e) {}
+}
+
 function usageSetEnabled(on) {
-  _usageEnabledCache = !!on;
-  _lsSet(USAGE_ENABLED_KEY, on ? '1' : '0');
-  if (!on) usageFlush(); // det som er talt hittil, skal ikke gå tapt
+  try { localStorage.setItem(USAGE_ENABLED_KEY, on ? '1' : '0'); } catch(e) {}
+  return on ? Promise.resolve() : usageFlush(); // det som er talt hittil, skal ikke gå tapt
 }
 
 document.addEventListener('click', function(e) {
@@ -163,7 +190,8 @@ document.addEventListener('click', function(e) {
   try {
     var t = e.target && e.target.closest ? e.target.closest(USAGE_STATIC_SEL) : null;
     var key = usageFeatureKey(t);
-    if (key && key.indexOf('usage-') !== 0) usageRecord(key); // ikke tell visningen selv
+    // Sidevisninger telles i navigateTo (også saker som åpnes fra kort og rader)
+    if (key && key.indexOf('usage-') !== 0 && key.indexOf('page:') !== 0) usageRecord(key);
   } catch(err) {}
 }, true);
 
@@ -178,61 +206,80 @@ function _usageDirReady() {
   return _bkDirHandle.queryPermission({ mode: 'readwrite' }).then(function(p) { return p === 'granted'; }).catch(function() { return false; });
 }
 
-// Filens logg (tom hvis den ikke finnes). En ulesbar fil legges i backup/ før
-// den overskrives, som med arbeidsfilen.
-function _usageReadFile(dir) {
+// Filskriving går i kø på tvers av faner når nettleseren har Web Locks
+function _usageWithLock(fn) {
+  if (typeof navigator !== 'undefined' && navigator.locks && navigator.locks.request) {
+    return navigator.locks.request('pt_usage_file', fn);
+  }
+  return new Promise(function(resolve) { resolve(fn()); });
+}
+
+// Filens logg (tom hvis den ikke finnes). Bare for skriving (forFlush) legges
+// en ulesbar eller delvis ugyldig fil i backup/ før den skrives om; visningen
+// leser stille og skriver aldri.
+function _usageReadFile(dir, forFlush) {
   return _fsReadText(dir, USAGE_FILE_NAME).then(function(text) {
     if (!text || !text.trim()) return _usageEmpty();
-    var log = null;
-    try { log = usageNormalizeLog(JSON.parse(text)); } catch(e) { log = null; }
-    if (log) return log;
+    var parsed = null, log = null;
+    try { parsed = JSON.parse(text); log = usageNormalizeLog(parsed); } catch(e) { log = null; }
+    if (!forFlush) return log || _usageEmpty();
+    if (log && usageIsLossless(parsed)) return log;
     return dir.getDirectoryHandle(DAILY_BACKUP_DIR, { create: true }).then(function(bdir) {
-      return _fsWriteText(bdir, 'usage-ulesbar-' + todayStr() + '.json', text);
+      return _fsWriteText(bdir, 'usage-ulesbar-' + todayStr() + '-' + Date.now() + '.json', text);
     }).then(function() {
-      showToast('✗ usage.json kunne ikke leses — lagt i backup/ og startet på nytt', true);
-      return _usageEmpty();
+      showToast('✗ usage.json hadde uventet innhold — kopi er lagt i backup/', true);
+      return log || _usageEmpty();
     });
   });
 }
 
+var _usageFlushing = false;
 function usageFlush() {
   if (_usageFlushing) return Promise.resolve();
-  var snap = _usageLoadDelta();
-  if (usageIsEmpty(snap)) return Promise.resolve();
+  if (usageIsEmpty(_usageBufRead(USAGE_BUF_KEY)) && usageIsEmpty(_usageBufRead(USAGE_INFLIGHT_KEY))) return Promise.resolve();
   _usageFlushing = true;
-  _usageDelta = _usageEmpty();
-  var dir = null;
-  return _usageDirReady().then(function(ok) {
-    if (!ok) throw new Error('no-access');
-    dir = _bkDirHandle;
-    return _usageReadFile(dir);
-  }).then(function(base) {
-    return _fsWriteText(dir, USAGE_FILE_NAME, JSON.stringify(usageMerge(base, snap), null, 1));
-  }).then(function() {
-    _usageSaveBuf();
-    return true;
-  }, function() {
-    _usageDelta = usageMerge(snap, _usageDelta); // ikke skrevet: tellerne venter
-    _usageSaveBuf();
-    return false;
-  }).then(function(written) {
+  return _usageWithLock(_usageFlushLocked).then(function(written) {
     _usageFlushing = false;
     // Telt noe under skrivingen, kommer en ny runde. Etter en feil venter vi
     // på neste klikk, oppstart eller tilgang i stedet for å prøve i ring.
-    if (written && !usageIsEmpty(_usageDelta)) usageScheduleFlush();
+    if (written && !usageIsEmpty(_usageBufRead(USAGE_BUF_KEY))) usageScheduleFlush();
+  }, function() { _usageFlushing = false; });
+}
+
+function _usageFlushLocked() {
+  return _usageDirReady().then(function(ok) {
+    if (!ok) return false;
+    var dir = _bkDirHandle;
+    // Det som venter, flyttes til «under skriving» og blir der til filen er
+    // bekreftet skrevet (en avbrutt skriving plukkes opp igjen neste gang)
+    var snap = usageMerge(_usageBufRead(USAGE_INFLIGHT_KEY), _usageBufRead(USAGE_BUF_KEY));
+    if (usageIsEmpty(snap)) return false;
+    _usageBufWrite(USAGE_INFLIGHT_KEY, snap);
+    _usageBufWrite(USAGE_BUF_KEY, _usageEmpty());
+    return _usageReadFile(dir, true).then(function(base) {
+      return _fsWriteText(dir, USAGE_FILE_NAME, JSON.stringify(usageMerge(base, snap), null, 1));
+    }).then(function() {
+      _usageBufWrite(USAGE_INFLIGHT_KEY, _usageEmpty());
+      return true;
+    }, function() {
+      _usageBufWrite(USAGE_BUF_KEY, usageMerge(_usageBufRead(USAGE_INFLIGHT_KEY), _usageBufRead(USAGE_BUF_KEY)));
+      _usageBufWrite(USAGE_INFLIGHT_KEY, _usageEmpty());
+      return false;
+    });
   });
 }
 
 document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'hidden' && _usageDelta && !usageIsEmpty(_usageDelta)) usageFlush();
+  if (document.visibilityState === 'hidden') usageFlush();
 });
 
-// Hele loggen: filen pluss det som venter. file er null uten datamappe.
+// Hele loggen: filen pluss det som venter. hasFile er false uten datamappe.
 function usageLoadAll() {
   return _usageDirReady().then(function(ok) {
-    return ok ? _usageReadFile(_bkDirHandle) : null;
+    return ok ? _usageReadFile(_bkDirHandle, false) : null;
   }).catch(function() { return null; }).then(function(file) {
-    return { log: usageMerge(file, _usageLoadDelta()), hasFile: !!file };
+    var waiting = usageMerge(_usageBufRead(USAGE_INFLIGHT_KEY), _usageBufRead(USAGE_BUF_KEY));
+    return { log: usageMerge(file, waiting), hasFile: !!file };
   });
 }
 
@@ -261,9 +308,13 @@ function renderUsageView() {
   var cb = document.getElementById('usage-enabled-cb');
   if (cb) cb.checked = usageEnabled();
   document.querySelectorAll('[data-usage-range]').forEach(function(b) {
-    b.classList.toggle('is-active', b.dataset.usageRange === _usageRange);
+    var on = b.dataset.usageRange === _usageRange;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
+  var seq = ++_usageRenderSeq;
   usageLoadAll().then(function(res) {
+    if (seq !== _usageRenderSeq) return; // et nyere valg er allerede tegnet
     var reg = _usageCollectIds();
     var s = usageSummarize(res.log, reg.ids, todayStr(), _usageRange);
     var html = '';
@@ -294,16 +345,21 @@ function _usageDownload(log) {
   showToast('✓ Lagret til ' + a.download);
 }
 
+// Nullstilling går i kø bak en skriving som pågår, og nekter heller enn å late
+// som når datamappen ikke kan nås (da ville den gamle filen dukket opp igjen).
 function _usageReset() {
-  _usageDelta = _usageEmpty();
-  _usageSaveBuf();
-  return _usageDirReady().then(function(ok) {
-    if (!ok) return;
-    return _fsWriteText(_bkDirHandle, USAGE_FILE_NAME, JSON.stringify(_usageEmpty()));
-  }).then(function() {
-    showToast('✓ Bruksstatistikken er nullstilt');
+  if (_usageFlushing) { showToast('Vent et øyeblikk — tellerne skrives akkurat nå'); return Promise.resolve(); }
+  return _usageWithLock(function() {
+    function clearBuffers() { _usageBufWrite(USAGE_BUF_KEY, _usageEmpty()); _usageBufWrite(USAGE_INFLIGHT_KEY, _usageEmpty()); }
+    if (!_bkDirHandle || !_bkFsaSupported()) { clearBuffers(); return true; } // ingen fil å tømme
+    return _usageDirReady().then(function(ok) {
+      if (!ok) { showToast('✗ Ingen tilgang til datamappen — usage.json kan ikke nullstilles nå', true); return false; }
+      return _fsWriteText(_bkDirHandle, USAGE_FILE_NAME, JSON.stringify(_usageEmpty())).then(function() { clearBuffers(); return true; });
+    });
+  }).then(function(done) {
+    if (done) showToast('✓ Bruksstatistikken er nullstilt');
     renderUsageView();
-  }).catch(function() { showToast('✗ Kunne ikke nullstille usage.json', true); });
+  }, function() { showToast('✗ Kunne ikke nullstille usage.json', true); });
 }
 
 (function() {

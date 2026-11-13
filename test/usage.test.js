@@ -6,7 +6,7 @@ const path = require('path');
 const { loadFunctions } = require('./extractFunctions');
 
 const F = loadFunctions(
-  ['usageFeatureKey', 'usageNormalizeLog', 'usageMerge', 'usageBump', 'usageRangeStart', 'usageSummarize', 'usageIsEmpty'],
+  ['_usageBadKey', 'usageIsLossless', 'usageFeatureKey', 'usageNormalizeLog', 'usageMerge', 'usageBump', 'usageRangeStart', 'usageSummarize', 'usageIsEmpty'],
   { vars: ['USAGE_STATIC_SEL'] }
 );
 const plain = (x) => JSON.parse(JSON.stringify(x));
@@ -23,7 +23,7 @@ test('usageFeatureKey: data-feature wins, then id, then data attributes', () => 
   assert.strictEqual(F.usageFeatureKey(el({ dataset: { status: 'ny' } })), 'status:ny');
   assert.strictEqual(F.usageFeatureKey(el({ dataset: { kind: 'ny', when: 'overdue' } })), 'filter:ny:overdue');
   assert.strictEqual(F.usageFeatureKey(el({ type: 'radio', name: 'status', value: 'ny' })), 'radio:status:ny');
-  assert.strictEqual(F.usageFeatureKey(el({ dataset: { mhView: 'full' } })), 'data:mhView:full');
+  assert.strictEqual(F.usageFeatureKey(el({ dataset: { mhView: 'full' } })), null); // unknown data values are never used
   assert.strictEqual(F.usageFeatureKey(el({ dataset: { tooltip: 'Hjelp' } })), null);
   assert.strictEqual(F.usageFeatureKey(el({})), null);
   assert.strictEqual(F.usageFeatureKey(null), null);
@@ -101,6 +101,43 @@ test('usageSummarize: empty log lists every known feature as never used', () => 
   assert.deepStrictEqual(plain(s.never), ['a', 'b']);
 });
 
+// AC6: dynamically drawn buttons carry case data in data-attributes. None of
+// it may end up in a feature key.
+test('usageFeatureKey never uses data-attribute values from dynamic buttons', () => {
+  const cases = [
+    el({ className: 'btn-card-more', dataset: { id: 'case-9f3a' } }),
+    el({ className: 'card-dropdown-item btn-medl-send', dataset: { id: 'case-9f3a' } }),
+    el({ className: 'btn-copy-path', dataset: { cn: '20241234' } }),
+    el({ className: 'x', dataset: { citedOpen: 'case-9f3a' } }),
+    el({ className: 'x', dataset: { docId: 'd1', idx: '4' } }),
+    el({ className: 'medl-out-case', dataset: { id: 'case-9f3a' } }),
+  ];
+  const keys = cases.map((c) => F.usageFeatureKey(c));
+  assert.deepStrictEqual(keys, ['class:btn-card-more', 'class:btn-medl-send', 'class:btn-copy-path', null, null, null]);
+  keys.forEach((k) => assert.ok(!k || !/case-9f3a|20241234|d1/.test(k)));
+});
+
+test('reserved keys (constructor, __proto__ …) are never counted', () => {
+  const d = { v: 1, days: {}, versions: {} };
+  F.usageBump(d, '2026-11-13', 'constructor', 'v1');
+  F.usageBump(d, '2026-11-13', '__proto__', 'v1');
+  F.usageBump(d, '2026-11-13', 'ok', 'toString');
+  assert.deepStrictEqual(plain(d.days), { '2026-11-13': { ok: 1 } });
+  assert.deepStrictEqual(plain(d.versions), {});
+  const n = F.usageNormalizeLog(JSON.parse('{"v":1,"days":{"2026-11-13":{"constructor":2,"__proto__":3,"a":1}}}'));
+  assert.deepStrictEqual(plain(n.days), { '2026-11-13': { a: 1 } });
+  const s = F.usageSummarize({ v: 1, days: {}, versions: {} }, ['constructor', 'a'], '2026-11-13', '7');
+  assert.deepStrictEqual(plain(s.never), ['a']);
+});
+
+test('usageIsLossless: only a clean v1 file survives untouched', () => {
+  assert.strictEqual(F.usageIsLossless({ v: 1, days: { '2026-11-13': { a: 1 } }, versions: { v1: '2026-11-13' } }), true);
+  assert.strictEqual(F.usageIsLossless({ v: 2, days: {}, versions: {} }), false);
+  assert.strictEqual(F.usageIsLossless({ v: 1, days: {}, versions: {}, extra: 1 }), false);
+  assert.strictEqual(F.usageIsLossless({ v: 1, days: { '2026-11-13': { a: 1, b: -2 } } }), false);
+  assert.strictEqual(F.usageIsLossless({ v: 1, days: { 'bad': { a: 1 } } }), false);
+});
+
 // Every interactive element in the static markup must have a derivable
 // feature ID, so a new button can't silently escape the usage view.
 test('static markup: every interactive element has a feature key', () => {
@@ -120,7 +157,8 @@ test('static markup: every interactive element has a feature key', () => {
     const name = (/\sname="([^"]*)"/.exec(' ' + attrs) || [])[1];
     const value = (/\svalue="([^"]*)"/.exec(' ' + attrs) || [])[1];
     const type = (/\stype="([^"]*)"/.exec(' ' + attrs) || [])[1];
-    if (!F.usageFeatureKey({ id, dataset, name, value, type })) missing.push(m[0].slice(0, 90));
+    const className = (/\sclass="([^"]*)"/.exec(' ' + attrs) || [])[1] || '';
+    if (!F.usageFeatureKey({ id, dataset, name, value, type, className })) missing.push(m[0].slice(0, 90));
   }
   assert.deepStrictEqual(missing, []);
 });
