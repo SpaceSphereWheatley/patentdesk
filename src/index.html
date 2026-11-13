@@ -658,26 +658,16 @@
                            value="C:\Users\brukernavn\Dokumenter\Saksdokumenter"
                            placeholder="C:\sti\til\Saksdokumenter" />
                     <div class="docroot-preview" id="docroot-preview"></div>
-                    <div class="docroot-filenote">
-                      For at åpning og kopiering av dokumenter skal fungere, bør hver
-                      sak-mappe inneholde filene:
-                      <ul>
-                        <li><code>Claims.pdf</code></li>
-                        <li><code>Application.pdf</code></li>
-                        <li><code>Figures.pdf</code></li>
-                        <li><code>Description.pdf</code></li>
-                        <li><code>Abstract.pdf</code></li>
-                      </ul>
-                    </div>
+                    <div class="docroot-filenote">Hver sak har en mappe med saksnummeret som navn. Filene i mappen hentes inn når saken åpnes (krever <code>Start-PatentDesk.ps1</code>).</div>
                   </div>
                   <div class="settings-row settings-row-col" id="settings-dp-rules">
                     <div class="settings-label">
                       <span class="settings-label-title">Dokumentpaneler: plassregler</span>
-                      <span class="settings-label-sub">Hvilken fil som åpnes i hvilket panel på fanen Dokumenter. Første PDF der filnavnet inneholder teksten, uten forskjell på store og små bokstaver. Tomt felt = velges for hånd.</span>
+                      <span class="settings-label-sub">Hvilken fil som åpnes i hvilket panel på fanen Dokumenter. Ett eller flere søkeord skilt med komma, prøvd i rekkefølge: første ord som treffer en PDF vinner, og et filnavn som er lik ordet går foran ett som bare inneholder det. Uten forskjell på store og små bokstaver. Tomt felt = velges for hånd.</span>
                     </div>
-                    <div class="dp-rule-row"><label for="input-dp-rule-1">Panel 1</label><input class="field-input" id="input-dp-rule-1" data-dp-rule="0" type="text" maxlength="40" placeholder="f.eks. claims" /></div>
-                    <div class="dp-rule-row"><label for="input-dp-rule-2">Panel 2</label><input class="field-input" id="input-dp-rule-2" data-dp-rule="1" type="text" maxlength="40" placeholder="f.eks. figures" /></div>
-                    <div class="dp-rule-row"><label for="input-dp-rule-3">Panel 3</label><input class="field-input" id="input-dp-rule-3" data-dp-rule="2" type="text" maxlength="40" placeholder="(for hånd)" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-1">Panel 1</label><input class="field-input" id="input-dp-rule-1" data-dp-rule="0" type="text" maxlength="120" placeholder="f.eks. patentkrav, claims, krav" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-2">Panel 2</label><input class="field-input" id="input-dp-rule-2" data-dp-rule="1" type="text" maxlength="120" placeholder="f.eks. figur, figures, tegning" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-3">Panel 3</label><input class="field-input" id="input-dp-rule-3" data-dp-rule="2" type="text" maxlength="120" placeholder="(for hånd)" /></div>
                   </div>
                   <div class="settings-row settings-row-col">
                     <div class="settings-label">
@@ -940,6 +930,8 @@
               <button type="button" class="dp-seg-btn" data-dp-side="right" aria-pressed="false">Krav til høyre</button>
             </div>
             <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle">Skjul krav</button>
+            <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-tools-toggle" title="Skjuler PDF-leserens verktøylinje (og dermed uthevingsverktøyene)">Skjul PDF-verktøy</button>
+            <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-focus-toggle" title="Fold sammen toppfeltet så dokumentene får mest mulig høyde">Fokus</button>
           </div>
         </div>
         <div class="dp-viewer" id="sak-viewer" role="tabpanel" aria-labelledby="sak-tab-docs" hidden>
@@ -1989,17 +1981,7 @@
           <input class="field-input settings-path-input" id="input-onb-docroot" type="text"
                  placeholder="C:\sti\til\Saksdokumenter" />
           <div class="docroot-preview" id="onb-docroot-preview"></div>
-          <div class="docroot-filenote">
-            For at åpning og kopiering av dokumenter skal fungere, bør hver
-            sak-mappe inneholde filene:
-            <ul>
-              <li><code>Claims.pdf</code></li>
-              <li><code>Application.pdf</code></li>
-              <li><code>Figures.pdf</code></li>
-              <li><code>Description.pdf</code></li>
-              <li><code>Abstract.pdf</code></li>
-            </ul>
-          </div>
+          <div class="docroot-filenote">Hver sak har en mappe med saksnummeret som navn. Filene i mappen hentes inn når saken åpnes (krever <code>Start-PatentDesk.ps1</code>).</div>
         </div>
 
         <div class="onb-step" data-step="2">

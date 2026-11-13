@@ -634,3 +634,150 @@ e2e('compact header: when the top bar changes height by itself, the documents re
   assert.ok(b.h - b.bottom < 40, 'no gap: ' + (b.h - b.bottom));
   await s.close();
 });
+
+// ── Focus mode and PDF toolbar ──────────────────────
+
+const docsTop = (p) => p.evaluate(() => document.getElementById('dp-body').getBoundingClientRect().top);
+
+e2e('focus: the case header folds into one strip and the documents start near the top', async () => {
+  const s = await openDocs({ status: 'viderebehandling' });
+  const p = s.page;
+  const normalTop = await docsTop(p);
+  assert.match(await p.locator('#dp-focus-toggle').textContent(), /Fokus/);
+  await p.click('#dp-focus-toggle');
+  await p.waitForTimeout(300);
+  assert.match(await p.locator('#dp-focus-toggle').textContent(), /Avslutt fokus/);
+  for (const sel of ['#btn-sak-back', '.sak-meta-line', '#sak-page-round', '#btn-sak-docs', '#btn-sak-history']) {
+    assert.equal(await p.locator(sel).isVisible(), false, sel + ' is hidden in focus mode');
+  }
+  assert.equal(await p.locator('#sak-page-title').isVisible(), true, 'case number stays');
+  assert.equal(await p.locator('#sak-status-chip').isVisible(), true, 'status chip stays');
+  assert.equal(await p.locator('#sak-tabs').isVisible() && await p.locator('#dp-toolbar').isVisible(), true);
+  const top = await docsTop(p);
+  assert.ok(top <= 55, 'documents start at ' + top + ' px (was ' + normalTop + ')');
+  const b = await p.evaluate(() => { const r = document.getElementById('dp-body').getBoundingClientRect(); return { bottom: r.bottom, h: innerHeight, scroll: document.documentElement.scrollHeight }; });
+  assert.ok(b.bottom <= b.h && b.h - b.bottom < 40, 'fills the window: ' + (b.h - b.bottom) + ' px left');
+  assert.ok(b.scroll <= b.h + 1, 'no page scrolling');
+  await s.close();
+});
+
+e2e('focus: leaving it, or switching to Oversikt, brings the whole header back', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.click('#dp-focus-toggle');
+  await p.click('#sak-tab-overview');
+  assert.equal(await p.locator('#btn-sak-back').isVisible(), true, 'normal header on Oversikt');
+  assert.equal(await p.locator('#btn-sak-docs').isVisible(), true);
+  await p.click('#sak-tab-docs');
+  await p.waitForTimeout(300);
+  assert.equal(await p.locator('#btn-sak-back').isVisible(), false, 'focus is kept for the Dokumenter tab');
+  await p.click('#dp-focus-toggle'); // Avslutt fokus
+  await p.waitForTimeout(200);
+  assert.equal(await p.locator('#btn-sak-back').isVisible(), true);
+  assert.equal(await p.evaluate(() => JSON.parse(localStorage.getItem('pt_doc_layout')).focus), false);
+  await s.close();
+});
+
+e2e('focus: remembered across a reload, and the same in every state and for an Oppdrag', async () => {
+  for (const o of [{}, { status: 'fristarkiv' }, { status: 'avsluttet' }, { type: 'oppdrag' }, { files: [] }]) {
+    const s = await openDocs(Object.assign({ layout: JSON.stringify({ focus: true }) }, o));
+    assert.equal(await s.page.locator('#btn-sak-back').isVisible(), false, JSON.stringify(o));
+    assert.ok((await docsTop(s.page)) <= 55, 'documents high up: ' + JSON.stringify(o));
+    await s.close();
+  }
+});
+
+e2e('PDF toolbar: off by default; the toggle puts the viewer parameters on every pane address and reloads the panes', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  assert.doesNotMatch(await frameUrl(p, 0), /#toolbar=0/);
+  assert.match(await p.locator('#dp-tools-toggle').textContent(), /Skjul PDF-verktøy/);
+  assert.equal(await p.locator('#dp-tools-toggle').getAttribute('aria-pressed'), null, 'the label says it, no aria-pressed on top (screen readers would read it twice)');
+  await p.waitForTimeout(300);
+  const before = docRequests.length;
+  await p.click('#dp-tools-toggle');
+  await p.waitForTimeout(500);
+  for (const i of [0, 1]) assert.match(await frameUrl(p, i), /#toolbar=0&navpanes=0$/);
+  assert.ok(docRequests.length >= before + 2, 'both panes were requested again: ' + before + ' -> ' + docRequests.length);
+  assert.match(await p.locator('#dp-tools-toggle').textContent(), /Vis PDF-verktøy/);
+  assert.equal(await p.evaluate(() => JSON.parse(localStorage.getItem('pt_doc_layout')).hideToolbar), true);
+  await p.click('#dp-tools-toggle');
+  await p.waitForTimeout(500);
+  assert.doesNotMatch(await frameUrl(p, 0), /#toolbar/);
+  await s.close();
+});
+
+e2e('PDF toolbar: a remembered choice is applied when the tab opens', async () => {
+  const s = await openDocs({ layout: JSON.stringify({ hideToolbar: true }) });
+  assert.match(await frameUrl(s.page, 0), /#toolbar=0&navpanes=0$/);
+  await s.close();
+});
+
+e2e('focus: a remembered focus does nothing when the app is opened as a plain file (no tab or toolbar to leave it with)', async () => {
+  const s = await openCase(pathToFileURL(APP_FILE).href, { layout: JSON.stringify({ focus: true }) });
+  assert.equal(await s.page.locator('#sak-tab-docs').isVisible(), false, 'no Dokumenter tab without the server');
+  await s.page.evaluate(() => setSakTab('docs'));   // kan ikke tvinges åpen
+  await s.page.waitForTimeout(300);
+  assert.equal(await s.page.locator('#btn-sak-back').isVisible(), true, 'the normal header stays');
+  assert.equal(await s.page.locator('#btn-sak-docs').isVisible(), true, 'and the Dokumenter list is reachable');
+  assert.equal(await s.page.evaluate(() => document.body.classList.contains('dp-focus-mode')), false);
+  await s.close();
+});
+
+// ── Review round 2 (focus mode) ─────────────────────
+
+e2e('focus and toolbar buttons: the tooltip follows the label', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  const title = (id) => p.locator(id).getAttribute('title');
+  const t0 = await title('#dp-tools-toggle'), f0 = await title('#dp-focus-toggle');
+  assert.match(t0, /Skjuler/);
+  await p.click('#dp-tools-toggle');
+  await p.waitForTimeout(300);
+  const t1 = await title('#dp-tools-toggle');
+  assert.match(t1, /Viser/);
+  assert.notEqual(t1, t0);
+  await p.click('#dp-focus-toggle');
+  await p.waitForTimeout(300);
+  const f1 = await title('#dp-focus-toggle');
+  assert.notEqual(f1, f0);
+  assert.match(f1, /tilbake|hele toppfeltet/i);
+  await s.close();
+});
+
+e2e('focus: a case without files says how to add one (the Dokumenter list is hidden in focus)', async () => {
+  const s = await openDocs({ files: [], layout: JSON.stringify({ focus: true }) });
+  assert.match(await s.page.locator('#dp-empty-0').textContent(), /Avslutt fokus/);
+  await s.close();
+  const s2 = await openDocs({ files: [] });
+  assert.doesNotMatch(await s2.page.locator('#dp-empty-0').textContent(), /Avslutt fokus/, 'only when focus hides the list');
+  await s2.close();
+});
+
+e2e('focus: survives a real reload, and pane and claims widths are the same with and without it', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  const widths = () => p.evaluate(() => ['#dp-claims', '.dp-pane[data-dp-pane="0"]', '.dp-pane[data-dp-pane="1"]'].map((q) => Math.round(document.querySelector(q).getBoundingClientRect().width)));
+  const before = await widths();
+  await p.click('#dp-focus-toggle');
+  await p.waitForTimeout(300);
+  assert.deepEqual(await widths(), before, 'widths unchanged by focus mode');
+  await p.reload();
+  await p.waitForTimeout(300);
+  await p.click('#sak-tab-docs');
+  await p.waitForTimeout(700);
+  assert.equal(await p.locator('#btn-sak-back').isVisible(), false, 'still in focus after a real reload');
+  assert.match(await p.locator('#dp-focus-toggle').textContent(), /Avslutt fokus/);
+  await s.close();
+});
+
+e2e('export: the layout carries focus and hideToolbar', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.click('#dp-focus-toggle');
+  await p.click('#dp-tools-toggle');
+  const ex = await p.evaluate(() => JSON.parse(JSON.stringify(makeExportPayload().docLayout)));
+  assert.equal(ex.focus, true);
+  assert.equal(ex.hideToolbar, true);
+  await s.close();
+});

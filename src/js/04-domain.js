@@ -783,13 +783,13 @@ function buildCasePath(caseNumber) {
 // og et kravpanel som kan flyttes, byttes og skjules. Oppsettet er felles for
 // alle saker (localStorage, pt_doc_layout) og følger med i eksport og
 // sikkerhetskopi. Plassreglene bestemmer hvilken fil som havner i hvilket
-// panel: første PDF der filnavnet (uten .pdf) inneholder teksten. Rene
+// panel: en kommaliste med søkeord, prøvd i rekkefølge (se docSlotMatch). Rene
 // funksjoner — se test/docPanes.test.js.
 var DOC_PANE_MAX = 3;
 var DOC_PANE_MIN = 0.15;
 var DOC_CLAIMS_MODES = ['overview'];
 var DOC_CLAIMS_SIDES = ['left', 'right'];
-var DOC_RULE_MAX = 40;
+var DOC_RULE_MAX = 120;
 var DOC_CLAIMS_W_MIN = 160;
 var DOC_CLAIMS_W_MAX = 480;
 
@@ -801,6 +801,8 @@ function defaultDocLayout() {
     claimsMode: 'overview',
     claimsWidth: 250,
     rules: ['claims', 'figures', ''],
+    focus: false,        // fokusmodus: toppfeltet foldes sammen til én stripe
+    hideToolbar: false,  // PDF-leserens egen verktøylinje og sidepanel skjules
     widths: { 1: [1], 2: [0.5, 0.5], 3: [1 / 3, 1 / 3, 1 / 3] }
   };
 }
@@ -852,6 +854,8 @@ function normalizeDocLayout(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return d;
   if (Number.isInteger(raw.count) && raw.count >= 1 && raw.count <= DOC_PANE_MAX) d.count = raw.count;
   if (typeof raw.claimsVisible === 'boolean') d.claimsVisible = raw.claimsVisible;
+  if (typeof raw.focus === 'boolean') d.focus = raw.focus;
+  if (typeof raw.hideToolbar === 'boolean') d.hideToolbar = raw.hideToolbar;
   if (DOC_CLAIMS_SIDES.indexOf(raw.claimsSide) !== -1) d.claimsSide = raw.claimsSide;
   if (DOC_CLAIMS_MODES.indexOf(raw.claimsMode) !== -1) d.claimsMode = raw.claimsMode;
   if (typeof raw.claimsWidth === 'number' && isFinite(raw.claimsWidth)) {
@@ -868,17 +872,29 @@ function normalizeDocLayout(raw) {
   return d;
 }
 
-// Indeksen til første PDF i files der navnet (uten .pdf) inneholder regelen,
-// uten forskjell på store og små bokstaver. Filer i skip hoppes over. -1 = ingen.
+// Indeksen til PDF-en i files som passer regelen, eller -1. Regelen er én
+// eller flere søkeord skilt med komma, prøvd i rekkefølge: første ord som
+// treffer en fil vinner. For hvert ord vinner et filnavn (uten .pdf) som er
+// lik ordet over ett som bare inneholder det; ellers første fil i lista.
+// Uten forskjell på store og små bokstaver. Filer i skip hoppes over.
 function docSlotMatch(files, rule, skip) {
-  var r = (typeof rule === 'string' ? rule : '').trim().toLowerCase();
-  if (!r || !Array.isArray(files)) return -1;
+  if (typeof rule !== 'string' || !Array.isArray(files)) return -1;
+  var words = rule.split(',').map(function(w) { return w.trim().toLowerCase(); })
+    .filter(function(w) { return w; });
   var skipped = Array.isArray(skip) ? skip : [];
-  for (var i = 0; i < files.length; i++) {
-    var f = files[i];
-    if (skipped.indexOf(i) !== -1) continue;
-    if (!f || typeof f.name !== 'string' || !_fileIsPdf(f.name)) continue;
-    if (_fileDisplayName(f.name).toLowerCase().indexOf(r) !== -1) return i;
+  var names = files.map(function(f, i) {
+    if (skipped.indexOf(i) !== -1) return null;
+    if (!f || typeof f.name !== 'string' || !_fileIsPdf(f.name)) return null;
+    return _fileDisplayName(f.name).toLowerCase();
+  });
+  for (var w = 0; w < words.length; w++) {
+    var partial = -1;
+    for (var i = 0; i < names.length; i++) {
+      if (names[i] === null) continue;
+      if (names[i] === words[w]) return i;
+      if (partial < 0 && names[i].indexOf(words[w]) !== -1) partial = i;
+    }
+    if (partial >= 0) return partial;
   }
   return -1;
 }
@@ -926,6 +942,11 @@ function claimOverviewRows(claims) {
 
 // Adressen et panel laster, eller null når appen ikke er åpnet via den lokale
 // serveren — da stopper nettleseren file:///-adresser i en iframe.
-function docPaneUrl(root, caseNumber, name, loc) {
-  return _docServedLocally(loc) ? _docFileUrl(root, caseNumber, name, loc) : null;
+// hideTools ber leseren (Edge/Chromium) skjule verktøylinje og sidepanel.
+// Merk: en senere lenke til en side (#page=N) må slås sammen med denne #-delen
+// (#page=3&toolbar=0&navpanes=0), og _dpSetFrame laster da ikke på nytt for et
+// sidebytte alene.
+function docPaneUrl(root, caseNumber, name, loc, hideTools) {
+  if (!_docServedLocally(loc)) return null;
+  return _docFileUrl(root, caseNumber, name, loc) + (hideTools ? '#toolbar=0&navpanes=0' : '');
 }

@@ -1672,7 +1672,6 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .docroot-preview  { font-size: var(--text-xs); color: var(--muted-text); word-break: break-all; }
 .docroot-preview code { background: var(--surface2); padding: 1px var(--space-1); border-radius: 3px; font-size: var(--text-xs); }
 .docroot-filenote { font-size: var(--text-xs); color: var(--muted-text); line-height: var(--line-normal); }
-.docroot-filenote ul { margin: var(--space-1) 0 0; padding-left: var(--space-7); }
 .docroot-filenote code { background: var(--surface2); padding: 1px var(--space-1); border-radius: 3px; font-size: var(--text-xs); }
 
 /* ── 22. DatePicker ──────────────────────────────── */
@@ -3056,7 +3055,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .dp-ov .dp-unk { color: var(--muted-text); }
 .dp-claims-empty { color: var(--muted-text); font-size: var(--text-sm); margin: 0; }
 
-.dp-rule-row { display: grid; grid-template-columns: 5rem minmax(0, 20rem); align-items: center; gap: var(--space-3); }
+.dp-rule-row { display: grid; grid-template-columns: 5rem minmax(0, 32rem); align-items: center; gap: var(--space-3); }
 .dp-rule-row label { font-size: var(--text-sm); color: var(--muted-text); }
 
 #view-sak.is-docs-tab .sak-unassigned,
@@ -3091,6 +3090,20 @@ body.dp-docs-mode .main-content { padding-top: var(--space-5); padding-bottom: v
 /* Fillisten i Dokumenter-nedtrekket: høyst ca. ti rader, så ruller den. Feltet
    for å legge til filer og knappene under blir stående i vinduet. */
 #sak-docs-list { max-height: clamp(120px, calc(100vh - 300px), 340px); overflow-y: auto; overscroll-behavior: contain; }
+
+/* Fokusmodus på fanen Dokumenter: saksnummer, status, faner og panelvalg på én
+   stripe, så dokumentene starter helt oppe. Gjelder bare på denne fanen. */
+body.dp-focus-mode .main-content { padding-top: var(--space-2); padding-bottom: var(--space-2); gap: var(--space-2); }
+body[data-page="sak"] #view-sak.is-docs-tab.is-focus { display: grid !important; grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-6); align-items: end; }
+#view-sak.is-focus .top-bar { grid-column: 1; margin: 0; }
+#view-sak.is-focus .dp-bar { grid-column: 2; margin: 0; }
+#view-sak.is-focus .dp-viewer { grid-column: 1 / -1; }
+#view-sak.is-focus #btn-sak-back,
+#view-sak.is-focus .sak-meta-line,
+#view-sak.is-focus .sak-topbar-right { display: none !important; }
+#view-sak.is-focus .dp-toolbar { padding-bottom: 0; }
+#view-sak.is-focus .dp-tab { padding: var(--space-1) var(--space-5); }
 /* ── Tidslinje-modal ──────────────────────────────── */
 
 /* axis toggle — shared between home and modal */
@@ -4114,26 +4127,16 @@ button.ob-del:hover { color: var(--text-on-no); }
                            value="C:\Users\brukernavn\Dokumenter\Saksdokumenter"
                            placeholder="C:\sti\til\Saksdokumenter" />
                     <div class="docroot-preview" id="docroot-preview"></div>
-                    <div class="docroot-filenote">
-                      For at åpning og kopiering av dokumenter skal fungere, bør hver
-                      sak-mappe inneholde filene:
-                      <ul>
-                        <li><code>Claims.pdf</code></li>
-                        <li><code>Application.pdf</code></li>
-                        <li><code>Figures.pdf</code></li>
-                        <li><code>Description.pdf</code></li>
-                        <li><code>Abstract.pdf</code></li>
-                      </ul>
-                    </div>
+                    <div class="docroot-filenote">Hver sak har en mappe med saksnummeret som navn. Filene i mappen hentes inn når saken åpnes (krever <code>Start-PatentDesk.ps1</code>).</div>
                   </div>
                   <div class="settings-row settings-row-col" id="settings-dp-rules">
                     <div class="settings-label">
                       <span class="settings-label-title">Dokumentpaneler: plassregler</span>
-                      <span class="settings-label-sub">Hvilken fil som åpnes i hvilket panel på fanen Dokumenter. Første PDF der filnavnet inneholder teksten, uten forskjell på store og små bokstaver. Tomt felt = velges for hånd.</span>
+                      <span class="settings-label-sub">Hvilken fil som åpnes i hvilket panel på fanen Dokumenter. Ett eller flere søkeord skilt med komma, prøvd i rekkefølge: første ord som treffer en PDF vinner, og et filnavn som er lik ordet går foran ett som bare inneholder det. Uten forskjell på store og små bokstaver. Tomt felt = velges for hånd.</span>
                     </div>
-                    <div class="dp-rule-row"><label for="input-dp-rule-1">Panel 1</label><input class="field-input" id="input-dp-rule-1" data-dp-rule="0" type="text" maxlength="40" placeholder="f.eks. claims" /></div>
-                    <div class="dp-rule-row"><label for="input-dp-rule-2">Panel 2</label><input class="field-input" id="input-dp-rule-2" data-dp-rule="1" type="text" maxlength="40" placeholder="f.eks. figures" /></div>
-                    <div class="dp-rule-row"><label for="input-dp-rule-3">Panel 3</label><input class="field-input" id="input-dp-rule-3" data-dp-rule="2" type="text" maxlength="40" placeholder="(for hånd)" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-1">Panel 1</label><input class="field-input" id="input-dp-rule-1" data-dp-rule="0" type="text" maxlength="120" placeholder="f.eks. patentkrav, claims, krav" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-2">Panel 2</label><input class="field-input" id="input-dp-rule-2" data-dp-rule="1" type="text" maxlength="120" placeholder="f.eks. figur, figures, tegning" /></div>
+                    <div class="dp-rule-row"><label for="input-dp-rule-3">Panel 3</label><input class="field-input" id="input-dp-rule-3" data-dp-rule="2" type="text" maxlength="120" placeholder="(for hånd)" /></div>
                   </div>
                   <div class="settings-row settings-row-col">
                     <div class="settings-label">
@@ -4396,6 +4399,8 @@ button.ob-del:hover { color: var(--text-on-no); }
               <button type="button" class="dp-seg-btn" data-dp-side="right" aria-pressed="false">Krav til høyre</button>
             </div>
             <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-claims-toggle">Skjul krav</button>
+            <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-tools-toggle" title="Skjuler PDF-leserens verktøylinje (og dermed uthevingsverktøyene)">Skjul PDF-verktøy</button>
+            <button type="button" class="dp-seg-btn dp-claims-toggle" id="dp-focus-toggle" title="Fold sammen toppfeltet så dokumentene får mest mulig høyde">Fokus</button>
           </div>
         </div>
         <div class="dp-viewer" id="sak-viewer" role="tabpanel" aria-labelledby="sak-tab-docs" hidden>
@@ -5414,13 +5419,11 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.64.2';
+var APP_VERSION    = 'v4.67.0';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
 var DEFAULT_DOC_ROOT = 'C:\\Users\\brukernavn\\Dokumenter\\Saksdokumenter';
-var DEFAULT_FILES = ['Claims.pdf', 'Description.pdf', 'Abstract.pdf', 'Figures.pdf', 'Application.pdf']
-  .map(function(n) { return { name: n }; });
 var ONBOARDING_KEY = 'pt_onboarding_completed';
 var USER_NAME_KEY  = 'pt_user_name';
 var VACATION_KEY = 'pt_vacations';
@@ -7802,13 +7805,13 @@ function buildCasePath(caseNumber) {
 // og et kravpanel som kan flyttes, byttes og skjules. Oppsettet er felles for
 // alle saker (localStorage, pt_doc_layout) og følger med i eksport og
 // sikkerhetskopi. Plassreglene bestemmer hvilken fil som havner i hvilket
-// panel: første PDF der filnavnet (uten .pdf) inneholder teksten. Rene
+// panel: en kommaliste med søkeord, prøvd i rekkefølge (se docSlotMatch). Rene
 // funksjoner — se test/docPanes.test.js.
 var DOC_PANE_MAX = 3;
 var DOC_PANE_MIN = 0.15;
 var DOC_CLAIMS_MODES = ['overview'];
 var DOC_CLAIMS_SIDES = ['left', 'right'];
-var DOC_RULE_MAX = 40;
+var DOC_RULE_MAX = 120;
 var DOC_CLAIMS_W_MIN = 160;
 var DOC_CLAIMS_W_MAX = 480;
 
@@ -7820,6 +7823,8 @@ function defaultDocLayout() {
     claimsMode: 'overview',
     claimsWidth: 250,
     rules: ['claims', 'figures', ''],
+    focus: false,        // fokusmodus: toppfeltet foldes sammen til én stripe
+    hideToolbar: false,  // PDF-leserens egen verktøylinje og sidepanel skjules
     widths: { 1: [1], 2: [0.5, 0.5], 3: [1 / 3, 1 / 3, 1 / 3] }
   };
 }
@@ -7871,6 +7876,8 @@ function normalizeDocLayout(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return d;
   if (Number.isInteger(raw.count) && raw.count >= 1 && raw.count <= DOC_PANE_MAX) d.count = raw.count;
   if (typeof raw.claimsVisible === 'boolean') d.claimsVisible = raw.claimsVisible;
+  if (typeof raw.focus === 'boolean') d.focus = raw.focus;
+  if (typeof raw.hideToolbar === 'boolean') d.hideToolbar = raw.hideToolbar;
   if (DOC_CLAIMS_SIDES.indexOf(raw.claimsSide) !== -1) d.claimsSide = raw.claimsSide;
   if (DOC_CLAIMS_MODES.indexOf(raw.claimsMode) !== -1) d.claimsMode = raw.claimsMode;
   if (typeof raw.claimsWidth === 'number' && isFinite(raw.claimsWidth)) {
@@ -7887,17 +7894,29 @@ function normalizeDocLayout(raw) {
   return d;
 }
 
-// Indeksen til første PDF i files der navnet (uten .pdf) inneholder regelen,
-// uten forskjell på store og små bokstaver. Filer i skip hoppes over. -1 = ingen.
+// Indeksen til PDF-en i files som passer regelen, eller -1. Regelen er én
+// eller flere søkeord skilt med komma, prøvd i rekkefølge: første ord som
+// treffer en fil vinner. For hvert ord vinner et filnavn (uten .pdf) som er
+// lik ordet over ett som bare inneholder det; ellers første fil i lista.
+// Uten forskjell på store og små bokstaver. Filer i skip hoppes over.
 function docSlotMatch(files, rule, skip) {
-  var r = (typeof rule === 'string' ? rule : '').trim().toLowerCase();
-  if (!r || !Array.isArray(files)) return -1;
+  if (typeof rule !== 'string' || !Array.isArray(files)) return -1;
+  var words = rule.split(',').map(function(w) { return w.trim().toLowerCase(); })
+    .filter(function(w) { return w; });
   var skipped = Array.isArray(skip) ? skip : [];
-  for (var i = 0; i < files.length; i++) {
-    var f = files[i];
-    if (skipped.indexOf(i) !== -1) continue;
-    if (!f || typeof f.name !== 'string' || !_fileIsPdf(f.name)) continue;
-    if (_fileDisplayName(f.name).toLowerCase().indexOf(r) !== -1) return i;
+  var names = files.map(function(f, i) {
+    if (skipped.indexOf(i) !== -1) return null;
+    if (!f || typeof f.name !== 'string' || !_fileIsPdf(f.name)) return null;
+    return _fileDisplayName(f.name).toLowerCase();
+  });
+  for (var w = 0; w < words.length; w++) {
+    var partial = -1;
+    for (var i = 0; i < names.length; i++) {
+      if (names[i] === null) continue;
+      if (names[i] === words[w]) return i;
+      if (partial < 0 && names[i].indexOf(words[w]) !== -1) partial = i;
+    }
+    if (partial >= 0) return partial;
   }
   return -1;
 }
@@ -7945,8 +7964,13 @@ function claimOverviewRows(claims) {
 
 // Adressen et panel laster, eller null når appen ikke er åpnet via den lokale
 // serveren — da stopper nettleseren file:///-adresser i en iframe.
-function docPaneUrl(root, caseNumber, name, loc) {
-  return _docServedLocally(loc) ? _docFileUrl(root, caseNumber, name, loc) : null;
+// hideTools ber leseren (Edge/Chromium) skjule verktøylinje og sidepanel.
+// Merk: en senere lenke til en side (#page=N) må slås sammen med denne #-delen
+// (#page=3&toolbar=0&navpanes=0), og _dpSetFrame laster da ikke på nytt for et
+// sidebytte alene.
+function docPaneUrl(root, caseNumber, name, loc, hideTools) {
+  if (!_docServedLocally(loc)) return null;
+  return _docFileUrl(root, caseNumber, name, loc) + (hideTools ? '#toolbar=0&navpanes=0' : '');
 }
 // ════════════════════════════════════════════════════════════════════════════
 // SEKSJON 3 · STORAGE-LAG
@@ -13398,11 +13422,10 @@ function triAriaLabel(claimNum, field, val, isCascade, isLocked) {
   return label;
 }
 
-function ensureSakFiles(data, cas) {
-  if (!Array.isArray(data.files)) {
-    var isOppdrag = cas && cas.type === 'oppdrag';
-    data.files = isOppdrag ? [] : DEFAULT_FILES.map(function(f) { return { name: f.name }; });
-  }
+// Nye saker (søknad og oppdrag) starter med tom filliste; den fylles fra
+// saksmappen når saken åpnes (dpSyncFolder). En lagret liste røres ikke.
+function ensureSakFiles(data) {
+  if (!Array.isArray(data.files)) data.files = [];
   return data;
 }
 
@@ -21708,7 +21731,10 @@ function dpReset() {
 function _dpResetFrames() {
   [0, 1, 2].forEach(function(i) {
     var f = document.getElementById('dp-frame-' + i);
-    if (f) { f.removeAttribute('src'); f.hidden = true; f.dataset.url = ''; }
+    if (f) {
+      if (f._dpLoad) { f.removeEventListener('load', f._dpLoad); f._dpLoad = null; }
+      f.removeAttribute('src'); f.hidden = true; f.dataset.url = '';
+    }
   });
 }
 
@@ -21768,6 +21794,7 @@ function dpOnPageChange(page) {
   if (page === 'sak') return;
   _folderSyncKey = null; // åpnes en sak igjen, leses mappen på nytt
   document.body.classList.remove('dp-docs-mode');
+  document.body.classList.remove('dp-focus-mode');
   _dpDrawerSet(false);
   _dpWasDocs = false;
 }
@@ -21785,11 +21812,27 @@ function dpApplyServerChrome() {
   return served;
 }
 
+// Fokusmodus gjelder bare på fanen Dokumenter; Oversikt har alltid hele toppfeltet.
+function _dpApplyFocus() {
+  // Uten serveren er panelvalgene (og dermed «Avslutt fokus») skjult, så fokus
+  // kan ikke slås på da — ellers ble toppfeltet borte uten vei tilbake.
+  var on = _dpTab === 'docs' && !!docLayout.focus && _docServedLocally(window.location);
+  var view = document.getElementById('view-sak');
+  if (view) view.classList.toggle('is-focus', on);
+  document.body.classList.toggle('dp-focus-mode', on);
+  var b = document.getElementById('dp-focus-toggle');
+  if (b) {
+    b.textContent = docLayout.focus ? 'Avslutt fokus' : 'Fokus';
+    b.title = docLayout.focus ? 'Gå tilbake til hele toppfeltet' : 'Fold sammen toppfeltet så dokumentene får mest mulig høyde';
+  }
+}
+
 function dpApplyTab() {
   var served = dpApplyServerChrome();
   var docs = _dpTab === 'docs';
   var view = document.getElementById('view-sak');
   if (view) view.classList.toggle('is-docs-tab', docs);
+  _dpApplyFocus();
   document.body.classList.toggle('dp-docs-mode', docs);
   // Sidemenyen trekkes inn bare idet fanen åpnes (ikke ved hver omtegning), så
   // en meny du selv åpner blir stående.
@@ -21895,6 +21938,10 @@ function _dpApplyLayout() {
   claims.style.width = l.claimsWidth + 'px';
   var tog = document.getElementById('dp-claims-toggle');
   tog.textContent = l.claimsVisible ? 'Skjul krav' : 'Vis krav';
+  var tools = document.getElementById('dp-tools-toggle');
+  tools.textContent = l.hideToolbar ? 'Vis PDF-verktøy' : 'Skjul PDF-verktøy';
+  tools.title = l.hideToolbar ? 'Viser PDF-leserens verktøylinje og sidepanel igjen' : 'Skjuler PDF-leserens verktøylinje og sidepanel (også uthevingsverktøyene)';
+  _dpApplyFocus();
   document.querySelectorAll('[data-dp-count]').forEach(function(b) {
     b.setAttribute('aria-pressed', Number(b.dataset.dpCount) === l.count ? 'true' : 'false');
   });
@@ -21968,13 +22015,14 @@ function renderDocPanes() {
     });
     sel.innerHTML = opts;
     pin.textContent = manual ? 'valgt for hånd' : (rule ? 'regel: ' + rule : '');
-    var url = idx >= 0 ? docPaneUrl(root, cas.caseNumber, files[idx].name, window.location) : '';
+    var url = idx >= 0 ? docPaneUrl(root, cas.caseNumber, files[idx].name, window.location, docLayout.hideToolbar) : '';
     _dpSetFrame(frame, url || '');
     if (url) {
       empty.hidden = true;
     } else {
       empty.hidden = false;
-      empty.textContent = !files.length ? 'Ingen filer registrert på saken.'
+      empty.textContent = !files.length ? 'Ingen filer registrert på saken.' +
+          (document.body.classList.contains('dp-focus-mode') ? ' Avslutt fokus for å legge til filer.' : '')
         : (rule && !manual ? 'Ingen fil passer regelen «' + rule + '». Velg en fil over.' : 'Velg en fil over.');
     }
   }
@@ -21984,10 +22032,26 @@ function renderDocPanes() {
 // leseren sted og zoom hver gang oppsettet endres.
 function _dpSetFrame(frame, url) {
   if (!frame) return;
-  if ((frame.dataset.url || '') === url) { frame.hidden = !url; return; }
+  var old = frame.dataset.url || '';
+  if (old === url) { frame.hidden = !url; return; }
   frame.dataset.url = url;
-  if (url) { frame.src = url; frame.hidden = false; }
-  else { frame.removeAttribute('src'); frame.hidden = true; }
+  if (!url) { frame.removeAttribute('src'); frame.hidden = true; return; }
+  frame.hidden = false;
+  // Samme fil med bare en annen #-del (verktøylinjen skjules eller vises) er for
+  // nettleseren bare en hopp-til-sted i samme dokument, og leseren leser ikke
+  // verktøylinje-valgene på nytt. Gå via en tom side, så filen lastes på nytt.
+  if (frame._dpLoad) { frame.removeEventListener('load', frame._dpLoad); frame._dpLoad = null; }
+  if (old && old.split('#')[0] === url.split('#')[0]) {
+    frame._dpLoad = function() {
+      frame.removeEventListener('load', frame._dpLoad);
+      frame._dpLoad = null;
+      if (frame.dataset.url === url) frame.src = url;
+    };
+    frame.addEventListener('load', frame._dpLoad);
+    frame.src = 'about:blank';
+    return;
+  }
+  frame.src = url;
 }
 
 function _dpSetLayout(patch) {
@@ -22185,6 +22249,8 @@ document.getElementById('btn-sak-docs-sync').addEventListener('click', dpFolderB
 document.getElementById('btn-sak-docs-repick').addEventListener('click', dpPickFolder);
 
 document.getElementById('dp-toolbar').addEventListener('click', function(e) {
+  if (e.target.closest('#dp-focus-toggle')) { _dpSetLayout({ focus: !docLayout.focus }); return; }
+  if (e.target.closest('#dp-tools-toggle')) { _dpSetLayout({ hideToolbar: !docLayout.hideToolbar }); return; }
   var c = e.target.closest('[data-dp-count]');
   if (c) { _dpSetLayout({ count: Number(c.dataset.dpCount) }); return; }
   var s = e.target.closest('[data-dp-side]');
@@ -22636,17 +22702,7 @@ if (document.readyState === 'loading') {
           <input class="field-input settings-path-input" id="input-onb-docroot" type="text"
                  placeholder="C:\sti\til\Saksdokumenter" />
           <div class="docroot-preview" id="onb-docroot-preview"></div>
-          <div class="docroot-filenote">
-            For at åpning og kopiering av dokumenter skal fungere, bør hver
-            sak-mappe inneholde filene:
-            <ul>
-              <li><code>Claims.pdf</code></li>
-              <li><code>Application.pdf</code></li>
-              <li><code>Figures.pdf</code></li>
-              <li><code>Description.pdf</code></li>
-              <li><code>Abstract.pdf</code></li>
-            </ul>
-          </div>
+          <div class="docroot-filenote">Hver sak har en mappe med saksnummeret som navn. Filene i mappen hentes inn når saken åpnes (krever <code>Start-PatentDesk.ps1</code>).</div>
         </div>
 
         <div class="onb-step" data-step="2">

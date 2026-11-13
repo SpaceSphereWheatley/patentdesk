@@ -33,6 +33,21 @@ test('defaultDocLayout: two panes, claims panel on the left, rules claims/figure
   assert.deepStrictEqual(Array.from(d.rules), ['claims', 'figures', '']);
 });
 
+test('defaultDocLayout: focus mode and hidden PDF toolbar are off', () => {
+  const d = defaultDocLayout();
+  assert.strictEqual(d.focus, false);
+  assert.strictEqual(d.hideToolbar, false);
+});
+
+test('normalizeDocLayout: focus and hideToolbar are kept only as booleans', () => {
+  assert.strictEqual(normalizeDocLayout({ focus: true }).focus, true);
+  assert.strictEqual(normalizeDocLayout({ hideToolbar: true }).hideToolbar, true);
+  ['ja', 1, null, {}, []].forEach(v => {
+    assert.strictEqual(normalizeDocLayout({ focus: v }).focus, false, JSON.stringify(v));
+    assert.strictEqual(normalizeDocLayout({ hideToolbar: v }).hideToolbar, false, JSON.stringify(v));
+  });
+});
+
 test('normalizeDocLayout: null, arrays and junk give the default', () => {
   const d = defaultDocLayout();
   [null, undefined, 'x', 7, [], true].forEach(v =>
@@ -58,7 +73,9 @@ test('normalizeDocLayout: rules are three trimmed, length-limited strings', () =
   assert.strictEqual(r.length, 3);
   assert.strictEqual(r[0], 'Claims');
   assert.strictEqual(r[1], '');
-  assert.ok(r[2].length <= 40);
+  assert.ok(r[2].length <= 120);
+  const long = 'patentkrav, claims, krav, kravsett, endrede krav, nye krav, patent claims, amended claims';
+  assert.strictEqual(normalizeDocLayout({ rules: [long] }).rules[0], long, 'a list of several words fits');
   assert.deepStrictEqual(Array.from(normalizeDocLayout({ rules: 'x' }).rules), ['claims', 'figures', '']);
   assert.strictEqual(normalizeDocLayout({ rules: ['a'] }).rules.length, 3);
 });
@@ -135,8 +152,45 @@ test('docSlotMatch: contains, ignoring case and extension', () => {
   assert.strictEqual(docSlotMatch(f, 'pdf', []), -1, 'the extension is not part of the name');
 });
 
-test('docSlotMatch: first file in the list wins', () => {
-  assert.strictEqual(docSlotMatch(names(['Claims_new.pdf', 'Claims.pdf']), 'claims', []), 0);
+test('docSlotMatch: among partial matches, the first file in the list wins', () => {
+  assert.strictEqual(docSlotMatch(names(['Claims_new.pdf', 'Claims_old.pdf']), 'claims', []), 0);
+});
+
+// ── docSlotMatch: several words (comma-separated) ───
+
+test('docSlotMatch: a name equal to the word beats one that only contains it', () => {
+  assert.strictEqual(docSlotMatch(names(['Kravbrev.pdf', 'Krav.pdf']), 'krav', []), 1);
+  assert.strictEqual(docSlotMatch(names(['Claims_new.pdf', 'claims.PDF']), 'Claims', []), 1);
+});
+
+test('docSlotMatch: falls back to the next word when the first matches nothing', () => {
+  const f = names(['Description.pdf', 'NO2024-claims.pdf', 'Figures.pdf']);
+  assert.strictEqual(docSlotMatch(f, 'patentkrav, claims, krav', []), 1);
+});
+
+test('docSlotMatch: the first word that matches wins, whatever the file order', () => {
+  const f = names(['XXX-claims.pdf', 'Svar_krav.pdf', 'Patentkrav.pdf']);
+  assert.strictEqual(docSlotMatch(f, 'patentkrav, claims, krav', []), 2);
+  assert.strictEqual(docSlotMatch(f, 'claims, patentkrav', []), 0);
+  assert.strictEqual(docSlotMatch(f, 'krav, claims', []), 1, 'no name equals "krav", so the first file containing it wins');
+});
+
+test('docSlotMatch: blank words, extra spaces and case are ignored', () => {
+  const f = names(['Description.pdf', 'Figures.pdf']);
+  assert.strictEqual(docSlotMatch(f, ' , ,  FIGUR ,', []), 1);
+  assert.strictEqual(docSlotMatch(f, ' , , ', []), -1);
+  assert.strictEqual(docSlotMatch(f, 'krav, claims', []), -1);
+});
+
+test('docSlotMatch: skipped files are passed over for every word', () => {
+  const f = names(['Patentkrav.pdf', 'XXX-claims.pdf']);
+  assert.strictEqual(docSlotMatch(f, 'patentkrav, claims', [0]), 1);
+  assert.strictEqual(docSlotMatch(f, 'patentkrav, claims', [0, 1]), -1);
+});
+
+test('docSlotMatch: a semicolon is part of the word, not a separator', () => {
+  const f = names(['Claims.pdf']);
+  assert.strictEqual(docSlotMatch(f, 'krav; claims', []), -1);
 });
 
 test('docSlotMatch: empty or blank rule never matches; no files gives -1', () => {
@@ -163,6 +217,16 @@ test('docSlotMatch: malformed file entries are ignored', () => {
 });
 
 // ── docSlotAssign (AC 4, 5, 7) ──────────────────────
+
+test('docSlotAssign: word lists never put the same file in two panes', () => {
+  const f = names(['Patentkrav.pdf', 'Figurer.pdf']);
+  assert.deepStrictEqual(Array.from(docSlotAssign(f, ['patentkrav, claims', 'patentkrav, figur', ''], 2, [])), [0, 1]);
+});
+
+test('docSlotAssign: a manual pick still beats a word list', () => {
+  const f = names(['Patentkrav.pdf', 'Other.pdf']);
+  assert.deepStrictEqual(Array.from(docSlotAssign(f, ['patentkrav, claims', '', ''], 2, [1])), [1, -1]);
+});
 
 test('docSlotAssign: fills each slot from its rule, up to the pane count', () => {
   const f = names(['Description.pdf', 'Claims.pdf', 'Figures.pdf']);
@@ -232,6 +296,15 @@ test('docPaneUrl: needs the local server; without it there is no pane url', () =
   assert.strictEqual(docPaneUrl('C:\\Saker', 'NO1', 'Claims.pdf', { protocol: 'https:', hostname: 'example.com', origin: 'https://example.com' }), null);
 });
 
+test('docPaneUrl: with the PDF toolbar hidden the address asks the viewer to hide toolbar and side panel', () => {
+  assert.strictEqual(
+    docPaneUrl('C:\\Saker', 'NO1', 'Claims', LOCALHOST, true),
+    'http://localhost:8080/docs?root=C%3A%5CSaker&case=NO1&file=Claims.pdf#toolbar=0&navpanes=0'
+  );
+  assert.strictEqual(docPaneUrl('C:\\Saker', 'NO1', 'Claims', LOCALHOST, false), docPaneUrl('C:\\Saker', 'NO1', 'Claims', LOCALHOST));
+  assert.strictEqual(docPaneUrl('C:\\Saker', 'NO1', 'Claims', FILE_LOC, true), null, 'still no url without the server');
+});
+
 test('docPaneUrl: served locally it is the /docs url', () => {
   assert.strictEqual(
     docPaneUrl('C:\\Saker', 'NO1', 'Claims', LOCALHOST),
@@ -246,6 +319,12 @@ test('readImportSettings: docLayout is read and normalised', () => {
   assert.strictEqual(r.docLayout.count, 3);
   assert.strictEqual(r.docLayout.claimsSide, 'right');
   assert.strictEqual(r.docLayout.rules[0], 'x');
+});
+
+test('readImportSettings: focus and hideToolbar come through import cleaned up', () => {
+  const r = readImportSettings({ docLayout: { focus: true, hideToolbar: 'x' } });
+  assert.strictEqual(r.docLayout.focus, true);
+  assert.strictEqual(r.docLayout.hideToolbar, false);
 });
 
 test('readImportSettings: a bad or missing docLayout changes nothing', () => {

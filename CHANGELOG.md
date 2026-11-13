@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.67.0] - 2026-11-13
+Mappesynk uten lokal server, og fanen Dokumenter skjules når serveren ikke kjører.
+
 ### Added
 - **Mappesynk uten lokal server.** Åpnes PatentDesk direkte som fil, kan
   nettleseren (Chrome/Edge) lese saksmappen selv. Knappen «Velg mappe» i
@@ -20,6 +23,39 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 - **Uten lokal server skjules det som krever den.** Fanen «Dokumenter»
   (dokumentpanelene) og innstillingene for dokumentpaneler vises bare når
   appen åpnes via `Start-PatentDesk.ps1`. Forklaringsvarselet er fjernet.
+
+## [4.66.0] - 2026-11-13
+Plassreglene for dokumentpanelene tar flere søkeord, og nye saker starter uten faste filnavn.
+
+### Changed
+- **Plassreglene for dokumentpanelene tar flere søkeord.** Skriv ord skilt med
+  komma, f.eks. «patentkrav, claims, krav»: ordene prøves i rekkefølge, og
+  første ord som treffer en PDF bestemmer filen. Et filnavn som er lik ordet
+  går nå foran ett som bare inneholder det («krav» velger Krav.pdf framfor
+  Kravbrev.pdf). Feltet tar opptil 120 tegn (før 40). Eksisterende regler med
+  ett ord virker som før.
+- **Nye søknadssaker starter med tom filliste.** De fem faste filnavnene
+  (Claims.pdf, Description.pdf osv.) legges ikke lenger inn; fillisten fylles
+  fra saksmappen når saken åpnes via den lokale serveren. Eksisterende saker
+  beholder listen sin. Merknaden om faste filnavn under «Saksmappe-rot» i
+  Innstillinger og oppstartsveiviseren er erstattet med en kort forklaring.
+
+## [4.65.0] - 2026-11-12
+Fokusmodus og «Skjul PDF-verktøy» gir dokumentene mer høyde på fanen Dokumenter.
+
+### Added
+- **Fokusmodus på fanen Dokumenter.** Knappen «Fokus» ved panelvalgene folder
+  toppfeltet sammen til én stripe med saksnummer, status, faner og panelvalg,
+  så dokumentene starter helt oppe (rundt 40 piksler fra toppen i stedet for
+  rundt 100, i vinduer fra ca. 1200 piksler bredde; i smalere vinduer kan
+  stripen bli to rader) og fyller resten av vinduet. «Avslutt fokus» (samme knapp) henter
+  hele toppfeltet tilbake, og Oversikt har alltid hele toppfeltet. Valget
+  huskes.
+- **«Skjul PDF-verktøy».** Ber PDF-leseren i panelene skjule sin egen
+  verktøylinje og sidepanel, så PDF-en får mer høyde. Verktøylinjen er også
+  der Edges uthevingsverktøy ligger, så valget er av som standard og kan slås
+  av og på; panelene lastes på nytt når du bytter. Valget huskes. Om leseren
+  følger ønsket, avhenger av Edge.
 
 ## [4.64.2] - 2026-11-11
 Fillisten i Dokumenter-nedtrekket er begrenset og ruller.
