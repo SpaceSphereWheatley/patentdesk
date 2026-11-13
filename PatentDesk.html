@@ -5417,7 +5417,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.66.0';
+var APP_VERSION    = 'v4.66.1';
 var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -21611,10 +21611,7 @@ function dpReset() {
 function _dpResetFrames() {
   [0, 1, 2].forEach(function(i) {
     var f = document.getElementById('dp-frame-' + i);
-    if (f) {
-      if (f._dpLoad) { f.removeEventListener('load', f._dpLoad); f._dpLoad = null; }
-      f.removeAttribute('src'); f.hidden = true; f.dataset.url = '';
-    }
+    if (f) { f.removeAttribute('src'); f.hidden = true; f.dataset.url = ''; }
   });
 }
 
@@ -21910,28 +21907,22 @@ function renderDocPanes() {
 
 // iframen får ny adresse bare når den faktisk er en annen — ellers mister
 // leseren sted og zoom hver gang oppsettet endres.
+//
+// En ny adresse lastes i en ny iframe som erstatter den gamle. Å gi en iframe
+// ny src legger et steg i fanens historikk, og da gikk Tilbake (history.back)
+// til forrige fil i panelet i stedet for ut av saken. En ny iframes første
+// lasting gjør ikke det. Den laster også filen helt på nytt når bare #-delen er
+// annerledes (verktøylinjen skjules eller vises), som leseren ellers ikke leser.
 function _dpSetFrame(frame, url) {
   if (!frame) return;
   var old = frame.dataset.url || '';
   if (old === url) { frame.hidden = !url; return; }
-  frame.dataset.url = url;
-  if (!url) { frame.removeAttribute('src'); frame.hidden = true; return; }
-  frame.hidden = false;
-  // Samme fil med bare en annen #-del (verktøylinjen skjules eller vises) er for
-  // nettleseren bare en hopp-til-sted i samme dokument, og leseren leser ikke
-  // verktøylinje-valgene på nytt. Gå via en tom side, så filen lastes på nytt.
-  if (frame._dpLoad) { frame.removeEventListener('load', frame._dpLoad); frame._dpLoad = null; }
-  if (old && old.split('#')[0] === url.split('#')[0]) {
-    frame._dpLoad = function() {
-      frame.removeEventListener('load', frame._dpLoad);
-      frame._dpLoad = null;
-      if (frame.dataset.url === url) frame.src = url;
-    };
-    frame.addEventListener('load', frame._dpLoad);
-    frame.src = 'about:blank';
-    return;
-  }
-  frame.src = url;
+  if (!url) { frame.dataset.url = ''; frame.removeAttribute('src'); frame.hidden = true; return; }
+  var fresh = frame.cloneNode(false);
+  fresh.dataset.url = url;
+  fresh.hidden = false;
+  fresh.setAttribute('src', url);
+  frame.parentNode.replaceChild(fresh, frame);
 }
 
 function _dpSetLayout(patch) {
