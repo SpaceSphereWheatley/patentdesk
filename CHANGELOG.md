@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.66.0] - 2026-11-13
+Plassreglene for dokumentpanelene tar flere søkeord, og nye saker starter uten faste filnavn.
+
 ### Changed
 - **Plassreglene for dokumentpanelene tar flere søkeord.** Skriv ord skilt med
   komma, f.eks. «patentkrav, claims, krav»: ordene prøves i rekkefølge, og
