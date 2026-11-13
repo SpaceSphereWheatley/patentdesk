@@ -108,15 +108,21 @@ function dpOnPageChange(page) {
   _dpWasDocs = false;
 }
 
-function dpApplyTab() {
-  // Uten den lokale serveren finnes ikke fanen Dokumenter (panelene kan ikke
-  // vise filer fra disk), og heller ikke innstillingene for den.
+// Uten den lokale serveren finnes ikke fanen Dokumenter (panelene kan ikke
+// vise filer fra disk), og heller ikke innstillingene for den. Kjøres også ved
+// oppstart, så innstillingene er skjult før noen sak er åpnet.
+function dpApplyServerChrome() {
   var served = _docServedLocally(window.location);
   if (!served && _dpTab === 'docs') _dpTab = 'overview';
   var bar = document.getElementById('dp-bar');
   if (bar) bar.hidden = !served;
   var rulesRow = document.getElementById('settings-dp-rules');
   if (rulesRow) rulesRow.hidden = !served;
+  return served;
+}
+
+function dpApplyTab() {
+  var served = dpApplyServerChrome();
   var docs = _dpTab === 'docs';
   var view = document.getElementById('view-sak');
   if (view) view.classList.toggle('is-docs-tab', docs);
@@ -337,7 +343,7 @@ var _folderSyncKey = null; // nøkkelen til lesingen som er gjort i denne åpnin
 // Hva en lesing gjelder: saken, saksnummeret (mappenavnet) og dokumentroten.
 // Endres noe av det, er en gammel lesing ikke lenger riktig og leses på nytt.
 function _dpFolderKey(cas) {
-  return cas ? cas.id + '|' + cas.caseNumber + '|' + _docRootNormalize(loadDocRoot()) : null;
+  return cas ? cas.id + '|' + cas.caseNumber + '|' + _docRootNormalize(loadDocRoot()) + '|' + _folderGen : null;
 }
 // Lesingen for saken slik den står nå, eller null hvis den gjelder noe annet.
 function dpFolderListing(cas) {
@@ -389,6 +395,8 @@ function _dpApplyListing(id, key, raw) {
 // Tillatelsen må ofte gis på nytt i en ny økt, og bare et klikk kan be om den.
 var _folderHandle = null;    // dokumentroten brukeren har valgt, eller null
 var _folderGranted = false;  // har vi lesetilgang nå, uten å spørre?
+var _folderGen = 0;          // øker hver gang mappen byttes, så svar fra den forrige mappen forkastes
+var _folderLoaded = false;   // er det lagrede håndtaket lest ferdig (så knappen ikke viser feil tekst først)?
 var _FH_DB_NAME = 'patentdesk_folder';
 var _FH_STORE = 'handles';
 var _FH_KEY = 'docroot';
@@ -438,7 +446,7 @@ function dpUpdateFolderButton() {
   var st = folderSyncButton(_dpSyncMode(), !!_folderHandle, _folderGranted);
   var row = document.getElementById('sak-docs-sync-row');
   if (!row) return;
-  row.hidden = !st.visible;
+  row.hidden = !st.visible || !_folderLoaded;
   document.getElementById('btn-sak-docs-sync-label').textContent = st.label;
   document.getElementById('btn-sak-docs-repick').hidden = !_folderHandle;
 }
@@ -456,6 +464,8 @@ function dpPickFolder() {
   catch(e) { return; }
   p.then(function(h) {
     _folderHandle = h;
+    _folderGen++;
+    _folderLoaded = true;
     _folderGranted = true;
     _fhSave(h, function() {});
     dpUpdateFolderButton();
@@ -472,17 +482,27 @@ function dpFolderButtonClick() {
   });
 }
 
-function dpInitFolderHandle() {
+// load: hvor det lagrede håndtaket hentes fra (standard IndexedDB).
+function dpInitFolderHandle(load) {
   if (_dpSyncMode() !== 'picker') return;
-  _fhLoad(function(err, h) {
-    if (err || !h) { dpUpdateFolderButton(); return; }
+  (load || _fhLoad)(function(err, h) {
+    _folderLoaded = true;
+    // Valgte brukeren en mappe mens vi leste, gjelder den, ikke den gamle.
+    if (err || !h || _folderHandle) { dpUpdateFolderButton(); return; }
     _folderHandle = h;
+    _folderGen++;
     folderPermissionGranted(h, false).then(function(ok) {
+      if (_folderHandle !== h) return;
       _folderGranted = ok;
       dpUpdateFolderButton();
       if (ok) _dpResync();
     });
   });
+}
+
+// Mappenavnet som faktisk leses, til meldingen «Saksmappen finnes ikke».
+function dpFolderRootName() {
+  return (_dpSyncMode() === 'picker' && _folderHandle && _folderHandle.name) ? String(_folderHandle.name) : null;
 }
 
 // ── Hendelser ──────────────────────────────────────
@@ -606,4 +626,5 @@ document.getElementById('dp-body').addEventListener('keydown', function(e) {
 });
 
 _dpFillRuleInputs();
+dpApplyServerChrome();
 dpInitFolderHandle();

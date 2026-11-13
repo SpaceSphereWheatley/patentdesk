@@ -283,6 +283,17 @@ e2e('AC2: opened as a plain file, the Dokumenter tab and its settings are gone (
   await s.close();
 });
 
+e2e('AC2: as a plain file the panel settings are hidden from the start, before any case has been opened', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const p = await ctx.newPage();
+  await p.addInitScript(() => { localStorage.setItem('pt_onboarding_completed', '1'); });
+  await p.goto(pathToFileURL(APP_FILE).href);
+  await p.evaluate(() => navigateTo('innstillinger'));
+  await p.click('#settings-tab-saksbehandling');
+  assert.equal(await p.locator('#settings-dp-rules').isVisible(), false);
+  await ctx.close();
+});
+
 e2e('AC1: the Dokumenter tab and the panel settings are visible through the local server', async () => {
   const s = await openDocs();
   const p = s.page;
