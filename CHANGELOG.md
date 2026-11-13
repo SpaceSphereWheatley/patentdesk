@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.66.1] - 2026-11-13
+«Tilbake» på saksiden virker igjen etter bruk av fanen Dokumenter.
+
 ### Fixed
 - **«Tilbake» på saksiden virker igjen etter at fanen Dokumenter er brukt.**
   Hver fil som ble lastet i et dokumentpanel, la et steg i nettleserens
