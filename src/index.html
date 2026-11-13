@@ -160,9 +160,9 @@
 
       <div class="drawer-footer">
         <div class="drawer-date" id="current-date"></div>
-        <a class="nipo-badge nipo-link" href="https://www.patentstyret.no" target="_blank" rel="noopener">Patentstyret</a>
+        <a class="nipo-badge nipo-link" data-feature="link-patentstyret" href="https://www.patentstyret.no" target="_blank" rel="noopener">Patentstyret</a>
         <span class="drawer-version logo-version"></span>
-        <a class="upd-btn changelog-link" href="https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
+        <a class="upd-btn changelog-link" data-feature="link-changelog" href="https://github.com/SpaceSphereWheatley/patentdesk/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
           <svg class="ti" aria-hidden="true"><use href="#ti-file-text"/></svg>
           Endringslogg
         </a>
@@ -455,6 +455,7 @@
             <button class="settings-nav-item" id="settings-tab-frister" data-settings-tab="frister" role="tab" aria-controls="settings-pane-frister">Frister</button>
             <button class="settings-nav-item" id="settings-tab-saksbehandling" data-settings-tab="saksbehandling" role="tab" aria-controls="settings-pane-saksbehandling">Saksbehandling</button>
             <button class="settings-nav-item" id="settings-tab-data" data-settings-tab="data" role="tab" aria-controls="settings-pane-data">Data</button>
+            <button class="settings-nav-item" id="settings-tab-bruk" data-settings-tab="bruk" role="tab" aria-controls="settings-pane-bruk">Bruk</button>
           </nav>
           <div class="settings-panes">
             <div class="settings-pane" id="settings-pane-arbeidsmengde" data-settings-pane="arbeidsmengde" role="tabpanel" aria-labelledby="settings-tab-arbeidsmengde">
@@ -824,6 +825,31 @@
                     <button class="s-btn" id="btn-about-open">Om appen</button>
                   </div>
                 </div>
+              </section>
+            </div>
+
+            <div class="settings-pane" id="settings-pane-bruk" data-settings-pane="bruk" role="tabpanel" aria-labelledby="settings-tab-bruk">
+              <section class="settings-section">
+                <h2 class="settings-section-title">Bruk av funksjoner</h2>
+                <div class="settings-group">
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Registrer bruk av funksjoner</span>
+                      <span class="settings-label-sub">Teller klikk per knapp og side, per dag. Lagres i usage.json i <a href="#" data-goto-settings-tab="data">datamappen</a>. Aldri saksinnhold.</span>
+                    </div>
+                    <input type="checkbox" class="settings-checkbox" id="usage-enabled-cb" title="Slå registrering av bruk på/av" />
+                  </div>
+                </div>
+                <div class="us-range" role="group" aria-label="Periode">
+                  <button class="s-btn" id="usage-range-7" data-usage-range="7">7 dager</button>
+                  <button class="s-btn" id="usage-range-30" data-usage-range="30">30 dager</button>
+                  <button class="s-btn" id="usage-range-90" data-usage-range="90">90 dager</button>
+                  <button class="s-btn" id="usage-range-all" data-usage-range="all">Alt</button>
+                  <span class="us-spacer"></span>
+                  <button class="s-btn" id="usage-export">Eksporter JSON</button>
+                  <button class="s-btn s-btn-danger" id="usage-reset">Nullstill</button>
+                </div>
+                <div id="usage-view" class="us-view"></div>
               </section>
             </div>
           </div>
@@ -1941,6 +1967,7 @@
 <!-- @include js/07-ui-nav-lists.js -->
 <!-- @include js/08-ui-dialogs-status.js -->
 <!-- @include js/09-ui-backup-workfile.js -->
+<!-- @include js/09a-usage-tracker.js -->
 <!-- @include js/10-ui-import-export-belegg.js -->
 <!-- @include js/11-case-helpers-ops.js -->
 <!-- @include js/12-case-render.js -->

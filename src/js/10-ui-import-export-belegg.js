@@ -167,6 +167,7 @@ document.addEventListener('visibilitychange', function() {
 function _bkInit() {
   _bkLoadDirHandle(function() {
     _bkUpdateSettingsUI();
+    usageScheduleFlush(); // tellere som ventet på datamappen
     if (backupEnabled()) scheduleAutoBackup();
     if (!_bkDirHandle || !_bkFsaSupported()) return;
     // Arbeidsfilen avstemmes mot nettleseren før noe skrives til den

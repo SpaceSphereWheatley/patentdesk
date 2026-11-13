@@ -434,6 +434,7 @@ function _wfRequestAccess() {
     if (p !== 'granted') { showToast('Tilgang ble ikke gitt'); return; }
     _wfHidePermBar();
     _bkUpdateSettingsUI();
+    usageScheduleFlush();
     _wfSync();
   }).catch(function() {});
 }
