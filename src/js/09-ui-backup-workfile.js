@@ -409,9 +409,9 @@ function _wfShowPermBar() {
   bar.setAttribute('role', 'status');
   var span = document.createElement('span');
   span.textContent = 'Datamappen er ikke tilkoblet';
-  var grant = document.createElement('button');
+  var grant = document.createElement('button'); if (grant.dataset) grant.dataset.feature = 'workfile-grant-access';
   grant.textContent = 'Gi tilgang';
-  var later = document.createElement('button');
+  var later = document.createElement('button'); if (later.dataset) later.dataset.feature = 'workfile-grant-later';
   later.className = 'wf-later';
   later.textContent = 'Senere';
   bar.appendChild(span);

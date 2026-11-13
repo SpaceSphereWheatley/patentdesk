@@ -85,7 +85,7 @@ function _bkOpenRestoreModal() {
       return '<div class="bk-snap-row">' +
         '<span class="bk-snap-time">' + esc(_bkFmtTime(s.exported)) + '</span>' +
         '<span class="bk-snap-count">' + n + ' sak' + (n !== 1 ? 'er' : '') + '</span>' +
-        '<button class="s-btn" data-bk-key="' + esc(s.exported) + '">Gjenopprett</button>' +
+        '<button class="s-btn" data-bk-key="' + esc(s.exported) + '" data-feature="backup-restore-snapshot">Gjenopprett</button>' +
       '</div>';
     }).join('');
   });
@@ -757,7 +757,7 @@ function depResetHtml(c) {
   if (!c || !c.depManual || c.num === 1) return '';
   return '<button type="button" class="sak-dep-reset" data-claim-dep-reset="' + esc(c.num) + '" tabindex="-1"' +
     ' aria-label="' + esc(depResetAriaLabel(c.num)) + '"' +
-    ' title="Manuelt satt — klikk for automatisk tilhørighet">↺</button>';
+    ' title="Manuelt satt — klikk for automatisk tilhørighet" data-feature="claim-dependency-reset">↺</button>';
 }
 
 // Visningen av etiketten er en knapp som åpner redigering. Et rent «Krav 2 —

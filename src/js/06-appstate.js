@@ -1234,7 +1234,7 @@ function renderAllSortHead(show) {
     var dirTxt = cur.dir === 'asc' ? 'stigende' : 'synkende';
     return '<button type="button" class="clh clh-' + col[0] + (on ? ' is-on' : '') + '" data-sort="' + col[0] + '"' +
       ' aria-pressed="' + (on ? 'true' : 'false') + '"' +
-      ' title="Sorter på ' + col[1].toLowerCase() + (on ? ' (nå ' + dirTxt + ')' : '') + '">' + col[1] +
+      ' title="Sorter på ' + col[1].toLowerCase() + (on ? ' (nå ' + dirTxt + ')' : '') + '" data-feature="list-sort-column">' + col[1] +
       (on ? '<span class="clh-arrow" aria-hidden="true">' + (cur.dir === 'asc' ? '\u25B2' : '\u25BC') + '</span>' : '') +
       '</button>';
   }).join('') + '<span class="clh-menu" aria-hidden="true"></span>';

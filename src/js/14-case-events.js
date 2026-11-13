@@ -39,7 +39,7 @@ function addTagPill(tag) {
   var pill = document.createElement('span');
   pill.className = 'tag-pill-item';
   pill.dataset.tag = tag;
-  pill.innerHTML = esc(tag) + '<button class="tag-pill-del" title="Fjern" tabindex="-1">✕</button>';
+  pill.innerHTML = esc(tag) + '<button class="tag-pill-del" title="Fjern" tabindex="-1" data-feature="tag-remove">✕</button>';
   pill.querySelector('.tag-pill-del').addEventListener('click', function(e) {
     e.stopPropagation();
     pill.remove();

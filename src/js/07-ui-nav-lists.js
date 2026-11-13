@@ -166,11 +166,11 @@ function openHistoryModal(id) {
           '<div class="hist-modal-main">' + mainHtml + '</div>' +
           '<div class="hist-modal-date">' +
             '<span class="hist-date-display">' + displayDate + '</span>' +
-            ' <button class="hist-date-edit-btn" data-idx="' + origIdx + '" title="Endre dato">✎</button>' +
+            ' <button class="hist-date-edit-btn" data-idx="' + origIdx + '" title="Endre dato" data-feature="history-edit-date">✎</button>' +
             '<span class="hist-date-input-wrap" style="display:none;">' +
               '<input class="field-input hist-date-input" type="text" placeholder="åååå.mm.dd" maxlength="10" value="' + (isoDate ? toDisplay(isoDate) : '') + '" data-idx="' + origIdx + '" />' +
-              '<button class="hist-date-save-btn btn-secondary btn-sm" data-idx="' + origIdx + '">Lagre</button>' +
-              '<button class="hist-date-cancel-btn btn-secondary btn-sm" data-idx="' + origIdx + '">Avbryt</button>' +
+              '<button class="hist-date-save-btn btn-secondary btn-sm" data-idx="' + origIdx + '" data-feature="history-save-date">Lagre</button>' +
+              '<button class="hist-date-cancel-btn btn-secondary btn-sm" data-idx="' + origIdx + '" data-feature="history-cancel-date">Avbryt</button>' +
             '</span>' +
           '</div>' +
         '</div>' +
@@ -396,7 +396,7 @@ function medlOutHtml(entry, withCase) {
   return '<div class="medl-out" data-id="' + esc(entry.caseId) + '">' +
     '<svg class="ti" aria-hidden="true"><use href="#ti-users"/></svg>' +
     '<span class="medl-out-text">Hos medleser: ' +
-      (withCase ? '<a href="#" class="medl-out-case" data-id="' + esc(entry.caseId) + '">' + esc(entry.caseNumber) + '</a> – ' : '') +
+      (withCase ? '<a href="#" class="medl-out-case" data-id="' + esc(entry.caseId) + '" data-feature="medlesing-open-case">' + esc(entry.caseNumber) + '</a> – ' : '') +
       '<strong>' + esc(entry.reader) + '</strong> · ' + esc(_medlSinceTxt(entry)) + '</span>' +
     '<span class="medl-out-actions">' +
       (withCase ? '' : '<button class="s-btn btn-medl-send" data-id="' + esc(entry.caseId) + '">Endre</button>') +
@@ -425,7 +425,7 @@ function renderMedlOutList() {
   tbody.innerHTML = rows.map(function(r) {
     var exists = cases.some(function(c) { return c.id === r.caseId; });
     var cn = exists
-      ? '<a href="#" class="medl-out-case" data-id="' + esc(r.caseId) + '">' + esc(r.caseNumber) + '</a>'
+      ? '<a href="#" class="medl-out-case" data-id="' + esc(r.caseId) + '" data-feature="medlesing-open-case">' + esc(r.caseNumber) + '</a>'
       : esc(r.caseNumber);
     var status = r.open
       ? '<span class="medl-status-pill">Hos medleser</span>'
@@ -518,7 +518,7 @@ function renderMedleserList() {
   el.innerHTML = medleserList.map(function(m, i) {
     return '<div class="vac-row medleser-row' + (m.active ? '' : ' medleser-inactive') + '">' +
       '<span class="vac-label">' + esc(m.name) + '</span>' +
-      '<label class="medleser-active"><input type="checkbox" class="medleser-toggle" data-idx="' + i + '"' + (m.active ? ' checked' : '') + ' /> aktiv</label>' +
+      '<label class="medleser-active"><input type="checkbox" class="medleser-toggle" data-idx="' + i + '"' + (m.active ? ' checked' : '') + '  data-feature="medlesing-reader-active"/> aktiv</label>' +
       '<button class="btn-icon btn-medleser-del" data-idx="' + i + '" title="Fjern fra lista" aria-label="Fjern ' + esc(m.name) + '">✕</button>' +
     '</div>';
   }).join('');

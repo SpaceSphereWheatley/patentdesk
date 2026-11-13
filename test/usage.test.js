@@ -4,10 +4,11 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const { loadFunctions } = require('./extractFunctions');
+const { scanDrawn, dynamicKeys } = require('./usageScan');
 
 const F = loadFunctions(
-  ['_usageBadKey', 'usageIsLossless', 'usageFeatureKey', 'usageNormalizeLog', 'usageMerge', 'usageBump', 'usageRangeStart', 'usageSummarize', 'usageIsEmpty'],
-  { vars: ['USAGE_STATIC_SEL'] }
+  ['_usageBadKey', 'usageWithRegistry', 'usageIsLossless', 'usageFeatureKey', 'usageNormalizeLog', 'usageMerge', 'usageBump', 'usageRangeStart', 'usageSummarize', 'usageIsEmpty'],
+  { vars: ['USAGE_STATIC_SEL', 'USAGE_DYNAMIC_FEATURES'] }
 );
 const plain = (x) => JSON.parse(JSON.stringify(x));
 const el = (o) => Object.assign({ id: '', dataset: {} }, o);
@@ -161,4 +162,34 @@ test('static markup: every interactive element has a feature key', () => {
     if (!F.usageFeatureKey({ id, dataset, name, value, type, className })) missing.push(m[0].slice(0, 90));
   }
   assert.deepStrictEqual(missing, []);
+});
+
+// ── The list of drawn features ("Aldri brukt" for buttons the DOM lacks) ──
+// These two tests keep the list honest: a new drawn button must get a name,
+// and the list must match the code. Fix a failure by editing the code or
+// USAGE_DYNAMIC_FEATURES in src/js/09a-usage-tracker.js.
+test('every interactive element drawn by src/js has a feature key', () => {
+  const unkeyed = scanDrawn().filter((x) => !x.key).map((x) => x.file + ':' + x.line + ' ' + x.what);
+  assert.deepStrictEqual(unkeyed, [], 'Give these elements data-feature="name" (or an id / btn-… class), then list the name in USAGE_DYNAMIC_FEATURES.');
+});
+
+test('USAGE_DYNAMIC_FEATURES lists exactly the drawn features that are not in the static markup', () => {
+  const listed = Object.keys(F.USAGE_DYNAMIC_FEATURES).sort();
+  const found = dynamicKeys();
+  assert.deepStrictEqual(found.filter((k) => !listed.includes(k)), [], 'drawn but not listed — add to USAGE_DYNAMIC_FEATURES with a label');
+  assert.deepStrictEqual(listed.filter((k) => !found.includes(k)), [], 'listed but no longer drawn — remove from USAGE_DYNAMIC_FEATURES');
+  listed.forEach((k) => assert.ok(typeof F.USAGE_DYNAMIC_FEATURES[k] === 'string' && F.USAGE_DYNAMIC_FEATURES[k].trim(), 'label for ' + k));
+});
+
+test('usageWithRegistry adds listed features and their names win over DOM text', () => {
+  const r = F.usageWithRegistry({ ids: ['a', 'doc-open'], labels: { a: 'A', 'doc-open': '2024-0042' } }, { 'doc-open': 'Dokument: Åpne', 'x-new': 'Ny' });
+  assert.deepStrictEqual(plain(r.ids), ['a', 'doc-open', 'x-new']);
+  assert.deepStrictEqual(plain(r.labels), { a: 'A', 'doc-open': 'Dokument: Åpne', 'x-new': 'Ny' });
+});
+
+test('a drawn feature that was never clicked shows up under never used', () => {
+  const ids = F.usageWithRegistry({ ids: ['btn-a'], labels: {} }, F.USAGE_DYNAMIC_FEATURES).ids;
+  const s = F.usageSummarize({ v: 1, days: { '2026-11-13': { 'btn-a': 1, 'claim-novelty': 2 } }, versions: {} }, ids, '2026-11-13', '30');
+  assert.ok(s.never.includes('claim-formal'));
+  assert.ok(!s.never.includes('claim-novelty'));
 });

@@ -25,9 +25,9 @@ var _dp = (function() {
     popup.setAttribute('aria-label', 'Kalender');
     popup.innerHTML =
       '<div class="dp-header">' +
-        '<button type="button" class="dp-nav dp-prev" title="Forrige måned">&#8249;</button>' +
+        '<button type="button" class="dp-nav dp-prev" title="Forrige måned" data-feature="datepicker-prev-month">&#8249;</button>' +
         '<span class="dp-heading"></span>' +
-        '<button type="button" class="dp-nav dp-next" title="Neste måned">&#8250;</button>' +
+        '<button type="button" class="dp-nav dp-next" title="Neste måned" data-feature="datepicker-next-month">&#8250;</button>' +
       '</div>' +
       '<div class="dp-weekdays">' +
         NB_DAYS.map(function(d){ return '<span>' + d + '</span>'; }).join('') +
@@ -76,13 +76,13 @@ var _dp = (function() {
     var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     var cells = '';
     for (var i = 0; i < firstDow; i++)
-      cells += '<button type="button" class="dp-day dp-day-empty" tabindex="-1"></button>';
+      cells += '<button type="button" class="dp-day dp-day-empty" tabindex="-1" data-feature="datepicker-empty-day"></button>';
     for (var d = 1; d <= daysInMonth; d++) {
       var isSel   = (d === sD && viewMonth === sM && viewYear === sY);
       var isToday = (d === tD && viewMonth === tM && viewYear === tY);
       cells += '<button type="button" class="dp-day' +
         (isSel ? ' dp-day-sel' : '') + (isToday ? ' dp-day-today' : '') +
-        '" data-day="' + d + '">' + d + '</button>';
+        '" data-day="' + d + '" data-feature="datepicker-pick-day">' + d + '</button>';
     }
     popup.querySelector('.dp-grid').innerHTML = cells;
   }
@@ -126,7 +126,7 @@ var _dp = (function() {
       w.appendChild(el);
       wrap = w;
     }
-    var triggerBtn = document.createElement('button');
+    var triggerBtn = document.createElement('button'); if (triggerBtn.dataset) triggerBtn.dataset.feature = 'datepicker-open';
     triggerBtn.type = 'button';
     triggerBtn.className = 'dp-trigger';
     triggerBtn.title = 'Velg dato';

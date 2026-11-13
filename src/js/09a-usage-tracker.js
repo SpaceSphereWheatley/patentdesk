@@ -11,6 +11,105 @@ var USAGE_INFLIGHT_KEY = 'pt_usage_inflight'; // det som skrives akkurat nå, ti
 var USAGE_FILE_NAME   = 'usage.json';
 var USAGE_STATIC_SEL  = 'button, a[href], select, summary, [role="tab"], input[type="checkbox"], input[type="radio"], [data-feature]';
 var _USAGE_FLUSH_MS   = 5000;
+// Funksjoner som tegnes av koden og derfor ikke finnes i markeringen når «Bruk»
+// åpnes. Listen gir dem et navn i «Aldri brukt». Den holdes i takt med koden av
+// test/usage.test.js: en ny tegnet knapp uten oppføring (eller en oppføring uten
+// knapp) stopper testene. Nøkkelen er funksjons-ID-en, verdien visningsnavnet.
+var USAGE_DYNAMIC_FEATURES = {
+  'backup-restore-snapshot': 'Gjenopprett øyeblikksbilde',
+  'btn-cpc-empty-add': 'CPC: Legg til klasse (tom liste)',
+  'btn-cpc-notice-dismiss': 'CPC-varsel: Lukk',
+  'btn-cpc-notice-load': 'CPC-varsel: Last inn',
+  'btn-cpc-reload': 'CPC: Last inn på nytt',
+  'btn-empty-clear-filter': 'Tom liste: Fjern filter',
+  'btn-mh-empty-add': 'Mothold: Legg til (tom liste)',
+  'btn-undo-action': 'Angre',
+  'bulk-delete-row': 'Bulk-import: Fjern rad',
+  'bulk-select-row': 'Bulk-import: Velg rad',
+  'checklist-add-item': 'Sjekkliste: Legg til punkt',
+  'checklist-delete-item': 'Sjekkliste: Slett punkt',
+  'checklist-toggle-item': 'Sjekkliste: Kryss av punkt',
+  'claim-change-changed': 'Krav: Endret',
+  'claim-change-unchanged': 'Krav: Uendret',
+  'claim-dependency-reset': 'Krav: Tilbake til automatisk tilhørighet',
+  'claim-dependency-toggle': 'Krav: Selvstendig/uselvstendig',
+  'claim-doc-popover': 'Krav: Velg mothold',
+  'claim-doc-popover-copy': 'Krav: Kopier mothold fra forrige krav',
+  'claim-doc-popover-option': 'Krav: Velg ett mothold i listen',
+  'claim-formal': 'Krav: Formell vurdering',
+  'claim-inventive': 'Krav: Oppfinnelseshøyde',
+  'claim-inventive-inherited': 'Krav: Oppfinnelseshøyde (arvet)',
+  'claim-inventive-locked': 'Krav: Oppfinnelseshøyde (låst)',
+  'claim-novelty': 'Krav: Nyhet',
+  'claim-novelty-inherited': 'Krav: Nyhet (arvet)',
+  'claim-origin': 'Krav: Opphav i brev',
+  'claim-p13': 'Krav: § 13-grunnlag',
+  'class:btn-active-toggle': 'Kortmeny: Aktiv/inaktiv',
+  'class:btn-card-hist': 'Sakskort: Historikk',
+  'class:btn-card-more': 'Sakskort: Flere handlinger (⋯)',
+  'class:btn-copy-path': 'Meny: Kopier sti',
+  'class:btn-del': 'Meny: Slett sak',
+  'class:btn-edit': 'Meny: Rediger sak',
+  'class:btn-home-del': 'Hjem: Slett',
+  'class:btn-home-edit': 'Hjem: Rediger',
+  'class:btn-medl-return': 'Medlesing: Tilbake fra medlesing',
+  'class:btn-medl-send': 'Medlesing: Send/endre medlesing',
+  'class:btn-medleser-del': 'Medlesere: Fjern fra lista',
+  'class:btn-row-action': 'Liste: Radhandling',
+  'class:btn-row-outcome': 'Liste: Utfall',
+  'class:btn-sak-class-del': 'Saken: Fjern CPC-klasse',
+  'class:btn-sak-copy-path': 'Saken: Kopier sti',
+  'class:btn-sak-del': 'Saken: Slett',
+  'class:btn-sak-edit': 'Saken: Rediger',
+  'class:btn-sak-outcome': 'Saken: Utfall',
+  'class:btn-unassigned-drop': 'Ikke fordelt: Fikk den ikke (slett)',
+  'class:btn-unassigned-off': 'Ikke fordelt: Bekreft fordelt',
+  'class:btn-unassigned-on': 'Ikke fordelt: Marker som ikke fordelt',
+  'class:btn-vac-del': 'Ferie: Slett',
+  'class:btn-vac-edit': 'Ferie: Rediger',
+  'cpc-in-use': 'CPC: I bruk',
+  'datepicker-empty-day': 'Datovelger: Tom celle',
+  'datepicker-next-month': 'Datovelger: Neste måned',
+  'datepicker-open': 'Datovelger: Åpne',
+  'datepicker-pick-day': 'Datovelger: Velg dag',
+  'datepicker-prev-month': 'Datovelger: Forrige måned',
+  'doc-copy-path': 'Dokument: Kopier sti',
+  'doc-delete': 'Dokument: Slett',
+  'doc-open': 'Dokument: Åpne',
+  'doc-rename': 'Dokument: Endre navn',
+  'docpane-file-pick': 'Dokumentpanel: Velg fil',
+  'history-cancel-date': 'Historikk: Avbryt datoendring',
+  'history-edit-date': 'Historikk: Endre dato',
+  'history-save-date': 'Historikk: Lagre dato',
+  'list-sort-column': 'Liste: Sorter kolonne',
+  'medlesing-open-case': 'Medlesing: Åpne sak',
+  'medlesing-reader-active': 'Medlesere: Aktiv',
+  'medlesing-toggle-item': 'Medlesing: Kryss av punkt',
+  'objection-add': 'Innvending: Legg til',
+  'objection-backfill': 'Innvending: Lagre nåværende vurdering som runde',
+  'objection-cancel': 'Innvending: Avbryt',
+  'objection-delete': 'Innvending: Slett',
+  'objection-is-new': 'Innvending: Ny i denne runden',
+  'objection-state': 'Innvending: Endre status',
+  'objection-submit': 'Innvending: Legg til (send skjema)',
+  'priorart-cited-elsewhere': 'Mothold: Også mothold i andre saker',
+  'priorart-cited-open': 'Mothold: Åpne sak der det er mothold',
+  'priorart-edit': 'Mothold: Rediger',
+  'priorart-flag': 'Mothold: Flagg',
+  'priorart-goto-details': 'Mothold: Vis i Detaljer',
+  'priorart-ops': 'Mothold: Operasjoner',
+  'priorart-restore': 'Mothold: Gjenopprett',
+  'reply-toggle-item': 'Svar: Kryss av punkt',
+  'sak-frist-unpostpone': 'Saken: Angre utsettelse',
+  'section-fold': 'Saken: Brett ut/sammen seksjon',
+  'tag-remove': 'Stikkord: Fjern',
+  'timeline-chip': 'Tidslinje: Filterchip',
+  'timeline-horizon': 'Tidslinje: Horisont',
+  'timeline-pin': 'Tidslinje: Fest sak',
+  'update-download-link': 'Oppdatering: Last ned',
+  'workfile-grant-access': 'Arbeidsfil: Gi tilgang',
+  'workfile-grant-later': 'Arbeidsfil: Senere',
+};
 var _usageTimer    = null;
 var _usageFlushing = false;
 var _usageRange    = '30';
@@ -35,9 +134,10 @@ function usageFeatureKey(el) {
   if (el.type === 'radio' && el.name) return 'radio:' + el.name + ':' + el.value;
   // Dynamisk tegnede knapper bærer saksdata i data-attributtene (data-id,
   // data-cn …) — de brukes ALDRI. Klassen btn-… er innholdsfri og skiller dem.
+  // Generelle stilklasser (btn-primary …) slår mange ulike knapper sammen og teller ikke.
   var cls = typeof el.className === 'string' ? el.className.split(/\s+/) : [];
   for (var i = 0; i < cls.length; i++) {
-    if (/^btn-[a-z0-9-]+$/.test(cls[i])) return 'class:' + cls[i];
+    if (/^btn-[a-z0-9-]+$/.test(cls[i]) && !/^btn-(primary|secondary|danger|icon|sm)$/.test(cls[i])) return 'class:' + cls[i];
   }
   return null;
 }
@@ -293,6 +393,18 @@ function _usageCollectIds() {
     if (labels[key]) return;
     var txt = (el.getAttribute('aria-label') || el.textContent || el.getAttribute('title') || el.getAttribute('data-tooltip') || '').replace(/\s+/g, ' ').trim();
     if (txt) labels[key] = txt.length > 48 ? txt.slice(0, 47) + '…' : txt;
+  });
+  return usageWithRegistry({ ids: ids, labels: labels }, USAGE_DYNAMIC_FEATURES);
+}
+
+// Legger de tegnede funksjonene til DOM-funksjonene. Listens navn går foran
+// teksten i DOM-en (som for tegnede lenker kan være et saksnummer).
+function usageWithRegistry(reg, registry) {
+  var ids = reg.ids.slice(), labels = {};
+  Object.keys(reg.labels).forEach(function(k) { labels[k] = reg.labels[k]; });
+  Object.keys(registry).forEach(function(k) {
+    if (ids.indexOf(k) === -1) ids.push(k);
+    labels[k] = registry[k];
   });
   return { ids: ids, labels: labels };
 }
