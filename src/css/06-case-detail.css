@@ -702,7 +702,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .dp-ov .dp-unk { color: var(--muted-text); }
 .dp-claims-empty { color: var(--muted-text); font-size: var(--text-sm); margin: 0; }
 
-.dp-rule-row { display: grid; grid-template-columns: 5rem minmax(0, 20rem); align-items: center; gap: var(--space-3); }
+.dp-rule-row { display: grid; grid-template-columns: 5rem minmax(0, 32rem); align-items: center; gap: var(--space-3); }
 .dp-rule-row label { font-size: var(--text-sm); color: var(--muted-text); }
 
 #view-sak.is-docs-tab .sak-unassigned,

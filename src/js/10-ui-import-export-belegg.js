@@ -780,11 +780,10 @@ function triAriaLabel(claimNum, field, val, isCascade, isLocked) {
   return label;
 }
 
-function ensureSakFiles(data, cas) {
-  if (!Array.isArray(data.files)) {
-    var isOppdrag = cas && cas.type === 'oppdrag';
-    data.files = isOppdrag ? [] : DEFAULT_FILES.map(function(f) { return { name: f.name }; });
-  }
+// Nye saker (søknad og oppdrag) starter med tom filliste; den fylles fra
+// saksmappen når saken åpnes (dpSyncFolder). En lagret liste røres ikke.
+function ensureSakFiles(data) {
+  if (!Array.isArray(data.files)) data.files = [];
   return data;
 }
 
