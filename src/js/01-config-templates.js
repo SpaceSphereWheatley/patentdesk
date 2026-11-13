@@ -282,12 +282,6 @@ function sakStatusChip(status, isOppdrag, outcome) {
   return { label: 'Ny', tone: 'ny' };
 }
 
-// Undertittelen i sakshodet er bare tittelen; statusen har egen knapp.
-// Ren funksjon — se test/sakStatusMenu.test.js.
-function sakSubtitle(cas) {
-  return (cas && cas.title) || '';
-}
-
 // Hint nederst i statusmenyen: det vanlige steget er hovedknappen.
 // Ren funksjon — se test/sakStatusMenu.test.js.
 function statusMenuHint(status, isOppdrag) {

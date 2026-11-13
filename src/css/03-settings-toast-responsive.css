@@ -152,8 +152,6 @@
                           color: var(--muted-text); font-size: var(--text-xs); padding: var(--space-1) var(--space-4);
                           cursor: pointer; white-space: nowrap; transition: color var(--dur-base), border-color var(--dur-base); }
 .cle-btn-add-item:hover { color: var(--primary); border-color: var(--primary-dim); }
-.cle-footer             { display: flex; gap: var(--space-5); align-items: center; padding: var(--space-5) var(--space-7);
-                          border-top: 1px solid var(--border); flex-wrap: wrap; }
 .cle-btn-save           { background: var(--primary-dim); border: 1px solid var(--primary); color: var(--primary);
                           border-radius: var(--radius); font-family: var(--font-body); font-size: var(--text-sm);
                           padding: var(--space-2) var(--space-6); cursor: pointer; transition: background var(--dur-base); }
@@ -221,7 +219,6 @@
   .main-content            { margin-left: 48px; padding: var(--space-8) var(--space-6) 3rem; }
   .home-dock               { left: 48px; padding-left: var(--space-6); padding-right: var(--space-6); }
   .field-row               { grid-template-columns: 1fr; }
-  .stat-cards              { grid-template-columns: 1fr 1fr; }
   .drawer-logo-row         { padding: 1.4rem 0 var(--space-7); justify-content: center; }
   .drawer-toggle-btn       { display: none; }
   /* .drawer-prefiks: reglene for pågående sak står lenger ned i arket */

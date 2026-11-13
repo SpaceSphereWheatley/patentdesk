@@ -151,37 +151,9 @@ a:focus-visible,
 
 /* Split-knapp */
 .btn-add-split { display: inline-flex; position: relative; }
-.btn-add-main  { border-radius: var(--radius) 0 0 var(--radius) !important; }
-.btn-add-arrow { border-radius: 0 var(--radius) var(--radius) 0 !important; border-left: 1px solid rgba(255,255,255,0.2) !important; padding: var(--space-3) var(--space-4) !important; font-size: var(--text-2xs) !important; }
-.btn-add-dropdown {
-  position: absolute; top: calc(100% + 4px); right: 0;
-  background: var(--surface); border: 1px solid var(--border2);
-  border-radius: var(--radius); min-width: 190px; z-index: 100;
-  box-shadow: var(--shadow-dropdown); overflow: hidden;
-}
-.btn-add-dd-item {
-  display: block; width: 100%; background: transparent; border: none;
-  padding: var(--space-4) var(--space-6); font-family: var(--font-body); font-size: var(--text-sm);
-  color: var(--muted-text); text-align: left; cursor: pointer;
-  transition: background var(--dur-instant), color var(--dur-instant);
-}
-.btn-add-dd-item:hover { background: var(--surface2); color: var(--text); }
 
 /* Bulk-modal */
-.bulk-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.bulk-tab { padding: var(--space-4) 1.1rem; font-size: var(--text-sm); color: var(--muted-text); cursor: pointer;
-            border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color var(--dur-base); }
-.bulk-tab:hover { color: var(--text); }
-.bulk-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-.bulk-paste-area {
-  width: 100%; min-height: 110px; background: var(--surface2); color: var(--text);
-  border: 1px solid var(--border2); border-radius: var(--radius);
-  padding: var(--space-3) var(--space-5); font-family: var(--font-body); font-size: var(--text-sm);
-  line-height: var(--line-normal); resize: vertical; transition: border-color var(--dur-base);
-}
-.bulk-paste-area:focus { outline: none; border-color: var(--primary); }
-.bulk-paste-hint { font-size: var(--text-xs); color: var(--muted-text); margin-top: var(--space-2); }
 .bulk-preview-hdr {
   display: grid; grid-template-columns: 26px 140px 1fr 130px 26px;
   gap: var(--space-3); padding: var(--space-1) 0 var(--space-2); border-bottom: 1px solid var(--border);
@@ -216,13 +188,6 @@ a:focus-visible,
 .claims-reduce-list { margin: var(--space-3) 0; padding-left: 1.25rem; font-size: var(--text-sm); line-height: 1.7; color: var(--text); }
 .claims-reduce-note { margin: 0; font-size: var(--text-xs); color: var(--text-subtle); }
 
-.bulk-row {
-  display: grid; grid-template-columns: 140px 1fr 130px 26px;
-  gap: var(--space-3); padding: var(--space-1) 0; border-bottom: 1px solid var(--border);
-  align-items: center;
-}
-.bulk-row:last-child { border-bottom: none; }
-.bulk-row .field-input { padding: var(--space-1) var(--space-4); font-size: var(--text-sm); }
 .bulk-check { width: 14px; height: 14px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
 .bulk-del { background: transparent; border: 1px solid var(--border2); border-radius: var(--radius-sm);
             color: var(--muted-text); cursor: pointer; width: 24px; height: 24px;
@@ -264,21 +229,9 @@ a:focus-visible,
 }
 .btn-icon:hover         { color: var(--primary); border-color: var(--primary-dim); }
 .btn-icon.btn-del:hover { color: var(--danger);  border-color: var(--danger); }
-.btn-hist-ml            { margin-left: var(--space-2); }
 .cpc-load-banner-btn-ml { margin-left: var(--space-3); }
 
 /* Action-knapp — fargesatt per side */
-.btn-action {
-  border: none; border-radius: var(--radius);
-  padding: var(--space-1) var(--space-5); font-family: var(--font-body);
-  font-size: var(--text-xs); letter-spacing: var(--tracking-wide);
-  cursor: pointer; transition: opacity var(--dur-base), transform var(--dur-instant);
-  white-space: nowrap; font-weight: normal;
-}
-.btn-action:hover { opacity: 0.82; transform: translateY(-1px); }
-body[data-page="ny"]               .btn-action { background: var(--s-frist-bg); color: var(--s-frist-text); border: 1px solid var(--s-frist-border); }
-body[data-page="fristarkiv"]       .btn-action { background: var(--s-videre-bg); color: var(--s-videre-text); border: 1px solid var(--s-videre-border); }
-body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg); color: var(--s-videre-text); border: 1px solid var(--s-videre-border); }
 
 .btn-year {
   background: transparent; border: 1px solid var(--border2);
@@ -291,7 +244,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .btn-year:disabled              { opacity: 0.3; cursor: default; }
 
 /* ── 7. Statistikkort ─────────────────────────────── */
-.stat-cards      { display: grid; grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: var(--space-6); }
 
 .card {
   background: var(--surface); border: 1px solid var(--border);
@@ -327,10 +279,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .case-table th.sortable       { cursor: pointer; transition: color var(--dur-base); }
 .case-table th.sortable:hover { color: var(--primary); }
 .case-table th:not(.sort-asc):not(.sort-desc) .sort-icon { opacity: 0.3; }
-.case-table th.sort-asc  .sort-icon::after { content: ' ↑'; }
-.case-table th.sort-desc .sort-icon::after { content: ' ↓'; }
-.case-table th.sort-asc  .sort-icon,
-.case-table th.sort-desc .sort-icon        { color: var(--primary); }
 .th-action, .th-edit { width: 1%; white-space: nowrap; }
 
 .case-table td           { padding: var(--space-4) 14px; border-top: 1px solid var(--border); vertical-align: middle; }
@@ -343,21 +291,13 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 }
 .case-table tfoot td.col-num { text-align: right; color: var(--accent-text); }
 
-.col-case-number { color: var(--accent-text); letter-spacing: var(--tracking-wide); white-space: nowrap; }
-.col-due-date    { white-space: nowrap; }
 .col-title       { min-width: 180px; }
-.col-notes       { color: var(--muted-text); font-size: var(--text-sm); min-width: 150px; max-width: 240px; }
-.col-days        { white-space: nowrap; }
-.col-act         { white-space: nowrap; }
-.col-edit        { white-space: nowrap; }
-.col-hidden      { display: none; }
 .col-num         { text-align: right; font-variant-numeric: tabular-nums; }
 .case-table td.col-num { text-align: right; color: var(--text); }
 .stat-col-num    { text-align: center; font-variant-numeric: tabular-nums; }
 .case-table td.stat-col-num, .case-table th.stat-col-num, .case-table tfoot td.stat-col-num { text-align: center; color: var(--text); }
 .stat-col-oppdrag { color: var(--color-info) !important; }
 .month-zero      { color: var(--muted-text) !important; }
-.col-status-center { text-align: center; }
 .empty-cell      { opacity: 0.3; }
 
 .table-empty {
@@ -431,8 +371,6 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 
 .modal-body   { padding: var(--space-8); display: flex; flex-direction: column; gap: var(--space-6); }
 .modal-footer { display: flex; justify-content: flex-end; gap: var(--space-5); padding: var(--space-6) var(--space-8); border-top: 1px solid var(--border); }
-.modal-type-btn { flex:1; padding: var(--space-2) 0; font-size: var(--text-sm); border:1px solid var(--border2); border-radius: var(--radius); background:var(--bg2); color:var(--muted-text); cursor:pointer; transition:background var(--dur-instant); }
-.modal-type-btn-active { background:var(--s-oppdrag-bg); color:var(--s-oppdrag-text); border-color:var(--s-oppdrag-border); font-weight: var(--weight-medium); }
 .modal-text         { color: var(--muted-text); font-size: var(--text-base); line-height: var(--line-normal); }
 .modal-text strong  { color: var(--accent-text); }
 
@@ -529,28 +467,12 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .legend-item  { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--muted-text); letter-spacing: var(--tracking-wide); }
 .legend-dot        { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 .legend-dot-line   { width: 16px; height: 2px; border-radius: 1px; flex-shrink: 0; display: inline-block; }
-.legend-dot.dot-ny     { background: rgba(99,179,237,0.8); }
-.legend-dot.dot-videre { background: rgba(154,117,234,0.8); }
 
 /* ── 14. Linjegraf (SVG) ──────────────────────────── */
-.line-chart     { width: 100%; height: auto; display: block; overflow: visible; }
-.chart-guide    { stroke: var(--border2); stroke-width: 1; stroke-dasharray: 3 3; }
-.chart-cur-line { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 3; opacity: 0.4; }
 
-.line-ny        { fill: none; stroke: var(--chart-ny); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
-.line-videre    { fill: none; stroke: var(--chart-videre); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
 
-.chart-dot              { fill: var(--surface); stroke-width: 1.5; cursor: default; transition: r var(--dur-base); }
-.chart-dot.dot-ny       { stroke: var(--chart-ny); }
-.chart-dot.dot-videre   { stroke: var(--chart-videre); }
-.chart-dot.dot-current  { r: 4; filter: drop-shadow(0 0 3px currentColor); }
 
-.chart-xlabel     { font-size: 12px; fill: var(--muted); text-anchor: middle; font-family: var(--font-body); }
-.chart-xlabel-cur { fill: var(--accent); font-weight: bold; }
-.chart-ytext      { font-size: 11px; fill: var(--muted); text-anchor: end; font-family: var(--font-body); }
 
-.trend-line  { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 5 4; opacity: 0.55; }
-.trend-label { font-size: 8px; fill: var(--accent); text-anchor: end; font-family: var(--font-body); opacity: 0.75; }
 
 /* ── 15. Stikkord ─────────────────────────────────── */
 .tag-pill-editor    { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2);
@@ -636,34 +558,14 @@ body[data-page="viderebehandling"] .btn-action { background: var(--s-videre-bg);
 .log-col-type    { flex: 0 0 140px; text-align: center; justify-content: center; }
 .log-col-date    { flex: 0 0 120px; text-align: center; }
 .log-col-cn      { flex: 0 0 110px; text-align: center; }
-.log-case-number { color: var(--accent-text); letter-spacing: var(--tracking-normal); white-space: nowrap; }
-.log-title       { color: var(--muted-text); font-size: var(--text-sm); }
 
 /* ── 18. Historikk-tidslinje ──────────────────────── */
 .hist-row           { display: none; }
 .hist-row.hist-open { display: table-row; }
-.hist-cell          { padding: 0 !important; background: var(--surface2); border-top: none !important; }
 
-.hist-timeline {
-  display: flex; flex-direction: row; align-items: flex-start;
-  gap: 0; padding: 0.9rem var(--space-8); overflow-x: auto;
-}
-.hist-step      { display: flex; flex-direction: column; align-items: center; position: relative; min-width: 100px; flex: 1; }
-.hist-step-last { flex: 0 0 auto; min-width: 90px; }
 
-.hist-dot {
-  width: 28px; height: 28px; background: var(--surface);
-  border: 2px solid var(--border2); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: var(--text-sm); z-index: 1; flex-shrink: 0;
-}
-.hist-step-last .hist-dot { border-color: var(--accent); background: rgba(200,169,110,0.1); }
 
-.hist-line  { position: absolute; top: 14px; left: 50%; right: -50%; height: 2px; background: var(--border2); z-index: 0; }
-.hist-info  { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; margin-top: var(--space-2); text-align: center; }
-.hist-label { font-size: var(--text-xs); color: var(--text); letter-spacing: var(--tracking-normal); white-space: nowrap; }
 .hist-date  { font-size: var(--text-2xs); color: var(--muted-text); white-space: nowrap; }
-.hist-approx{ color: var(--accent-text); font-style: normal; }
 
 /* ── Historikk-modal ───────────────────────────────── */
 .hist-modal-item { display:flex; align-items:flex-start; gap: var(--space-5); padding: var(--space-4) 0; border-bottom:1px solid var(--border); }

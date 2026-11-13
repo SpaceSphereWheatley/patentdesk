@@ -3,8 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { loadFunctions } = require('./extractFunctions');
 
-const { sakStatusChip, sakSubtitle, statusMenuHint } = loadFunctions(
-  ['sakStatusChip', 'sakSubtitle', 'statusMenuHint', 'forwardAction'],
+const { sakStatusChip, statusMenuHint } = loadFunctions(
+  ['sakStatusChip', 'statusMenuHint', 'forwardAction'],
   { vars: ['OUTCOMES'] }
 );
 
@@ -23,12 +23,6 @@ test('a closed case shows its outcome in the status button', () => {
 test('an oppdrag is either Aktiv or Avsluttet', () => {
   assert.deepStrictEqual({ ...sakStatusChip('ny', true) }, { label: 'Aktiv', tone: 'oppdrag' });
   assert.deepStrictEqual({ ...sakStatusChip('avsluttet', true) }, { label: 'Avsluttet', tone: 'avsl' });
-});
-
-test('the subtitle is the title alone — the status has its own button now', () => {
-  assert.strictEqual(sakSubtitle({ title: 'Varmeveksler', status: 'ny' }), 'Varmeveksler');
-  assert.strictEqual(sakSubtitle({ status: 'ny' }), '');
-  assert.strictEqual(sakSubtitle(null), '');
 });
 
 test('the menu points to the main button for the usual step, or says nothing when there is none', () => {

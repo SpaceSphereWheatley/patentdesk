@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Removed
+- Ubrukt kode og ubrukte stiler ryddet bort (ca. 11 KB mindre fil): funksjonen `sakSubtitle` (undertittelen i sakshodet er for lengst fjernet fra visningen) og 102 CSS-velgere for klasser som ingen skjerm bruker lenger (bl.a. gamle bulk-, historikk- og diagramstiler). Ingen synlig endring.
+
 ## [4.67.0] - 2026-11-13
 Mappesynk uten lokal server, og fanen Dokumenter skjules når serveren ikke kjører.
 
