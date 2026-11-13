@@ -14,6 +14,11 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
   går nå foran ett som bare inneholder det («krav» velger Krav.pdf framfor
   Kravbrev.pdf). Feltet tar opptil 120 tegn (før 40). Eksisterende regler med
   ett ord virker som før.
+- **Nye søknadssaker starter med tom filliste.** De fem faste filnavnene
+  (Claims.pdf, Description.pdf osv.) legges ikke lenger inn; fillisten fylles
+  fra saksmappen når saken åpnes via den lokale serveren. Eksisterende saker
+  beholder listen sin. Merknaden om faste filnavn under «Saksmappe-rot» i
+  Innstillinger og oppstartsveiviseren er erstattet med en kort forklaring.
 
 ## [4.65.0] - 2026-11-12
 Fokusmodus og «Skjul PDF-verktøy» gir dokumentene mer høyde på fanen Dokumenter.

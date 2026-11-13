@@ -1672,7 +1672,6 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .docroot-preview  { font-size: var(--text-xs); color: var(--muted-text); word-break: break-all; }
 .docroot-preview code { background: var(--surface2); padding: 1px var(--space-1); border-radius: 3px; font-size: var(--text-xs); }
 .docroot-filenote { font-size: var(--text-xs); color: var(--muted-text); line-height: var(--line-normal); }
-.docroot-filenote ul { margin: var(--space-1) 0 0; padding-left: var(--space-7); }
 .docroot-filenote code { background: var(--surface2); padding: 1px var(--space-1); border-radius: 3px; font-size: var(--text-xs); }
 
 /* ── 22. DatePicker ──────────────────────────────── */
@@ -4129,17 +4128,7 @@ button.ob-del:hover { color: var(--text-on-no); }
                            value="C:\Users\brukernavn\Dokumenter\Saksdokumenter"
                            placeholder="C:\sti\til\Saksdokumenter" />
                     <div class="docroot-preview" id="docroot-preview"></div>
-                    <div class="docroot-filenote">
-                      For at åpning og kopiering av dokumenter skal fungere, bør hver
-                      sak-mappe inneholde filene:
-                      <ul>
-                        <li><code>Claims.pdf</code></li>
-                        <li><code>Application.pdf</code></li>
-                        <li><code>Figures.pdf</code></li>
-                        <li><code>Description.pdf</code></li>
-                        <li><code>Abstract.pdf</code></li>
-                      </ul>
-                    </div>
+                    <div class="docroot-filenote">Hver sak har en mappe med saksnummeret som navn. Filene i mappen hentes inn når saken åpnes (krever <code>Start-PatentDesk.ps1</code>).</div>
                   </div>
                   <div class="settings-row settings-row-col" id="settings-dp-rules">
                     <div class="settings-label">
@@ -5433,8 +5422,6 @@ var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
 var DEFAULT_DOC_ROOT = 'C:\\Users\\brukernavn\\Dokumenter\\Saksdokumenter';
-var DEFAULT_FILES = ['Claims.pdf', 'Description.pdf', 'Abstract.pdf', 'Figures.pdf', 'Application.pdf']
-  .map(function(n) { return { name: n }; });
 var ONBOARDING_KEY = 'pt_onboarding_completed';
 var USER_NAME_KEY  = 'pt_user_name';
 var VACATION_KEY = 'pt_vacations';
@@ -13316,11 +13303,10 @@ function triAriaLabel(claimNum, field, val, isCascade, isLocked) {
   return label;
 }
 
-function ensureSakFiles(data, cas) {
-  if (!Array.isArray(data.files)) {
-    var isOppdrag = cas && cas.type === 'oppdrag';
-    data.files = isOppdrag ? [] : DEFAULT_FILES.map(function(f) { return { name: f.name }; });
-  }
+// Nye saker (søknad og oppdrag) starter med tom filliste; den fylles fra
+// saksmappen når saken åpnes (dpSyncFolder). En lagret liste røres ikke.
+function ensureSakFiles(data) {
+  if (!Array.isArray(data.files)) data.files = [];
   return data;
 }
 
@@ -22464,17 +22450,7 @@ if (document.readyState === 'loading') {
           <input class="field-input settings-path-input" id="input-onb-docroot" type="text"
                  placeholder="C:\sti\til\Saksdokumenter" />
           <div class="docroot-preview" id="onb-docroot-preview"></div>
-          <div class="docroot-filenote">
-            For at åpning og kopiering av dokumenter skal fungere, bør hver
-            sak-mappe inneholde filene:
-            <ul>
-              <li><code>Claims.pdf</code></li>
-              <li><code>Application.pdf</code></li>
-              <li><code>Figures.pdf</code></li>
-              <li><code>Description.pdf</code></li>
-              <li><code>Abstract.pdf</code></li>
-            </ul>
-          </div>
+          <div class="docroot-filenote">Hver sak har en mappe med saksnummeret som navn. Filene i mappen hentes inn når saken åpnes (krever <code>Start-PatentDesk.ps1</code>).</div>
         </div>
 
         <div class="onb-step" data-step="2">

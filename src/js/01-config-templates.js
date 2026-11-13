@@ -8,8 +8,6 @@ var SCHEMA_VERSION = 8;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
 var DEFAULT_DOC_ROOT = 'C:\\Users\\brukernavn\\Dokumenter\\Saksdokumenter';
-var DEFAULT_FILES = ['Claims.pdf', 'Description.pdf', 'Abstract.pdf', 'Figures.pdf', 'Application.pdf']
-  .map(function(n) { return { name: n }; });
 var ONBOARDING_KEY = 'pt_onboarding_completed';
 var USER_NAME_KEY  = 'pt_user_name';
 var VACATION_KEY = 'pt_vacations';
