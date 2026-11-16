@@ -582,7 +582,7 @@ function saveAppFile(text) {
 }
 
 function githubLink(href) {
-  var a = document.createElement('a');
+  var a = document.createElement('a'); if (a.dataset) a.dataset.feature = 'update-download-link';
   a.href = href || UPDATE_DOWNLOAD_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
   return a;
 }

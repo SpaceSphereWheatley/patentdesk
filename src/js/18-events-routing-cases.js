@@ -61,6 +61,7 @@ function navDepth() {
 }
 
 function navigateTo(page, addToHistory) {
+  usageRecordNav(page);
   flushPendingSakEdits();
   if (activePage === 'sak') document.title = 'PatentDesk — Sakslogg';
   // Saksliste-filteret nullstilles ved sidebytte (gjelder nå alle sakslister).

@@ -437,7 +437,7 @@ function renderCle() {
     var itemsHtml = phase.items.map(function(item) {
       return '<div class="cle-item" data-pi="' + pi + '" data-id="' + esc(item.id) + '">' +
         '<input class="cle-item-label" type="text" value="' + esc(item.label) + '" placeholder="Punkt…" />' +
-        '<button class="cle-btn-del-item" title="Slett punkt">✕</button>' +
+        '<button class="cle-btn-del-item" title="Slett punkt" data-feature="checklist-delete-item">✕</button>' +
       '</div>';
     }).join('');
     return '<div class="cle-phase" data-pi="' + pi + '">' +
@@ -447,7 +447,7 @@ function renderCle() {
       '<div class="cle-items">' + itemsHtml + '</div>' +
       '<div class="cle-add-item-row">' +
         '<input class="cle-add-item-input" type="text" placeholder="Legg til punkt…" />' +
-        '<button class="cle-btn-add-item">+ Legg til</button>' +
+        '<button class="cle-btn-add-item" data-feature="checklist-add-item">+ Legg til</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -467,7 +467,7 @@ function renderCle() {
       div.dataset.pi = pi;
       div.dataset.id = newId;
       div.innerHTML = '<input class="cle-item-label" type="text" value="' + esc(label) + '" placeholder="Punkt…" />' +
-        '<button class="cle-btn-del-item" title="Slett punkt">✕</button>';
+        '<button class="cle-btn-del-item" title="Slett punkt" data-feature="checklist-delete-item">✕</button>';
       div.querySelector('.cle-btn-del-item').addEventListener('click', function() { div.remove(); });
       itemsEl.appendChild(div);
       inp.value = '';

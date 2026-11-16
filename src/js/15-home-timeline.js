@@ -225,7 +225,7 @@ function renderHomeDeadlines() {
       vacBadge +
       trackHtml(c, true) +
       '<div class="home-row-more" style="position:relative;flex-shrink:0;margin-left:var(--space-1);">' +
-        '<button class="btn-card-more home-row-more-btn" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
+        '<button class="btn-card-more home-row-more-btn" data-feature="home-row-more" data-id="' + c.id + '" title="Handlinger" aria-label="Handlinger">⋯</button>' +
       '</div>' +
     '</div>';
   }
@@ -702,7 +702,7 @@ function _updateOverduePin(scrollEl) {
   if (!anchor) {
     anchor = document.createElement('div');
     anchor.className = 'tl-pin-anchor';
-    var pin = document.createElement('button');
+    var pin = document.createElement('button'); if (pin.dataset) pin.dataset.feature = 'timeline-pin';
     pin.type = 'button';
     pin.className = 'tl-overdue-pin';
     anchor.appendChild(pin);
@@ -782,7 +782,7 @@ function buildTimelineWidget(hostEl, opts) {
   typeWrap.setAttribute('aria-label', 'Filtrer sakstyper');
   TIMELINE_TYPES.forEach(function(t) {
     var meta = TIMELINE_TYPE_META[t];
-    var chip = document.createElement('button');
+    var chip = document.createElement('button'); if (chip.dataset) chip.dataset.feature = 'timeline-chip';
     chip.type = 'button';
     chip.className = 'tl-type-chip';
     chip.dataset.type = t;
@@ -799,7 +799,7 @@ function buildTimelineWidget(hostEl, opts) {
   var horizonWrap = document.createElement('div');
   horizonWrap.className = 'tl-horizon-group';
   TL_HORIZONS.forEach(function(h) {
-    var btn = document.createElement('button');
+    var btn = document.createElement('button'); if (btn.dataset) btn.dataset.feature = 'timeline-horizon';
     btn.className = 'tl-horizon-btn';
     btn.dataset.tlHorizon = String(h);
     btn.textContent = h === 90 ? '3 mnd' : h === 180 ? '6 mnd' : '1 år';

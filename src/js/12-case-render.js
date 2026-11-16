@@ -424,11 +424,11 @@ function renderSakAssessmentRows(data, claimNums) {
 // finnes ikke i saksmappen på disk (se test/folderSync.test.js).
 function sakFileRowHtml(f, i, fileUrl, missing) {
   return '<div class="sak-docs-dropdown-row' + (missing ? ' sak-docs-missing' : '') + '" data-idx="' + i + '">' +
-    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span>' +
+    '<a class="sak-docs-open" data-idx="' + i + '" href="' + esc(fileUrl) + '" target="_blank" rel="noopener" title="' + esc(_fileResolvedName(f.name)) + '" data-feature="doc-open"><span class="sak-docs-file-icon">' + _fileIcon(f.name) + '</span><span class="sak-docs-open-label">' + esc(fileListLabel(f)) + '</span>' +
       (missing ? '<span class="sak-docs-missing-tag" title="Filen finnes ikke i saksmappen">mangler</span>' : '') + '</a>' +
-    '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
-    '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
-    '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
+    '<button class="sak-docs-copy" data-idx="' + i + '" title="Kopier sti" aria-label="Kopier sti" data-feature="doc-copy-path"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg></button>' +
+    '<button class="sak-docs-rename" data-idx="' + i + '" title="Endre navn" aria-label="Endre navn" data-feature="doc-rename"><svg class="ti" aria-hidden="true"><use href="#ti-pencil"/></svg></button>' +
+    '<button class="sak-docs-del" data-idx="' + i + '" title="Slett" aria-label="Slett" data-feature="doc-delete"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
   '</div>';
 }
 
@@ -541,7 +541,7 @@ function _checklistItemsHtml(data, group) {
   return group.items.map(function(item) {
     var checked = data.checklist[item.id] === true;
     return '<label class="sak-check-row sak-check-clickable' + (checked ? ' sak-check-done' : '') + '">' +
-      '<input type="checkbox" class="sak-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + ' />' +
+      '<input type="checkbox" class="sak-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + '  data-feature="checklist-toggle-item"/>' +
       '<span class="sak-check-label">' + esc(item.label) + '</span>' +
     '</label>';
   }).join('');
@@ -555,7 +555,7 @@ function _checklistFoldHtml(data, g, titleHtml, bodyHtml, open) {
   var bodyId = 'sak-fold-body-' + key.replace(/[^a-z0-9]+/g, '-');
   var pct = c.total ? Math.round(c.done / c.total * 100) : 0;
   return '<section class="sak-section sak-fold' + (open ? ' is-open' : '') + '" data-sak-section="checklist" data-fold="' + key + '">' +
-    '<h2 class="sak-fold-h"><button type="button" class="sak-fold-head" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + bodyId + '">' +
+    '<h2 class="sak-fold-h"><button type="button" class="sak-fold-head" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + bodyId + '" data-feature="section-fold">' +
       '<span class="sak-fold-title">' + titleHtml + '</span>' +
       '<span class="sak-fold-bar" aria-hidden="true"><span style="width:' + pct + '%"></span></span>' +
       '<span class="sak-fold-count">' + c.done + ' / ' + c.total + '</span>' +
@@ -780,7 +780,7 @@ function sakObjectionsHtml(cas, data) {
   var sent = lettersSent(cas.history);
   if (!L) {
     var link = canBackfillRound(cas, visibleRounds(cas, rounds))
-      ? '<button type="button" class="ob-link" data-ob-backfill="1">Lagre nåværende vurdering som runde ' + sent + '</button>' : '';
+      ? '<button type="button" class="ob-link" data-ob-backfill="1" data-feature="objection-backfill">Lagre nåværende vurdering som runde ' + sent + '</button>' : '';
     return '<div class="ob-list"><div class="ob-head"><span class="ob-title">Innvendinger fra brev ' + sent + '</span></div>' +
       '<p class="ob-empty">Ingen lagret runde for brev ' + sent + link + '</p></div>';
   }
@@ -802,10 +802,10 @@ function sakObjectionsHtml(cas, data) {
     var ctrl = g.isNew
       ? '<span class="ob-new">Ny – tas med i brev ' + k + '</span>'
       : '<span class="ob-seg ob-state" role="group" aria-label="Vurdering">' + OBJECTION_STATES.map(function(s) {
-          return '<button type="button" class="ob-st ob-st-' + s + '" data-state="' + s + '" aria-pressed="' + (g.state === s ? 'true' : 'false') + '">' +
+          return '<button type="button" class="ob-st ob-st-' + s + '" data-state="' + s + '" aria-pressed="' + (g.state === s ? 'true' : 'false') + '" data-feature="objection-state">' +
             OBJECTION_STATE_LABEL[s] + '</button>';
         }).join('') + '</span>';
-    var del = g.manual ? '<button type="button" class="ob-del" aria-label="Slett innvending" title="Slett innvending">×</button>' : '<span class="ob-del"></span>';
+    var del = g.manual ? '<button type="button" class="ob-del" aria-label="Slett innvending" title="Slett innvending" data-feature="objection-delete">×</button>' : '<span class="ob-del"></span>';
     return '<div class="' + cls + '" data-obj-ids="' + esc(ids.join(' ')) + '">' +
       '<span class="ob-text">' + text + '</span>' + (g.manual ? '<span class="ob-tag">Egen</span>' : '') + ctrl + del + '</div>';
   }).join('');
@@ -816,15 +816,15 @@ function sakObjectionsHtml(cas, data) {
         prog.x + ' / ' + prog.y + ' vurdert</span>' : '') + '</div>' +
     (L.backfilled ? '<p class="ob-note ob-backfilled">Runden er lagret i ettertid – innvendingene kan avvike fra brevet som ble sendt.</p>' : '') +
     empty + rowsHtml +
-    '<button type="button" class="ob-add">+ Innvending</button>' +
+    '<button type="button" class="ob-add" data-feature="objection-add">+ Innvending</button>' +
     '<form class="ob-form" hidden novalidate>' +
       '<label class="field-label" for="ob-input">Innvending</label>' +
       '<input class="field-input ob-input" id="ob-input" type="text" maxlength="' + OBJECTION_TEXT_MAX + '" autocomplete="off" />' +
       '<div class="ob-form-foot">' +
-        '<label class="svar-change"><input type="checkbox" class="ob-isnew" /> Ny i denne runden</label>' +
+        '<label class="svar-change"><input type="checkbox" class="ob-isnew"  data-feature="objection-is-new"/> Ny i denne runden</label>' +
         '<span class="ob-count">0 / ' + OBJECTION_TEXT_MAX + '</span><span class="ob-spacer"></span>' +
-        '<button type="button" class="btn-secondary ob-cancel">Avbryt</button>' +
-        '<button type="submit" class="btn-primary ob-submit">Legg til</button>' +
+        '<button type="button" class="btn-secondary ob-cancel" data-feature="objection-cancel">Avbryt</button>' +
+        '<button type="submit" class="btn-primary ob-submit" data-feature="objection-submit">Legg til</button>' +
       '</div>' +
     '</form>' +
   '</div>';
@@ -859,7 +859,7 @@ function renderSakResponse(cas, data, opts) {
   var rows = RESPONSE_CHECKLIST.map(function(item) {
     var on = done.indexOf(item.id) !== -1;
     return '<label class="sak-check-row sak-check-clickable' + (on ? ' sak-check-done' : '') + '">' +
-      '<input type="checkbox" class="sak-checkbox" data-svar-id="' + item.id + '"' + (on ? ' checked' : '') + ' />' +
+      '<input type="checkbox" class="sak-checkbox" data-svar-id="' + item.id + '"' + (on ? ' checked' : '') + '  data-feature="reply-toggle-item"/>' +
       '<span class="sak-check-label">' + esc(item.label) + '</span>' +
     '</label>';
   }).join('');
@@ -1035,7 +1035,7 @@ function renderMedlesingDetail(id) {
       lastGroup = item.group || null;
       return groupHtml +
         '<label class="medl-check-row' + (item.group ? ' medl-check-sub' : '') + (checked ? ' medl-check-done' : '') + (missingItem ? ' medl-check-missing' : '') + '">' +
-          '<input type="checkbox" class="medl-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + ' />' +
+          '<input type="checkbox" class="medl-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + '  data-feature="medlesing-toggle-item"/>' +
           '<span class="medl-check-label">' + esc(item.label) + '</span>' +
           (missingItem ? '<span class="medl-check-missing-tag">Mangler</span>' : '') +
         '</label>';

@@ -164,11 +164,11 @@ function _renderModalBulkPreview() {
       : '<div class="bulk-preview-cell">' + esc(row.title || '') + '</div>';
     var checkLabel = row.dup ? 'Legg inn ' + (row.cn || '') + ' likevel' : 'Velg ' + (row.cn || 'rad');
     return '<div class="bulk-preview-row' + (row.dup ? ' is-dup' : '') + '" data-rid="' + row.id + '">' +
-      '<div class="bulk-check-cell"><input type="checkbox" class="bulk-check" data-rid="' + row.id + '"' + (row.checked ? ' checked' : '') + ' aria-label="' + esc(checkLabel) + '"/></div>' +
+      '<div class="bulk-check-cell"><input type="checkbox" class="bulk-check" data-rid="' + row.id + '"' + (row.checked ? ' checked' : '') + ' aria-label="' + esc(checkLabel) + '" data-feature="bulk-select-row"/></div>' +
       '<div class="bulk-preview-cell' + (cnOk ? '' : ' err') + '">' + esc(row.cn || '—') + '</div>' +
       titleHtml +
       '<div class="bulk-preview-cell' + (dateOk ? '' : ' err') + '">' + esc(dateDisp) + '</div>' +
-      '<button class="bulk-del" data-rid="' + row.id + '" title="Fjern rad">×</button>' +
+      '<button class="bulk-del" data-rid="' + row.id + '" title="Fjern rad" data-feature="bulk-delete-row">×</button>' +
     '</div>';
   }).join('');
   container.innerHTML = hdr + rows;

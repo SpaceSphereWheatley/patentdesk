@@ -180,7 +180,7 @@ function _dpBuild() {
     if (i > 0) html += '<div class="dp-split" role="separator" aria-orientation="vertical" tabindex="0" data-dp-split="' + (i - 1) + '" aria-label="Bredde på panel ' + i + ' og ' + (i + 1) + '"></div>';
     html += '<section class="dp-pane" data-dp-pane="' + i + '" aria-label="Panel ' + (i + 1) + '">' +
       '<div class="dp-phead"><span class="dp-slot">' + (i + 1) + '</span>' +
-      '<select class="dp-pick" data-dp-pick="' + i + '" aria-label="Fil i panel ' + (i + 1) + '"></select>' +
+      '<select class="dp-pick" data-dp-pick="' + i + '" aria-label="Fil i panel ' + (i + 1) + '" data-feature="docpane-file-pick"></select>' +
       '<span class="dp-pin" id="dp-pin-' + i + '"></span></div>' +
       '<iframe class="dp-frame" id="dp-frame-' + i + '" title="Dokument i panel ' + (i + 1) + '" hidden></iframe>' +
       '<div class="dp-empty" id="dp-empty-' + i + '"></div>' +

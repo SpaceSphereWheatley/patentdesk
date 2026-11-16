@@ -8,8 +8,8 @@ const { normalizeSettingsTab, stepSettingsTab, SETTINGS_TABS } = loadFunctions(
   { vars: ['SETTINGS_TABS', 'SETTINGS_TAB_LEGACY'] }
 );
 
-test('SETTINGS_TABS is the four main sections in menu order', () => {
-  assert.deepStrictEqual(Array.from(SETTINGS_TABS), ['arbeidsmengde', 'frister', 'saksbehandling', 'data']);
+test('SETTINGS_TABS is the main sections in menu order', () => {
+  assert.deepStrictEqual(Array.from(SETTINGS_TABS), ['arbeidsmengde', 'frister', 'saksbehandling', 'data', 'bruk']);
 });
 
 test('normalizeSettingsTab keeps a known tab', () => {
@@ -38,11 +38,12 @@ test('stepSettingsTab moves to the next and previous tab', () => {
   assert.strictEqual(stepSettingsTab('arbeidsmengde', 1), 'frister');
   assert.strictEqual(stepSettingsTab('frister', 1), 'saksbehandling');
   assert.strictEqual(stepSettingsTab('data', -1), 'saksbehandling');
+  assert.strictEqual(stepSettingsTab('bruk', -1), 'data');
 });
 
 test('stepSettingsTab wraps around at both ends', () => {
-  assert.strictEqual(stepSettingsTab('data', 1), 'arbeidsmengde');
-  assert.strictEqual(stepSettingsTab('arbeidsmengde', -1), 'data');
+  assert.strictEqual(stepSettingsTab('bruk', 1), 'arbeidsmengde');
+  assert.strictEqual(stepSettingsTab('arbeidsmengde', -1), 'bruk');
 });
 
 test('stepSettingsTab starts from the first tab when the current id is unknown', () => {
