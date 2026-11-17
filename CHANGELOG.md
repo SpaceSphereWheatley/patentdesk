@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.68.1] - 2026-11-17
+Rettelse: «Lagre sak» i «Én sak» virker igjen, og saken vises i dialogens tidslinje.
+
 ### Fixed
 - **«Lagre sak» virket ikke i «Én sak».** Dialogen åpner i «Flere saker» på de fleste sider, og der er knappen av til en rad er valgt. Ved bytte til «Én sak» fikk knappen ny tekst, men ble ikke slått på igjen, så et klikk gjorde ingenting. Knappen er nå alltid på i «Én sak».
 - **«Én sak» vises i tidslinjen i dialogen.** Mens saken fylles ut, tegnes den som utkast i forhåndsvisningen, slik «Flere saker» alt gjorde, med valgt status (Fristarkiv som milepæl, oppdrag med sin varighet). En sak som redigeres ligger allerede på tidslinjen og får ikke noe utkast.
