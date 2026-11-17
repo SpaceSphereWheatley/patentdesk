@@ -6,7 +6,7 @@ function _modalSwitchTab(tab) {
   document.getElementById('modal-tab-sak').className  = 'modal-tab' + (!isBulk ? ' modal-tab-sak-on'  : '');
   document.getElementById('modal-tab-bulk').className = 'modal-tab' + (isBulk  ? ' modal-tab-bulk-on' : '');
   document.getElementById('modal-bulk-count').style.display  = isBulk ? '' : 'none';
-  document.getElementById('btn-save').textContent = isBulk ? 'Legg til saker' : 'Lagre sak';
+  if (!isBulk) _applySaveButtonState(modalSaveButtonState(false, 0));
   if (!editIdEl.value) document.getElementById('modal-title').textContent = isBulk ? 'Legg til saker' : 'Legg til sak';
   if (isBulk) {
     _modalBulkParsed = [];
@@ -16,8 +16,55 @@ function _modalSwitchTab(tab) {
     document.getElementById('modal-bulk-preview').innerHTML = '';
     document.getElementById('f-bulk-unassigned').checked = UNASSIGNED_NEW_DEFAULT;
     _updateModalBulkCount();
+  } else {
+    renderModalSingleDraft();
   }
 }
+
+// Teksten og tilstanden til lagreknappen. «Flere saker» slår den av til minst
+// én rad er valgt; «Én sak» må slå den på igjen, ellers er den død etter et
+// besøk i den andre fanen. Ren funksjon — se test/modalSingleCase.test.js.
+function modalSaveButtonState(isBulk, checked) {
+  if (!isBulk) return { text: 'Lagre sak', disabled: false };
+  return { text: checked > 0 ? 'Legg til ' + checked + ' saker' : 'Legg til saker', disabled: checked === 0 };
+}
+function _applySaveButtonState(st) {
+  var btn = document.getElementById('btn-save');
+  if (!btn) return;
+  btn.textContent = st.text;
+  btn.disabled = st.disabled;
+}
+
+// Utkastbjelken for «Én sak» i forhåndsvisningen av tidslinjen, med samme
+// status som er valgt (Fristarkiv blir milepæl, oppdrag får sin varighet).
+// En sak som redigeres, ligger allerede på tidslinjen og får ingen.
+// Ren funksjon — se test/modalSingleCase.test.js.
+function singleCaseDraftRow(f) {
+  if (!f || f.editing || !f.date || !isValidDate(f.date)) return null;
+  var isOp = f.status === 'oppdrag';
+  var d = parseInt(f.duration, 10);
+  return { cn: f.cn || '', title: f.title || '', date: parseDate(f.date), checked: true,
+    type: isOp ? 'oppdrag' : 'sak', status: isOp ? 'ny' : (f.status || 'ny'),
+    duration: isOp && d >= 1 ? d : null };
+}
+function renderModalSingleDraft() {
+  if (document.getElementById('modal-pane-sak').style.display === 'none') return;
+  var st = getSelectedStatus();
+  var isOp = st === 'oppdrag';
+  var row = singleCaseDraftRow({
+    cn:       (isOp ? document.getElementById('f-case-number-op') : fCaseNum).value.trim(),
+    title:    fTitle.value.trim(),
+    date:     (isOp ? document.getElementById('f-due-date-op') : fDueDate).value.trim(),
+    status:   st,
+    duration: fDuration.value,
+    editing:  !!editIdEl.value
+  });
+  renderTimeline({ target: 'modal-timeline', draftRows: row ? [row] : null });
+}
+['f-case-number', 'f-case-number-op', 'f-due-date', 'f-due-date-op', 'f-title', 'f-duration'].forEach(function(fid) {
+  var el = document.getElementById(fid);
+  if (el) el.addEventListener('input', renderModalSingleDraft);
+});
 
 document.getElementById('modal-tab-sak').addEventListener('click', function() { _modalSwitchTab('sak'); });
 document.getElementById('modal-tab-bulk').addEventListener('click', function() { _modalSwitchTab('bulk'); });
@@ -32,6 +79,7 @@ document.getElementById('modal-adv-toggle').addEventListener('click', function()
 document.querySelectorAll('input[name="status"]').forEach(function(r) {
   r.addEventListener('change', function() {
     _setModalOppdrag(this.value === 'oppdrag');
+    renderModalSingleDraft();
   });
 });
 
@@ -81,11 +129,9 @@ if (modalAxisToggle) {
 function _updateModalBulkCount() {
   var checked = _modalBulkParsed.filter(function(r) { return r.checked; }).length;
   var lbl = document.getElementById('modal-bulk-count');
-  var btn = document.getElementById('btn-save');
   if (lbl) lbl.textContent = checked + ' av ' + _modalBulkParsed.length + ' saker valgt';
-  if (btn && document.getElementById('modal-pane-bulk').style.display !== 'none') {
-    btn.textContent = checked > 0 ? 'Legg til ' + checked + ' saker' : 'Legg til saker';
-    btn.disabled = checked === 0;
+  if (document.getElementById('modal-pane-bulk').style.display !== 'none') {
+    _applySaveButtonState(modalSaveButtonState(true, checked));
   }
 }
 
