@@ -696,7 +696,8 @@ function openModal(c) {
   var openBulk = !c && defaultAddTab(activePage) === 'bulk';
   if (openBulk) _modalSwitchTab('bulk');
 
-  renderTimeline({ target: 'modal-timeline' });
+  if (openBulk) renderTimeline({ target: 'modal-timeline' });
+  else          renderModalSingleDraft();
   openBackdrop('modal-backdrop');
   setTimeout(function() {
     (openBulk ? document.getElementById('modal-bulk-paste')

@@ -482,10 +482,11 @@ function buildTimelineDiv(opts) {
   if (opts.draftRows) {
     opts.draftRows.forEach(function(row) {
       if (!row.checked || !row.date || !isValidDate(row.date)) return;
-      // Saker fra «Flere saker» opprettes alltid som Ny, så de får samme
-      // arbeidsvindu og samme frist-tidspunkt som de lagrede Ny-bjelkene.
+      // Saker fra «Flere saker» opprettes alltid som Ny og har ingen status;
+      // «Én sak» har statusen som er valgt. Utkastet får samme arbeidsvindu
+      // og frist-tidspunkt som en lagret bjelke med samme status.
       var e2 = tlDueOffset(row.date, now);
-      var s  = timelineBarStart({ type: 'sak', status: 'ny' }, row.date, now);
+      var s  = timelineBarStart({ type: row.type || 'sak', status: row.status || 'ny', duration: row.duration }, row.date, now);
       if (e2 < -PAST || s > HORIZON) return;
       s  = Math.max(-PAST, s);
       e2 = Math.min(HORIZON, e2);
