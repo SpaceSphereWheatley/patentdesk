@@ -340,6 +340,7 @@ document.addEventListener('keydown', function(e) {
     case '5': e.preventDefault(); navigateTo('oppdrag'); break;
     case '6': e.preventDefault(); navigateTo('avsluttet'); break;
     case '7': e.preventDefault(); navigateTo('medlesing'); break;
+    case '8': e.preventDefault(); navigateTo('op'); break;
   }
 });
 document.getElementById('btn-shortcuts-close').addEventListener('click', function() { closeBackdrop('shortcuts-backdrop'); });
@@ -434,6 +435,7 @@ function searchCaseList(q, list, detailsFn) {
 function _searchHitMeta(c) {
   var label;
   if (c.type === 'oppdrag') label = c.status === 'avsluttet' ? 'Avsluttet oppdrag' : 'Oppdrag';
+  else if (isOpCase(c))     label = 'OP-sak · ' + opPhaseLabel(c.status);
   else                      label = (STATUS_CONFIG[c.status] || {}).label || c.status || '';
   if (c.status === 'avsluttet' || !c.dueDate) return label;
   var d = daysUntil(deadlineFor(c));

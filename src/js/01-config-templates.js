@@ -4,7 +4,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
 var APP_VERSION    = 'v4.68.1';
-var SCHEMA_VERSION = 8;
+var SCHEMA_VERSION = 9;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
 var DEFAULT_DOC_ROOT = 'C:\\Users\\brukernavn\\Dokumenter\\Saksdokumenter';
@@ -201,6 +201,13 @@ function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
     dueDateDesc:   ''
   };
 
+  // OP-saker går gjennom fasene uten dialoger; fasens frist foreslås av
+  // opSyncDue. Bare avgjørelsen telles i statistikken.
+  if (opPhase(fromStatus) || opPhase(toStatus)) {
+    if (toStatus === 'avsluttet') t.logType = 'op';
+    return t;
+  }
+
   // Oppdrag har ingen saksflyt — de er enten aktive eller utført.
   if (isOppdrag) {
     if (toStatus === 'avsluttet') t.logType = 'oppdrag';
@@ -251,6 +258,7 @@ function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
 // Ren funksjon — se test/sakLayout.test.js.
 function forwardAction(status, isOppdrag) {
   if (status === 'avsluttet') return null;
+  if (opPhase(status)) return opForwardAction(status);
 
   // Et oppdrag er enten aktivt eller utført — ingen mellomstasjoner.
   if (isOppdrag) return { label: 'Merk som utført', toStatus: 'avsluttet', choice: null };
@@ -277,6 +285,7 @@ function sakStatusChip(status, isOppdrag, outcome) {
     return { label: 'Avsluttet' + (o ? ' · ' + o : ''), tone: 'avsl' };
   }
   if (isOppdrag) return { label: 'Aktiv', tone: 'oppdrag' };
+  if (opPhase(s)) return { label: opPhaseLabel(s), tone: 'op' };
   if (s === 'viderebehandling') return { label: 'Viderebehandling', tone: 'videre' };
   if (s === 'fristarkiv')       return { label: 'Fristarkiv', tone: 'frist' };
   return { label: 'Ny', tone: 'ny' };
@@ -351,7 +360,7 @@ function responseChangesLabel(changes) {
 
 // Linjen under tittelen på sakssiden. Tom for Ny, avsluttede saker og oppdrag.
 function sakRoundLine(c) {
-  if (!c || c.type === 'oppdrag') return '';
+  if (!isApplication(c)) return '';
   var status = c.status || 'ny';
   if (status !== 'fristarkiv' && status !== 'viderebehandling') return '';
   var info = responseRoundInfo(c);

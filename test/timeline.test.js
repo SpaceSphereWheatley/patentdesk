@@ -91,7 +91,7 @@ test('MODAL_TIMELINE_TYPES is every timeline type except fristarkiv', () => {
   });
   // Array.from: the vm sandbox has its own Array realm, so deepStrictEqual
   // would fail on the prototype rather than the contents.
-  assert.deepStrictEqual(Array.from(MODAL_TIMELINE_TYPES), ['ny', 'viderebehandling', 'oppdrag']);
+  assert.deepStrictEqual(Array.from(MODAL_TIMELINE_TYPES), ['ny', 'viderebehandling', 'oppdrag', 'op']);
   assert.deepStrictEqual(
     Array.from(TIMELINE_TYPES).filter((t) => MODAL_TIMELINE_TYPES.indexOf(t) === -1),
     ['fristarkiv']

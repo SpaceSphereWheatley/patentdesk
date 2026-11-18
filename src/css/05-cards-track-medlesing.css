@@ -48,6 +48,11 @@
 .case-card-cn-oppdrag   { color: var(--color-info) !important; font-weight: var(--weight-medium); }
 .oppdrag-duration-pill  { display:inline-flex;align-items:center;gap: var(--space-1);font-size: var(--text-xs);padding: 1px var(--space-2);border-radius:var(--radius-pill);background:var(--bg2);border:1px solid var(--border);color:var(--muted-text);flex-shrink:0; }
 .tl-bar-oppdrag         { background: rgba(6,182,212,0.45) !important; border-color: var(--s-oppdrag-border) !important; }
+/* OP-saker (innsigelser): rosa. Ventefasene er milepæler i nøytral grå. */
+.case-card-op           { background: rgba(236,72,153,0.04); border-color: rgba(236,72,153,0.25); }
+.case-card-cn-op        { color: var(--s-op-text) !important; font-weight: var(--weight-medium); }
+.tl-bar-op              { background: rgba(190,24,93,0.45) !important; border-color: var(--s-op-border) !important; }
+.tl-bar-op.tl-bar-op-wait { background: rgba(107,114,128,0.45) !important; border-color: var(--s-frist-border) !important; }
 
 /* ── Forløpsspor ─────────────────────────────────
    Fire chevroner per sak: Formalia → 1. brev → Svar/Viderebehandling → Avgjørelse. Pilene
@@ -337,6 +342,7 @@
 .sak-status-btn.active-fristarkiv      { background: var(--s-frist-bg); color: var(--s-frist-text); border-color: var(--s-frist-border); }
 .sak-status-btn.active-avsluttet       { background: var(--s-avsl-bg); color: var(--s-avsl-text); border-color: var(--s-avsl-border); }
 .sak-status-btn.active-oppdrag         { background: var(--s-oppdrag-bg); color: var(--s-oppdrag-text); border-color: var(--s-oppdrag-border); }
+.sak-status-btn.active-op              { background: var(--s-op-bg); color: var(--s-op-text); border-color: var(--s-op-border); }
 
 /* Sjekkliste. Reserveplassen i fase B har gruppeblokker som barn og trenger
    luft mellom dem; en fases egen liste har enkeltpunkter som barn, og da er

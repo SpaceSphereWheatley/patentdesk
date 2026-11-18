@@ -50,6 +50,7 @@ test('defaultHomeDeadlineFilter: own work on, applicant deadlines off, no horizo
     viderebehandling: { overdue: true,  upcoming: true },
     fristarkiv:       { overdue: false, upcoming: false },
     oppdrag:          { overdue: true,  upcoming: true },
+    op:               { overdue: true,  upcoming: true },
     horizon: 0
   });
 });
@@ -85,8 +86,8 @@ test('normalizeHomeDeadlineFilter: non-boolean flags and unknown horizons are ig
   });
 });
 
-test('HOME_DEADLINE_KINDS: the four kinds the filter covers', () => {
-  assert.deepStrictEqual(Array.from(HOME_DEADLINE_KINDS), ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag']);
+test('HOME_DEADLINE_KINDS: the five kinds the filter covers', () => {
+  assert.deepStrictEqual(Array.from(HOME_DEADLINE_KINDS), ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag', 'op']);
 });
 
 // ── selectHomeDeadlines ─────────────────────────────
@@ -140,13 +141,13 @@ test('selectHomeDeadlines: everything off gives an empty list', () => {
 
 test('homeDeadlineFilterSummary: names the kinds and qualifies partial ones', () => {
   assert.strictEqual(homeDeadlineFilterSummary(defaultHomeDeadlineFilter()),
-    'Førstesøknader · Viderebehandlinger · Oppdrag');
+    'Førstesøknader · Viderebehandlinger · Oppdrag · OP-saker');
   const f = defaultHomeDeadlineFilter();
   f.viderebehandling.upcoming = false;
   f.fristarkiv.overdue = true;
   f.horizon = 30;
   assert.strictEqual(homeDeadlineFilterSummary(f),
-    'Førstesøknader · Viderebehandlinger (forfalte) · Svarfrister (forfalte) · Oppdrag · kommende innen 30 dager');
+    'Førstesøknader · Viderebehandlinger (forfalte) · Svarfrister (forfalte) · Oppdrag · OP-saker · kommende innen 30 dager');
   f.ny.overdue = false;
   assert.strictEqual(homeDeadlineFilterSummary(f).split(' · ')[0], 'Førstesøknader (kommende)');
 });

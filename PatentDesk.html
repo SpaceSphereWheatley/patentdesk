@@ -72,6 +72,7 @@
   --s-videre-bg:    #eef2ff; --s-videre-text:#4338ca; --s-videre-border:#c7d2fe;
   --s-avsl-bg:      #f3f4f6; --s-avsl-text:  #6b7280; --s-avsl-border:  #d1d5db;
   --s-oppdrag-bg:   #ecfeff; --s-oppdrag-text:#0e7490; --s-oppdrag-border:#a5f3fc;
+  --s-op-bg:        #fdf2f8; --s-op-text:     #9d174d; --s-op-border:     #fbcfe8;
   /* Farge-on-primary/danger */
   --on-primary:  #ffffff;
   --on-danger:   #ffffff;
@@ -492,6 +493,7 @@ a:focus-visible,
 .stat-col-num    { text-align: center; font-variant-numeric: tabular-nums; }
 .case-table td.stat-col-num, .case-table th.stat-col-num, .case-table tfoot td.stat-col-num { text-align: center; color: var(--text); }
 .stat-col-oppdrag { color: var(--color-info) !important; }
+.stat-col-op { color: var(--s-op-text) !important; }
 .month-zero      { color: var(--muted-text) !important; }
 .empty-cell      { opacity: 0.3; }
 
@@ -529,6 +531,8 @@ a:focus-visible,
 .s-viderebehandling { background:var(--s-videre-bg); color:var(--s-videre-text); border-color:var(--s-videre-border); }
 .s-avsluttet        { background:var(--s-avsl-bg); color:var(--s-avsl-text); border-color:var(--s-avsl-border); }
 .s-oppdrag          { background:var(--s-oppdrag-bg); color:var(--s-oppdrag-text); border-color:var(--s-oppdrag-border); }
+.s-op               { background:var(--s-op-bg); color:var(--s-op-text); border-color:var(--s-op-border); }
+.s-op-wait          { background:var(--s-frist-bg); color:var(--s-frist-text); border-color:var(--s-frist-border); }
 
 .status-radio-group { display: flex; gap: var(--space-4); flex-wrap: wrap; }
 .status-radio       { cursor: pointer; }
@@ -740,6 +744,7 @@ a:focus-visible,
 .log-badge.log-videre     { background:rgba(139,92,246,0.1);   color:var(--log-videre-text); border:1px solid rgba(139,92,246,0.3); }
 .log-badge.log-avsluttet  { background:rgba(107,114,128,0.12); color:var(--log-avsl-text); border:1px solid rgba(107,114,128,0.3); }
 .log-badge.log-oppdrag    { background:rgba(6,182,212,0.12); color:var(--color-info); border:1px solid rgba(6,182,212,0.35); }
+.log-badge.log-op         { background:var(--s-op-bg); color:var(--s-op-text); border:1px solid var(--s-op-border); }
 
 .btn-log-edit {
   background: transparent; border: 1px solid var(--border2);
@@ -1685,6 +1690,11 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .case-card-cn-oppdrag   { color: var(--color-info) !important; font-weight: var(--weight-medium); }
 .oppdrag-duration-pill  { display:inline-flex;align-items:center;gap: var(--space-1);font-size: var(--text-xs);padding: 1px var(--space-2);border-radius:var(--radius-pill);background:var(--bg2);border:1px solid var(--border);color:var(--muted-text);flex-shrink:0; }
 .tl-bar-oppdrag         { background: rgba(6,182,212,0.45) !important; border-color: var(--s-oppdrag-border) !important; }
+/* OP-saker (innsigelser): rosa. Ventefasene er milepæler i nøytral grå. */
+.case-card-op           { background: rgba(236,72,153,0.04); border-color: rgba(236,72,153,0.25); }
+.case-card-cn-op        { color: var(--s-op-text) !important; font-weight: var(--weight-medium); }
+.tl-bar-op              { background: rgba(190,24,93,0.45) !important; border-color: var(--s-op-border) !important; }
+.tl-bar-op.tl-bar-op-wait { background: rgba(107,114,128,0.45) !important; border-color: var(--s-frist-border) !important; }
 
 /* ── Forløpsspor ─────────────────────────────────
    Fire chevroner per sak: Formalia → 1. brev → Svar/Viderebehandling → Avgjørelse. Pilene
@@ -1974,6 +1984,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 .sak-status-btn.active-fristarkiv      { background: var(--s-frist-bg); color: var(--s-frist-text); border-color: var(--s-frist-border); }
 .sak-status-btn.active-avsluttet       { background: var(--s-avsl-bg); color: var(--s-avsl-text); border-color: var(--s-avsl-border); }
 .sak-status-btn.active-oppdrag         { background: var(--s-oppdrag-bg); color: var(--s-oppdrag-text); border-color: var(--s-oppdrag-border); }
+.sak-status-btn.active-op              { background: var(--s-op-bg); color: var(--s-op-text); border-color: var(--s-op-border); }
 
 /* Sjekkliste. Reserveplassen i fase B har gruppeblokker som barn og trenger
    luft mellom dem; en fases egen liste har enkeltpunkter som barn, og da er
@@ -2975,6 +2986,40 @@ body[data-page="sak"] #view-sak.is-docs-tab.is-focus { display: grid !important;
 #view-sak.is-focus .sak-topbar-right { display: none !important; }
 #view-sak.is-focus .dp-toolbar { padding-bottom: 0; }
 #view-sak.is-focus .dp-tab { padding: var(--space-1) var(--space-5); }
+
+/* ── OP-panelet (op-): parter, utvalg, saksdatoer og kontrollfrister ── */
+.op-panel { margin: var(--space-4, 16px) 0; }
+.op-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .op-grid { grid-template-columns: 1fr; } }
+.op-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.op-card-title { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-text); font-weight: 600; }
+.op-card-sub { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.op-kv { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 6px 12px; align-items: center; font-size: 13.5px; }
+.op-kv-k { color: var(--muted-text); }
+.op-kv-plain { padding: 4px 0; }
+.op-input { width: 100%; }
+.op-opp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; margin-bottom: 6px; align-items: center; }
+.op-opp-new { grid-template-columns: minmax(0, 1fr); }
+.op-opp-del[disabled] { opacity: .35; cursor: not-allowed; }
+.op-dates { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.op-dates th { text-align: left; font-weight: 400; color: var(--muted-text); padding: 5px 8px 5px 0; width: 48%; }
+.op-dates td { padding: 5px 0; border-bottom: 1px solid var(--border); }
+.op-dates tr:last-child td { border-bottom: 0; }
+.op-date-cell { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.op-date-cell .dp-wrap { width: 140px; }
+.op-reply-kind { width: auto; }
+.op-due { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 10px;
+  background: var(--s-op-bg); border: 1px solid var(--s-op-border); border-radius: var(--radius); font-size: 13.5px; }
+.op-due label { color: var(--s-op-text); font-weight: 600; }
+.op-due .dp-wrap { width: 140px; }
+.op-due-note { color: var(--muted-text); font-size: 12.5px; }
+.op-link { background: none; border: 0; padding: 0; color: var(--primary); cursor: pointer; font: inherit; text-decoration: underline; }
+.op-ctrl { margin-top: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; font-size: 13.5px; }
+.op-ctrl-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+.op-ctrl-open { font-weight: 600; }
+.op-ctrl-met { color: var(--trk-done-text); }
+.op-ctrl-na { color: var(--muted-text); font-style: italic; }
+.op-ctrl-hint { color: var(--muted-text); font-size: 12px; margin-top: 4px; }
 /* ── Tidslinje-modal ──────────────────────────────── */
 
 /* axis toggle — shared between home and modal */
@@ -3327,6 +3372,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 .sak-status-chip.tone-frist   { background: var(--s-frist-bg);   color: var(--s-frist-text);   border-color: var(--s-frist-border); }
 .sak-status-chip.tone-avsl    { background: var(--s-avsl-bg);    color: var(--s-avsl-text);    border-color: var(--s-avsl-border); }
 .sak-status-chip.tone-oppdrag { background: var(--s-oppdrag-bg); color: var(--s-oppdrag-text); border-color: var(--s-oppdrag-border); }
+.sak-status-chip.tone-op { background: var(--s-op-bg); color: var(--s-op-text); border-color: var(--s-op-border); }
 .sak-status-menu   { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; min-width: 240px;
                      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
                      box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: var(--space-2); }
@@ -3423,6 +3469,9 @@ button.ob-del:hover { color: var(--text-on-no); }
   <symbol id="ti-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
   </symbol>
+  <symbol id="ti-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 20h10"/><path d="M6 6l6 -1l6 1"/><path d="M12 3v17"/><path d="M9 12l-3 -6l-3 6a3 3 0 0 0 6 0"/><path d="M21 12l-3 -6l-3 6a3 3 0 0 0 6 0"/>
+  </symbol>
   <symbol id="ti-external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>
   </symbol>
@@ -3471,6 +3520,10 @@ button.ob-del:hover { color: var(--text-on-no); }
         <a class="nav-tab" data-page="oppdrag" data-tooltip="Oppdrag" href="#">
           <svg class="ti" aria-hidden="true"><use href="#ti-flag"/></svg>
           <span class="nav-label">Oppdrag</span>
+        </a>
+        <a class="nav-tab" data-page="op" data-tooltip="OP-saker" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-scale"/></svg>
+          <span class="nav-label">OP-saker</span>
         </a>
         <a class="nav-tab" data-page="fristarkiv" data-tooltip="Fristarkiv" href="#">
           <svg class="ti" aria-hidden="true"><use href="#ti-archive"/></svg>
@@ -3609,6 +3662,9 @@ button.ob-del:hover { color: var(--text-on-no); }
                     <tr><th scope="row">Oppdrag</th>
                       <td><input type="checkbox" data-kind="oppdrag" data-when="overdue" aria-label="Oppdrag, forfalt"></td>
                       <td><input type="checkbox" data-kind="oppdrag" data-when="upcoming" aria-label="Oppdrag, kommende"></td></tr>
+                    <tr><th scope="row">OP-sak (arbeidsfasene)</th>
+                      <td><input type="checkbox" data-kind="op" data-when="overdue" aria-label="OP-sak, forfalt"></td>
+                      <td><input type="checkbox" data-kind="op" data-when="upcoming" aria-label="OP-sak, kommende"></td></tr>
                   </tbody>
                 </table>
                 <label class="home-dl-horizon">Kommende innen
@@ -3745,6 +3801,7 @@ button.ob-del:hover { color: var(--text-on-no); }
                       <th class="stat-col-num stat-col-new">Viderebehandlinger</th>
                       <th class="stat-col-num stat-col-new">Avgjort</th>
                       <th class="stat-col-num stat-col-oppdrag">Oppdrag</th>
+                      <th class="stat-col-num stat-col-op" title="OP-saker avgjort">OP</th>
                     </tr>
                   </thead>
                   <tbody id="year-tbody"></tbody>
@@ -3877,13 +3934,34 @@ button.ob-del:hover { color: var(--text-on-no); }
                       <span class="tdf-cell tdf-na" role="cell" title="Oppdrag bruker alltid faktisk frist"><span class="tdf-cell-lbl">Buffer</span>—</span>
                     </div>
                     <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">OP-sak · Formalia</span>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                        <input class="s-inp" id="input-ww-op_formalia" data-ww-key="op_formalia" type="number" min="1" max="365" step="1" aria-label="Varighet i arbeidsdager, OP-sak · Formalia" />
+                        <span class="s-unit">arb.dager</span></label>
+                      <span class="tdf-cell tdf-na" role="cell" title="OP-saker har ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                    </div>
+                    <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">OP-sak · Oppstart</span>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                        <input class="s-inp" id="input-ww-op_oppstart" data-ww-key="op_oppstart" type="number" min="1" max="365" step="1" aria-label="Varighet i arbeidsdager, OP-sak · Oppstart" />
+                        <span class="s-unit">arb.dager</span></label>
+                      <span class="tdf-cell tdf-na" role="cell" title="OP-saker har ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                    </div>
+                    <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">OP-sak · Avgjørelse</span>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                        <input class="s-inp" id="input-ww-op_avgjorelse" data-ww-key="op_avgjorelse" type="number" min="1" max="365" step="1" aria-label="Varighet i arbeidsdager, OP-sak · Avgjørelse" />
+                        <span class="s-unit">arb.dager</span></label>
+                      <span class="tdf-cell tdf-na" role="cell" title="OP-saker har ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                    </div>
+                    <div class="tdf-row" role="row">
                       <span class="tdf-type" role="rowheader">Fristarkiv</span>
                       <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ikke arbeid"><span class="tdf-cell-lbl">Varighet</span>Milepæl</span>
                       <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
                     </div>
                   </div>
                   <div class="settings-row tdf-foot">
-                    <span class="settings-label-sub">Standard: Ny 10 / 0, Viderebehandling 3 / 0, Oppdrag 2 (varighet i arbeidsdager, buffer i dager)</span>
+                    <span class="settings-label-sub">Standard: Ny 10 / 0, Viderebehandling 3 / 0, Oppdrag 2, OP-sak 1 / 1 / 10 (varighet i arbeidsdager, buffer i dager). OP-sakens ventefaser er milepæler.</span>
                     <button class="s-btn" id="btn-ww-reset">Tilbakestill til standard</button>
                   </div>
                 </div>
@@ -4327,6 +4405,9 @@ button.ob-del:hover { color: var(--text-on-no); }
           <div class="sak-frist-note" id="sak-frist-note"></div>
         </div>
 
+        <!-- OP-sak: parter, utvalg, saksdatoer og kontrollfrister (renderSakOp) -->
+        <section class="op-panel" id="sak-op" aria-label="OP-sak" hidden></section>
+
         <!-- Progress bar + resultatsammendrag -->
         <section class="sak-progress-section" id="sak-summary-section">
           <div class="sak-summary-box">
@@ -4765,18 +4846,63 @@ button.ob-del:hover { color: var(--text-on-no); }
           </div>
         </div>
 
+        <!-- OP-sak (innsigelse): nummer, parter og datoer. Ved redigering vises
+             bare nummer, frist og eget vindu; resten endres på sakssiden. -->
+        <div id="modal-row-opcase" style="display:none;">
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="f-op-number">OP-saksnummer</label>
+              <input class="field-input" id="f-op-number" type="text" placeholder="OP ÅÅÅÅ/xxxxx" maxlength="13" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f-op-due">Frist for fasen <span class="field-label-sub">valgfritt</span></label>
+              <input class="field-input" id="f-op-due" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f-op-duration">Eget vindu <span class="field-label-sub">arbeidsdager</span></label>
+              <input class="field-input" id="f-op-duration" type="number" min="1" max="365" placeholder="Standard" />
+            </div>
+          </div>
+          <div class="field-row op-create-only">
+            <div class="field-group">
+              <label class="field-label" for="f-op-patent">Patentnummer</label>
+              <input class="field-input" id="f-op-patent" type="text" maxlength="200" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f-op-holder">Patenthaver</label>
+              <input class="field-input" id="f-op-holder" type="text" maxlength="200" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f-op-received">Mottatt</label>
+              <input class="field-input" id="f-op-received" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+            </div>
+          </div>
+          <div class="field-row op-create-only">
+            <div class="field-group">
+              <label class="field-label" for="f-op-opponent">Innsiger</label>
+              <input class="field-input" id="f-op-opponent" type="text" maxlength="200" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f-op-opponent-agent">Fullmektig <span class="field-label-sub">valgfritt</span></label>
+              <input class="field-input" id="f-op-opponent-agent" type="text" maxlength="200" />
+            </div>
+          </div>
+          <span class="field-hint op-create-only">Flere innsigere, utvalg og datoer legges inn på sakssiden.</span>
+        </div>
+
         <div class="field-group">
           <label class="field-label" for="f-title">Tittel</label>
           <input class="field-input" id="f-title" type="text" placeholder="Oppfinnelsens tittel" maxlength="200" />
         </div>
 
-        <div class="field-group">
+        <div class="field-group" id="modal-row-status">
           <label class="field-label">Type / Status</label>
           <div class="status-radio-group">
             <label class="status-radio"><input type="radio" name="status" value="ny" /><span class="status-pill s-ny">Ny</span></label>
             <label class="status-radio"><input type="radio" name="status" value="viderebehandling" /><span class="status-pill s-viderebehandling">Viderebehandling</span></label>
             <label class="status-radio"><input type="radio" name="status" value="fristarkiv" /><span class="status-pill s-fristarkiv">Fristarkiv</span></label>
             <label class="status-radio"><input type="radio" name="status" value="oppdrag" /><span class="status-pill s-oppdrag">Oppdrag</span></label>
+            <label class="status-radio"><input type="radio" name="status" value="op" /><span class="status-pill s-op">OP-sak</span></label>
           </div>
           <span class="field-hint">«Avsluttet» settes når saken lukkes.</span>
         </div>
@@ -5266,6 +5392,7 @@ button.ob-del:hover { color: var(--text-on-no); }
           <tr><td><kbd>5</kbd></td><td>Oppdrag</td></tr>
           <tr><td><kbd>6</kbd></td><td>Alle saker</td></tr>
           <tr><td><kbd>7</kbd></td><td>Medlesing</td></tr>
+          <tr><td><kbd>8</kbd></td><td>OP-saker</td></tr>
           <tr><td><kbd>?</kbd></td><td>Denne oversikten</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>Lukk dialog</td></tr>
         </table>
@@ -5314,7 +5441,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
 var APP_VERSION    = 'v4.68.1';
-var SCHEMA_VERSION = 8;
+var SCHEMA_VERSION = 9;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
 var DEFAULT_DOC_ROOT = 'C:\\Users\\brukernavn\\Dokumenter\\Saksdokumenter';
@@ -5511,6 +5638,13 @@ function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
     dueDateDesc:   ''
   };
 
+  // OP-saker går gjennom fasene uten dialoger; fasens frist foreslås av
+  // opSyncDue. Bare avgjørelsen telles i statistikken.
+  if (opPhase(fromStatus) || opPhase(toStatus)) {
+    if (toStatus === 'avsluttet') t.logType = 'op';
+    return t;
+  }
+
   // Oppdrag har ingen saksflyt — de er enten aktive eller utført.
   if (isOppdrag) {
     if (toStatus === 'avsluttet') t.logType = 'oppdrag';
@@ -5561,6 +5695,7 @@ function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
 // Ren funksjon — se test/sakLayout.test.js.
 function forwardAction(status, isOppdrag) {
   if (status === 'avsluttet') return null;
+  if (opPhase(status)) return opForwardAction(status);
 
   // Et oppdrag er enten aktivt eller utført — ingen mellomstasjoner.
   if (isOppdrag) return { label: 'Merk som utført', toStatus: 'avsluttet', choice: null };
@@ -5587,6 +5722,7 @@ function sakStatusChip(status, isOppdrag, outcome) {
     return { label: 'Avsluttet' + (o ? ' · ' + o : ''), tone: 'avsl' };
   }
   if (isOppdrag) return { label: 'Aktiv', tone: 'oppdrag' };
+  if (opPhase(s)) return { label: opPhaseLabel(s), tone: 'op' };
   if (s === 'viderebehandling') return { label: 'Viderebehandling', tone: 'videre' };
   if (s === 'fristarkiv')       return { label: 'Fristarkiv', tone: 'frist' };
   return { label: 'Ny', tone: 'ny' };
@@ -5661,7 +5797,7 @@ function responseChangesLabel(changes) {
 
 // Linjen under tittelen på sakssiden. Tom for Ny, avsluttede saker og oppdrag.
 function sakRoundLine(c) {
-  if (!c || c.type === 'oppdrag') return '';
+  if (!isApplication(c)) return '';
   var status = c.status || 'ny';
   if (status !== 'fristarkiv' && status !== 'viderebehandling') return '';
   var info = responseRoundInfo(c);
@@ -5767,7 +5903,7 @@ function claimMappingChange(origin, change) {
 // Runden kravene kobles mot: siste synlige runde, bare i Viderebehandling og
 // bare når søkeren har svart med endrede krav.
 function mappingRound(c, rounds) {
-  if (!c || c.status !== 'viderebehandling' || c.type === 'oppdrag') return null;
+  if (!c || c.status !== 'viderebehandling' || !isApplication(c)) return null;
   var latest = null;
   visibleRounds(c, rounds).forEach(function(r) { if (!latest || r.n > latest.n) latest = r; });
   if (!latest || !latest.response || !Array.isArray(latest.response.changes)) return null;
@@ -5956,7 +6092,7 @@ function isObjectionId(id) {
 
 // Runden innvendingene kommer fra: den med n lik antall sendte brev.
 function objectionRound(c, rounds) {
-  if (!c || c.type === 'oppdrag') return null;
+  if (!isApplication(c)) return null;
   var sent = lettersSent(c.history);
   return visibleRounds(c, rounds).find(function(r) { return r.n === sent; }) || null;
 }
@@ -6147,7 +6283,7 @@ function objectionStateIn(roundStates, id) {
 
 // Innvendingene som vises i runde k, hver med sin vurdering.
 function shownObjections(c, data) {
-  if (!c || c.type === 'oppdrag' || c.status !== 'viderebehandling') return [];
+  if (!isApplication(c) || c.status !== 'viderebehandling') return [];
   var rounds = roundsOf(data);
   var L = objectionRound(c, rounds);
   if (!L) return [];
@@ -6248,7 +6384,7 @@ var OBJECTION_WARN_LABEL = { nyhet: 'mangler nyhet', oh: 'mangler oppfinnelsesh�
 // Merknader under «Avslag» i Avgjør: er søker hørt om det avslaget bygger
 // på? Tom liste = ingen merknader. Hindrer aldri avslaget.
 function refusalWarnings(c, data, rounds) {
-  if (!c || c.type === 'oppdrag' || c.status !== 'viderebehandling') return [];
+  if (!isApplication(c) || c.status !== 'viderebehandling') return [];
   var L = objectionRound(c, rounds);
   if (!L) return ['Ingen lagret runde – kan ikke kontrollere at søker er hørt'];
   var vr = visibleRounds(c, rounds);
@@ -6497,7 +6633,7 @@ function docFirstRound(rounds, docId) {
 
 // Rundene som kan vises: aldri flere enn brevene som faktisk er sendt.
 function visibleRounds(c, rounds) {
-  if (!c || c.type === 'oppdrag') return [];
+  if (!isApplication(c)) return [];
   var sent = lettersSent(c.history);
   return (Array.isArray(rounds) ? rounds : []).filter(function(r) {
     return r && typeof r.n === 'number' && r.n <= sent;
@@ -6505,7 +6641,7 @@ function visibleRounds(c, rounds) {
 }
 
 function canBackfillRound(c, rounds) {
-  if (!c || c.type === 'oppdrag') return false;
+  if (!isApplication(c)) return false;
   return lettersSent(c.history) >= 1 && !(Array.isArray(rounds) && rounds.length);
 }
 
@@ -6569,7 +6705,7 @@ function responseChecked(data, round) {
 // Fremdriftslinjen øverst og i sticky-baren: hovedsjekklisten, eller i
 // Viderebehandling sjekklisten for svaret i runden saken er i.
 function sakChecklistProgress(c, data, template) {
-  if (c && c.type !== 'oppdrag' && c.status === 'viderebehandling') {
+  if (isApplication(c) && c.status === 'viderebehandling') {
     var round = examinationRound(c);
     return { label: 'Svar – runde ' + round, done: responseChecked(data, round).length, total: RESPONSE_CHECKLIST.length };
   }
@@ -6609,7 +6745,7 @@ function examinationRound(c) {
 // caution (runde 3+), granted, refused, closed. Oppdrag har ingen saksflyt og gir null.
 // Ren funksjon — se test/caseTrack.test.js.
 function caseTrack(c) {
-  if (!c || c.type === 'oppdrag') return null;
+  if (!isApplication(c)) return null;
   var status = c.status || 'ny';
   var round  = examinationRound(c);
   var slots  = [{ label: 'Formalia', state: 'done' }];
@@ -6672,7 +6808,7 @@ function pipelineCounts(list, year, todayIso) {
             decided: { meddelt: 0, avslatt: 0, henlagt: 0, total: 0 } };
   var today = Date.UTC(+todayIso.slice(0, 4), +todayIso.slice(5, 7) - 1, +todayIso.slice(8, 10));
   (list || []).forEach(function(c) {
-    if (!c || c.type === 'oppdrag') return;
+    if (!isApplication(c)) return;
     var status = c.status || 'ny';
     if (status === 'ny') { if (isUnassigned(c)) p.nyUnassigned++; else p.ny++; }
     else if (status === 'fristarkiv') {
@@ -6703,6 +6839,10 @@ function pipelineCounts(list, year, todayIso) {
 function rowAction(status, isOppdrag) {
   if (status === 'avsluttet') return null;
   if (isOppdrag) return { type: 'complete-oppdrag', label: 'Merk som utført' };
+  if (opPhase(status)) {
+    var op = opForwardAction(status);
+    return { type: 'op-forward', label: op.label, toStatus: op.toStatus };
+  }
   if (status === 'fristarkiv')       return { type: 'response', label: 'Svar mottatt …' };
   if (status === 'viderebehandling') return { type: 'choice-videre', label: 'Avgjør …' };
   return { type: 'confirm', label: 'Brev sendt' };
@@ -6878,6 +7018,10 @@ var PAGES = {
   oppdrag: {
     title:       'Oppdrag',
     countsAs:    null
+  },
+  op: {
+    title:       'OP-saker',
+    countsAs:    null
   }
 };
 
@@ -6886,12 +7030,20 @@ var STATUS_CONFIG = {
   ny:              { int:0, label:'Ny',               pill:'s-ny',              histLabel:'Ny sak',           histIcon:'📄' },
   viderebehandling:{ int:1, label:'Viderebehandling', pill:'s-viderebehandling',histLabel:'Viderebehandling', histIcon:'🔄' },
   fristarkiv:      { int:2, label:'Fristarkiv',       pill:'s-fristarkiv',      histLabel:'Fristarkiv',       histIcon:'📁' },
-  avsluttet:       { int:3, label:'Avsluttet',        pill:'s-avsluttet',       histLabel:'Avsluttet',        histIcon:'✅' }
+  avsluttet:       { int:3, label:'Avsluttet',        pill:'s-avsluttet',       histLabel:'Avsluttet',        histIcon:'✅' },
+  // OP-saker (innsigelser): fasene, se OP_PHASES. Uten tallkode med vilje:
+  // de lagres som tekst, så en eldre versjon som ikke kjenner dem, hopper
+  // over sakene ved import i stedet for å gjøre dem om til Ny søknad.
+  op_formalia:     { label:'Formalia',         pill:'s-op',              histLabel:'Formalia',         histIcon:'📄' },
+  op_svar:         { label:'Venter på svar',   pill:'s-op-wait',         histLabel:'Venter på svar',   histIcon:'📁' },
+  op_oppstart:     { label:'Oppstart',         pill:'s-op',              histLabel:'Oppstart',         histIcon:'🗓️' },
+  op_skrift:       { label:'Skriftveksling',   pill:'s-op-wait',         histLabel:'Skriftveksling',   histIcon:'✉️' },
+  op_avgjorelse:   { label:'Avgjørelse',       pill:'s-op',              histLabel:'Avgjørelse',       histIcon:'⚖️' }
 };
 var INT_TO_STATUS = { 0:'ny', 1:'viderebehandling', 2:'fristarkiv', 3:'avsluttet' };
 
-var LOG_LABELS = { ny:'Nybehandling', videre:'Viderebehandling', avsluttet:'Avsluttet', oppdrag:'Oppdrag utført' };
-var LOG_CLS    = { ny:'log-ny', videre:'log-videre', avsluttet:'log-avsluttet', oppdrag:'log-oppdrag' };
+var LOG_LABELS = { ny:'Nybehandling', videre:'Viderebehandling', avsluttet:'Avsluttet', oppdrag:'Oppdrag utført', op:'OP-sak avgjort' };
+var LOG_CLS    = { ny:'log-ny', videre:'log-videre', avsluttet:'log-avsluttet', oppdrag:'log-oppdrag', op:'log-op' };
 
 // ── Måneder ────────────────────────────────────────
 var MONTHS = [
@@ -7117,7 +7269,7 @@ function dayRolloverDue(renderedDay, today, busy) {
 
 function encodeCase(c) {
   var cfg = STATUS_CONFIG[c.status];
-  return Object.assign({}, c, { status: cfg !== undefined ? cfg.int : c.status });
+  return Object.assign({}, c, { status: cfg !== undefined && cfg.int !== undefined ? cfg.int : c.status });
 }
 
 function decodeCase(c) {
@@ -7238,7 +7390,8 @@ function readImportSettings(d) {
 // En markering for å huske hvilken sak du holder på med. Den er ikke en
 // status og påvirker verken belegg eller frister. Maks én sak om gangen, så
 // den lagres som én innstilling ({ id, since }) og ikke som et felt på sakene.
-// Bare egen arbeid kan markeres: Ny, Viderebehandling og aktive oppdrag. I
+// Bare egen arbeid kan markeres: Ny, Viderebehandling, aktive oppdrag og
+// OP-saker i en arbeidsfase. I
 // Fristarkiv er brevet sendt og fristen søkerens, og en sak som ikke er
 // fordelt ennå er ikke din.
 // Rene funksjoner — se test/activeCase.test.js.
@@ -7246,6 +7399,7 @@ function canBeActiveCase(c) {
   if (!c || c.status === 'avsluttet') return false;
   if (isUnassigned(c)) return false;
   if (c.type === 'oppdrag') return true;
+  if (isOpCase(c)) return isOpWorkPhase(c);
   return c.status === 'ny' || c.status === 'viderebehandling';
 }
 
@@ -7345,7 +7499,7 @@ var UNASSIGNED_REMINDER_MAX = 365;
 var UNASSIGNED_NEW_DEFAULT = true;
 
 function canBeUnassigned(c) {
-  return !!c && c.type !== 'oppdrag' && (c.status || 'ny') === 'ny';
+  return isApplication(c) && (c.status || 'ny') === 'ny';
 }
 
 function isUnassigned(c) {
@@ -7400,7 +7554,7 @@ function countsAsPotentialBelegg(c) {
 // Rene funksjoner — se test/hosMedleser.test.js.
 function canSendToMedleser(c) {
   // En sak som ikke er fordelt ennå, er ikke din å sende.
-  if (!c || c.type === 'oppdrag' || isUnassigned(c)) return false;
+  if (!isApplication(c) || isUnassigned(c)) return false;
   return c.status === 'ny' || c.status === 'viderebehandling';
 }
 
@@ -7615,7 +7769,7 @@ function suggestMedleser(list, log, today) {
 // derfor av som standard. horizon begrenser bare kommende (0 = ingen grense) —
 // forfalte vises alltid, så en glemt frist ikke kan gjemme seg bak grensen.
 // Rene funksjoner — se test/homeDeadlines.test.js.
-var HOME_DEADLINE_KINDS    = ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag'];
+var HOME_DEADLINE_KINDS    = ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag', 'op'];
 var HOME_DEADLINE_HORIZONS = [0, 14, 30, 60, 90];
 
 function defaultHomeDeadlineFilter() {
@@ -7624,6 +7778,7 @@ function defaultHomeDeadlineFilter() {
     viderebehandling: { overdue: true,  upcoming: true },
     fristarkiv:       { overdue: false, upcoming: false },
     oppdrag:          { overdue: true,  upcoming: true },
+    op:               { overdue: true,  upcoming: true },
     horizon: 0
   };
 }
@@ -7641,10 +7796,12 @@ function normalizeHomeDeadlineFilter(raw) {
   return f;
 }
 
-// Hvilken rad i filteret en sak hører til; null for avsluttede saker og oppdrag
+// Hvilken rad i filteret en sak hører til; null for avsluttede saker. OP-saker
+// er med i arbeidsfasene; ventefasene er patenthavers eller partenes frister.
 function homeDeadlineKind(c) {
   if (!c || c.status === 'avsluttet') return null;
   if (c.type === 'oppdrag') return 'oppdrag';
+  if (isOpCase(c)) return isOpWorkPhase(c) ? 'op' : null;
   return HOME_DEADLINE_KINDS.indexOf(c.status) !== -1 ? c.status : null;
 }
 
@@ -7667,7 +7824,7 @@ function selectHomeDeadlines(list, filter, daysFn) {
 
 // Kort tekst som sier hva lista viser, så et skjult valg ikke glemmes
 function homeDeadlineFilterSummary(filter) {
-  var names = { ny: 'Førstesøknader', viderebehandling: 'Viderebehandlinger', fristarkiv: 'Svarfrister', oppdrag: 'Oppdrag' };
+  var names = { ny: 'Førstesøknader', viderebehandling: 'Viderebehandlinger', fristarkiv: 'Svarfrister', oppdrag: 'Oppdrag', op: 'OP-saker' };
   var parts = [];
   HOME_DEADLINE_KINDS.forEach(function(k) {
     var s = filter[k];
@@ -7861,6 +8018,360 @@ function docPaneUrl(root, caseNumber, name, loc, hideTools) {
   return _docFileUrl(root, caseNumber, name, loc) + (hideTools ? '#toolbar=0&navpanes=0' : '');
 }
 // ════════════════════════════════════════════════════════════════════════════
+// SEKSJON 2a · OP-SAKER (INNSIGELSER)
+// Egen sakstype (type: 'op') med egne faser. Hver fase oppfører seg som en
+// vanlig sak: arbeidsfasene har et arbeidsvindu som slutter på fasens frist og
+// teller i belegget, ventefasene er milepæler (som Fristarkiv). Saksdataene
+// ligger på saken som `op` (se normalizeOp). SANT er fasit for frister og
+// status — fristene appen regner ut, er forslag som kan overstyres.
+// Rene funksjoner — se test/opCases.test.js.
+// ════════════════════════════════════════════════════════════════════════════
+
+// Fasene i rekkefølge. Statusen lagres som `status` på saken, så alt som ser på
+// Ny/Fristarkiv/Viderebehandling, aldri treffer en OP-sak. `next` er etiketten
+// på knappen som fører saken videre fra fasen.
+var OP_PHASES = [
+  { status: 'op_formalia',   label: 'Formalia',       work: true,  windowKey: 'op_formalia',   next: 'Oversendt patenthaver' },
+  { status: 'op_svar',       label: 'Venter på svar', work: false, windowKey: null,            next: 'Svar / fristutløp' },
+  { status: 'op_oppstart',   label: 'Oppstart',       work: true,  windowKey: 'op_oppstart',   next: 'Oppstartsmøte holdt' },
+  { status: 'op_skrift',     label: 'Skriftveksling', work: false, windowKey: null,            next: 'Tilstrekkelig opplyst' },
+  { status: 'op_avgjorelse', label: 'Avgjørelse',     work: true,  windowKey: 'op_avgjorelse', next: 'Avgjørelse sendt' }
+];
+
+var OP_OUTCOMES = {
+  opprettholdt: 'Opprettholdt',
+  endret:       'Opprettholdt i endret form',
+  opphevet:     'Opphevet',
+  avvist:       'Innsigelse avvist'
+};
+
+var OP_TEXT_MAX = 200;
+var OP_MAX_OPPONENTS = 20;
+// Oppstartsmøtet: helst innen 10 virkedager etter svar eller fristutløp.
+var OP_MEETING_WORKDAYS = 10;
+// Begge kontrollfristene er tre måneder.
+var OP_CONTROL_MONTHS = 3;
+
+// Datofeltene på en OP-sak, i den rekkefølgen saken går gjennom dem.
+var OP_DATE_FIELDS = ['received', 'replyDue', 'replyDate', 'meetingDate', 'noticeDate',
+  'decisionDate', 'protocolDate', 'sentDate', 'transferDate'];
+var OP_TEXT_FIELDS = ['patentNo', 'holder', 'holderAgent', 'unit', 'voter2', 'voter3', 'jurist'];
+
+function isOpCase(c) { return !!c && c.type === 'op'; }
+
+// En patentsøknad: alt som ikke er et oppdrag eller en OP-sak. Bare søknader
+// har krav, runder, mothold, CPC og medlesing.
+function isApplication(c) { return !!c && c.type !== 'oppdrag' && c.type !== 'op'; }
+
+function opPhaseIndex(status) {
+  for (var i = 0; i < OP_PHASES.length; i++) if (OP_PHASES[i].status === status) return i;
+  return -1;
+}
+function opPhase(status) {
+  var i = opPhaseIndex(status);
+  return i === -1 ? null : OP_PHASES[i];
+}
+function opPhaseLabel(status) {
+  if (status === 'avsluttet') return 'Avsluttet';
+  var p = opPhase(status);
+  return p ? p.label : '';
+}
+function isOpWorkPhase(c) {
+  if (!isOpCase(c)) return false;
+  var p = opPhase(c.status);
+  return !!p && p.work;
+}
+function isOpWaitPhase(c) {
+  if (!isOpCase(c)) return false;
+  var p = opPhase(c.status);
+  return !!p && !p.work;
+}
+
+// Neste steg fra en fase; null når saken er avsluttet.
+function opForwardAction(status) {
+  var i = opPhaseIndex(status);
+  if (i === -1) return null;
+  var to = i + 1 < OP_PHASES.length ? OP_PHASES[i + 1].status : 'avsluttet';
+  return { label: OP_PHASES[i].next, toStatus: to, choice: null };
+}
+
+// OP-saksnummer: «OP YYYY/xxxxx», der YYYY er året innsigelsen kom inn.
+// Gir nummeret i fast form, eller null når det ikke er gyldig.
+function normalizeOpNumber(raw) {
+  if (typeof raw !== 'string') return null;
+  var m = /^OP (\d{4})\/(\d{5})$/.exec(raw.trim().toUpperCase());
+  if (!m) return null;
+  var y = +m[1];
+  if (y < 1900 || y > 2100) return null;
+  return 'OP ' + m[1] + '/' + m[2];
+}
+
+function normalizeOpDate(v) {
+  return typeof v === 'string' && isValidDate(v) ? parseDate(v) : '';
+}
+function normalizeOpText(v) {
+  return typeof v === 'string' ? sanitizeText(v).trim().slice(0, OP_TEXT_MAX) : '';
+}
+
+// Et fullstendig og gyldig `op`-objekt fra lagrede eller importerte data.
+// Ukjente datoer blir tomme; innsigere uten navn tas ikke med.
+function normalizeOp(raw) {
+  var src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  var out = {};
+  OP_TEXT_FIELDS.forEach(function(k) { out[k] = normalizeOpText(src[k]); });
+  OP_DATE_FIELDS.forEach(function(k) { out[k] = normalizeOpDate(src[k]); });
+  out.replyKind = src.replyKind === 'svar' || src.replyKind === 'utlopt' ? src.replyKind : '';
+  out.outcome = typeof src.outcome === 'string' && Object.prototype.hasOwnProperty.call(OP_OUTCOMES, src.outcome) ? src.outcome : '';
+  out.dueManual = src.dueManual === true;
+  out.opponents = (Array.isArray(src.opponents) ? src.opponents : [])
+    .filter(function(o) { return o && typeof o === 'object'; })
+    .map(function(o) { return { name: normalizeOpText(o.name), agent: normalizeOpText(o.agent) }; })
+    .filter(function(o) { return !!o.name; })
+    .slice(0, OP_MAX_OPPONENTS);
+  return out;
+}
+
+// Datoen n arbeidsdager etter iso (iso selv telles ikke). nonWorkday: helg,
+// røde dager og ferie (standard isNonWorkday).
+function opAddWorkdays(iso, n, nonWorkday) {
+  if (!iso) return '';
+  nonWorkday = nonWorkday || isNonWorkday;
+  var d = new Date(iso + 'T00:00:00');
+  var left = n;
+  for (var i = 0; i < 3660 && left > 0; i++) {
+    d = addDaysLocal(d, 1);
+    if (!nonWorkday(d)) left--;
+  }
+  return isoLocalDate(d);
+}
+
+// De to kontrollfristene, hver for seg:
+//  (a) ubesvart svarfrist: saken skal tas opp til avgjørelse innen tre måneder
+//      etter at fristen løp ut. Oppfylt når «tatt opp til avgjørelse» er satt.
+//  (b) protokollen skal være ferdig innen tre måneder etter varselet om at
+//      saken er tilstrekkelig opplyst. Oppfylt når «protokoll ferdig» er satt.
+function opControlDeadlines(op) {
+  var o = op || {};
+  function plus(iso) { return iso ? addMonthsClamped(new Date(iso + 'T00:00:00'), OP_CONTROL_MONTHS) : ''; }
+  var expired = o.replyKind === 'utlopt' ? (o.replyDue || o.replyDate || '') : '';
+  return {
+    a: { applies: !!expired, date: plus(expired), met: !!expired && !!o.decisionDate },
+    b: { applies: !!o.noticeDate, date: plus(o.noticeDate), met: !!o.noticeDate && !!o.protocolDate }
+  };
+}
+
+// Fristen for oppstartsmøtet: 10 arbeidsdager etter svaret, eller etter at
+// svarfristen løp ut. Tom før noen av dem er kjent.
+function opMeetingDue(op, nonWorkday) {
+  var o = op || {};
+  var base = o.replyKind === 'svar' ? o.replyDate
+           : o.replyKind === 'utlopt' ? (o.replyDue || o.replyDate) : '';
+  return base ? opAddWorkdays(base, OP_MEETING_WORKDAYS, nonWorkday) : '';
+}
+
+// Fristen appen foreslår for fasen saken står i. Tom når fasen ikke har noen
+// fast frist (Formalia, Skriftveksling) — da setter du den selv.
+function opSuggestedDue(c, nonWorkday) {
+  if (!isOpCase(c)) return '';
+  var op = c.op || {};
+  switch (c.status) {
+    case 'op_svar':     return op.replyDue || '';
+    case 'op_oppstart': return opMeetingDue(op, nonWorkday);
+    case 'op_avgjorelse': {
+      var ctl = opControlDeadlines(op);
+      var open = [ctl.a, ctl.b].filter(function(x) { return x.applies && !x.met; }).map(function(x) { return x.date; });
+      open.sort();
+      return open[0] || '';
+    }
+    default: return '';
+  }
+}
+
+// Fasens frist slik den skal lagres: forslaget, med mindre du har satt den selv.
+function opSyncDue(c, nonWorkday) {
+  if (!isOpCase(c)) return c ? c.dueDate || '' : '';
+  if ((c.op && c.op.dueManual) || c.status === 'avsluttet') return c.dueDate || '';
+  return opSuggestedDue(c, nonWorkday);
+}
+
+// Feltene som endres når en OP-sak bytter fase: fasens frist foreslås på nytt
+// (den gamle fasens frist er behandlet), og sakens eget vindu gjaldt den gamle
+// fasen. Avsluttet beholder fristen den hadde.
+function opStatusPatch(c, toStatus, nonWorkday) {
+  var op = Object.assign(normalizeOp(c && c.op), { dueManual: false });
+  var next = Object.assign({}, c, { status: toStatus, op: op });
+  return { op: op, duration: null, dueDate: toStatus === 'avsluttet' ? (c.dueDate || '') : opSuggestedDue(next, nonWorkday) };
+}
+
+// Feltene som endres når OP-dataene redigeres på sakssiden. changes kan ha
+// OP-feltene, `dueDate` (fasens frist satt for hånd) og `dueManual: false`
+// (tilbake til forslaget). Gir { op, dueDate }, eller null når endringen ikke
+// er gyldig (ikke en OP-sak, eller den siste innsigeren fjernes).
+function opApplyUpdate(c, changes, nonWorkday) {
+  if (!isOpCase(c) || !changes || typeof changes !== 'object') return null;
+  var cur = normalizeOp(c.op);
+  var merged = Object.assign({}, cur);
+  OP_TEXT_FIELDS.concat(OP_DATE_FIELDS, ['replyKind', 'outcome', 'opponents']).forEach(function(k) {
+    if (Object.prototype.hasOwnProperty.call(changes, k)) merged[k] = changes[k];
+  });
+  var op = normalizeOp(merged);
+  if (Object.prototype.hasOwnProperty.call(changes, 'opponents') && !op.opponents.length) return null;
+  var dueDate = c.dueDate || '';
+  if (Object.prototype.hasOwnProperty.call(changes, 'dueDate')) {
+    dueDate = normalizeOpDate(changes.dueDate);
+    op.dueManual = true;
+  } else if (changes.dueManual === false) {
+    op.dueManual = false;
+  }
+  var next = Object.assign({}, c, { op: op, dueDate: dueDate });
+  return { op: op, dueDate: opSyncDue(next, nonWorkday) };
+}
+
+// Feltene fra «Legg til sak» / «Rediger sak» for en OP-sak. Ny sak: nummer og
+// minst én innsiger kreves. Redigering: bare nummer, fasens frist, eget vindu
+// (og tittel, notater, stikkord, som leses av dialogen selv); resten endres på
+// sakssiden. Gir { error } eller { caseNumber, dueDate, duration, op? }.
+function opModalPayload(f, editing) {
+  f = f || {};
+  var cn = normalizeOpNumber(f.number || '');
+  if (!cn) return { error: 'OP-saksnummer må ha formen OP ÅÅÅÅ/xxxxx, f.eks. OP 2026/00123.' };
+  var due = (f.due || '').trim();
+  if (due && !isValidDate(due)) return { error: 'Ugyldig frist — bruk formatet åååå.mm.dd.' };
+  var durRaw = String(f.duration == null ? '' : f.duration).trim();
+  var dur = durRaw === '' ? null : parseInt(durRaw, 10);
+  if (durRaw !== '' && !(dur >= 1 && dur <= WORK_WINDOW_MAX)) return { error: 'Eget vindu må være minst 1 arbeidsdag — eller tomt for standarden.' };
+  var out = { caseNumber: cn, dueDate: due ? parseDate(due) : '', duration: dur };
+  if (editing) return out;
+  var received = (f.received || '').trim();
+  if (received && !isValidDate(received)) return { error: 'Ugyldig mottaksdato — bruk formatet åååå.mm.dd.' };
+  var op = normalizeOp({ patentNo: f.patentNo, holder: f.holder, received: received ? parseDate(received) : '',
+    opponents: [{ name: f.opponent, agent: f.opponentAgent }] });
+  if (!op.opponents.length) return { error: 'Skriv inn minst én innsiger.' };
+  out.op = op;
+  return out;
+}
+
+// Forløpssporet for en OP-sak: ett steg per fase, i samme form som caseTrack
+// ({ label, state }). null for andre saker.
+function opTrack(c) {
+  if (!isOpCase(c)) return null;
+  var cur = c.status === 'avsluttet' ? OP_PHASES.length : opPhaseIndex(c.status);
+  return OP_PHASES.map(function(p, i) {
+    var state = i < cur ? 'done' : i > cur ? 'future' : p.work ? 'active' : 'wait';
+    return { label: p.label, state: state };
+  });
+}
+
+// Tittelen i lister: sakens egen tittel, ellers patentnummer og patenthaver.
+function opCaseTitle(c) {
+  if (c && c.title) return c.title;
+  var op = (c && c.op) || {};
+  return [op.patentNo, op.holder].filter(Boolean).join(' · ');
+}
+
+// ── Sakssiden: OP-panelet ──────────────────────────
+var OP_DATE_LABELS = {
+  received:     'Mottatt',
+  replyDue:     'Svarfrist patenthaver',
+  replyDate:    'Svar mottatt / bekreftet fristutløp',
+  meetingDate:  'Oppstartsmøte',
+  noticeDate:   'Varsel: tilstrekkelig opplyst',
+  decisionDate: 'Tatt opp til avgjørelse',
+  protocolDate: 'Protokoll ferdig',
+  sentDate:     'Utsendt',
+  transferDate: 'Overført til klageoppfølging'
+};
+var OP_TEXT_LABELS = {
+  patentNo: 'Patentnummer', holder: 'Patenthaver', holderAgent: 'Patenthavers fullmektig',
+  unit: 'Ansvarlig enhet', voter2: '2. voterende', voter3: '3. voterende', jurist: 'Patentjurist'
+};
+
+// Linjen for én kontrollfrist: datoen, «oppfylt» eller hvorfor den ikke gjelder.
+function opControlText(x, notApplies) {
+  if (!x.applies) return { text: notApplies, tone: 'na' };
+  if (x.met) return { text: toDisplay(x.date) + ' · oppfylt', tone: 'met' };
+  return { text: toDisplay(x.date), tone: 'open' };
+}
+
+// HTML for OP-panelet. All tekst fra saken går gjennom esc. nonWorkday som i
+// opSuggestedDue. Ren funksjon — se test/opCases.test.js.
+function opPanelHtml(c, nonWorkday) {
+  if (!isOpCase(c)) return '';
+  var op = normalizeOp(c.op);
+  function input(attr, val, extra) {
+    return '<input class="field-input op-input" type="text" ' + attr + ' value="' + esc(val || '') + '"' + (extra || '') + ' />';
+  }
+  function text(k) {
+    return '<div class="op-kv-k"><label for="op-f-' + k + '">' + esc(OP_TEXT_LABELS[k]) + '</label></div>' +
+      '<div class="op-kv-v">' + input('id="op-f-' + k + '" data-op-field="' + k + '" maxlength="' + OP_TEXT_MAX + '"', op[k]) + '</div>';
+  }
+  function dateRow(k) {
+    var extra = k === 'replyDate'
+      ? '<select class="field-input op-reply-kind" data-feature="op-reply-kind" data-op-field="replyKind" aria-label="Hva skjedde ved svarfristen">' +
+          '<option value=""' + (op.replyKind === '' ? ' selected' : '') + '>—</option>' +
+          '<option value="svar"' + (op.replyKind === 'svar' ? ' selected' : '') + '>Svar mottatt</option>' +
+          '<option value="utlopt"' + (op.replyKind === 'utlopt' ? ' selected' : '') + '>Fristen løp ut uten svar</option>' +
+        '</select>'
+      : '';
+    return '<tr><th scope="row"><label for="op-d-' + k + '">' + esc(OP_DATE_LABELS[k]) + '</label></th>' +
+      '<td class="op-date-cell">' + input('id="op-d-' + k + '" data-op-date="' + k + '" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off"', toDisplay(op[k]), ' data-op-dp="1"') +
+      extra + '</td></tr>';
+  }
+  var opps = op.opponents.map(function(o, i) {
+    return '<div class="op-opp" data-op-opp="' + i + '">' +
+      input('data-op-opp-key="name" aria-label="Innsiger ' + (i + 1) + '" maxlength="' + OP_TEXT_MAX + '"', o.name) +
+      input('data-op-opp-key="agent" aria-label="Fullmektig for innsiger ' + (i + 1) + '" placeholder="Fullmektig" maxlength="' + OP_TEXT_MAX + '"', o.agent) +
+      '<button type="button" class="btn-icon btn-icon-sm op-opp-del" data-feature="op-remove-opponent" data-op-remove="' + i + '"' +
+        (op.opponents.length <= 1 ? ' disabled title="En OP-sak må ha minst én innsiger"' : ' title="Fjern innsiger"') +
+        ' aria-label="Fjern innsiger ' + (i + 1) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
+    '</div>';
+  }).join('') +
+    '<div class="op-opp op-opp-new">' +
+      input('data-op-opp-new="name" aria-label="Ny innsiger" placeholder="+ Legg til innsiger" maxlength="' + OP_TEXT_MAX + '"', '') +
+    '</div>';
+  var outcome = '<select class="field-input" id="op-f-outcome" data-op-field="outcome">' +
+    '<option value="">— ikke valgt —</option>' +
+    Object.keys(OP_OUTCOMES).map(function(k) {
+      return '<option value="' + k + '"' + (op.outcome === k ? ' selected' : '') + '>' + esc(OP_OUTCOMES[k]) + '</option>';
+    }).join('') + '</select>';
+
+  var ctl = opControlDeadlines(op);
+  var a = opControlText(ctl.a, op.replyKind === 'svar' ? 'ikke aktuell (svar mottatt)' : 'gjelder bare når fristen løper ut uten svar');
+  var b = opControlText(ctl.b, 'starter når varselet er sendt');
+  var phase = opPhase(c.status);
+  var sugg = opSuggestedDue(c, nonWorkday);
+  var dueNote = !phase ? ''
+    : op.dueManual
+      ? 'satt for hånd' + (sugg && sugg !== c.dueDate ? ' · forslag ' + toDisplay(sugg) +
+          ' <button type="button" class="op-link" data-feature="op-use-suggestion" data-op-action="use-suggestion">Bruk forslag</button>' : '')
+      : sugg ? 'forslag · kontroller i SANT' : 'ingen fast frist i denne fasen — sett den selv';
+  var dueRow = phase
+    ? '<div class="op-due"><label for="op-due-input">Frist for fasen «' + esc(phase.label) + '»</label>' +
+        input('id="op-due-input" data-op-due="1" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off"', toDisplay(c.dueDate), ' data-op-dp="1"') +
+        '<span class="op-due-note">' + dueNote + '</span></div>'
+    : '';
+
+  return '<div class="op-grid">' +
+    '<div class="op-card"><h3 class="op-card-title">Parter og utvalg</h3><div class="op-kv">' +
+      text('patentNo') + text('holder') + text('holderAgent') +
+      '<div class="op-kv-k">Innsigere</div><div class="op-kv-v">' + opps + '</div>' +
+      text('unit') +
+      '<div class="op-kv-k">1. voterende</div><div class="op-kv-v op-kv-plain">Deg</div>' +
+      text('voter2') + text('voter3') + text('jurist') +
+      '<div class="op-kv-k"><label for="op-f-outcome">Utfall</label></div><div class="op-kv-v">' + outcome + '</div>' +
+    '</div></div>' +
+    '<div class="op-card"><h3 class="op-card-title">Saksdatoer <span class="op-card-sub">fra SANT</span></h3>' +
+      dueRow +
+      '<table class="op-dates">' + OP_DATE_FIELDS.map(dateRow).join('') + '</table>' +
+      '<div class="op-ctrl">' +
+        '<div class="op-ctrl-row"><span>(a) Tatt opp til avgjørelse — ubesvart frist + 3 mnd.</span><span class="op-ctrl-' + a.tone + '">' + esc(a.text) + '</span></div>' +
+        '<div class="op-ctrl-row"><span>(b) Protokoll ferdig — varsel + 3 mnd.</span><span class="op-ctrl-' + b.tone + '">' + esc(b.text) + '</span></div>' +
+        '<div class="op-ctrl-hint">Utregnet av appen. SANT er fasit.</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+// ════════════════════════════════════════════════════════════════════════════
 // SEKSJON 3 · STORAGE-LAG
 // Eneste sted som leser/skriver localStorage
 // migrate(), load*(), save*(), reset()
@@ -7937,6 +8448,9 @@ var SCHEMA_MIGRATIONS = {
       localStorage.setItem(key, JSON.stringify(data));
     }
   }
+  // v8 → v9: ny sakstype OP (innsigelser), type 'op' med egne faser som status
+  // og saksdata i `op`. Eksisterende saker er uendret, så ingen omskriving.
+  // Bumpen markerer at dataene kan inneholde OP-saker.
 };
 
 function migrateAll() {
@@ -8394,12 +8908,14 @@ function deleteAllData() {
 
 // ── Import-validering ──────────────────────────────
 var VALID_IMPORT_STATUSES = { ny:1, viderebehandling:1, fristarkiv:1, avsluttet:1 };
+// En OP-sak har en OP-fase eller er avsluttet; ingen andre saker har OP-faser.
 function _validateImportCase(c) {
   if (!c || typeof c !== 'object') return false;
   if (typeof c.id !== 'string' || !c.id.trim()) return false;
   if (typeof c.caseNumber !== 'string' || !c.caseNumber.trim()) return false;
   if (typeof c.dueDate !== 'string') return false;
   if (typeof c.title !== 'string') return false;
+  if (isOpCase(c)) return c.status === 'avsluttet' || !!opPhase(c.status);
   if (!VALID_IMPORT_STATUSES[c.status]) return false;
   return true;
 }
@@ -8432,8 +8948,13 @@ function migrateCases(arr) {
       caseBuffer: n.caseBuffer  != null ? n.caseBuffer : null,
       outcome:    normaliseOutcome(n.status || 'ny', n.outcome)
     };
+    // OP-saker: saksdataene normaliseres; søknadens utfall gjelder ikke
+    if (out.type === 'op') {
+      out.op = normalizeOp(n.op);
+      out.outcome = null;
+    }
     // «Ikke fordelt» tas bare med når det er satt, så andre saker er uendret
-    if (n.unassigned === true) {
+    if (n.unassigned === true && out.type !== 'op') {
       out.unassigned = true;
       out.unassignedSince = typeof n.unassignedSince === 'string' ? n.unassignedSince : null;
     }
@@ -8610,7 +9131,7 @@ function bufferDaysFor(c) {
 // globale bufferen eller en per-sak-buffer trekkes fra.
 function bufferAppliesTo(c) {
   if (!c) return true;
-  if (c.type === 'oppdrag') return false;
+  if (!isApplication(c)) return false;
   if (c.status === 'fristarkiv') return false;
   return true;
 }
@@ -8704,6 +9225,7 @@ function fristMetaMode(c) {
 // Rene funksjoner — se test/sakLayout.test.js.
 function fristOwnerLabel(c) {
   if (!c || c.type === 'oppdrag') return 'Frist';
+  if (isOpCase(c)) return c.status === 'op_svar' ? 'Patenthavers frist' : isOpWorkPhase(c) ? 'Din frist' : 'Frist';
   if (c.status === 'fristarkiv') return 'Søkers frist';
   if (c.status === 'ny' || c.status === 'viderebehandling') return 'Din frist';
   return 'Frist';
@@ -8721,8 +9243,8 @@ function fristCountdownLabel(c, days, workDays) {
     var over = Math.abs(days);
     return over + (over === 1 ? ' dag' : ' dager') + ' på overtid';
   }
-  var ownDeadline = c && c.type !== 'oppdrag' &&
-                    (c.status === 'ny' || c.status === 'viderebehandling');
+  var ownDeadline = isOpWorkPhase(c) || (isApplication(c) &&
+                    (c.status === 'ny' || c.status === 'viderebehandling'));
   if (ownDeadline) return workDays + (workDays === 1 ? ' arbeidsdag' : ' arbeidsdager') + ' igjen';
   return days + (days === 1 ? ' dag' : ' dager') + ' igjen';
 }
@@ -8733,6 +9255,7 @@ function fristCountdownLabel(c, days, workDays) {
 function fristCountdownTone(c, days) {
   if (c && c.status === 'avsluttet') return '';
   if (c && c.type !== 'oppdrag' && c.status === 'fristarkiv') return '';
+  if (isOpWaitPhase(c)) return '';
   if (days < 0) return 'overdue';
   if (days <= 14) return 'urgent';
   return '';
@@ -8740,6 +9263,12 @@ function fristCountdownTone(c, days) {
 
 function fristOwnerNote(c) {
   if (!c || c.type === 'oppdrag') return 'Avtalt frist for oppdraget.';
+  if (isOpCase(c)) {
+    if (c.status === 'op_svar') return 'Patenthavers svarfrist. Den koster deg ikke arbeid og teller ikke i belegget.';
+    if (isOpWaitPhase(c)) return 'Frist i skriftvekslingen. Teller ikke i belegget.';
+    if (isOpWorkPhase(c)) return 'Din frist for fasen. Teller i belegget. Kontroller mot SANT.';
+    return '';
+  }
   if (c.status === 'fristarkiv') {
     return 'Realitetsbrevet er sendt. Dette er søkerens frist til å svare oss — den koster deg ikke arbeid og teller ikke i belegget.';
   }
@@ -8775,7 +9304,7 @@ function applyRoundsTransition(theCase, fromStatus, toStatus, patch, respExtra) 
   var base = data || defaultSakData(0);
   var view = ensureClaims(Object.assign({}, base, { claims: Array.isArray(base.claims) ? base.claims.slice() : [] }));
   var after = roundsAfterTransition(before, {
-    from: fromStatus, to: toStatus, isOppdrag: theCase.type === 'oppdrag',
+    from: fromStatus, to: toStatus, isOppdrag: !isApplication(theCase),
     lettersAfter: lettersSent(patch.history), sakData: view, today: todayStr(),
     deadline: toStatus === 'fristarkiv' ? (patch.dueDate || theCase.dueDate || null) : null,
     response: respExtra
@@ -8816,7 +9345,8 @@ function modalCaseBuffer(orig, newStatus, raw) {
 // vinduet strekker seg bakover forbi dem (se workWindowStart). Standardverdier
 // per sakstype; brukeren kan endre dem under Innstillinger (workWindows).
 // Oppdrag-verdien gjelder bare oppdrag uten egen varighet.
-var WORK_WINDOW_DEFAULTS = { ny: 10, viderebehandling: 3, oppdrag: 2 };
+// OP-saker har ett vindu per arbeidsfase (se OP_PHASES).
+var WORK_WINDOW_DEFAULTS = { ny: 10, viderebehandling: 3, oppdrag: 2, op_formalia: 1, op_oppstart: 1, op_avgjorelse: 10 };
 var WORK_WINDOW_MAX = 365;
 
 // Til og med v4.41.0 var vinduet kalenderdager, med 14 som standard for Ny.
@@ -8895,6 +9425,12 @@ function workWindowDays(c) {
     var d = parseInt(c.duration, 10);
     return d >= 1 ? d : workWindows.oppdrag;
   }
+  if (isOpCase(c)) {
+    var od = parseInt(c.duration, 10);
+    if (od >= 1) return od;
+    var ph = opPhase(c.status);
+    return (ph && ph.windowKey && workWindows[ph.windowKey]) || WORK_WINDOW_DEFAULTS.op_avgjorelse;
+  }
   if (c && c.status === 'viderebehandling') return workWindows.viderebehandling;
   return workWindows.ny;
 }
@@ -8944,6 +9480,7 @@ function overduePenaltyOffsets(today, n, nonWorkday) {
 function countsInBelegg(c) {
   if (!c || !c.dueDate) return false;
   if (c.type === 'oppdrag') return false;
+  if (isOpCase(c)) return isOpWorkPhase(c);
   if (isUnassigned(c)) return false;
   return c.status === 'ny' || c.status === 'viderebehandling';
 }
@@ -8955,6 +9492,7 @@ function countsInBelegg(c) {
 // en hel rad i tidslinjen. Oppdrag i Fristarkiv beholder varigheten sin.
 function timelineSpanDays(c) {
   if (c && c.type !== 'oppdrag' && c.status === 'fristarkiv') return MILESTONE_DAYS;
+  if (isOpWaitPhase(c)) return MILESTONE_DAYS;
   return workWindowDays(c);
 }
 
@@ -8963,10 +9501,12 @@ function timelineSpanDays(c) {
 // to effDueDate (the buffered date for søknader, dueDate for oppdrag). The
 // window skips the vacation itself, so this means the work has to be done
 // around it.
-// Fristarkiv-saker har ingen arbeidsperiode, så de kan aldri kollidere med ferie.
+// Fristarkiv-saker og OP-saker i en ventefase har ingen arbeidsperiode, så de
+// kan aldri kollidere med ferie.
 function periodOverlapsVacation(c) {
   if (!c || !c.dueDate) return false;
   if (c.status === 'fristarkiv') return false;
+  if (isOpWaitPhase(c)) return false;
   var endStr  = effDueFor(c);  // buffer-justert for søknader, dueDate for oppdrag
   var sStr    = workWindowStart(endStr, workWindowDays(c));
   return vacations.some(function(v) {
@@ -8976,7 +9516,8 @@ function periodOverlapsVacation(c) {
 
 // Sakstyper (nøkler) en sak kan filtreres på i tidslinjen: status for vanlige
 // saker, eller 'oppdrag' for saker med type==='oppdrag' (uavhengig av status).
-var TIMELINE_TYPES = ['ny', 'fristarkiv', 'viderebehandling', 'oppdrag'];
+// 'op' er OP-saker (innsigelser) i alle faser.
+var TIMELINE_TYPES = ['ny', 'fristarkiv', 'viderebehandling', 'oppdrag', 'op'];
 
 // Sakstypene modaltidslinjen viser. Den er en forhåndsvisning av
 // arbeidsbelastningen du planlegger nye saker inn i, og fristarkivsaker ligger
@@ -9009,7 +9550,7 @@ function normalizeTlView(raw) {
     return out;
   }
   return {
-    home:  part(src.home,  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] }, true),
+    home:  part(src.home,  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag', 'op'] }, true),
     modal: part(src.modal, { horizon: 90, axisMode: 'month' }, false)
   };
 }
@@ -9040,6 +9581,7 @@ function filterCasesForTimeline(allCases, typeFilter) {
   return (allCases || []).filter(function(cas) {
     if (!cas || !cas.dueDate) return false;
     if (cas.type === 'oppdrag') return !!wanted.oppdrag && cas.status !== 'avsluttet';
+    if (isOpCase(cas)) return !!wanted.op && cas.status !== 'avsluttet';
     return !!wanted[cas.status];
   });
 }
@@ -9049,6 +9591,7 @@ function filterCasesForTimeline(allCases, typeFilter) {
 // Fristarkiv (2) nederst — der venter saken på søkeren.
 function timelineRowPriority(r) {
   if (r.isOppdrag) return 0;
+  if (r.isOpCase) return r.opWork ? 0 : 2;
   if (r.status === 'viderebehandling') return 1;
   if (r.status === 'fristarkiv') return 2;
   return 0;
@@ -9146,6 +9689,8 @@ function timelineRange(cas, now, horizon, past) {
     windowStart: spanDays === MILESTONE_DAYS && !isOp ? null : workWindowStart(effDue, spanDays),
     effDue:      effDue,
     isOppdrag:   isOp,
+    isOpCase:    isOpCase(cas),
+    opWork:      isOpWorkPhase(cas),
     status:      cas.status,
     // Forfalt fra fristen (for en utsatt sak den faktiske); belegget og
     // forfalt-båndet følger planen (planOverdue).
@@ -9278,7 +9823,8 @@ function visibleLaneCount(ranges, fromDay, toDay) {
 }
 
 // timelineOverdueBands: forfalt-båndene — ett per sak belegget straffer for
-// forfalt (planen er passert; Ny og Viderebehandling, fordelt, ikke oppdrag).
+// forfalt (planen er passert; Ny, Viderebehandling og OP-saker i en
+// arbeidsfase, fordelt, ikke oppdrag).
 // En utsatt sak er forfalt fra fristen, men straffes først når planen er
 // passert, som belegget (planOverdue). Båndene ligger over de samme
 // arbeidsdagene som belegget bokfører straffen på (penaltyOffsets, se
@@ -9292,7 +9838,8 @@ function timelineOverdueBands(ranges, penaltyOffsets) {
   });
   if (!segs.length) return [];
   return (ranges || []).filter(function(r) {
-    return r.planOverdue && !r.isOppdrag && !r.unassigned && (r.status === 'ny' || r.status === 'viderebehandling');
+    return r.planOverdue && !r.isOppdrag && !r.unassigned &&
+      (r.status === 'ny' || r.status === 'viderebehandling' || (r.isOpCase && r.opWork));
   }).map(function(r) {
     return { id: r.id, caseNumber: r.caseNumber, segments: segs.map(function(s) { return s.slice(); }) };
   });
@@ -9523,7 +10070,8 @@ var _tlPageDefaults = {
   ny:               ['ny', 'oppdrag'],
   fristarkiv:       ['fristarkiv'],
   viderebehandling: ['viderebehandling'],
-  oppdrag:          ['oppdrag']
+  oppdrag:          ['oppdrag'],
+  op:               ['op']
 };
 var _tlLastCasesPage = null;
 
@@ -9617,6 +10165,8 @@ function _dispatch(action, payload) {
       // Oppdater state. Stikkord fra avslutningsdialogen følger med i samme
       // endring, så «Angre» tar dem også.
       var patch = statusChangePatch(toStatus, payload.outcome, newDueDate);
+      // OP-saker: fasens frist foreslås på nytt (opStatusPatch)
+      if (isOpCase(theCase)) Object.assign(patch, opStatusPatch(theCase, toStatus));
       if (typeof payload.tags === 'string') patch.tags = payload.tags;
       patch.history = appendHistory(theCase, fromStatus, toStatus);
       // «Svar mottatt»: mottaksdato og hva som kom inn følger overgangen
@@ -9657,7 +10207,7 @@ function _dispatch(action, payload) {
     case 'MEDL_SET': {
       // Fra «Rediger sak». Et nytt navn skrevet inn der legges også på lista.
       var sc = cases.find(function(c) { return c.id === payload.id; });
-      if (!sc || sc.type === 'oppdrag') break;
+      if (!isApplication(sc)) break;
       var reader = sanitizeText(payload.reader || '').trim();
       if (reader && payload.addToList) {
         medleserList = addMedleser(medleserList, reader);
@@ -9735,7 +10285,12 @@ function _dispatch(action, payload) {
         history: [{ type: 'status', date: new Date().toISOString(), from: null, to: p.status }]
       };
       if (p.duration) newCase.duration = p.duration;
-      if (p.caseBuffer != null && p.type !== 'oppdrag') newCase.caseBuffer = p.caseBuffer;
+      if (p.caseBuffer != null && isApplication(newCase)) newCase.caseBuffer = p.caseBuffer;
+      // OP-sak: saksdataene fra dialogen; en frist skrevet inn der er satt for hånd
+      if (isOpCase(newCase)) {
+        newCase.op = Object.assign(normalizeOp(p.op), { dueManual: !!p.dueDate });
+        newCase.dueDate = opSyncDue(newCase);
+      }
       if (p.unassigned) Object.assign(newCase, unassignedPatch(newCase, true, newCase.createdAt));
       AppState.cases = cases.concat([newCase]);
       saveCases();
@@ -9757,20 +10312,27 @@ function _dispatch(action, payload) {
                       notes: sanitizeText(p.notes || ''), tags: normaliseTags(p.tags || ''),
                       type: p.type || c.type, caseBuffer: p.caseBuffer != null ? p.caseBuffer : null };
         if (p.type === 'oppdrag') { patch.status = p.status || 'ny'; patch.duration = p.duration; patch.caseBuffer = null; }
+        else if (p.type === 'op') {
+          // Fasen og OP-dataene endres på sakssiden; dialogen endrer nummer,
+          // tittel, notater, stikkord, eget vindu og fasens frist.
+          patch.status = c.status; patch.duration = p.duration; patch.caseBuffer = null;
+          var opUpd = opApplyUpdate(c, p.dueDate !== c.dueDate ? { dueDate: p.dueDate } : {});
+          if (opUpd) { patch.op = opUpd.op; patch.dueDate = opUpd.dueDate; }
+        }
         else                      { patch.status = p.status;  delete patch.duration; }
         patch.outcome = normaliseOutcome(patch.status, c.outcome);
         Object.assign(patch, unassignedPatch(Object.assign({}, c, patch), !!p.unassigned, new Date().toISOString()));
         // Record frist change in history if dueDate changed
         var histPatch = {};
-        if (p.dueDate !== c.dueDate) {
-          histPatch.history = appendHistory(c, null, null, 'frist', c.dueDate, p.dueDate);
+        if (patch.dueDate !== c.dueDate) {
+          histPatch.history = appendHistory(c, null, null, 'frist', c.dueDate, patch.dueDate);
         }
         return Object.assign({}, c, patch, histPatch);
       });
       saveCases();
       // Innleverings- og prioritetsdatoen ligger i saksdetaljene (pt_sak_*),
       // ikke i cases[]
-      if (p.type !== 'oppdrag' && typeof p.filingDate === 'string') {
+      if (p.type !== 'oppdrag' && p.type !== 'op' && typeof p.filingDate === 'string') {
         var editData = loadSakData(p.id) || defaultSakData(0);
         var priorityDate = typeof p.priorityDate === 'string' ? p.priorityDate : (editData.priorityDate || '');
         if ((editData.filingDate || '') !== p.filingDate || (editData.priorityDate || '') !== priorityDate) {
@@ -9854,6 +10416,21 @@ function _dispatch(action, payload) {
     case 'CASE_COMPLETE': {
       // Håndteres av runStatusTransition; rutes hit som CASE_STATUS_CHANGE
       dispatch('CASE_STATUS_CHANGE', payload);
+      break;
+    }
+
+    case 'OP_UPDATE': {
+      // OP-dataene fra sakssiden: ett eller flere felt (se opApplyUpdate)
+      var ouCase = cases.find(function(c) { return c.id === payload.id; });
+      var ouPatch = opApplyUpdate(ouCase, payload.changes);
+      if (!ouPatch) { if (isOpCase(ouCase)) showToast('✗ En OP-sak må ha minst én innsiger', true); break; }
+      if (ouPatch.dueDate !== ouCase.dueDate) {
+        ouPatch.history = appendHistory(ouCase, null, null, 'frist', ouCase.dueDate, ouPatch.dueDate);
+      }
+      AppState.cases = cases.map(function(c) { return c.id === payload.id ? Object.assign({}, c, ouPatch) : c; });
+      saveCases();
+      render();
+      if (activeSakId === payload.id) renderSak(payload.id);
       break;
     }
 
@@ -9954,7 +10531,7 @@ function _dispatch(action, payload) {
     case 'OBJECTION_STATE_SET': {
       // Vurdering av én (gruppert) innvending i runden saken er i nå
       var osCase = cases.find(function(c) { return c.id === payload.id; });
-      if (!osCase || osCase.type === 'oppdrag' || osCase.status !== 'viderebehandling') break;
+      if (!isApplication(osCase) || osCase.status !== 'viderebehandling') break;
       if (payload.round !== examinationRound(osCase) || OBJECTION_STATES.indexOf(payload.state) === -1) break;
       var osData = loadSakData(payload.id);
       if (!osData) break;
@@ -9968,7 +10545,7 @@ function _dispatch(action, payload) {
     case 'OBJECTION_ADD': {
       // Egen innvending: reist i runde k («Ny i denne runden») eller i brev L
       var oaCase = cases.find(function(c) { return c.id === payload.id; });
-      if (!oaCase || oaCase.type === 'oppdrag' || oaCase.status !== 'viderebehandling') break;
+      if (!isApplication(oaCase) || oaCase.status !== 'viderebehandling') break;
       var oaData = loadSakData(payload.id);
       if (!oaData) break;
       var oaRound = objectionRound(oaCase, roundsOf(oaData));
@@ -9986,7 +10563,7 @@ function _dispatch(action, payload) {
 
     case 'OBJECTION_DELETE': {
       var odCase = cases.find(function(c) { return c.id === payload.id; });
-      if (!odCase || odCase.type === 'oppdrag' || odCase.status !== 'viderebehandling') break;
+      if (!isApplication(odCase) || odCase.status !== 'viderebehandling') break;
       var odData = loadSakData(payload.id);
       if (!odData) break;
       var odOut = objectionsAfterDelete(odData, payload.objId);
@@ -10679,7 +11256,8 @@ function _dispatch(action, payload) {
 function casesForPage(page) {
   if (PAGES[page] && PAGES[page].showAll) return cases;
   if (page === 'oppdrag') return cases.filter(function(c) { return c.type === 'oppdrag' && c.status !== 'avsluttet'; });
-  return cases.filter(function(c) { return (c.status || 'ny') === page && c.type !== 'oppdrag'; });
+  if (page === 'op') return cases.filter(function(c) { return isOpCase(c) && c.status !== 'avsluttet'; });
+  return cases.filter(function(c) { return (c.status || 'ny') === page && isApplication(c); });
 }
 
 // ── Alle saker: sortering på kolonneoverskriftene ──
@@ -10703,10 +11281,12 @@ function nextAllSort(cur, key) {
 }
 
 // Rekkefølgen i saksflyten: aktive oppdrag, Ny, Viderebehandling, Fristarkiv, Avsluttet.
+// OP-saker i en arbeidsfase står med Ny, i en ventefase med Fristarkiv.
 // Ren funksjon — se test/allCasesSort.test.js.
 function allCasesStatusRank(c) {
   if (c.status === 'avsluttet') return 4;
   if (c.type === 'oppdrag') return 0;
+  if (isOpCase(c)) return isOpWorkPhase(c) ? 1 : 3;
   return { ny: 1, viderebehandling: 2, fristarkiv: 3 }[c.status || 'ny'] || 1;
 }
 
@@ -10804,9 +11384,10 @@ function navHasBadge(page) {
 
 function updateNav() {
   // Grupper saker per side i én gjennomgang i stedet for ett filter per fane
-  var byPage = { ny: [], viderebehandling: [], fristarkiv: [], avsluttet: [], oppdrag: [] };
+  var byPage = { ny: [], viderebehandling: [], fristarkiv: [], avsluttet: [], oppdrag: [], op: [] };
   cases.forEach(function(c) {
     if (c.type === 'oppdrag') { if (c.status !== 'avsluttet') byPage.oppdrag.push(c); return; }
+    if (isOpCase(c)) { if (c.status !== 'avsluttet') byPage.op.push(c); return; }
     var s = c.status || 'ny';
     if (byPage[s]) byPage[s].push(c);
   });
@@ -10826,9 +11407,11 @@ function updateNav() {
     badge.textContent = list.length - waiting;
     if (page === 'ny') badge.title = waiting ? '+ ' + waiting + ' ikke fordelt' : '';
     // Oppdrag: farg badge etter alvorlighetsgrad
-    if (page === 'oppdrag') {
+    if (page === 'oppdrag' || page === 'op') {
       badge.classList.remove('nav-count-urgent', 'nav-count-soon');
-      var minDays = list.reduce(function(m, c) { return Math.min(m, daysUntil(c.dueDate)); }, Infinity);
+      // OP: bare arbeidsfasene — patenthavers svarfrist er ikke din
+      var own = page === 'op' ? list.filter(function(c) { return isOpWorkPhase(c) && c.dueDate; }) : list;
+      var minDays = own.reduce(function(m, c) { return Math.min(m, daysUntil(c.dueDate)); }, Infinity);
       if (list.length && minDays < 0)       badge.classList.add('nav-count-urgent');
       else if (list.length && minDays <= 7) badge.classList.add('nav-count-soon');
     }
@@ -10891,11 +11474,11 @@ function lookupTitle(logEntry) {
 // en endret dato flyttes på riktig hendelse. Statistikken føres på selve
 // overgangen (se statusTransition): realitetsbrev ut fra Ny er en
 // nybehandling, fra Viderebehandling en viderebehandling, og en avslutning
-// er «avsluttet» — eller «oppdrag» for oppdrag. Andre overganger, og eldre
+// er «avsluttet» — eller «oppdrag» for oppdrag og «op» for OP-saker. Andre overganger, og eldre
 // historikk uten from, førte ingenting. Ren funksjon — se test/dataIntegrity.test.js.
 function historyLogType(h, isOppdrag) {
   if (!h || (h.type && h.type !== 'status')) return null;
-  if (h.to === 'avsluttet') return isOppdrag ? 'oppdrag' : 'avsluttet';
+  if (h.to === 'avsluttet') return opPhase(h.from) ? 'op' : isOppdrag ? 'oppdrag' : 'avsluttet';
   if (h.to === 'fristarkiv' && !isOppdrag) {
     if (h.from === 'ny') return 'ny';
     if (h.from === 'viderebehandling') return 'videre';
@@ -11421,7 +12004,7 @@ function trackStepHtml(s) {
 // Fullt spor (sakslister) eller minispor (Oversikt). Oppdrag har ingen
 // saksflyt og får én bjelke i sporets sted.
 function trackHtml(c, mini) {
-  var slots = caseTrack(c);
+  var slots = isOpCase(c) ? opTrack(c) : caseTrack(c);
   if (!slots) {
     var done = c.status === 'avsluttet';
     var text = done ? 'Oppdrag · utført' : 'Oppdrag' + (c.duration ? ' · ' + c.duration + ' dager' : '');
@@ -11447,7 +12030,7 @@ function trackHtml(c, mini) {
 // beholder hele forløpet, for der er statusene ulike fra rad til rad.
 // Ren funksjon — se test/listTrack.test.js.
 function listTrackMini(page) {
-  return ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag'].indexOf(page) !== -1;
+  return ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag', 'op'].indexOf(page) !== -1;
 }
 
 // ── Felles kortliste-renderer ──────────────────────
@@ -11482,9 +12065,14 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
     var cls         = days < 0 ? 'overdue' : days <= 3 ? 'urgent' : days <= 14 ? 'soon' : 'ok';
     // I Fristarkiv er fristen søkerens: nøytral og stiplet, uansett hvor nær.
     if (!isOppdrag && c.status === 'fristarkiv') cls = 'theirs';
+    var isOp        = isOpCase(c);
+    // OP i en ventefase: fristen er patenthavers eller partenes
+    if (isOpWaitPhase(c)) cls = 'theirs';
     var daysTxt     = days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'I dag' : days + 'd';
+    // En OP-fase uten fast frist (Formalia, Skriftveksling) kan stå uten dato
+    if (!c.dueDate) { cls = 'ok'; daysTxt = 'Ingen frist'; }
     var tips        = [];
-    if (cls === 'theirs') tips.push('Søkerens svarfrist — ikke din arbeidsfrist');
+    if (cls === 'theirs') tips.push(isOp ? 'Partenes frist — ikke din arbeidsfrist' : 'Søkerens svarfrist — ikke din arbeidsfrist');
     if (isUnassigned(c)) tips.push('Ikke fordelt ennå — teller ikke i belegget');
     if (periodOverlapsVacation(c)) tips.push(vacationTipText(c));
     var closedAgo   = isAvsluttet ? closedDaysAgo(c, todayStr()) : null;
@@ -11496,12 +12084,12 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
             (closedAgo === 0 ? 'I dag' : closedAgo + 'd siden') + '</span>'
         : '<span class="days-badge days-badge-placeholder"></span>';
     var tooltip     = c.tags ? ' title="' + esc(c.tags) + '"' : '';
-    var cardCls     = (isOppdrag ? ' case-card-oppdrag' : '') + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '');
-    var cnCls       = isOppdrag ? ' case-card-cn-oppdrag' : '';
+    var cardCls     = (isOppdrag ? ' case-card-oppdrag' : '') + (isOp ? ' case-card-op' : '') + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '');
+    var cnCls       = isOppdrag ? ' case-card-cn-oppdrag' : isOp ? ' case-card-cn-op' : '';
     return '<div class="case-card' + cardCls + '" data-id="' + c.id + '">' +
       daysBadge +
       '<span class="case-card-cn' + cnCls + '"' + tooltip + '>' + esc(c.caseNumber) + '</span>' +
-      '<span class="case-card-main"><span class="case-card-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
+      '<span class="case-card-main"><span class="case-card-title">' + esc(isOp ? opCaseTitle(c) : c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
       postponePillHtml(c) +
@@ -11673,7 +12261,7 @@ function openTagModal(id, toStatus, callback, opts) {
   pendingTagCallback = callback || null;
   var theCase   = cases.find(function(c) { return c.id === id; });
   var isClosing = pendingTagStatus === 'avsluttet';
-  pendingTagNeedsOutcome = isClosing && !!theCase && theCase.type !== 'oppdrag';
+  pendingTagNeedsOutcome = isClosing && isApplication(theCase);
   document.getElementById('tag-case-number').textContent = theCase ? theCase.caseNumber : '';
   document.getElementById('f-tags').value = (theCase && theCase.tags) ? theCase.tags : '';
   document.getElementById('tag-modal-title').childNodes[0].textContent =
@@ -11939,6 +12527,7 @@ function runRowAction(id) {
   else if (a.type === 'response')          runStatusTransition(id, 'viderebehandling');
   else if (a.type === 'choice-videre')     openVidereChoice(id, c.caseNumber);
   else if (a.type === 'complete-oppdrag')  completeOppdrag(id);
+  else if (a.type === 'op-forward')        runStatusTransition(id, a.toStatus);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -12609,6 +13198,11 @@ var USAGE_DYNAMIC_FEATURES = {
   'doc-delete': 'Dokument: Slett',
   'doc-open': 'Dokument: Åpne',
   'doc-rename': 'Dokument: Endre navn',
+  'op-f-outcome': 'OP-sak: Utfall',
+  'op-phase': 'OP-sak: Bytt fase',
+  'op-reply-kind': 'OP-sak: Svar mottatt / fristen løp ut',
+  'op-remove-opponent': 'OP-sak: Fjern innsiger',
+  'op-use-suggestion': 'OP-sak: Bruk foreslått frist',
   'docpane-file-pick': 'Dokumentpanel: Velg fil',
   'history-cancel-date': 'Historikk: Avbryt datoendring',
   'history-edit-date': 'Historikk: Endre dato',
@@ -13230,10 +13824,12 @@ function caseCsvRows(list, detailsFn) {
   var rows = [['Saksnummer', 'Type', 'Status', 'Utfall', 'Forfallsdato', 'Tittel', 'Notater', 'Stikkord', 'Innleveringsdato', 'Ikke fordelt']];
   (list || []).forEach(function(c) {
     var isOp = c.type === 'oppdrag';
+    var isOpC = isOpCase(c);
     var status = isOp ? (c.status === 'avsluttet' ? 'Utført' : 'Aktiv') : ((STATUS_CONFIG[c.status] || {}).label || c.status || '');
-    var outcome = !isOp && Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome) ? OUTCOMES[c.outcome].label : '';
-    var d = isOp ? null : detailsFn(c.id);
-    rows.push([c.caseNumber || '', isOp ? 'Oppdrag' : 'Søknad', status, outcome, toDisplay(c.dueDate || ''),
+    var outcome = isOpC ? (OP_OUTCOMES[(c.op || {}).outcome] || '')
+      : !isOp && Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome) ? OUTCOMES[c.outcome].label : '';
+    var d = isOp || isOpC ? null : detailsFn(c.id);
+    rows.push([c.caseNumber || '', isOp ? 'Oppdrag' : isOpC ? 'OP-sak' : 'Søknad', status, outcome, toDisplay(c.dueDate || ''),
       c.title || '', c.notes || '', c.tags || '', toDisplay((d && d.filingDate) || ''), isUnassigned(c) ? 'Ja' : '']);
   });
   return rows;
@@ -14422,6 +15018,9 @@ function renderSak(id) {
   if (!cas) { navigateTo('hjem'); return; }
 
   var isOppdrag = cas.type === 'oppdrag';
+  var isOp      = isOpCase(cas);
+  // Oppdrag og OP-saker har ingen søknadsdeler (krav, CPC, mothold, sjekkliste)
+  var noApp     = !isApplication(cas);
 
   _sakActiveClaimNum  = null;
   _sakEditingLabelNum = null;
@@ -14462,20 +15061,20 @@ function renderSak(id) {
 
   // Varighet (oppdrag-felt)
   var durField = document.getElementById('sak-duration-field');
-  if (durField) durField.style.display = isOppdrag ? '' : 'none';
+  if (durField) durField.style.display = isOppdrag || isOp ? '' : 'none';
   var durInp = document.getElementById('sak-duration');
   if (durInp) durInp.textContent = cas.duration || (workWindowDays(cas) + ' (standard)');
 
   // Per-sak-buffer (skjules for oppdrag)
   var bufField = document.getElementById('sak-case-buffer-field');
-  if (bufField) bufField.style.display = isOppdrag ? 'none' : '';
+  if (bufField) bufField.style.display = noApp ? 'none' : '';
   var bufInp = document.getElementById('sak-case-buffer');
   if (bufInp) bufInp.textContent = caseBufferLabel(cas);
 
   // Medlesing (føres inn i «Rediger sak»; skjules for oppdrag)
   var medlField = document.getElementById('sak-medl-field');
-  if (medlField) medlField.style.display = isOppdrag ? 'none' : '';
-  var medlEntry = isOppdrag ? null : caseMedlFor(medlLog, cas.id);
+  if (medlField) medlField.style.display = noApp ? 'none' : '';
+  var medlEntry = noApp ? null : caseMedlFor(medlLog, cas.id);
   document.getElementById('sak-medl').textContent = medlEntry ? medlEntry.reader + ' · ' + toDisplay(medlEntry.sent) : '—';
 
   // Metalinjen i sakshodet (lesing; redigering skjer fortsatt i «Rediger sak»)
@@ -14483,7 +15082,12 @@ function renderSak(id) {
 
   // Status-knapper — forenklet for oppdrag
   var statusBtns = document.getElementById('sak-status-btns');
-  if (isOppdrag) {
+  if (isOp) {
+    statusBtns.innerHTML = OP_PHASES.map(function(p) {
+      return '<button class="sak-status-btn" data-feature="op-phase" data-status="' + p.status + '">' + esc(p.label) + '</button>';
+    }).join('') +
+      '<button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>';
+  } else if (isOppdrag) {
     statusBtns.innerHTML =
       '<button class="sak-status-btn" data-status="ny"><svg class="ti" aria-hidden="true"><use href="#ti-flag"/></svg> Aktiv</button>' +
       '<button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>';
@@ -14501,7 +15105,8 @@ function renderSak(id) {
   document.querySelectorAll('.sak-status-btn').forEach(function(btn) {
     btn.className = 'sak-status-btn';
     if (btn.dataset.status === (cas.status || 'ny')) {
-      btn.classList.add(isOppdrag && btn.dataset.status === 'ny' ? 'active-oppdrag' : 'active-' + (cas.status || 'ny'));
+      btn.classList.add(isOppdrag && btn.dataset.status === 'ny' ? 'active-oppdrag'
+        : isOp && btn.dataset.status !== 'avsluttet' ? 'active-op' : 'active-' + (cas.status || 'ny'));
     }
   });
   var chipInfo = sakStatusChip(cas.status, isOppdrag, cas.outcome);
@@ -14515,12 +15120,13 @@ function renderSak(id) {
   if (hintEl) hintEl.textContent = statusMenuHint(cas.status, isOppdrag);
   setSakStatusMenu(false);
 
-  renderSakChecklist(isOppdrag ? null : data);
+  renderSakChecklist(noApp ? null : data);
+  renderSakOp(cas);
 
   // Seksjoner skjules på data-sak-section, ikke på overskriftsteksten — den
   // endrer seg, attributtet gjør det ikke.
   document.querySelectorAll('.sak-section[data-sak-section]').forEach(function(sec) {
-    var hide = isOppdrag && OPPDRAG_HIDDEN_SECTIONS.indexOf(sec.dataset.sakSection) !== -1;
+    var hide = noApp && OPPDRAG_HIDDEN_SECTIONS.indexOf(sec.dataset.sakSection) !== -1;
     sec.style.display = hide ? 'none' : '';
   });
   // En fase uten synlige seksjoner skal ikke stå igjen som en tom flate.
@@ -14533,7 +15139,7 @@ function renderSak(id) {
   });
   applyPhaseCollapse();
 
-  if (!isOppdrag) {
+  if (!noApp) {
     document.getElementById('sak-num-claims').value        = data.numClaims || '';
     document.getElementById('sak-filing-date').textContent = toDisplay(data.filingDate) || '—';
     document.getElementById('sak-priority-date').textContent = toDisplay(data.priorityDate) || '—';
@@ -14548,7 +15154,7 @@ function renderSak(id) {
   }
 
   // Sammendraget summerer krav — uten krav har det ingenting å vise.
-  var showSummary = !isOppdrag && (data.numClaims || 0) > 0;
+  var showSummary = !noApp && (data.numClaims || 0) > 0;
   var summarySection = document.getElementById('sak-summary-section');
   if (summarySection) summarySection.style.display = showSummary ? '' : 'none';
   var sentinel = document.getElementById('sak-summary-sentinel');
@@ -14595,9 +15201,9 @@ function renderSakMeta(cas) {
   var el = document.getElementById('sak-meta-line'); if (!el) return;
   var isOppdrag = cas.type === 'oppdrag';
   var data = loadSakData(cas.id) || {};
-  var medlEntry = isOppdrag ? null : caseMedlFor(medlLog, cas.id);
+  var medlEntry = !isApplication(cas) ? null : caseMedlFor(medlLog, cas.id);
   var parts = sakMetaLine({
-    title: cas.title || '', isOppdrag: isOppdrag,
+    title: isOpCase(cas) ? opCaseTitle(cas) : (cas.title || ''), isOppdrag: isOppdrag,
     durationLabel: cas.duration ? cas.duration + ' arb.dager' : workWindowDays(cas) + ' arb.dager (standard)',
     filing: data.filingDate, priority: data.priorityDate,
     bufferLabel: metaBufferLabel(cas),
@@ -14778,7 +15384,7 @@ function renderSakFrist(cas) {
   var effDue    = fristDisplayDate(cas);
   var days      = daysUntil(effDue);
   var postponed = postponedDaysFor(cas);
-  var isApplicant = cas.type !== 'oppdrag' && cas.status === 'fristarkiv';
+  var isApplicant = (isApplication(cas) && cas.status === 'fristarkiv') || isOpWaitPhase(cas);
 
   box.className = 'sak-frist' + (isApplicant ? ' sak-frist-applicant' : '');
   document.getElementById('sak-frist-owner').textContent = fristOwnerLabel(cas);
@@ -15267,7 +15873,7 @@ function renderSakResponse(cas, data, opts) {
   var el = document.getElementById('sak-svar');
   if (!el) return;
   var keepForm = !(opts && opts.closeForm) ? obOpenFormState(el) : null;
-  if (!cas || cas.type === 'oppdrag' || cas.status !== 'viderebehandling') { el.innerHTML = ''; delete el.dataset.obCase; return; }
+  if (!isApplication(cas) || cas.status !== 'viderebehandling') { el.innerHTML = ''; delete el.dataset.obCase; return; }
   var round = examinationRound(cas);
   var done = responseChecked(data, round);
   var rows = RESPONSE_CHECKLIST.map(function(item) {
@@ -15493,6 +16099,38 @@ function _cpcHierarchy(code) {
   });
 }
 
+
+// ── OP-panelet ─────────────────────────────────────
+// Panelet tegnes på nytt etter hver endring. Feltet som har fokus, får det
+// tilbake, så Tab fra ett felt til det neste virker som i et vanlig skjema.
+function _opFocusSelector(elm) {
+  if (!elm || !elm.closest) return null;
+  // Kalenderknappen ved et datofelt: knappen i samme dp-wrap som feltet
+  if (elm.classList && elm.classList.contains('dp-trigger')) {
+    var inp = elm.parentNode && elm.parentNode.querySelector('input[id]');
+    return inp ? '#' + inp.id + ' ~ .dp-trigger' : null;
+  }
+  if (elm.id) return '#' + elm.id;
+  var row = elm.closest('[data-op-opp]');
+  if (row && elm.dataset.opOppKey) return '[data-op-opp="' + row.dataset.opOpp + '"] [data-op-opp-key="' + elm.dataset.opOppKey + '"]';
+  if (elm.dataset.opOppNew) return '[data-op-opp-new]';
+  return null;
+}
+
+function renderSakOp(cas) {
+  var el = document.getElementById('sak-op');
+  if (!el) return;
+  if (!isOpCase(cas)) { el.hidden = true; el.innerHTML = ''; return; }
+  var active = document.activeElement;
+  var focusSel = active && el.contains(active) ? _opFocusSelector(active) : null;
+  el.hidden = false;
+  el.innerHTML = opPanelHtml(cas);
+  el.querySelectorAll('[data-op-dp]').forEach(function(inp) { _dp.init(inp); });
+  if (focusSel) {
+    var again = el.querySelector(focusSel);
+    if (again) again.focus();
+  }
+}
 // ── CPC-UI ─────────────────────────────────────────
 function _cpcSetBanner(html) {
   var banner = document.getElementById('cpc-load-banner');
@@ -16277,6 +16915,7 @@ function loadSakDataQuiet(id) {
 // Statusen slik Ctrl+K skriver den: et ferdig oppdrag er «Avsluttet oppdrag».
 function citedStatusLabel(e) {
   if (e.type === 'oppdrag') return e.status === 'avsluttet' ? 'Avsluttet oppdrag' : 'Oppdrag';
+  if (e.type === 'op') return 'OP-sak · ' + opPhaseLabel(e.status);
   return (STATUS_CONFIG[e.status] || {}).label || e.status;
 }
 
@@ -16907,7 +17546,7 @@ document.getElementById('sak-status-btns').addEventListener('click', function(e)
   var theCase = cases.find(function(c) { return c.id === id; });
   if (!theCase) return;
   // Et nytt trykk på «Avsluttet» på en avsluttet sak endrer utfallet.
-  if (theCase.status === 'avsluttet' && btn.dataset.status === 'avsluttet' && theCase.type !== 'oppdrag') {
+  if (theCase.status === 'avsluttet' && btn.dataset.status === 'avsluttet' && isApplication(theCase)) {
     editOutcome(id);
     return;
   }
@@ -16921,7 +17560,7 @@ document.getElementById('sak-status-btns').addEventListener('click', function(e)
 document.getElementById('sak-num-claims').addEventListener('change', function() {
   var id = activeSakId; if (!id) return;
   var cas = cases.find(function(c) { return c.id === id; });
-  if (!cas || cas.type === 'oppdrag') return;
+  if (!isApplication(cas)) return;
   var count = Math.max(0, parseInt(this.value, 10) || 0);
   var data = loadSakData(id) || defaultSakData(0);
   var sum = claimsRemovalSummary(data.claims || [], count);
@@ -18074,21 +18713,87 @@ document.getElementById('sak-notes').addEventListener('input', syncNotesDots);
 document.getElementById('btn-claims-empty-set').addEventListener('click', function() {
   document.getElementById('sak-num-claims').focus();
 });
+
+// ── OP-panelet: endringer ──────────────────────────
+// Hver endring går som OP_UPDATE. Den sendes etter at fokus har flyttet seg,
+// så panelet kan gi fokus tilbake til feltet du gikk til (renderSakOp).
+function _opPanelOpponents(panel) {
+  var list = [];
+  panel.querySelectorAll('.op-opp[data-op-opp]').forEach(function(row) {
+    list.push({ name: row.querySelector('[data-op-opp-key="name"]').value,
+                agent: row.querySelector('[data-op-opp-key="agent"]').value });
+  });
+  return list;
+}
+function _opSend(changes) {
+  var id = activeSakId; if (!id) return;
+  setTimeout(function() { dispatch('OP_UPDATE', { id: id, changes: changes }); }, 0);
+}
+function _opDateValue(raw) {
+  var t = (raw || '').trim();
+  if (!t) return '';
+  return isValidDate(t) ? parseDate(t) : null;
+}
+document.getElementById('sak-op').addEventListener('change', function(e) {
+  var t = e.target;
+  var changes = {};
+  if (t.dataset.opField) {
+    changes[t.dataset.opField] = t.value;
+  } else if (t.dataset.opDate || t.dataset.opDue) {
+    var v = _opDateValue(t.value);
+    if (v === null) {
+      showToast('✗ Ugyldig dato — bruk formatet åååå.mm.dd', true);
+      var cas = cases.find(function(c) { return c.id === activeSakId; });
+      if (cas) renderSakOp(cas);
+      return;
+    }
+    changes[t.dataset.opDate || 'dueDate'] = v;
+  } else if (t.dataset.opOppKey) {
+    // Et tømt navn fjerner ikke innsigeren; bruk krysset for det
+    var opps = _opPanelOpponents(this);
+    if (opps.some(function(o) { return !o.name.trim(); })) {
+      showToast('✗ Innsigeren må ha et navn — bruk krysset for å fjerne', true);
+      var cas2 = cases.find(function(c) { return c.id === activeSakId; });
+      if (cas2) renderSakOp(cas2);
+      return;
+    }
+    changes.opponents = opps;
+  } else if (t.dataset.opOppNew) {
+    if (!t.value.trim()) return;
+    changes.opponents = _opPanelOpponents(this).concat([{ name: t.value, agent: '' }]);
+  } else {
+    return;
+  }
+  _opSend(changes);
+});
+document.getElementById('sak-op').addEventListener('click', function(e) {
+  var rm = e.target.closest('[data-op-remove]');
+  if (rm && !rm.disabled) {
+    var i = parseInt(rm.dataset.opRemove, 10);
+    _opSend({ opponents: _opPanelOpponents(this).filter(function(_, j) { return j !== i; }) });
+    return;
+  }
+  if (e.target.closest('[data-op-action="use-suggestion"]')) _opSend({ dueManual: false });
+});
 // ── Hjem-side ──────────────────────────────────────
-// Fristene på Hjem som er dine: Ny, Viderebehandling og aktive oppdrag med
+// Fristene på Hjem som er dine: Ny, Viderebehandling, aktive oppdrag og
+// OP-saker i en arbeidsfase, med
 // frist. Fristarkiv er søkerens frist, og en sak som ikke er fordelt er ikke
 // din ennå. daysFn(c) gir dager til fristen som gjelder (negativt = forfalt).
 // next er antall dager til nærmeste frist som ikke er passert, eller null.
 // Ren funksjon — se test/homeDock.test.js.
 function homeDeadlineSummary(list, daysFn) {
-  var s = { total: 0, ny: 0, videre: 0, oppdrag: 0, next: null };
+  var s = { total: 0, ny: 0, videre: 0, oppdrag: 0, op: 0, next: null };
   (list || []).forEach(function(c) {
     if (!c || !c.dueDate || c.status === 'avsluttet' || c.status === 'fristarkiv' || isUnassigned(c)) return;
+    // OP-saker i en ventefase venter på partene
+    if (isOpWaitPhase(c)) return;
     var d = daysFn(c);
     if (typeof d !== 'number' || !isFinite(d)) return;
     if (d < 0) {
       s.total++;
       if (c.type === 'oppdrag') s.oppdrag++;
+      else if (isOpCase(c)) s.op++;
       else if (c.status === 'viderebehandling') s.videre++;
       else s.ny++;
     } else if (s.next === null || d < s.next) {
@@ -18105,6 +18810,7 @@ function homeOverdueSubText(s) {
   if (s.ny)      parts.push(s.ny + (s.ny === 1 ? ' ny' : ' nye'));
   if (s.videre)  parts.push(s.videre + (s.videre === 1 ? ' viderebehandling' : ' viderebehandlinger'));
   if (s.oppdrag) parts.push(s.oppdrag + ' oppdrag');
+  if (s.op)      parts.push(s.op + (s.op === 1 ? ' OP-sak' : ' OP-saker'));
   return parts.join(' · ');
 }
 
@@ -18278,6 +18984,7 @@ function renderHomeDeadlines() {
   function renderRow(r) {
     var c = r.c, d = r.d;
     var isOppdrag = r.kind === 'oppdrag';
+    var isOp      = r.kind === 'op';
     var cls  = d < 0 ? 'overdue' : d <= 3 ? 'urgent' : d <= 14 ? 'soon' : 'ok';
     var tips = [];
     // I Fristarkiv er fristen søkerens: stiplet og nøytral, men rød når den er passert
@@ -18289,11 +18996,11 @@ function renderHomeDeadlines() {
     if (periodOverlapsVacation(c)) tips.push(vacationTipText(c));
     var vacBadge = periodOverlapsVacation(c)
       ? '<span class="vac-badge' + (isUnassigned(c) ? ' vac-badge-soft' : '') + '" title="' + esc(vacationTipText(c)) + '">⛱</span>' : '';
-    return '<div class="home-upcoming-row' + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '') + '" data-id="' + c.id + '" data-page="' + (isOppdrag ? 'oppdrag' : c.status) + '">' +
+    return '<div class="home-upcoming-row' + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '') + '" data-id="' + c.id + '" data-page="' + (isOppdrag ? 'oppdrag' : isOp ? 'op' : c.status) + '">' +
       '<span class="days-badge ' + cls + '"' + (tips.length ? ' title="' + esc(tips.join(' · ')) + '"' : '') + '>' +
         (d < 0 ? Math.abs(d)+'d forfalt' : d === 0 ? 'I dag' : d+'d') + '</span>' +
-      '<span class="home-upcoming-cn' + (isOppdrag ? ' case-card-cn-oppdrag' : '') + '">' + esc(c.caseNumber) + '</span>' +
-      '<span class="case-card-main"><span class="home-upcoming-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
+      '<span class="home-upcoming-cn' + (isOppdrag ? ' case-card-cn-oppdrag' : isOp ? ' case-card-cn-op' : '') + '">' + esc(c.caseNumber) + '</span>' +
+      '<span class="case-card-main"><span class="home-upcoming-title">' + esc(isOp ? opCaseTitle(c) : c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
       postponePillHtml(c) +
@@ -18451,7 +19158,7 @@ function buildTimelineDiv(opts) {
 
   busyRanges.forEach(function(r) {
     var bar = document.createElement('div');
-    var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : 'tl-bar-' + r.status;
+    var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : r.isOpCase ? 'tl-bar-op' + (r.opWork ? '' : ' tl-bar-op-wait') : 'tl-bar-' + r.status;
     bar.className = 'tl-bar ' + typeCls + (r.isMilestone ? ' tl-bar-milestone' : '') + (opts.draggable && r.canBuffer ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '') + (opts.activeId && r.id === opts.activeId ? ' tl-bar-active' : '') + (r.unassigned ? ' tl-bar-unassigned' : '');
     var visStart = Math.max(-PAST, r.start);
     var visEnd   = Math.min(HORIZON, r.end);
@@ -18835,7 +19542,8 @@ var TIMELINE_TYPE_META = {
   ny:               { label: 'Ny',               color: '#185fa5' },
   fristarkiv:       { label: 'Fristarkiv',        color: '#6b7280' },
   viderebehandling: { label: 'Viderebehandling',  color: '#4338ca' },
-  oppdrag:          { label: 'Oppdrag',           color: '#06b6d4' }
+  oppdrag:          { label: 'Oppdrag',           color: '#06b6d4' },
+  op:               { label: 'OP-sak',            color: '#be185d' }
 };
 
 function buildTimelineWidget(hostEl, opts) {
@@ -19202,7 +19910,7 @@ function renderVacationList() {
 function buildByMonth() {
   var byMonth = {};
   function ensureKey(k) {
-    if (!byMonth[k]) byMonth[k] = { ny: 0, videre: 0, oppdrag: 0 };
+    if (!byMonth[k]) byMonth[k] = { ny: 0, videre: 0, oppdrag: 0, op: 0 };
   }
   stats.log.forEach(function(e) {
     var k = monthKey(e.date);
@@ -19210,23 +19918,26 @@ function buildByMonth() {
     if (e.type === 'ny')      byMonth[k].ny++;
     if (e.type === 'videre')  byMonth[k].videre++;
     if (e.type === 'oppdrag') byMonth[k].oppdrag++;
+    if (e.type === 'op')      byMonth[k].op++;
   });
   return byMonth;
 }
 
 function renderMonthTable(MONTHS_YEAR, byMonth, decisions) {
-  var totNy = 0, totVidere = 0, totOppdrag = 0;
+  var totNy = 0, totVidere = 0, totOppdrag = 0, totOp = 0;
   function cell(n, extra) {
     return '<td class="stat-col-num' + (n ? '' : ' month-zero') + (extra || '') + '">' + (n || '—') + '</td>';
   }
   document.getElementById('year-tbody').innerHTML = MONTHS_YEAR.map(function(key, i) {
-    var d = byMonth[key] || { ny: 0, videre: 0, oppdrag: 0 };
+    var d = byMonth[key] || { ny: 0, videre: 0, oppdrag: 0, op: 0 };
     totNy      += d.ny;
     totVidere  += (d.videre || 0);
     totOppdrag += (d.oppdrag || 0);
+    totOp      += (d.op || 0);
     return '<tr><td>' + MONTHS[i].name + '</td>' +
       cell(d.ny) + cell(d.videre || 0, ' stat-col-new') + cell(decisions.months[i], ' stat-col-new') +
       cell(d.oppdrag || 0, ' stat-col-oppdrag') +
+      cell(d.op || 0, ' stat-col-op') +
       '</tr>';
   }).join('');
   document.getElementById('year-tfoot').innerHTML =
@@ -19235,6 +19946,7 @@ function renderMonthTable(MONTHS_YEAR, byMonth, decisions) {
     '<td class="stat-col-num stat-col-new">' + totVidere + '</td>' +
     '<td class="stat-col-num stat-col-new">' + decisions.total + '</td>' +
     '<td class="stat-col-num stat-col-oppdrag">' + totOppdrag + '</td>' +
+    '<td class="stat-col-num stat-col-op">' + totOp + '</td>' +
     '</tr>';
 }
 
@@ -19245,7 +19957,7 @@ function renderMonthTable(MONTHS_YEAR, byMonth, decisions) {
 function decisionsByMonth(list, year) {
   var out = { months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], meddelt: 0, avslatt: 0, henlagt: 0, total: 0 };
   (list || []).forEach(function(c) {
-    if (!c || c.type === 'oppdrag' || c.status !== 'avsluttet') return;
+    if (!isApplication(c) || c.status !== 'avsluttet') return;
     if (!Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome)) return;
     var when = closedDate(c);
     if (!when) return;
@@ -19267,7 +19979,7 @@ function allTimeTotals(log, list) {
     else if (e && e.type === 'videre') t.videre++;
   });
   (list || []).forEach(function(c) {
-    if (c && c.type !== 'oppdrag' && c.status === 'avsluttet' &&
+    if (isApplication(c) && c.status === 'avsluttet' &&
         Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome) && closedDate(c)) t.decided++;
   });
   return t;
@@ -19506,7 +20218,7 @@ function forecastByMonth(list, year, now, dueFn) {
   var out = {};
   var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   (list || []).forEach(function(c) {
-    if (!c || c.type === 'oppdrag' || c.status !== 'ny' || isUnassigned(c)) return;
+    if (!isApplication(c) || c.status !== 'ny' || isUnassigned(c)) return;
     var due = dueFn(c);
     if (!due) return;
     var d = new Date(due + 'T00:00:00');
@@ -19902,6 +20614,7 @@ document.addEventListener('keydown', function(e) {
     case '5': e.preventDefault(); navigateTo('oppdrag'); break;
     case '6': e.preventDefault(); navigateTo('avsluttet'); break;
     case '7': e.preventDefault(); navigateTo('medlesing'); break;
+    case '8': e.preventDefault(); navigateTo('op'); break;
   }
 });
 document.getElementById('btn-shortcuts-close').addEventListener('click', function() { closeBackdrop('shortcuts-backdrop'); });
@@ -19996,6 +20709,7 @@ function searchCaseList(q, list, detailsFn) {
 function _searchHitMeta(c) {
   var label;
   if (c.type === 'oppdrag') label = c.status === 'avsluttet' ? 'Avsluttet oppdrag' : 'Oppdrag';
+  else if (isOpCase(c))     label = 'OP-sak · ' + opPhaseLabel(c.status);
   else                      label = (STATUS_CONFIG[c.status] || {}).label || c.status || '';
   if (c.status === 'avsluttet' || !c.dueDate) return label;
   var d = daysUntil(deadlineFor(c));
@@ -20284,7 +20998,7 @@ function copyToClipboard(text, btn) {
 }
 
 // ── Hash-routing ───────────────────────────────────
-var VALID_PAGES = ['hjem','ny','fristarkiv','viderebehandling','avsluttet','statistikk','innstillinger','oppdrag','medlesing'];
+var VALID_PAGES = ['hjem','ny','fristarkiv','viderebehandling','avsluttet','statistikk','innstillinger','oppdrag','medlesing','op'];
 
 var activeSakId = null;
 
@@ -20455,7 +21169,7 @@ document.getElementById('case-list').addEventListener('click', function(e) {
       activeCaseMenuItemHtml(c) +
       unassignedMenuItemsHtml(c) +
       medlMenuItemsHtml(c) +
-      (c.status === 'avsluttet' && c.type !== 'oppdrag'
+      (c.status === 'avsluttet' && isApplication(c)
         ? '<button class="card-dropdown-item btn-row-outcome" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
         : '') +
       '<button class="card-dropdown-item btn-copy-path" data-cn="' + esc(c.caseNumber) + '"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier mappe-sti</button>' +
@@ -20563,7 +21277,7 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     activeCaseMenuItemHtml(c) +
     unassignedMenuItemsHtml(c) +
     medlMenuItemsHtml(c) +
-    (c.status === 'avsluttet' && c.type !== 'oppdrag'
+    (c.status === 'avsluttet' && isApplication(c)
       ? '<button class="card-dropdown-item btn-sak-outcome"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
       : '') +
     '<button class="card-dropdown-item btn-sak-copy-path" data-cn="' + esc(c.caseNumber) + '"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier mappe-sti</button>' +
@@ -20796,9 +21510,21 @@ var fPriorityDate = document.getElementById('f-priority-date');
 var _modalBulkMode = 'auto'; // 'auto' | 'fast'
 var _modalBulkParsed = [];
 
-function _setModalOppdrag(isOppdrag) {
-  document.getElementById('modal-row-sak').style.display     = isOppdrag ? 'none' : '';
+// kind: valgt verdi i «Type / Status» — 'oppdrag', 'op' eller en søknadsstatus.
+function _setModalOppdrag(kind) {
+  var isOppdrag = kind === 'oppdrag', isOp = kind === 'op';
+  document.getElementById('modal-row-sak').style.display     = isOppdrag || isOp ? 'none' : '';
   document.getElementById('modal-row-oppdrag').style.display = isOppdrag ? '' : 'none';
+  document.getElementById('modal-row-opcase').style.display  = isOp ? '' : 'none';
+  // Parter og mottaksdato legges inn bare når saken opprettes
+  var editing = !!editIdEl.value;
+  document.querySelectorAll('#modal-row-opcase .op-create-only').forEach(function(el) { el.style.display = editing ? 'none' : ''; });
+  // En OP-sak bytter ikke type, og en søknad blir ikke en OP-sak
+  var orig = editing ? cases.find(function(c) { return c.id === editIdEl.value; }) : null;
+  var statusRow = document.getElementById('modal-row-status');
+  if (statusRow) statusRow.style.display = orig && isOpCase(orig) ? 'none' : '';
+  var opRadio = document.querySelector('input[name="status"][value="op"]');
+  if (opRadio) opRadio.closest('label').style.display = orig && !isOpCase(orig) ? 'none' : '';
   _syncModalBuffer();
   _syncModalUnassigned();
   _syncModalMedl();
@@ -20813,7 +21539,8 @@ var fMedlDate   = document.getElementById('f-medl-date');
 // Bare når en eksisterende søknad redigeres — ikke for oppdrag eller nye saker.
 function _syncModalMedl() {
   var row = document.getElementById('modal-row-medl');
-  if (row) row.style.display = editIdEl.value && getSelectedStatus() !== 'oppdrag' ? '' : 'none';
+  var st = getSelectedStatus();
+  if (row) row.style.display = editIdEl.value && st !== 'oppdrag' && st !== 'op' ? '' : 'none';
 }
 
 function _fillModalMedl(c) {
@@ -20868,7 +21595,7 @@ function _syncModalUnassigned() {
 function _syncModalBuffer() {
   if (!fCaseBuffer) return;
   var st = getSelectedStatus();
-  var applies = st !== 'oppdrag' && st !== 'fristarkiv' && st !== 'avsluttet';
+  var applies = st !== 'oppdrag' && st !== 'op' && st !== 'fristarkiv' && st !== 'avsluttet';
   fCaseBuffer.closest('.field-group').style.display = applies ? '' : 'none';
   fCaseBuffer.placeholder = 'Standard: ' + typeBufferFor({ status: st });
   // Bare viderebehandling kan utsettes etter fristen (canPostpone)
@@ -20877,7 +21604,7 @@ function _syncModalBuffer() {
   var hint = document.getElementById('f-case-buffer-hint');
   if (hint) hint.hidden = !late;
   var orig = editIdEl.value ? cases.find(function(c) { return c.id === editIdEl.value; }) : null;
-  if (orig && orig.type !== 'oppdrag') {
+  if (isApplication(orig)) {
     fCaseBuffer.value = (st === orig.status && orig.caseBuffer != null) ? String(orig.caseBuffer) : '';
   }
 }
@@ -20896,14 +21623,14 @@ function modalFallbackStatus(orig) {
 }
 function setSelectedStatus(val) {
   document.querySelectorAll('input[name="status"]').forEach(function(r) { r.checked = (r.value === val); });
-  _setModalOppdrag(val === 'oppdrag');
+  _setModalOppdrag(val);
 }
 // Fanen «Legg til» åpner på når en ny sak legges til. «Flere saker» er
 // standard, men den legger alltid inn Ny søknader, og oppdrag legges inn ett
 // og ett — derfor åpner Fristarkiv, Viderebehandling og Oppdrag på «Én sak».
 // Rene funksjoner — se test/addModalTab.test.js.
 function defaultAddTab(page) {
-  return ['fristarkiv', 'viderebehandling', 'oppdrag'].indexOf(page) >= 0 ? 'sak' : 'bulk';
+  return ['fristarkiv', 'viderebehandling', 'oppdrag', 'op'].indexOf(page) >= 0 ? 'sak' : 'bulk';
 }
 function addButtonLabel(page) {
   return defaultAddTab(page) === 'bulk' ? '+ Legg til saker' : '+ Legg til sak';
@@ -20916,9 +21643,11 @@ function openModal(c) {
   // Determine context
   var defaultOppdrag = !c && activePage === 'oppdrag';
   var isOppdrag = (c && c.type === 'oppdrag') || defaultOppdrag;
+  var defaultOp = !c && activePage === 'op';
+  var isOp = (c && isOpCase(c)) || defaultOp;
 
   document.getElementById('modal-title').textContent = c
-    ? (isOppdrag ? 'Rediger oppdrag' : 'Rediger sak')
+    ? (isOppdrag ? 'Rediger oppdrag' : isOp ? 'Rediger OP-sak' : 'Rediger sak')
     : 'Legg til sak';
 
   // Reset adv toggle
@@ -20941,22 +21670,24 @@ function openModal(c) {
     fModalTags.value = c.tags  || '';
     fDuration.value   = c.duration || '';
     fCaseBuffer.value = c.caseBuffer != null ? String(c.caseBuffer) : '';
-    fFilingDate.value = c.type === 'oppdrag' ? '' : toDisplay((loadSakData(c.id) || {}).filingDate || '');
-    fPriorityDate.value = c.type === 'oppdrag' ? '' : toDisplay((loadSakData(c.id) || {}).priorityDate || '');
+    fFilingDate.value = !isApplication(c) ? '' : toDisplay((loadSakData(c.id) || {}).filingDate || '');
+    fPriorityDate.value = !isApplication(c) ? '' : toDisplay((loadSakData(c.id) || {}).priorityDate || '');
+    _fillModalOp(c);
     if (c.notes || c.tags) {
       document.getElementById('modal-adv-toggle').classList.add('open');
       document.getElementById('modal-adv-body').classList.add('open');
     }
     document.getElementById('f-unassigned').checked = isUnassigned(c);
     _fillModalMedl(c);
-    setSelectedStatus(isOppdrag ? 'oppdrag' : (c.status || 'ny'));
+    setSelectedStatus(isOppdrag ? 'oppdrag' : isOp ? 'op' : (c.status || 'ny'));
   } else {
     document.getElementById('f-unassigned').checked = UNASSIGNED_NEW_DEFAULT;
     _fillModalMedl(null);
     editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = fFilingDate.value = fPriorityDate.value = '';
     document.getElementById('f-case-number-op').value = '';
     document.getElementById('f-due-date-op').value = '';
-    var defStatus = defaultOppdrag ? 'oppdrag'
+    _fillModalOp(null);
+    var defStatus = defaultOppdrag ? 'oppdrag' : defaultOp ? 'op'
       : (['statistikk','innstillinger','hjem'].indexOf(activePage) >= 0 ? 'ny' : activePage);
     setSelectedStatus(defStatus);
   }
@@ -20969,8 +21700,25 @@ function openModal(c) {
   openBackdrop('modal-backdrop');
   setTimeout(function() {
     (openBulk ? document.getElementById('modal-bulk-paste')
-      : isOppdrag ? document.getElementById('f-case-number-op') : fCaseNum).focus();
+      : isOppdrag ? document.getElementById('f-case-number-op')
+      : isOp ? document.getElementById('f-op-number') : fCaseNum).focus();
   }, 50);
+}
+// OP-feltene i dialogen: tomme for en ny sak, nummer/frist/vindu ved redigering.
+var OP_MODAL_FIELDS = ['f-op-number', 'f-op-due', 'f-op-duration', 'f-op-patent', 'f-op-holder',
+  'f-op-received', 'f-op-opponent', 'f-op-opponent-agent'];
+function _fillModalOp(c) {
+  OP_MODAL_FIELDS.forEach(function(fid) { document.getElementById(fid).value = ''; });
+  if (!c || !isOpCase(c)) return;
+  document.getElementById('f-op-number').value = c.caseNumber || '';
+  document.getElementById('f-op-due').value = toDisplay(c.dueDate || '');
+  document.getElementById('f-op-duration').value = c.duration || '';
+}
+function _readModalOp(editing) {
+  function v(fid) { return document.getElementById(fid).value; }
+  return opModalPayload({ number: v('f-op-number'), due: v('f-op-due'), duration: v('f-op-duration'),
+    patentNo: v('f-op-patent'), holder: v('f-op-holder'), received: v('f-op-received'),
+    opponent: v('f-op-opponent'), opponentAgent: v('f-op-opponent-agent') }, editing);
 }
 function closeModal() { closeBackdrop('modal-backdrop'); }
 
@@ -21018,26 +21766,30 @@ function _applySaveButtonState(st) {
 function singleCaseDraftRow(f) {
   if (!f || f.editing || !f.date || !isValidDate(f.date)) return null;
   var isOp = f.status === 'oppdrag';
+  var isOpCaseDraft = f.status === 'op';
   var d = parseInt(f.duration, 10);
   return { cn: f.cn || '', title: f.title || '', date: parseDate(f.date), checked: true,
-    type: isOp ? 'oppdrag' : 'sak', status: isOp ? 'ny' : (f.status || 'ny'),
-    duration: isOp && d >= 1 ? d : null };
+    type: isOp ? 'oppdrag' : isOpCaseDraft ? 'op' : 'sak',
+    status: isOp ? 'ny' : isOpCaseDraft ? 'op_formalia' : (f.status || 'ny'),
+    duration: (isOp || isOpCaseDraft) && d >= 1 ? d : null };
 }
 function renderModalSingleDraft() {
   if (document.getElementById('modal-pane-sak').style.display === 'none') return;
   var st = getSelectedStatus();
   var isOp = st === 'oppdrag';
+  var isOpC = st === 'op';
   var row = singleCaseDraftRow({
-    cn:       (isOp ? document.getElementById('f-case-number-op') : fCaseNum).value.trim(),
+    cn:       (isOp ? document.getElementById('f-case-number-op') : isOpC ? document.getElementById('f-op-number') : fCaseNum).value.trim(),
     title:    fTitle.value.trim(),
-    date:     (isOp ? document.getElementById('f-due-date-op') : fDueDate).value.trim(),
+    date:     (isOp ? document.getElementById('f-due-date-op') : isOpC ? document.getElementById('f-op-due') : fDueDate).value.trim(),
     status:   st,
-    duration: fDuration.value,
+    duration: isOpC ? document.getElementById('f-op-duration').value : fDuration.value,
     editing:  !!editIdEl.value
   });
   renderTimeline({ target: 'modal-timeline', draftRows: row ? [row] : null });
 }
-['f-case-number', 'f-case-number-op', 'f-due-date', 'f-due-date-op', 'f-title', 'f-duration'].forEach(function(fid) {
+['f-case-number', 'f-case-number-op', 'f-due-date', 'f-due-date-op', 'f-title', 'f-duration',
+  'f-op-number', 'f-op-due', 'f-op-duration'].forEach(function(fid) {
   var el = document.getElementById(fid);
   if (el) el.addEventListener('input', renderModalSingleDraft);
 });
@@ -21054,7 +21806,7 @@ document.getElementById('modal-adv-toggle').addEventListener('click', function()
 // ── Status radioknapper ────────────────────────────
 document.querySelectorAll('input[name="status"]').forEach(function(r) {
   r.addEventListener('change', function() {
-    _setModalOppdrag(this.value === 'oppdrag');
+    _setModalOppdrag(this.value);
     renderModalSingleDraft();
   });
 });
@@ -21139,6 +21891,7 @@ function markBulkDuplicates(rows, existing) {
 
 function _bulkDupLabel(dup) {
   if (dup.type === 'oppdrag') return 'Oppdrag';
+  if (dup.type === 'op') return 'OP-sak';
   return (STATUS_CONFIG[dup.status] || {}).label || dup.status;
 }
 
@@ -21307,6 +22060,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
   fieldError.textContent = '';
   fieldWarn.textContent  = '';
   var st = getSelectedStatus();
+  if (st === 'op') { _saveModalOp(); return; }
   var isOppdrag = st === 'oppdrag';
   var cnEl = isOppdrag ? document.getElementById('f-case-number-op') : fCaseNum;
   var ddEl = isOppdrag ? document.getElementById('f-due-date-op')    : fDueDate;
@@ -21367,6 +22121,35 @@ document.getElementById('btn-save').addEventListener('click', function() {
   if (plan.transitionTo) runStatusTransition(id, plan.transitionTo, { skipConfirm: true });
 });
 
+// «Lagre» for en OP-sak. Ny sak starter i Formalia; ved redigering endres
+// bare nummer, frist, vindu, tittel, notater og stikkord (fasen og
+// OP-dataene endres på sakssiden).
+function _saveModalOp() {
+  var id = editIdEl.value;
+  var r = _readModalOp(!!id);
+  if (r.error) { fieldError.textContent = r.error; _dupWarnPending = false; return; }
+  var cnLower = r.caseNumber.toLowerCase();
+  var duplicate = cases.find(function(c) { return c.caseNumber.toLowerCase() === cnLower && c.id !== id; });
+  if (duplicate && !_dupWarnPending) {
+    fieldWarn.textContent = '⚠ Saksnummer «' + r.caseNumber + '» finnes allerede. Klikk Lagre igjen for å opprette likevel.';
+    _dupWarnPending = true; return;
+  }
+  _dupWarnPending = false;
+  var payload = { caseNumber: r.caseNumber, dueDate: r.dueDate, title: fTitle.value.trim(),
+    notes: fNotes.value.trim(), tags: fModalTags.value, type: 'op', duration: r.duration, caseBuffer: null };
+  if (id) {
+    payload.id = id;
+    dispatch('CASE_EDIT', payload);
+  } else {
+    payload.status = 'op_formalia';
+    payload.op = r.op;
+    dispatch('CASE_CREATE', payload);
+  }
+  if (activePage === 'sak' || ['statistikk', 'innstillinger', 'hjem'].indexOf(activePage) >= 0) render();
+  else navigateTo('op');
+  closeModal();
+}
+
 // Hva «Lagre» i «Rediger sak» gjør med statusen. Et statusbytte på en
 // eksisterende søknad lagres ikke direkte — da ville saken havnet i
 // Fristarkiv uten søkerens frist, og overgangen manglet i historikken og
@@ -21374,7 +22157,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
 // etterpå gjennom runStatusTransition. Nye saker og oppdrag har ingen
 // saksflyt og lagres som før. Ren funksjon — se test/dataIntegrity.test.js.
 function editStatusPlan(orig, selected) {
-  if (!orig || orig.type === 'oppdrag' || selected === 'oppdrag' || selected === orig.status) {
+  if (!orig || !isApplication(orig) || selected === 'oppdrag' || selected === 'op' || selected === orig.status) {
     return { status: selected, transitionTo: null };
   }
   return { status: orig.status, transitionTo: selected };

@@ -156,7 +156,7 @@ function openTagModal(id, toStatus, callback, opts) {
   pendingTagCallback = callback || null;
   var theCase   = cases.find(function(c) { return c.id === id; });
   var isClosing = pendingTagStatus === 'avsluttet';
-  pendingTagNeedsOutcome = isClosing && !!theCase && theCase.type !== 'oppdrag';
+  pendingTagNeedsOutcome = isClosing && isApplication(theCase);
   document.getElementById('tag-case-number').textContent = theCase ? theCase.caseNumber : '';
   document.getElementById('f-tags').value = (theCase && theCase.tags) ? theCase.tags : '';
   document.getElementById('tag-modal-title').childNodes[0].textContent =
@@ -422,6 +422,7 @@ function runRowAction(id) {
   else if (a.type === 'response')          runStatusTransition(id, 'viderebehandling');
   else if (a.type === 'choice-videre')     openVidereChoice(id, c.caseNumber);
   else if (a.type === 'complete-oppdrag')  completeOppdrag(id);
+  else if (a.type === 'op-forward')        runStatusTransition(id, a.toStatus);
 }
 
 // ════════════════════════════════════════════════════════════════════════════

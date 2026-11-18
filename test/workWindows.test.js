@@ -23,9 +23,9 @@ function makeCase(overrides) {
   }, overrides);
 }
 
-const DEFAULTS = { ny: 10, viderebehandling: 3, oppdrag: 2 };
+const DEFAULTS = { ny: 10, viderebehandling: 3, oppdrag: 2, op_formalia: 1, op_oppstart: 1, op_avgjorelse: 10 };
 
-test('WORK_WINDOW_DEFAULTS: 10 workdays for Ny, 3 for Viderebehandling, 2 for oppdrag', () => {
+test('WORK_WINDOW_DEFAULTS: 10 workdays for Ny, 3 for Viderebehandling, 2 for oppdrag, 1/1/10 for the OP work phases', () => {
   const { WORK_WINDOW_DEFAULTS } = load(DEFAULTS);
   assert.deepStrictEqual(Object.assign({}, WORK_WINDOW_DEFAULTS), DEFAULTS);
 });
@@ -41,7 +41,7 @@ test('normalizeWorkWindows falls back to the defaults for missing or invalid inp
 test('normalizeWorkWindows keeps valid values per type and rejects the rest individually', () => {
   const { normalizeWorkWindows } = load(DEFAULTS);
   const r = normalizeWorkWindows({ ny: 12, viderebehandling: 0, oppdrag: '5', extra: 9 });
-  assert.deepStrictEqual(Object.assign({}, r), { ny: 12, viderebehandling: 3, oppdrag: 2 });
+  assert.deepStrictEqual(Object.assign({}, r), { ny: 12, viderebehandling: 3, oppdrag: 2, op_formalia: 1, op_oppstart: 1, op_avgjorelse: 10 });
 });
 
 test('normalizeWorkWindows rounds down and caps at 365 days', () => {

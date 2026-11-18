@@ -204,10 +204,12 @@ function caseCsvRows(list, detailsFn) {
   var rows = [['Saksnummer', 'Type', 'Status', 'Utfall', 'Forfallsdato', 'Tittel', 'Notater', 'Stikkord', 'Innleveringsdato', 'Ikke fordelt']];
   (list || []).forEach(function(c) {
     var isOp = c.type === 'oppdrag';
+    var isOpC = isOpCase(c);
     var status = isOp ? (c.status === 'avsluttet' ? 'Utført' : 'Aktiv') : ((STATUS_CONFIG[c.status] || {}).label || c.status || '');
-    var outcome = !isOp && Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome) ? OUTCOMES[c.outcome].label : '';
-    var d = isOp ? null : detailsFn(c.id);
-    rows.push([c.caseNumber || '', isOp ? 'Oppdrag' : 'Søknad', status, outcome, toDisplay(c.dueDate || ''),
+    var outcome = isOpC ? (OP_OUTCOMES[(c.op || {}).outcome] || '')
+      : !isOp && Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome) ? OUTCOMES[c.outcome].label : '';
+    var d = isOp || isOpC ? null : detailsFn(c.id);
+    rows.push([c.caseNumber || '', isOp ? 'Oppdrag' : isOpC ? 'OP-sak' : 'Søknad', status, outcome, toDisplay(c.dueDate || ''),
       c.title || '', c.notes || '', c.tags || '', toDisplay((d && d.filingDate) || ''), isUnassigned(c) ? 'Ja' : '']);
   });
   return rows;

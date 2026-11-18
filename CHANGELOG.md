@@ -7,6 +7,15 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Added
+- **Ny sakstype: OP-saker (innsigelser).** Egen side «OP-saker» i menyen (tast 8), og «OP-sak» i «Legg til sak». Saksnummeret må ha formen `OP ÅÅÅÅ/xxxxx`. Ved oppretting legges patentnummer, patenthaver, første innsiger og mottaksdato inn. Resten fylles ut på sakssiden: flere innsigere med fullmektig, patenthavers fullmektig, ansvarlig enhet, 2. og 3. voterende, patentjurist, utfall og alle saksdatoene fra SANT. Ukjente datoer står tomme.
+- **Fem faser som oppfører seg som vanlige saker.** Formalia, Oppstart og Avgjørelse er arbeid: de har et arbeidsvindu som slutter på fasens frist og teller i belegget (standard 1, 1 og 10 arbeidsdager, kan endres under Innstillinger og per sak). Venter på svar og Skriftveksling er milepæler, som Fristarkiv: de gir ikke belegg, ingen ferieoverlapp og ingen forfalt-straff. Knappen øverst fører saken til neste fase, og avgjørelsen telles i statistikken (kolonnen «OP»).
+- **Foreslåtte frister og to kontrollfrister.** Appen foreslår fristen for fasen: svarfristen i Venter på svar, 10 arbeidsdager etter svar eller fristutløp for oppstartsmøtet, og i Avgjørelse den tidligste av de to kontrollfristene som ikke er oppfylt. Kontrollfristene vises hver for seg: (a) tatt opp til avgjørelse innen 3 måneder etter en ubesvart svarfrist, og (b) protokoll ferdig innen 3 måneder etter varselet om at saken er tilstrekkelig opplyst. En frist du setter selv blir stående, og «Bruk forslag» gir deg forslaget tilbake. SANT er fasit, så appen sender ingenting og lukker ingenting av seg selv.
+- OP-saker vises på Hjem (fristlista og tidslinjen, i rosa), i «Alle saker», i søket og i CSV-eksporten. Søknadsdelene (krav, CPC, mothold, sjekkliste, medlesing) er skjult på OP-saker.
+
+### Changed
+- `SCHEMA_VERSION` er 9. Eksisterende data lastes uendret. Fasene lagres som tekst, så en eldre versjon som importerer en fil med OP-saker hopper over dem i stedet for å gjøre dem om til nye søknader.
+
 ## [4.68.1] - 2026-11-17
 Rettelse: «Lagre sak» i «Én sak» virker igjen, og saken vises i dialogens tidslinje.
 

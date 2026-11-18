@@ -207,7 +207,7 @@ function dayRolloverDue(renderedDay, today, busy) {
 
 function encodeCase(c) {
   var cfg = STATUS_CONFIG[c.status];
-  return Object.assign({}, c, { status: cfg !== undefined ? cfg.int : c.status });
+  return Object.assign({}, c, { status: cfg !== undefined && cfg.int !== undefined ? cfg.int : c.status });
 }
 
 function decodeCase(c) {
@@ -328,7 +328,8 @@ function readImportSettings(d) {
 // En markering for å huske hvilken sak du holder på med. Den er ikke en
 // status og påvirker verken belegg eller frister. Maks én sak om gangen, så
 // den lagres som én innstilling ({ id, since }) og ikke som et felt på sakene.
-// Bare egen arbeid kan markeres: Ny, Viderebehandling og aktive oppdrag. I
+// Bare egen arbeid kan markeres: Ny, Viderebehandling, aktive oppdrag og
+// OP-saker i en arbeidsfase. I
 // Fristarkiv er brevet sendt og fristen søkerens, og en sak som ikke er
 // fordelt ennå er ikke din.
 // Rene funksjoner — se test/activeCase.test.js.
@@ -336,6 +337,7 @@ function canBeActiveCase(c) {
   if (!c || c.status === 'avsluttet') return false;
   if (isUnassigned(c)) return false;
   if (c.type === 'oppdrag') return true;
+  if (isOpCase(c)) return isOpWorkPhase(c);
   return c.status === 'ny' || c.status === 'viderebehandling';
 }
 
@@ -435,7 +437,7 @@ var UNASSIGNED_REMINDER_MAX = 365;
 var UNASSIGNED_NEW_DEFAULT = true;
 
 function canBeUnassigned(c) {
-  return !!c && c.type !== 'oppdrag' && (c.status || 'ny') === 'ny';
+  return isApplication(c) && (c.status || 'ny') === 'ny';
 }
 
 function isUnassigned(c) {
@@ -490,7 +492,7 @@ function countsAsPotentialBelegg(c) {
 // Rene funksjoner — se test/hosMedleser.test.js.
 function canSendToMedleser(c) {
   // En sak som ikke er fordelt ennå, er ikke din å sende.
-  if (!c || c.type === 'oppdrag' || isUnassigned(c)) return false;
+  if (!isApplication(c) || isUnassigned(c)) return false;
   return c.status === 'ny' || c.status === 'viderebehandling';
 }
 
@@ -705,7 +707,7 @@ function suggestMedleser(list, log, today) {
 // derfor av som standard. horizon begrenser bare kommende (0 = ingen grense) —
 // forfalte vises alltid, så en glemt frist ikke kan gjemme seg bak grensen.
 // Rene funksjoner — se test/homeDeadlines.test.js.
-var HOME_DEADLINE_KINDS    = ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag'];
+var HOME_DEADLINE_KINDS    = ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag', 'op'];
 var HOME_DEADLINE_HORIZONS = [0, 14, 30, 60, 90];
 
 function defaultHomeDeadlineFilter() {
@@ -714,6 +716,7 @@ function defaultHomeDeadlineFilter() {
     viderebehandling: { overdue: true,  upcoming: true },
     fristarkiv:       { overdue: false, upcoming: false },
     oppdrag:          { overdue: true,  upcoming: true },
+    op:               { overdue: true,  upcoming: true },
     horizon: 0
   };
 }
@@ -731,10 +734,12 @@ function normalizeHomeDeadlineFilter(raw) {
   return f;
 }
 
-// Hvilken rad i filteret en sak hører til; null for avsluttede saker og oppdrag
+// Hvilken rad i filteret en sak hører til; null for avsluttede saker. OP-saker
+// er med i arbeidsfasene; ventefasene er patenthavers eller partenes frister.
 function homeDeadlineKind(c) {
   if (!c || c.status === 'avsluttet') return null;
   if (c.type === 'oppdrag') return 'oppdrag';
+  if (isOpCase(c)) return isOpWorkPhase(c) ? 'op' : null;
   return HOME_DEADLINE_KINDS.indexOf(c.status) !== -1 ? c.status : null;
 }
 
@@ -757,7 +762,7 @@ function selectHomeDeadlines(list, filter, daysFn) {
 
 // Kort tekst som sier hva lista viser, så et skjult valg ikke glemmes
 function homeDeadlineFilterSummary(filter) {
-  var names = { ny: 'Førstesøknader', viderebehandling: 'Viderebehandlinger', fristarkiv: 'Svarfrister', oppdrag: 'Oppdrag' };
+  var names = { ny: 'Førstesøknader', viderebehandling: 'Viderebehandlinger', fristarkiv: 'Svarfrister', oppdrag: 'Oppdrag', op: 'OP-saker' };
   var parts = [];
   HOME_DEADLINE_KINDS.forEach(function(k) {
     var s = filter[k];

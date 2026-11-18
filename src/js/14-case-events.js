@@ -164,7 +164,7 @@ document.getElementById('sak-status-btns').addEventListener('click', function(e)
   var theCase = cases.find(function(c) { return c.id === id; });
   if (!theCase) return;
   // Et nytt trykk på «Avsluttet» på en avsluttet sak endrer utfallet.
-  if (theCase.status === 'avsluttet' && btn.dataset.status === 'avsluttet' && theCase.type !== 'oppdrag') {
+  if (theCase.status === 'avsluttet' && btn.dataset.status === 'avsluttet' && isApplication(theCase)) {
     editOutcome(id);
     return;
   }
@@ -178,7 +178,7 @@ document.getElementById('sak-status-btns').addEventListener('click', function(e)
 document.getElementById('sak-num-claims').addEventListener('change', function() {
   var id = activeSakId; if (!id) return;
   var cas = cases.find(function(c) { return c.id === id; });
-  if (!cas || cas.type === 'oppdrag') return;
+  if (!isApplication(cas)) return;
   var count = Math.max(0, parseInt(this.value, 10) || 0);
   var data = loadSakData(id) || defaultSakData(0);
   var sum = claimsRemovalSummary(data.claims || [], count);
@@ -1330,4 +1330,66 @@ document.getElementById('sak-notes').addEventListener('input', syncNotesDots);
 // Tomt krav-antall: knappen i tomtilstanden flytter fokus til «Antall krav».
 document.getElementById('btn-claims-empty-set').addEventListener('click', function() {
   document.getElementById('sak-num-claims').focus();
+});
+
+// ── OP-panelet: endringer ──────────────────────────
+// Hver endring går som OP_UPDATE. Den sendes etter at fokus har flyttet seg,
+// så panelet kan gi fokus tilbake til feltet du gikk til (renderSakOp).
+function _opPanelOpponents(panel) {
+  var list = [];
+  panel.querySelectorAll('.op-opp[data-op-opp]').forEach(function(row) {
+    list.push({ name: row.querySelector('[data-op-opp-key="name"]').value,
+                agent: row.querySelector('[data-op-opp-key="agent"]').value });
+  });
+  return list;
+}
+function _opSend(changes) {
+  var id = activeSakId; if (!id) return;
+  setTimeout(function() { dispatch('OP_UPDATE', { id: id, changes: changes }); }, 0);
+}
+function _opDateValue(raw) {
+  var t = (raw || '').trim();
+  if (!t) return '';
+  return isValidDate(t) ? parseDate(t) : null;
+}
+document.getElementById('sak-op').addEventListener('change', function(e) {
+  var t = e.target;
+  var changes = {};
+  if (t.dataset.opField) {
+    changes[t.dataset.opField] = t.value;
+  } else if (t.dataset.opDate || t.dataset.opDue) {
+    var v = _opDateValue(t.value);
+    if (v === null) {
+      showToast('✗ Ugyldig dato — bruk formatet åååå.mm.dd', true);
+      var cas = cases.find(function(c) { return c.id === activeSakId; });
+      if (cas) renderSakOp(cas);
+      return;
+    }
+    changes[t.dataset.opDate || 'dueDate'] = v;
+  } else if (t.dataset.opOppKey) {
+    // Et tømt navn fjerner ikke innsigeren; bruk krysset for det
+    var opps = _opPanelOpponents(this);
+    if (opps.some(function(o) { return !o.name.trim(); })) {
+      showToast('✗ Innsigeren må ha et navn — bruk krysset for å fjerne', true);
+      var cas2 = cases.find(function(c) { return c.id === activeSakId; });
+      if (cas2) renderSakOp(cas2);
+      return;
+    }
+    changes.opponents = opps;
+  } else if (t.dataset.opOppNew) {
+    if (!t.value.trim()) return;
+    changes.opponents = _opPanelOpponents(this).concat([{ name: t.value, agent: '' }]);
+  } else {
+    return;
+  }
+  _opSend(changes);
+});
+document.getElementById('sak-op').addEventListener('click', function(e) {
+  var rm = e.target.closest('[data-op-remove]');
+  if (rm && !rm.disabled) {
+    var i = parseInt(rm.dataset.opRemove, 10);
+    _opSend({ opponents: _opPanelOpponents(this).filter(function(_, j) { return j !== i; }) });
+    return;
+  }
+  if (e.target.closest('[data-op-action="use-suggestion"]')) _opSend({ dueManual: false });
 });

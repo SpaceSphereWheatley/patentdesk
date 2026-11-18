@@ -782,6 +782,7 @@ function loadSakDataQuiet(id) {
 // Statusen slik Ctrl+K skriver den: et ferdig oppdrag er «Avsluttet oppdrag».
 function citedStatusLabel(e) {
   if (e.type === 'oppdrag') return e.status === 'avsluttet' ? 'Avsluttet oppdrag' : 'Oppdrag';
+  if (e.type === 'op') return 'OP-sak · ' + opPhaseLabel(e.status);
   return (STATUS_CONFIG[e.status] || {}).label || e.status;
 }
 

@@ -9,7 +9,7 @@ const { normalizeTlView, tlViewFromConfig, TIMELINE_TYPES } = loadFunctions(
 );
 
 const DEFAULT = {
-  home:  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] },
+  home:  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag', 'op'] },
   modal: { horizon: 90, axisMode: 'month' },
 };
 
@@ -34,7 +34,7 @@ test('normalizeTlView falls back field by field on invalid values', () => {
   const v = normalizeTlView({ home: { horizon: 42, axisMode: 'dag', typeFilter: 'ny' }, modal: { horizon: 365 } });
   assert.strictEqual(v.home.horizon, 90);
   assert.strictEqual(v.home.axisMode, 'month');
-  assert.deepStrictEqual([...v.home.typeFilter], ['ny', 'oppdrag']);
+  assert.deepStrictEqual([...v.home.typeFilter], ['ny', 'oppdrag', 'op']);
   assert.strictEqual(v.modal.horizon, 365);
   assert.strictEqual(v.modal.axisMode, 'month');
 });

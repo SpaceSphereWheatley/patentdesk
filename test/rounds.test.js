@@ -584,9 +584,10 @@ function fakeStorage(init) {
   };
 }
 
-test('AC8 SCHEMA_VERSION is 8', () => {
+// Rundene kom i v8; OP-sakene (test/opCases.test.js) løftet den til 9.
+test('AC8 SCHEMA_VERSION is 9', () => {
   const S = load(['SCHEMA_VERSION']);
-  assert.strictEqual(S.SCHEMA_VERSION, 8);
+  assert.strictEqual(S.SCHEMA_VERSION, 9);
 });
 
 test('AC8 SCHEMA_MIGRATIONS[7] adds rounds: [] and changes nothing else; idempotent', () => {

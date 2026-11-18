@@ -168,6 +168,10 @@ var PAGES = {
   oppdrag: {
     title:       'Oppdrag',
     countsAs:    null
+  },
+  op: {
+    title:       'OP-saker',
+    countsAs:    null
   }
 };
 
@@ -176,12 +180,20 @@ var STATUS_CONFIG = {
   ny:              { int:0, label:'Ny',               pill:'s-ny',              histLabel:'Ny sak',           histIcon:'📄' },
   viderebehandling:{ int:1, label:'Viderebehandling', pill:'s-viderebehandling',histLabel:'Viderebehandling', histIcon:'🔄' },
   fristarkiv:      { int:2, label:'Fristarkiv',       pill:'s-fristarkiv',      histLabel:'Fristarkiv',       histIcon:'📁' },
-  avsluttet:       { int:3, label:'Avsluttet',        pill:'s-avsluttet',       histLabel:'Avsluttet',        histIcon:'✅' }
+  avsluttet:       { int:3, label:'Avsluttet',        pill:'s-avsluttet',       histLabel:'Avsluttet',        histIcon:'✅' },
+  // OP-saker (innsigelser): fasene, se OP_PHASES. Uten tallkode med vilje:
+  // de lagres som tekst, så en eldre versjon som ikke kjenner dem, hopper
+  // over sakene ved import i stedet for å gjøre dem om til Ny søknad.
+  op_formalia:     { label:'Formalia',         pill:'s-op',              histLabel:'Formalia',         histIcon:'📄' },
+  op_svar:         { label:'Venter på svar',   pill:'s-op-wait',         histLabel:'Venter på svar',   histIcon:'📁' },
+  op_oppstart:     { label:'Oppstart',         pill:'s-op',              histLabel:'Oppstart',         histIcon:'🗓️' },
+  op_skrift:       { label:'Skriftveksling',   pill:'s-op-wait',         histLabel:'Skriftveksling',   histIcon:'✉️' },
+  op_avgjorelse:   { label:'Avgjørelse',       pill:'s-op',              histLabel:'Avgjørelse',       histIcon:'⚖️' }
 };
 var INT_TO_STATUS = { 0:'ny', 1:'viderebehandling', 2:'fristarkiv', 3:'avsluttet' };
 
-var LOG_LABELS = { ny:'Nybehandling', videre:'Viderebehandling', avsluttet:'Avsluttet', oppdrag:'Oppdrag utført' };
-var LOG_CLS    = { ny:'log-ny', videre:'log-videre', avsluttet:'log-avsluttet', oppdrag:'log-oppdrag' };
+var LOG_LABELS = { ny:'Nybehandling', videre:'Viderebehandling', avsluttet:'Avsluttet', oppdrag:'Oppdrag utført', op:'OP-sak avgjort' };
+var LOG_CLS    = { ny:'log-ny', videre:'log-videre', avsluttet:'log-avsluttet', oppdrag:'log-oppdrag', op:'log-op' };
 
 // ── Måneder ────────────────────────────────────────
 var MONTHS = [

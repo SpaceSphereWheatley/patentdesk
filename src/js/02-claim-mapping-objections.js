@@ -35,7 +35,7 @@ function claimMappingChange(origin, change) {
 // Runden kravene kobles mot: siste synlige runde, bare i Viderebehandling og
 // bare når søkeren har svart med endrede krav.
 function mappingRound(c, rounds) {
-  if (!c || c.status !== 'viderebehandling' || c.type === 'oppdrag') return null;
+  if (!c || c.status !== 'viderebehandling' || !isApplication(c)) return null;
   var latest = null;
   visibleRounds(c, rounds).forEach(function(r) { if (!latest || r.n > latest.n) latest = r; });
   if (!latest || !latest.response || !Array.isArray(latest.response.changes)) return null;
@@ -224,7 +224,7 @@ function isObjectionId(id) {
 
 // Runden innvendingene kommer fra: den med n lik antall sendte brev.
 function objectionRound(c, rounds) {
-  if (!c || c.type === 'oppdrag') return null;
+  if (!isApplication(c)) return null;
   var sent = lettersSent(c.history);
   return visibleRounds(c, rounds).find(function(r) { return r.n === sent; }) || null;
 }
@@ -415,7 +415,7 @@ function objectionStateIn(roundStates, id) {
 
 // Innvendingene som vises i runde k, hver med sin vurdering.
 function shownObjections(c, data) {
-  if (!c || c.type === 'oppdrag' || c.status !== 'viderebehandling') return [];
+  if (!isApplication(c) || c.status !== 'viderebehandling') return [];
   var rounds = roundsOf(data);
   var L = objectionRound(c, rounds);
   if (!L) return [];
@@ -516,7 +516,7 @@ var OBJECTION_WARN_LABEL = { nyhet: 'mangler nyhet', oh: 'mangler oppfinnelsesh�
 // Merknader under «Avslag» i Avgjør: er søker hørt om det avslaget bygger
 // på? Tom liste = ingen merknader. Hindrer aldri avslaget.
 function refusalWarnings(c, data, rounds) {
-  if (!c || c.type === 'oppdrag' || c.status !== 'viderebehandling') return [];
+  if (!isApplication(c) || c.status !== 'viderebehandling') return [];
   var L = objectionRound(c, rounds);
   if (!L) return ['Ingen lagret runde – kan ikke kontrollere at søker er hørt'];
   var vr = visibleRounds(c, rounds);
@@ -765,7 +765,7 @@ function docFirstRound(rounds, docId) {
 
 // Rundene som kan vises: aldri flere enn brevene som faktisk er sendt.
 function visibleRounds(c, rounds) {
-  if (!c || c.type === 'oppdrag') return [];
+  if (!isApplication(c)) return [];
   var sent = lettersSent(c.history);
   return (Array.isArray(rounds) ? rounds : []).filter(function(r) {
     return r && typeof r.n === 'number' && r.n <= sent;
@@ -773,7 +773,7 @@ function visibleRounds(c, rounds) {
 }
 
 function canBackfillRound(c, rounds) {
-  if (!c || c.type === 'oppdrag') return false;
+  if (!isApplication(c)) return false;
   return lettersSent(c.history) >= 1 && !(Array.isArray(rounds) && rounds.length);
 }
 
@@ -837,7 +837,7 @@ function responseChecked(data, round) {
 // Fremdriftslinjen øverst og i sticky-baren: hovedsjekklisten, eller i
 // Viderebehandling sjekklisten for svaret i runden saken er i.
 function sakChecklistProgress(c, data, template) {
-  if (c && c.type !== 'oppdrag' && c.status === 'viderebehandling') {
+  if (isApplication(c) && c.status === 'viderebehandling') {
     var round = examinationRound(c);
     return { label: 'Svar – runde ' + round, done: responseChecked(data, round).length, total: RESPONSE_CHECKLIST.length };
   }
@@ -877,7 +877,7 @@ function examinationRound(c) {
 // caution (runde 3+), granted, refused, closed. Oppdrag har ingen saksflyt og gir null.
 // Ren funksjon — se test/caseTrack.test.js.
 function caseTrack(c) {
-  if (!c || c.type === 'oppdrag') return null;
+  if (!isApplication(c)) return null;
   var status = c.status || 'ny';
   var round  = examinationRound(c);
   var slots  = [{ label: 'Formalia', state: 'done' }];
@@ -940,7 +940,7 @@ function pipelineCounts(list, year, todayIso) {
             decided: { meddelt: 0, avslatt: 0, henlagt: 0, total: 0 } };
   var today = Date.UTC(+todayIso.slice(0, 4), +todayIso.slice(5, 7) - 1, +todayIso.slice(8, 10));
   (list || []).forEach(function(c) {
-    if (!c || c.type === 'oppdrag') return;
+    if (!isApplication(c)) return;
     var status = c.status || 'ny';
     if (status === 'ny') { if (isUnassigned(c)) p.nyUnassigned++; else p.ny++; }
     else if (status === 'fristarkiv') {
@@ -971,6 +971,10 @@ function pipelineCounts(list, year, todayIso) {
 function rowAction(status, isOppdrag) {
   if (status === 'avsluttet') return null;
   if (isOppdrag) return { type: 'complete-oppdrag', label: 'Merk som utført' };
+  if (opPhase(status)) {
+    var op = opForwardAction(status);
+    return { type: 'op-forward', label: op.label, toStatus: op.toStatus };
+  }
   if (status === 'fristarkiv')       return { type: 'response', label: 'Svar mottatt …' };
   if (status === 'viderebehandling') return { type: 'choice-videre', label: 'Avgjør …' };
   return { type: 'confirm', label: 'Brev sendt' };

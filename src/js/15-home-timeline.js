@@ -1,18 +1,22 @@
 // ── Hjem-side ──────────────────────────────────────
-// Fristene på Hjem som er dine: Ny, Viderebehandling og aktive oppdrag med
+// Fristene på Hjem som er dine: Ny, Viderebehandling, aktive oppdrag og
+// OP-saker i en arbeidsfase, med
 // frist. Fristarkiv er søkerens frist, og en sak som ikke er fordelt er ikke
 // din ennå. daysFn(c) gir dager til fristen som gjelder (negativt = forfalt).
 // next er antall dager til nærmeste frist som ikke er passert, eller null.
 // Ren funksjon — se test/homeDock.test.js.
 function homeDeadlineSummary(list, daysFn) {
-  var s = { total: 0, ny: 0, videre: 0, oppdrag: 0, next: null };
+  var s = { total: 0, ny: 0, videre: 0, oppdrag: 0, op: 0, next: null };
   (list || []).forEach(function(c) {
     if (!c || !c.dueDate || c.status === 'avsluttet' || c.status === 'fristarkiv' || isUnassigned(c)) return;
+    // OP-saker i en ventefase venter på partene
+    if (isOpWaitPhase(c)) return;
     var d = daysFn(c);
     if (typeof d !== 'number' || !isFinite(d)) return;
     if (d < 0) {
       s.total++;
       if (c.type === 'oppdrag') s.oppdrag++;
+      else if (isOpCase(c)) s.op++;
       else if (c.status === 'viderebehandling') s.videre++;
       else s.ny++;
     } else if (s.next === null || d < s.next) {
@@ -29,6 +33,7 @@ function homeOverdueSubText(s) {
   if (s.ny)      parts.push(s.ny + (s.ny === 1 ? ' ny' : ' nye'));
   if (s.videre)  parts.push(s.videre + (s.videre === 1 ? ' viderebehandling' : ' viderebehandlinger'));
   if (s.oppdrag) parts.push(s.oppdrag + ' oppdrag');
+  if (s.op)      parts.push(s.op + (s.op === 1 ? ' OP-sak' : ' OP-saker'));
   return parts.join(' · ');
 }
 
@@ -202,6 +207,7 @@ function renderHomeDeadlines() {
   function renderRow(r) {
     var c = r.c, d = r.d;
     var isOppdrag = r.kind === 'oppdrag';
+    var isOp      = r.kind === 'op';
     var cls  = d < 0 ? 'overdue' : d <= 3 ? 'urgent' : d <= 14 ? 'soon' : 'ok';
     var tips = [];
     // I Fristarkiv er fristen søkerens: stiplet og nøytral, men rød når den er passert
@@ -213,11 +219,11 @@ function renderHomeDeadlines() {
     if (periodOverlapsVacation(c)) tips.push(vacationTipText(c));
     var vacBadge = periodOverlapsVacation(c)
       ? '<span class="vac-badge' + (isUnassigned(c) ? ' vac-badge-soft' : '') + '" title="' + esc(vacationTipText(c)) + '">⛱</span>' : '';
-    return '<div class="home-upcoming-row' + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '') + '" data-id="' + c.id + '" data-page="' + (isOppdrag ? 'oppdrag' : c.status) + '">' +
+    return '<div class="home-upcoming-row' + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '') + '" data-id="' + c.id + '" data-page="' + (isOppdrag ? 'oppdrag' : isOp ? 'op' : c.status) + '">' +
       '<span class="days-badge ' + cls + '"' + (tips.length ? ' title="' + esc(tips.join(' · ')) + '"' : '') + '>' +
         (d < 0 ? Math.abs(d)+'d forfalt' : d === 0 ? 'I dag' : d+'d') + '</span>' +
-      '<span class="home-upcoming-cn' + (isOppdrag ? ' case-card-cn-oppdrag' : '') + '">' + esc(c.caseNumber) + '</span>' +
-      '<span class="case-card-main"><span class="home-upcoming-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
+      '<span class="home-upcoming-cn' + (isOppdrag ? ' case-card-cn-oppdrag' : isOp ? ' case-card-cn-op' : '') + '">' + esc(c.caseNumber) + '</span>' +
+      '<span class="case-card-main"><span class="home-upcoming-title">' + esc(isOp ? opCaseTitle(c) : c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
       postponePillHtml(c) +
@@ -375,7 +381,7 @@ function buildTimelineDiv(opts) {
 
   busyRanges.forEach(function(r) {
     var bar = document.createElement('div');
-    var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : 'tl-bar-' + r.status;
+    var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : r.isOpCase ? 'tl-bar-op' + (r.opWork ? '' : ' tl-bar-op-wait') : 'tl-bar-' + r.status;
     bar.className = 'tl-bar ' + typeCls + (r.isMilestone ? ' tl-bar-milestone' : '') + (opts.draggable && r.canBuffer ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '') + (opts.activeId && r.id === opts.activeId ? ' tl-bar-active' : '') + (r.unassigned ? ' tl-bar-unassigned' : '');
     var visStart = Math.max(-PAST, r.start);
     var visEnd   = Math.min(HORIZON, r.end);
@@ -759,7 +765,8 @@ var TIMELINE_TYPE_META = {
   ny:               { label: 'Ny',               color: '#185fa5' },
   fristarkiv:       { label: 'Fristarkiv',        color: '#6b7280' },
   viderebehandling: { label: 'Viderebehandling',  color: '#4338ca' },
-  oppdrag:          { label: 'Oppdrag',           color: '#06b6d4' }
+  oppdrag:          { label: 'Oppdrag',           color: '#06b6d4' },
+  op:               { label: 'OP-sak',            color: '#be185d' }
 };
 
 function buildTimelineWidget(hostEl, opts) {

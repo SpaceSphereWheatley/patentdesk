@@ -42,26 +42,30 @@ function _applySaveButtonState(st) {
 function singleCaseDraftRow(f) {
   if (!f || f.editing || !f.date || !isValidDate(f.date)) return null;
   var isOp = f.status === 'oppdrag';
+  var isOpCaseDraft = f.status === 'op';
   var d = parseInt(f.duration, 10);
   return { cn: f.cn || '', title: f.title || '', date: parseDate(f.date), checked: true,
-    type: isOp ? 'oppdrag' : 'sak', status: isOp ? 'ny' : (f.status || 'ny'),
-    duration: isOp && d >= 1 ? d : null };
+    type: isOp ? 'oppdrag' : isOpCaseDraft ? 'op' : 'sak',
+    status: isOp ? 'ny' : isOpCaseDraft ? 'op_formalia' : (f.status || 'ny'),
+    duration: (isOp || isOpCaseDraft) && d >= 1 ? d : null };
 }
 function renderModalSingleDraft() {
   if (document.getElementById('modal-pane-sak').style.display === 'none') return;
   var st = getSelectedStatus();
   var isOp = st === 'oppdrag';
+  var isOpC = st === 'op';
   var row = singleCaseDraftRow({
-    cn:       (isOp ? document.getElementById('f-case-number-op') : fCaseNum).value.trim(),
+    cn:       (isOp ? document.getElementById('f-case-number-op') : isOpC ? document.getElementById('f-op-number') : fCaseNum).value.trim(),
     title:    fTitle.value.trim(),
-    date:     (isOp ? document.getElementById('f-due-date-op') : fDueDate).value.trim(),
+    date:     (isOp ? document.getElementById('f-due-date-op') : isOpC ? document.getElementById('f-op-due') : fDueDate).value.trim(),
     status:   st,
-    duration: fDuration.value,
+    duration: isOpC ? document.getElementById('f-op-duration').value : fDuration.value,
     editing:  !!editIdEl.value
   });
   renderTimeline({ target: 'modal-timeline', draftRows: row ? [row] : null });
 }
-['f-case-number', 'f-case-number-op', 'f-due-date', 'f-due-date-op', 'f-title', 'f-duration'].forEach(function(fid) {
+['f-case-number', 'f-case-number-op', 'f-due-date', 'f-due-date-op', 'f-title', 'f-duration',
+  'f-op-number', 'f-op-due', 'f-op-duration'].forEach(function(fid) {
   var el = document.getElementById(fid);
   if (el) el.addEventListener('input', renderModalSingleDraft);
 });
@@ -78,7 +82,7 @@ document.getElementById('modal-adv-toggle').addEventListener('click', function()
 // ── Status radioknapper ────────────────────────────
 document.querySelectorAll('input[name="status"]').forEach(function(r) {
   r.addEventListener('change', function() {
-    _setModalOppdrag(this.value === 'oppdrag');
+    _setModalOppdrag(this.value);
     renderModalSingleDraft();
   });
 });
@@ -163,6 +167,7 @@ function markBulkDuplicates(rows, existing) {
 
 function _bulkDupLabel(dup) {
   if (dup.type === 'oppdrag') return 'Oppdrag';
+  if (dup.type === 'op') return 'OP-sak';
   return (STATUS_CONFIG[dup.status] || {}).label || dup.status;
 }
 
@@ -331,6 +336,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
   fieldError.textContent = '';
   fieldWarn.textContent  = '';
   var st = getSelectedStatus();
+  if (st === 'op') { _saveModalOp(); return; }
   var isOppdrag = st === 'oppdrag';
   var cnEl = isOppdrag ? document.getElementById('f-case-number-op') : fCaseNum;
   var ddEl = isOppdrag ? document.getElementById('f-due-date-op')    : fDueDate;
@@ -391,6 +397,35 @@ document.getElementById('btn-save').addEventListener('click', function() {
   if (plan.transitionTo) runStatusTransition(id, plan.transitionTo, { skipConfirm: true });
 });
 
+// «Lagre» for en OP-sak. Ny sak starter i Formalia; ved redigering endres
+// bare nummer, frist, vindu, tittel, notater og stikkord (fasen og
+// OP-dataene endres på sakssiden).
+function _saveModalOp() {
+  var id = editIdEl.value;
+  var r = _readModalOp(!!id);
+  if (r.error) { fieldError.textContent = r.error; _dupWarnPending = false; return; }
+  var cnLower = r.caseNumber.toLowerCase();
+  var duplicate = cases.find(function(c) { return c.caseNumber.toLowerCase() === cnLower && c.id !== id; });
+  if (duplicate && !_dupWarnPending) {
+    fieldWarn.textContent = '⚠ Saksnummer «' + r.caseNumber + '» finnes allerede. Klikk Lagre igjen for å opprette likevel.';
+    _dupWarnPending = true; return;
+  }
+  _dupWarnPending = false;
+  var payload = { caseNumber: r.caseNumber, dueDate: r.dueDate, title: fTitle.value.trim(),
+    notes: fNotes.value.trim(), tags: fModalTags.value, type: 'op', duration: r.duration, caseBuffer: null };
+  if (id) {
+    payload.id = id;
+    dispatch('CASE_EDIT', payload);
+  } else {
+    payload.status = 'op_formalia';
+    payload.op = r.op;
+    dispatch('CASE_CREATE', payload);
+  }
+  if (activePage === 'sak' || ['statistikk', 'innstillinger', 'hjem'].indexOf(activePage) >= 0) render();
+  else navigateTo('op');
+  closeModal();
+}
+
 // Hva «Lagre» i «Rediger sak» gjør med statusen. Et statusbytte på en
 // eksisterende søknad lagres ikke direkte — da ville saken havnet i
 // Fristarkiv uten søkerens frist, og overgangen manglet i historikken og
@@ -398,7 +433,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
 // etterpå gjennom runStatusTransition. Nye saker og oppdrag har ingen
 // saksflyt og lagres som før. Ren funksjon — se test/dataIntegrity.test.js.
 function editStatusPlan(orig, selected) {
-  if (!orig || orig.type === 'oppdrag' || selected === 'oppdrag' || selected === orig.status) {
+  if (!orig || !isApplication(orig) || selected === 'oppdrag' || selected === 'op' || selected === orig.status) {
     return { status: selected, transitionTo: null };
   }
   return { status: orig.status, transitionTo: selected };

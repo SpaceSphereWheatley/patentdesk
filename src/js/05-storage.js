@@ -75,6 +75,9 @@ var SCHEMA_MIGRATIONS = {
       localStorage.setItem(key, JSON.stringify(data));
     }
   }
+  // v8 → v9: ny sakstype OP (innsigelser), type 'op' med egne faser som status
+  // og saksdata i `op`. Eksisterende saker er uendret, så ingen omskriving.
+  // Bumpen markerer at dataene kan inneholde OP-saker.
 };
 
 function migrateAll() {
@@ -532,12 +535,14 @@ function deleteAllData() {
 
 // ── Import-validering ──────────────────────────────
 var VALID_IMPORT_STATUSES = { ny:1, viderebehandling:1, fristarkiv:1, avsluttet:1 };
+// En OP-sak har en OP-fase eller er avsluttet; ingen andre saker har OP-faser.
 function _validateImportCase(c) {
   if (!c || typeof c !== 'object') return false;
   if (typeof c.id !== 'string' || !c.id.trim()) return false;
   if (typeof c.caseNumber !== 'string' || !c.caseNumber.trim()) return false;
   if (typeof c.dueDate !== 'string') return false;
   if (typeof c.title !== 'string') return false;
+  if (isOpCase(c)) return c.status === 'avsluttet' || !!opPhase(c.status);
   if (!VALID_IMPORT_STATUSES[c.status]) return false;
   return true;
 }
@@ -570,8 +575,13 @@ function migrateCases(arr) {
       caseBuffer: n.caseBuffer  != null ? n.caseBuffer : null,
       outcome:    normaliseOutcome(n.status || 'ny', n.outcome)
     };
+    // OP-saker: saksdataene normaliseres; søknadens utfall gjelder ikke
+    if (out.type === 'op') {
+      out.op = normalizeOp(n.op);
+      out.outcome = null;
+    }
     // «Ikke fordelt» tas bare med når det er satt, så andre saker er uendret
-    if (n.unassigned === true) {
+    if (n.unassigned === true && out.type !== 'op') {
       out.unassigned = true;
       out.unassignedSince = typeof n.unassignedSince === 'string' ? n.unassignedSince : null;
     }
@@ -748,7 +758,7 @@ function bufferDaysFor(c) {
 // globale bufferen eller en per-sak-buffer trekkes fra.
 function bufferAppliesTo(c) {
   if (!c) return true;
-  if (c.type === 'oppdrag') return false;
+  if (!isApplication(c)) return false;
   if (c.status === 'fristarkiv') return false;
   return true;
 }
@@ -842,6 +852,7 @@ function fristMetaMode(c) {
 // Rene funksjoner — se test/sakLayout.test.js.
 function fristOwnerLabel(c) {
   if (!c || c.type === 'oppdrag') return 'Frist';
+  if (isOpCase(c)) return c.status === 'op_svar' ? 'Patenthavers frist' : isOpWorkPhase(c) ? 'Din frist' : 'Frist';
   if (c.status === 'fristarkiv') return 'Søkers frist';
   if (c.status === 'ny' || c.status === 'viderebehandling') return 'Din frist';
   return 'Frist';
@@ -859,8 +870,8 @@ function fristCountdownLabel(c, days, workDays) {
     var over = Math.abs(days);
     return over + (over === 1 ? ' dag' : ' dager') + ' på overtid';
   }
-  var ownDeadline = c && c.type !== 'oppdrag' &&
-                    (c.status === 'ny' || c.status === 'viderebehandling');
+  var ownDeadline = isOpWorkPhase(c) || (isApplication(c) &&
+                    (c.status === 'ny' || c.status === 'viderebehandling'));
   if (ownDeadline) return workDays + (workDays === 1 ? ' arbeidsdag' : ' arbeidsdager') + ' igjen';
   return days + (days === 1 ? ' dag' : ' dager') + ' igjen';
 }
@@ -871,6 +882,7 @@ function fristCountdownLabel(c, days, workDays) {
 function fristCountdownTone(c, days) {
   if (c && c.status === 'avsluttet') return '';
   if (c && c.type !== 'oppdrag' && c.status === 'fristarkiv') return '';
+  if (isOpWaitPhase(c)) return '';
   if (days < 0) return 'overdue';
   if (days <= 14) return 'urgent';
   return '';
@@ -878,6 +890,12 @@ function fristCountdownTone(c, days) {
 
 function fristOwnerNote(c) {
   if (!c || c.type === 'oppdrag') return 'Avtalt frist for oppdraget.';
+  if (isOpCase(c)) {
+    if (c.status === 'op_svar') return 'Patenthavers svarfrist. Den koster deg ikke arbeid og teller ikke i belegget.';
+    if (isOpWaitPhase(c)) return 'Frist i skriftvekslingen. Teller ikke i belegget.';
+    if (isOpWorkPhase(c)) return 'Din frist for fasen. Teller i belegget. Kontroller mot SANT.';
+    return '';
+  }
   if (c.status === 'fristarkiv') {
     return 'Realitetsbrevet er sendt. Dette er søkerens frist til å svare oss — den koster deg ikke arbeid og teller ikke i belegget.';
   }
@@ -913,7 +931,7 @@ function applyRoundsTransition(theCase, fromStatus, toStatus, patch, respExtra) 
   var base = data || defaultSakData(0);
   var view = ensureClaims(Object.assign({}, base, { claims: Array.isArray(base.claims) ? base.claims.slice() : [] }));
   var after = roundsAfterTransition(before, {
-    from: fromStatus, to: toStatus, isOppdrag: theCase.type === 'oppdrag',
+    from: fromStatus, to: toStatus, isOppdrag: !isApplication(theCase),
     lettersAfter: lettersSent(patch.history), sakData: view, today: todayStr(),
     deadline: toStatus === 'fristarkiv' ? (patch.dueDate || theCase.dueDate || null) : null,
     response: respExtra
@@ -954,7 +972,8 @@ function modalCaseBuffer(orig, newStatus, raw) {
 // vinduet strekker seg bakover forbi dem (se workWindowStart). Standardverdier
 // per sakstype; brukeren kan endre dem under Innstillinger (workWindows).
 // Oppdrag-verdien gjelder bare oppdrag uten egen varighet.
-var WORK_WINDOW_DEFAULTS = { ny: 10, viderebehandling: 3, oppdrag: 2 };
+// OP-saker har ett vindu per arbeidsfase (se OP_PHASES).
+var WORK_WINDOW_DEFAULTS = { ny: 10, viderebehandling: 3, oppdrag: 2, op_formalia: 1, op_oppstart: 1, op_avgjorelse: 10 };
 var WORK_WINDOW_MAX = 365;
 
 // Til og med v4.41.0 var vinduet kalenderdager, med 14 som standard for Ny.
@@ -1033,6 +1052,12 @@ function workWindowDays(c) {
     var d = parseInt(c.duration, 10);
     return d >= 1 ? d : workWindows.oppdrag;
   }
+  if (isOpCase(c)) {
+    var od = parseInt(c.duration, 10);
+    if (od >= 1) return od;
+    var ph = opPhase(c.status);
+    return (ph && ph.windowKey && workWindows[ph.windowKey]) || WORK_WINDOW_DEFAULTS.op_avgjorelse;
+  }
   if (c && c.status === 'viderebehandling') return workWindows.viderebehandling;
   return workWindows.ny;
 }
@@ -1082,6 +1107,7 @@ function overduePenaltyOffsets(today, n, nonWorkday) {
 function countsInBelegg(c) {
   if (!c || !c.dueDate) return false;
   if (c.type === 'oppdrag') return false;
+  if (isOpCase(c)) return isOpWorkPhase(c);
   if (isUnassigned(c)) return false;
   return c.status === 'ny' || c.status === 'viderebehandling';
 }
@@ -1093,6 +1119,7 @@ function countsInBelegg(c) {
 // en hel rad i tidslinjen. Oppdrag i Fristarkiv beholder varigheten sin.
 function timelineSpanDays(c) {
   if (c && c.type !== 'oppdrag' && c.status === 'fristarkiv') return MILESTONE_DAYS;
+  if (isOpWaitPhase(c)) return MILESTONE_DAYS;
   return workWindowDays(c);
 }
 
@@ -1101,10 +1128,12 @@ function timelineSpanDays(c) {
 // to effDueDate (the buffered date for søknader, dueDate for oppdrag). The
 // window skips the vacation itself, so this means the work has to be done
 // around it.
-// Fristarkiv-saker har ingen arbeidsperiode, så de kan aldri kollidere med ferie.
+// Fristarkiv-saker og OP-saker i en ventefase har ingen arbeidsperiode, så de
+// kan aldri kollidere med ferie.
 function periodOverlapsVacation(c) {
   if (!c || !c.dueDate) return false;
   if (c.status === 'fristarkiv') return false;
+  if (isOpWaitPhase(c)) return false;
   var endStr  = effDueFor(c);  // buffer-justert for søknader, dueDate for oppdrag
   var sStr    = workWindowStart(endStr, workWindowDays(c));
   return vacations.some(function(v) {
@@ -1114,7 +1143,8 @@ function periodOverlapsVacation(c) {
 
 // Sakstyper (nøkler) en sak kan filtreres på i tidslinjen: status for vanlige
 // saker, eller 'oppdrag' for saker med type==='oppdrag' (uavhengig av status).
-var TIMELINE_TYPES = ['ny', 'fristarkiv', 'viderebehandling', 'oppdrag'];
+// 'op' er OP-saker (innsigelser) i alle faser.
+var TIMELINE_TYPES = ['ny', 'fristarkiv', 'viderebehandling', 'oppdrag', 'op'];
 
 // Sakstypene modaltidslinjen viser. Den er en forhåndsvisning av
 // arbeidsbelastningen du planlegger nye saker inn i, og fristarkivsaker ligger
@@ -1147,7 +1177,7 @@ function normalizeTlView(raw) {
     return out;
   }
   return {
-    home:  part(src.home,  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag'] }, true),
+    home:  part(src.home,  { horizon: 90, axisMode: 'month', typeFilter: ['ny', 'oppdrag', 'op'] }, true),
     modal: part(src.modal, { horizon: 90, axisMode: 'month' }, false)
   };
 }
@@ -1178,6 +1208,7 @@ function filterCasesForTimeline(allCases, typeFilter) {
   return (allCases || []).filter(function(cas) {
     if (!cas || !cas.dueDate) return false;
     if (cas.type === 'oppdrag') return !!wanted.oppdrag && cas.status !== 'avsluttet';
+    if (isOpCase(cas)) return !!wanted.op && cas.status !== 'avsluttet';
     return !!wanted[cas.status];
   });
 }
@@ -1187,6 +1218,7 @@ function filterCasesForTimeline(allCases, typeFilter) {
 // Fristarkiv (2) nederst — der venter saken på søkeren.
 function timelineRowPriority(r) {
   if (r.isOppdrag) return 0;
+  if (r.isOpCase) return r.opWork ? 0 : 2;
   if (r.status === 'viderebehandling') return 1;
   if (r.status === 'fristarkiv') return 2;
   return 0;
@@ -1284,6 +1316,8 @@ function timelineRange(cas, now, horizon, past) {
     windowStart: spanDays === MILESTONE_DAYS && !isOp ? null : workWindowStart(effDue, spanDays),
     effDue:      effDue,
     isOppdrag:   isOp,
+    isOpCase:    isOpCase(cas),
+    opWork:      isOpWorkPhase(cas),
     status:      cas.status,
     // Forfalt fra fristen (for en utsatt sak den faktiske); belegget og
     // forfalt-båndet følger planen (planOverdue).
@@ -1416,7 +1450,8 @@ function visibleLaneCount(ranges, fromDay, toDay) {
 }
 
 // timelineOverdueBands: forfalt-båndene — ett per sak belegget straffer for
-// forfalt (planen er passert; Ny og Viderebehandling, fordelt, ikke oppdrag).
+// forfalt (planen er passert; Ny, Viderebehandling og OP-saker i en
+// arbeidsfase, fordelt, ikke oppdrag).
 // En utsatt sak er forfalt fra fristen, men straffes først når planen er
 // passert, som belegget (planOverdue). Båndene ligger over de samme
 // arbeidsdagene som belegget bokfører straffen på (penaltyOffsets, se
@@ -1430,7 +1465,8 @@ function timelineOverdueBands(ranges, penaltyOffsets) {
   });
   if (!segs.length) return [];
   return (ranges || []).filter(function(r) {
-    return r.planOverdue && !r.isOppdrag && !r.unassigned && (r.status === 'ny' || r.status === 'viderebehandling');
+    return r.planOverdue && !r.isOppdrag && !r.unassigned &&
+      (r.status === 'ny' || r.status === 'viderebehandling' || (r.isOpCase && r.opWork));
   }).map(function(r) {
     return { id: r.id, caseNumber: r.caseNumber, segments: segs.map(function(s) { return s.slice(); }) };
   });
@@ -1661,7 +1697,8 @@ var _tlPageDefaults = {
   ny:               ['ny', 'oppdrag'],
   fristarkiv:       ['fristarkiv'],
   viderebehandling: ['viderebehandling'],
-  oppdrag:          ['oppdrag']
+  oppdrag:          ['oppdrag'],
+  op:               ['op']
 };
 var _tlLastCasesPage = null;
 

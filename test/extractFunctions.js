@@ -40,13 +40,22 @@ function extractVarSource(html, name) {
 // from PatentDesk.html into a sandbox and returns them as callable JS values,
 // so domain-logic tests don't need to spin up the full single-file app (DOM,
 // IndexedDB, localStorage, etc).
+// Felles typepredikater for sakstypene (src/js/04a-op-cases.js). De brukes av
+// svært mange domenefunksjoner, så de lastes alltid med — med mindre testen
+// laster dem selv eller stubber dem som globals.
+const CORE_FUNCTIONS = ['isOpCase', 'isApplication', 'opPhaseIndex', 'opPhase', 'opPhaseLabel',
+  'isOpWorkPhase', 'isOpWaitPhase', 'opForwardAction'];
+const CORE_VARS = ['OP_PHASES'];
+
 function loadFunctions(names, opts) {
   opts = opts || {};
   const vars = opts.vars || [];
   const globals = opts.globals || {};
   const html = fs.readFileSync(HTML_PATH, 'utf8');
-  const sources = names.map((name) => extractFunctionSource(html, name))
-    .concat(vars.map((name) => extractVarSource(html, name)));
+  const extraFns = CORE_FUNCTIONS.filter((n) => names.indexOf(n) === -1 && !(n in globals));
+  const extraVars = CORE_VARS.filter((n) => vars.indexOf(n) === -1 && !(n in globals));
+  const sources = names.concat(extraFns).map((name) => extractFunctionSource(html, name))
+    .concat(vars.concat(extraVars).map((name) => extractVarSource(html, name)));
   const sandbox = Object.assign({ module: { exports: {} } }, globals);
   vm.createContext(sandbox);
   const exported = names.concat(vars);
