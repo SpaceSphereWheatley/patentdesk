@@ -141,13 +141,23 @@ function opControlDeadlines(op) {
   };
 }
 
-// Fristen for oppstartsmøtet: 10 arbeidsdager etter svaret, eller etter at
+// Virkedager for saksfrister: helg og røde dager teller ikke, men din ferie
+// gjør det — fristen flytter seg ikke fordi du har fri. (Arbeidsvinduet, som
+// er din arbeidstid, strekker seg derimot forbi ferien.)
+function opProceduralNonWorkday(d) {
+  var dow = d.getDay();
+  if (dow === 0 || dow === 6) return true;
+  var ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return getNorwegianHolidays(d.getFullYear()).some(function(h) { return h.date === ds; });
+}
+
+// Fristen for oppstartsmøtet: 10 virkedager etter svaret, eller etter at
 // svarfristen løp ut. Tom før noen av dem er kjent.
 function opMeetingDue(op, nonWorkday) {
   var o = op || {};
   var base = o.replyKind === 'svar' ? o.replyDate
            : o.replyKind === 'utlopt' ? (o.replyDue || o.replyDate) : '';
-  return base ? opAddWorkdays(base, OP_MEETING_WORKDAYS, nonWorkday) : '';
+  return base ? opAddWorkdays(base, OP_MEETING_WORKDAYS, nonWorkday || opProceduralNonWorkday) : '';
 }
 
 // Fristen appen foreslår for fasen saken står i. Tom når fasen ikke har noen
@@ -239,7 +249,10 @@ function opTrack(c) {
   var cur = c.status === 'avsluttet' ? OP_PHASES.length : opPhaseIndex(c.status);
   return OP_PHASES.map(function(p, i) {
     var state = i < cur ? 'done' : i > cur ? 'future' : p.work ? 'active' : 'wait';
-    return { label: p.label, state: state };
+    var slot = { label: p.label, state: state };
+    // OP-saker har ingen søker: det er partene saken venter på
+    if (state === 'wait') slot.stateText = 'venter på partene';
+    return slot;
   });
 }
 

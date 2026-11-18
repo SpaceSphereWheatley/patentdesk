@@ -77,7 +77,7 @@ test('forwardAction and sakStatusChip delegate to the OP phases', () => {
   const { forwardAction, sakStatusChip } = load();
   assert.strictEqual(forwardAction('op_svar', false).toStatus, 'op_oppstart');
   assert.deepStrictEqual(plain(sakStatusChip('op_avgjorelse', false)), { label: 'Avgjørelse', tone: 'op' });
-  assert.strictEqual(sakStatusChip('avsluttet', false, 'opphevet').label, 'Avsluttet');
+  assert.strictEqual(sakStatusChip('avsluttet', false, 'opphevet').label, 'Avsluttet · Opphevet');
 });
 
 test('statusTransition for OP needs no dialogs and logs only the closing', () => {
@@ -278,9 +278,10 @@ test('migrateCases leaves søknader and oppdrag without an op field (schema 8 da
 test('import validation: OP phases only on OP cases', () => {
   const { _validateImportCase } = loadStorage();
   const base = { id: 'o1', caseNumber: 'OP 2026/00123', dueDate: '', title: '' };
-  assert.strictEqual(_validateImportCase(Object.assign({ type: 'op', status: 'op_avgjorelse' }, base)), true);
-  assert.strictEqual(_validateImportCase(Object.assign({ type: 'op', status: 'avsluttet' }, base)), true);
-  assert.strictEqual(_validateImportCase(Object.assign({ type: 'op', status: 'ny' }, base)), false);
+  const opp = { op: { opponents: [{ name: 'A', agent: '' }] } };
+  assert.strictEqual(_validateImportCase(Object.assign({ type: 'op', status: 'op_avgjorelse' }, opp, base)), true);
+  assert.strictEqual(_validateImportCase(Object.assign({ type: 'op', status: 'avsluttet' }, opp, base)), true);
+  assert.strictEqual(_validateImportCase(Object.assign({ type: 'op', status: 'ny' }, opp, base)), false);
   assert.strictEqual(_validateImportCase(Object.assign({ type: 'sak', status: 'op_svar' }, base)), false);
   assert.strictEqual(_validateImportCase(Object.assign({ type: 'sak', status: 'ny' }, base)), true);
 });
@@ -443,4 +444,145 @@ test('vacation conflict: only OP work phases can collide with a vacation', () =>
   assert.strictEqual(periodOverlapsVacation(opCase('op_avgjorelse', {}, { dueDate: '2026-12-11' })), true);
   assert.strictEqual(periodOverlapsVacation(opCase('op_svar', {}, { dueDate: '2026-12-08' })), false);
   assert.strictEqual(periodOverlapsVacation(opCase('op_skrift', {}, { dueDate: '2026-12-08' })), false);
+});
+
+// ── Funn fra gjennomgangen ────────────────────────
+function inDays(days) {
+  const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + days);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function loadBelegg(list) {
+  return loadFunctions(['computeBelegg', 'countsInBelegg', 'countsAsPotentialBelegg', 'isUnassigned', 'canBeUnassigned',
+    'workWindowDays', 'workWindowStart', 'addDaysLocal', 'overduePenaltyOffsets', 'effDueFor', 'getEffectiveDueDate',
+    'isoLocalDate', 'bufferAppliesTo', 'typeBufferFor', 'bufferDaysFor'], {
+    vars: ['OVERDUE_PENALTY_WORKDAYS', 'WORK_WINDOW_DEFAULTS'],
+    globals: { cases: list, workWindows: { ny: 10, viderebehandling: 3, oppdrag: 2, op_formalia: 1, op_oppstart: 1, op_avgjorelse: 10 },
+      vacations: [], typeBuffers: { ny: 0, viderebehandling: 0 }, isNonWorkday: () => false },
+  });
+}
+
+test('AC8: an overdue OP work phase costs the overdue penalty; an overdue wait phase costs nothing', () => {
+  const work = loadBelegg([opCase('op_avgjorelse', {}, { dueDate: inDays(-5) })]).computeBelegg(30);
+  assert.strictEqual(work.busy, 3);
+  const wait = loadBelegg([opCase('op_svar', {}, { dueDate: inDays(-5) })]).computeBelegg(30);
+  assert.strictEqual(wait.busy, 0);
+  const closed = loadBelegg([opCase('avsluttet', {}, { dueDate: inDays(5) })]).computeBelegg(30);
+  assert.strictEqual(closed.busy, 0);
+  const avg = loadBelegg([opCase('op_avgjorelse', {}, { dueDate: inDays(20) })]).computeBelegg(30);
+  assert.strictEqual(avg.busy, 10);
+});
+
+function loadTimeline() {
+  return loadFunctions(['timelineRange', 'timelineBarStart', 'tlDueOffset', 'timelineSpanDays', 'workWindowDays', 'workWindowStart',
+    'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'bufferDaysFor', 'typeBufferFor', 'canPostpone', 'postponedDaysFor',
+    'isUnassigned', 'canBeUnassigned', 'isoLocalDate', 'timelineOverdueBands', 'filterCasesForTimeline'], {
+    vars: ['MILESTONE_DAYS', 'WORK_WINDOW_DEFAULTS'],
+    globals: { workWindows: { op_formalia: 1, op_oppstart: 1, op_avgjorelse: 10 }, typeBuffers: { ny: 0, viderebehandling: 0 },
+      isNonWorkday: weekend, vacations: [] },
+  });
+}
+
+test('AC2/4: wait phases are milestones on their date; work phases are windows, also with a 1-day window', () => {
+  const { timelineRange } = loadTimeline();
+  const now = new Date('2026-11-18T08:00:00');
+  const svar = timelineRange(opCase('op_svar', {}, { dueDate: '2026-12-11' }), now, 365, 180);
+  assert.strictEqual(svar.isMilestone, true);
+  assert.strictEqual(svar.windowStart, null);
+  ['op_formalia', 'op_oppstart', 'op_avgjorelse'].forEach((st) => {
+    const r = timelineRange(opCase(st, {}, { dueDate: '2026-12-11' }), now, 365, 180);
+    assert.strictEqual(r.isMilestone, false, st);
+    assert.ok(r.windowStart, st);
+  });
+});
+
+test('AC8/9: overdue bands for OP work phases only; closed and waiting OP cases leave the timeline filter', () => {
+  const { timelineOverdueBands, filterCasesForTimeline } = loadTimeline();
+  const bands = timelineOverdueBands([
+    { planOverdue: true, isOpCase: true, opWork: true, status: 'op_avgjorelse', id: 'a' },
+    { planOverdue: true, isOpCase: true, opWork: false, status: 'op_svar', id: 'b' },
+  ], [0, 1, 2]);
+  assert.strictEqual(bands.length, 1);
+  const list = [opCase('op_svar', {}, { id: 'w' }), opCase('avsluttet', {}, { id: 'c' }), opCase('op_avgjorelse', {}, { id: 'a', dueDate: '' })];
+  assert.deepStrictEqual(plain(filterCasesForTimeline(list, ['op'])).map((c) => c.id), ['w']);
+  assert.deepStrictEqual(plain(filterCasesForTimeline(list, ['ny'])), []);
+});
+
+test('AC9: homeDeadlineKind keeps OP work phases only', () => {
+  const { homeDeadlineKind } = loadFunctions(['homeDeadlineKind'], { vars: ['HOME_DEADLINE_KINDS'] });
+  assert.strictEqual(homeDeadlineKind(opCase('op_avgjorelse')), 'op');
+  assert.strictEqual(homeDeadlineKind(opCase('op_svar')), null);
+  assert.strictEqual(homeDeadlineKind(opCase('avsluttet')), null);
+});
+
+test('AC5: the OP window stretches back past a public holiday and a vacation', () => {
+  const { workWindowStart, workWindowDays } = load();
+  // 7. desember er en (tenkt) rød dag, 8. desember en feriedag
+  const off = (d) => weekend(d) || (d.getFullYear() === 2026 && d.getMonth() === 11 && (d.getDate() === 7 || d.getDate() === 8));
+  // Uten fridager: 30. november. To fridager inni vinduet skyver starten to arbeidsdager bakover.
+  assert.strictEqual(workWindowStart('2026-12-11', workWindowDays(opCase('op_avgjorelse')), off), '2026-11-26');
+});
+
+test('AC6: a negative own window is refused in the dialog and in the settings', () => {
+  const { opModalPayload, normalizeWorkWindows } = load();
+  assert.match(opModalPayload({ number: 'OP 2026/00123', opponent: 'A', duration: '-3' }, false).error, /vindu/);
+  assert.strictEqual(normalizeWorkWindows({ op_avgjorelse: -4 }).op_avgjorelse, 10);
+});
+
+test('AC10: import refuses an OP case without opponents', () => {
+  const { _validateImportCase } = loadStorage();
+  const base = { id: 'o1', caseNumber: 'OP 2026/00123', dueDate: '', title: '', type: 'op', status: 'op_svar' };
+  assert.strictEqual(_validateImportCase(Object.assign({ op: { opponents: [] } }, base)), false);
+  assert.strictEqual(_validateImportCase(Object.assign({}, base)), false);
+  assert.strictEqual(_validateImportCase(Object.assign({ op: { opponents: [{ name: 'A', agent: '' }] } }, base)), true);
+});
+
+test('AC11: every OP field survives encode → decode → migrate → validate', () => {
+  const { migrateCases, _validateImportCase, encodeCase, decodeCase } = loadStorage();
+  const op = { patentNo: 'NO 1', holder: 'H', holderAgent: 'HA', unit: 'U', voter2: 'V2', voter3: 'V3', jurist: 'J',
+    received: '2026-03-03', replyDue: '2026-07-03', replyDate: '2026-06-29', meetingDate: '2026-07-09',
+    noticeDate: '2026-09-28', decisionDate: '2026-11-01', protocolDate: '2026-12-01', sentDate: '2026-12-05',
+    transferDate: '2026-12-10', replyKind: 'svar', outcome: 'endret', dueManual: true,
+    opponents: [{ name: 'A', agent: 'B' }, { name: 'C', agent: '' }] };
+  const orig = { id: 'o1', caseNumber: 'OP 2026/00123', type: 'op', status: 'op_avgjorelse', dueDate: '2026-12-20',
+    title: 'T', duration: 12, history: [{ type: 'status', date: '2026-03-03T00:00:00.000Z', from: null, to: 'op_formalia' }], op: op };
+  const wire = JSON.parse(JSON.stringify(encodeCase(orig)));
+  const [back] = plain(migrateCases([decodeCase(wire)]));
+  assert.strictEqual(_validateImportCase(back), true);
+  assert.deepStrictEqual(back.op, op);
+  assert.strictEqual(back.status, 'op_avgjorelse');
+  assert.strictEqual(back.duration, 12);
+  assert.strictEqual(back.dueDate, '2026-12-20');
+});
+
+test('AC12: the empty OP page tells you how to add one', () => {
+  const { emptyStateMessage } = loadFunctions(['emptyStateMessage', 'addButtonLabel', 'defaultAddTab']);
+  assert.strictEqual(emptyStateMessage('', 'op').text, 'Ingen saker her. Bruk «+ Legg til sak» for å opprette en ny.');
+});
+
+test('stored timeline views from before OP get the OP type added once', () => {
+  const { migrateTlViewAddOp } = loadFunctions(['migrateTlViewAddOp']);
+  assert.deepStrictEqual(plain(migrateTlViewAddOp({ home: { horizon: 180, typeFilter: ['ny'] }, modal: {} })),
+    { home: { horizon: 180, typeFilter: ['ny', 'op'] }, modal: {} });
+  assert.deepStrictEqual(plain(migrateTlViewAddOp({ home: { typeFilter: ['op', 'ny'] } })), { home: { typeFilter: ['op', 'ny'] } });
+  assert.strictEqual(migrateTlViewAddOp(null), null);
+  assert.deepStrictEqual(plain(migrateTlViewAddOp({ home: { horizon: 90 } })), { home: { horizon: 90 } });
+});
+
+test('the suggested oppstartsmøte deadline counts public holidays, not your vacation', () => {
+  const { opProceduralNonWorkday } = loadFunctions(['opProceduralNonWorkday'], {
+    globals: { getNorwegianHolidays: () => [{ date: '2026-12-25' }], vacations: [{ from: '2026-12-01', to: '2026-12-31' }] } });
+  assert.strictEqual(opProceduralNonWorkday(new Date('2026-12-25T00:00:00')), true);
+  assert.strictEqual(opProceduralNonWorkday(new Date('2026-12-09T00:00:00')), false);
+  assert.strictEqual(opProceduralNonWorkday(new Date('2026-12-12T00:00:00')), true);
+});
+
+test('OP track: the waiting step says it waits on the parties, not the applicant', () => {
+  const { opTrack } = load();
+  assert.strictEqual(plain(opTrack(opCase('op_svar')))[1].stateText, 'venter på partene');
+});
+
+test('a closed OP case shows its outcome in the status chip', () => {
+  const { sakStatusChip } = load();
+  assert.strictEqual(sakStatusChip('avsluttet', false, 'opphevet').label, 'Avsluttet · Opphevet');
+  assert.strictEqual(sakStatusChip('avsluttet', false, 'meddelt').label, 'Avsluttet · Meddelt');
 });

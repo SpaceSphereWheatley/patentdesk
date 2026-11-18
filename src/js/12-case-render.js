@@ -99,7 +99,7 @@ function renderSak(id) {
         : isOp && btn.dataset.status !== 'avsluttet' ? 'active-op' : 'active-' + (cas.status || 'ny'));
     }
   });
-  var chipInfo = sakStatusChip(cas.status, isOppdrag, cas.outcome);
+  var chipInfo = sakStatusChip(cas.status, isOppdrag, isOp ? (cas.op || {}).outcome : cas.outcome);
   var chip = document.getElementById('sak-status-chip');
   if (chip) {
     chip.textContent = chipInfo.label;

@@ -628,7 +628,7 @@ function currentTrackSlot(slots) {
 
 function trackStepHtml(s) {
   var ico = TRK_ICONS[s.state];
-  return '<span class="trk-step trk-' + s.state + '" title="' + esc(s.label + ' — ' + TRK_STATE_TEXT[s.state]) + '">' +
+  return '<span class="trk-step trk-' + s.state + '" title="' + esc(s.label + ' — ' + (s.stateText || TRK_STATE_TEXT[s.state])) + '">' +
     (ico ? '<svg class="ti" aria-hidden="true"><use href="#' + ico + '"/></svg>' : '') +
     '<span>' + esc(s.label) + '</span></span>';
 }

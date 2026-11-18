@@ -281,7 +281,8 @@ function forwardAction(status, isOppdrag) {
 function sakStatusChip(status, isOppdrag, outcome) {
   var s = status || 'ny';
   if (s === 'avsluttet') {
-    var o = (!isOppdrag && outcome && Object.prototype.hasOwnProperty.call(OUTCOMES, outcome)) ? OUTCOMES[outcome].label : '';
+    var o = (!isOppdrag && outcome && Object.prototype.hasOwnProperty.call(OUTCOMES, outcome)) ? OUTCOMES[outcome].label
+          : (!isOppdrag && outcome && Object.prototype.hasOwnProperty.call(OP_OUTCOMES, outcome)) ? OP_OUTCOMES[outcome] : '';
     return { label: 'Avsluttet' + (o ? ' · ' + o : ''), tone: 'avsl' };
   }
   if (isOppdrag) return { label: 'Aktiv', tone: 'oppdrag' };

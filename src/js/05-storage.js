@@ -74,11 +74,32 @@ var SCHEMA_MIGRATIONS = {
       data.rounds = [];
       localStorage.setItem(key, JSON.stringify(data));
     }
-  }
+  },
   // v8 → v9: ny sakstype OP (innsigelser), type 'op' med egne faser som status
-  // og saksdata i `op`. Eksisterende saker er uendret, så ingen omskriving.
-  // Bumpen markerer at dataene kan inneholde OP-saker.
+  // og saksdata i `op`. Eksisterende saker er uendret. En lagret
+  // tidslinjevisning på Hjem får OP-saker lagt til i sakstypene, så de nye
+  // sakene ikke er skjult for den som har endret visningen før.
+  8: function() {
+    var raw = localStorage.getItem(TL_VIEW_KEY);
+    if (!raw) return;
+    var v;
+    try { v = JSON.parse(raw); } catch(e) { return; } // ugyldig JSON røres ikke
+    localStorage.setItem(TL_VIEW_KEY, JSON.stringify(migrateTlViewAddOp(v)));
+    // Visningen er alt lest inn (loadTlView) når migreringen kjører: rett den også
+    if (typeof _tlConfig !== 'undefined' && _tlConfig['home-timeline']) {
+      var h = _tlConfig['home-timeline'];
+      if (Array.isArray(h.typeFilter) && h.typeFilter.indexOf('op') === -1) h.typeFilter = h.typeFilter.concat(['op']);
+    }
+  }
 };
+
+// Legger 'op' til sakstypene i en lagret tidslinjevisning på Hjem.
+// Ren funksjon — se test/opCases.test.js.
+function migrateTlViewAddOp(v) {
+  if (!v || typeof v !== 'object' || !v.home || !Array.isArray(v.home.typeFilter)) return v;
+  if (v.home.typeFilter.indexOf('op') !== -1) return v;
+  return Object.assign({}, v, { home: Object.assign({}, v.home, { typeFilter: v.home.typeFilter.concat(['op']) }) });
+}
 
 function migrateAll() {
   var v = parseInt(localStorage.getItem('pt_schema_version') || '0', 10);
@@ -542,7 +563,11 @@ function _validateImportCase(c) {
   if (typeof c.caseNumber !== 'string' || !c.caseNumber.trim()) return false;
   if (typeof c.dueDate !== 'string') return false;
   if (typeof c.title !== 'string') return false;
-  if (isOpCase(c)) return c.status === 'avsluttet' || !!opPhase(c.status);
+  if (isOpCase(c)) {
+    // Minst én innsiger, som i dialogen og på sakssiden
+    if (!c.op || !Array.isArray(c.op.opponents) || !c.op.opponents.length) return false;
+    return c.status === 'avsluttet' || !!opPhase(c.status);
+  }
   if (!VALID_IMPORT_STATUSES[c.status]) return false;
   return true;
 }
@@ -1292,7 +1317,10 @@ function tlDueOffset(dateStr, now) {
 // arbeidsdager og fridager inni det tegnes med. En milepæl er én dag bred.
 function timelineBarStart(cas, effDue, now) {
   var spanDays = timelineSpanDays(cas);
-  if (spanDays === MILESTONE_DAYS && cas.type !== 'oppdrag') return tlDueOffset(effDue, now) - MILESTONE_DAYS;
+  // En milepæl er en dato, ikke arbeid: Fristarkiv og OP-sakens ventefaser.
+  // En OP-arbeidsfase er et vindu også når det bare er én dag.
+  var milestone = isOpCase(cas) ? isOpWaitPhase(cas) : spanDays === MILESTONE_DAYS && cas.type !== 'oppdrag';
+  if (milestone) return tlDueOffset(effDue, now) - MILESTONE_DAYS;
   return tlDueOffset(workWindowStart(effDue, spanDays), now) - 1;
 }
 
@@ -1303,6 +1331,7 @@ function timelineRange(cas, now, horizon, past) {
   var isOp     = cas.type === 'oppdrag';
   var effDue   = effDueFor(cas);
   var spanDays = timelineSpanDays(cas);
+  var milestone = isOpCase(cas) ? isOpWaitPhase(cas) : spanDays === MILESTONE_DAYS && !isOp;
   var effEnd   = tlDueOffset(effDue, now);
   var postponed = postponedDaysFor(cas);
   return {
@@ -1311,9 +1340,9 @@ function timelineRange(cas, now, horizon, past) {
     actualEnd:   Math.min(horizon, tlDueOffset(cas.dueDate, now)),
     hasBuffer:   !isOp && cas.dueDate !== effDue,
     canBuffer:   bufferAppliesTo(cas),
-    isMilestone: spanDays === MILESTONE_DAYS && !isOp,
+    isMilestone: milestone,
     // Første dag i arbeidsvinduet — fridager mellom den og effDue skraveres
-    windowStart: spanDays === MILESTONE_DAYS && !isOp ? null : workWindowStart(effDue, spanDays),
+    windowStart: milestone ? null : workWindowStart(effDue, spanDays),
     effDue:      effDue,
     isOppdrag:   isOp,
     isOpCase:    isOpCase(cas),
