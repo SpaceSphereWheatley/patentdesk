@@ -202,9 +202,10 @@ function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
   };
 
   // OP-saker går gjennom fasene uten dialoger; fasens frist foreslås av
-  // opSyncDue. Bare avgjørelsen telles i statistikken.
+  // opSyncDue. Avslutningen spør om utfall og stikkord, som for andre saker,
+  // og bare den telles i statistikken.
   if (opPhase(fromStatus) || opPhase(toStatus)) {
-    if (toStatus === 'avsluttet') t.logType = 'op';
+    if (toStatus === 'avsluttet') { t.needsTags = true; t.logType = 'op'; }
     return t;
   }
 

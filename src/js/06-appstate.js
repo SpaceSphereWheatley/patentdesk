@@ -89,7 +89,7 @@ function _dispatch(action, payload) {
       // endring, så «Angre» tar dem også.
       var patch = statusChangePatch(toStatus, payload.outcome, newDueDate);
       // OP-saker: fasens frist foreslås på nytt (opStatusPatch)
-      if (isOpCase(theCase)) Object.assign(patch, opStatusPatch(theCase, toStatus));
+      if (isOpCase(theCase)) Object.assign(patch, opStatusPatch(theCase, toStatus, payload.outcome));
       if (typeof payload.tags === 'string') patch.tags = payload.tags;
       patch.history = appendHistory(theCase, fromStatus, toStatus);
       // «Svar mottatt»: mottaksdato og hva som kom inn følger overgangen

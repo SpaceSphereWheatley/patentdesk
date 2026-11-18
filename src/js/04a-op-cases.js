@@ -28,8 +28,8 @@ var OP_OUTCOMES = {
 
 var OP_TEXT_MAX = 200;
 var OP_MAX_OPPONENTS = 20;
-// Oppstartsmøtet: helst innen 10 virkedager etter svar eller fristutløp.
-var OP_MEETING_WORKDAYS = 10;
+// Oppstartsmøtet: innen 10 dager etter svar eller fristutløp (kalenderdager).
+var OP_MEETING_DAYS = 10;
 // Begge kontrollfristene er tre måneder.
 var OP_CONTROL_MONTHS = 3;
 
@@ -112,20 +112,6 @@ function normalizeOp(raw) {
   return out;
 }
 
-// Datoen n arbeidsdager etter iso (iso selv telles ikke). nonWorkday: helg,
-// røde dager og ferie (standard isNonWorkday).
-function opAddWorkdays(iso, n, nonWorkday) {
-  if (!iso) return '';
-  nonWorkday = nonWorkday || isNonWorkday;
-  var d = new Date(iso + 'T00:00:00');
-  var left = n;
-  for (var i = 0; i < 3660 && left > 0; i++) {
-    d = addDaysLocal(d, 1);
-    if (!nonWorkday(d)) left--;
-  }
-  return isoLocalDate(d);
-}
-
 // De to kontrollfristene, hver for seg:
 //  (a) ubesvart svarfrist: saken skal tas opp til avgjørelse innen tre måneder
 //      etter at fristen løp ut. Oppfylt når «tatt opp til avgjørelse» er satt.
@@ -141,33 +127,24 @@ function opControlDeadlines(op) {
   };
 }
 
-// Virkedager for saksfrister: helg og røde dager teller ikke, men din ferie
-// gjør det — fristen flytter seg ikke fordi du har fri. (Arbeidsvinduet, som
-// er din arbeidstid, strekker seg derimot forbi ferien.)
-function opProceduralNonWorkday(d) {
-  var dow = d.getDay();
-  if (dow === 0 || dow === 6) return true;
-  var ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  return getNorwegianHolidays(d.getFullYear()).some(function(h) { return h.date === ds; });
-}
-
-// Fristen for oppstartsmøtet: 10 virkedager etter svaret, eller etter at
-// svarfristen løp ut. Tom før noen av dem er kjent.
-function opMeetingDue(op, nonWorkday) {
+// Fristen for oppstartsmøtet: 10 dager etter svaret, eller etter at
+// svarfristen løp ut. Som alle frister i appen telles kalenderdager — røde
+// dager og ferie flytter den ikke. Tom før noen av dem er kjent.
+function opMeetingDue(op) {
   var o = op || {};
   var base = o.replyKind === 'svar' ? o.replyDate
            : o.replyKind === 'utlopt' ? (o.replyDue || o.replyDate) : '';
-  return base ? opAddWorkdays(base, OP_MEETING_WORKDAYS, nonWorkday || opProceduralNonWorkday) : '';
+  return base ? isoLocalDate(addDaysLocal(new Date(base + 'T00:00:00'), OP_MEETING_DAYS)) : '';
 }
 
 // Fristen appen foreslår for fasen saken står i. Tom når fasen ikke har noen
 // fast frist (Formalia, Skriftveksling) — da setter du den selv.
-function opSuggestedDue(c, nonWorkday) {
+function opSuggestedDue(c) {
   if (!isOpCase(c)) return '';
   var op = c.op || {};
   switch (c.status) {
     case 'op_svar':     return op.replyDue || '';
-    case 'op_oppstart': return opMeetingDue(op, nonWorkday);
+    case 'op_oppstart': return opMeetingDue(op);
     case 'op_avgjorelse': {
       var ctl = opControlDeadlines(op);
       var open = [ctl.a, ctl.b].filter(function(x) { return x.applies && !x.met; }).map(function(x) { return x.date; });
@@ -179,26 +156,30 @@ function opSuggestedDue(c, nonWorkday) {
 }
 
 // Fasens frist slik den skal lagres: forslaget, med mindre du har satt den selv.
-function opSyncDue(c, nonWorkday) {
+function opSyncDue(c) {
   if (!isOpCase(c)) return c ? c.dueDate || '' : '';
   if ((c.op && c.op.dueManual) || c.status === 'avsluttet') return c.dueDate || '';
-  return opSuggestedDue(c, nonWorkday);
+  return opSuggestedDue(c);
 }
 
 // Feltene som endres når en OP-sak bytter fase: fasens frist foreslås på nytt
 // (den gamle fasens frist er behandlet), og sakens eget vindu gjaldt den gamle
-// fasen. Avsluttet beholder fristen den hadde.
-function opStatusPatch(c, toStatus, nonWorkday) {
+// fasen. Avsluttet beholder fristen den hadde, og får utfallet som ble valgt
+// i avslutningsdialogen (outcome, en nøkkel i OP_OUTCOMES).
+function opStatusPatch(c, toStatus, outcome) {
   var op = Object.assign(normalizeOp(c && c.op), { dueManual: false });
+  if (toStatus === 'avsluttet' && outcome !== undefined && outcome !== null) {
+    op.outcome = Object.prototype.hasOwnProperty.call(OP_OUTCOMES, outcome) ? outcome : '';
+  }
   var next = Object.assign({}, c, { status: toStatus, op: op });
-  return { op: op, duration: null, dueDate: toStatus === 'avsluttet' ? (c.dueDate || '') : opSuggestedDue(next, nonWorkday) };
+  return { op: op, duration: null, dueDate: toStatus === 'avsluttet' ? (c.dueDate || '') : opSuggestedDue(next) };
 }
 
 // Feltene som endres når OP-dataene redigeres på sakssiden. changes kan ha
 // OP-feltene, `dueDate` (fasens frist satt for hånd) og `dueManual: false`
 // (tilbake til forslaget). Gir { op, dueDate }, eller null når endringen ikke
 // er gyldig (ikke en OP-sak, eller den siste innsigeren fjernes).
-function opApplyUpdate(c, changes, nonWorkday) {
+function opApplyUpdate(c, changes) {
   if (!isOpCase(c) || !changes || typeof changes !== 'object') return null;
   var cur = normalizeOp(c.op);
   var merged = Object.assign({}, cur);
@@ -215,7 +196,7 @@ function opApplyUpdate(c, changes, nonWorkday) {
     op.dueManual = false;
   }
   var next = Object.assign({}, c, { op: op, dueDate: dueDate });
-  return { op: op, dueDate: opSyncDue(next, nonWorkday) };
+  return { op: op, dueDate: opSyncDue(next) };
 }
 
 // Feltene fra «Legg til sak» / «Rediger sak» for en OP-sak. Ny sak: nummer og
@@ -287,9 +268,8 @@ function opControlText(x, notApplies) {
   return { text: toDisplay(x.date), tone: 'open' };
 }
 
-// HTML for OP-panelet. All tekst fra saken går gjennom esc. nonWorkday som i
-// opSuggestedDue. Ren funksjon — se test/opCases.test.js.
-function opPanelHtml(c, nonWorkday) {
+// HTML for OP-panelet. All tekst fra saken går gjennom esc. Ren funksjon — se test/opCases.test.js.
+function opPanelHtml(c) {
   if (!isOpCase(c)) return '';
   var op = normalizeOp(c.op);
   function input(attr, val, extra) {
@@ -333,7 +313,7 @@ function opPanelHtml(c, nonWorkday) {
   var a = opControlText(ctl.a, op.replyKind === 'svar' ? 'ikke aktuell (svar mottatt)' : 'gjelder bare når fristen løper ut uten svar');
   var b = opControlText(ctl.b, 'starter når varselet er sendt');
   var phase = opPhase(c.status);
-  var sugg = opSuggestedDue(c, nonWorkday);
+  var sugg = opSuggestedDue(c);
   var dueNote = !phase ? ''
     : op.dueManual
       ? 'satt for hånd' + (sugg && sugg !== c.dueDate ? ' · forslag ' + toDisplay(sugg) +

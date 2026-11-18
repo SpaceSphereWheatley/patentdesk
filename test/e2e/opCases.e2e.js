@@ -97,7 +97,7 @@ e2e('case page: dates drive the phase deadline, phases walk forward, belegg only
   assert.equal(c.dueDate, '2027-03-03');
   assert.equal(await p.evaluate((i) => countsInBelegg(cases.find((x) => x.id === i)), id), false);
 
-  // Svar mottatt → Oppstart: 10 arbeidsdager etter svaret
+  // Svar mottatt → Oppstart: 10 kalenderdager etter svaret
   await p.selectOption('#sak-op [data-op-field="replyKind"]', 'svar');
   await p.waitForTimeout(50);
   await p.fill('#op-d-replyDate', '2027.03.01');
@@ -109,7 +109,7 @@ e2e('case page: dates drive the phase deadline, phases walk forward, belegg only
   await p.waitForTimeout(50);
   c = await opCase(p);
   assert.equal(c.status, 'op_oppstart');
-  assert.equal(c.dueDate, '2027-03-15');
+  assert.equal(c.dueDate, '2027-03-11');
   assert.equal(await p.evaluate((i) => countsInBelegg(cases.find((x) => x.id === i)), id), true);
 
   // Varsel om tilstrekkelig opplyst → Avgjørelse: varsel + 3 mnd
@@ -142,12 +142,19 @@ e2e('case page: dates drive the phase deadline, phases walk forward, belegg only
     await p.screenshot({ path: path.join(SHOTS, 'op-liste.png') });
   }
 
-  // Avgjørelse sendt: avsluttet, ute av belegg, statistikken teller den
+  // Avgjørelse sendt: som andre saker spør dialogen om utfall og stikkord
   await p.evaluate((i) => navigateTo('sak/' + i), id);
   await p.click('#btn-sak-forward');
+  await p.waitForSelector('#tag-op-outcome-group', { state: 'visible' });
+  assert.equal(await p.locator('#tag-outcome-group').isVisible(), false);
+  assert.equal(await p.locator('#btn-tag-confirm').isDisabled(), true);
+  await p.click('#tag-op-outcome-group label:has(input[value="endret"])');
+  await p.click('#btn-tag-confirm');
   await p.waitForTimeout(50);
   c = await opCase(p);
   assert.equal(c.status, 'avsluttet');
+  assert.equal(c.op.outcome, 'endret');
+  assert.match(await p.textContent('#sak-status-chip'), /Avsluttet · Opprettholdt i endret form/);
   assert.equal(await p.evaluate(() => stats.log.filter((e) => e.type === 'op').length), 1);
   assert.deepEqual(s.errors, []);
   await s.close();

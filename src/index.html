@@ -1757,6 +1757,16 @@
           </div>
           <span class="field-hint">Vises i sakens forløpsspor og i saksflyten på Oversikt.</span>
         </div>
+        <!-- Utfall for OP-saker (innsigelser), se OP_OUTCOMES -->
+        <div class="field-group" id="tag-op-outcome-group" style="display:none;">
+          <span class="field-label" id="tag-op-outcome-label">Utfall</span>
+          <div class="status-radio-group" role="radiogroup" aria-labelledby="tag-op-outcome-label">
+            <label class="status-radio"><input type="radio" name="op-outcome" value="opprettholdt" /><span class="status-pill s-op">Opprettholdt</span></label>
+            <label class="status-radio"><input type="radio" name="op-outcome" value="endret" /><span class="status-pill s-op">Opprettholdt i endret form</span></label>
+            <label class="status-radio"><input type="radio" name="op-outcome" value="opphevet" /><span class="status-pill s-op">Opphevet</span></label>
+            <label class="status-radio"><input type="radio" name="op-outcome" value="avvist" /><span class="status-pill s-op">Innsigelse avvist</span></label>
+          </div>
+        </div>
         <div class="field-group">
           <label class="field-label" for="f-tags">Stikkord</label>
           <input class="field-input" id="f-tags" type="text" placeholder="f.eks. bioteknologi, avslag, krav endret" />

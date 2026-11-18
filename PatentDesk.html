@@ -5140,6 +5140,16 @@ button.ob-del:hover { color: var(--text-on-no); }
           </div>
           <span class="field-hint">Vises i sakens forløpsspor og i saksflyten på Oversikt.</span>
         </div>
+        <!-- Utfall for OP-saker (innsigelser), se OP_OUTCOMES -->
+        <div class="field-group" id="tag-op-outcome-group" style="display:none;">
+          <span class="field-label" id="tag-op-outcome-label">Utfall</span>
+          <div class="status-radio-group" role="radiogroup" aria-labelledby="tag-op-outcome-label">
+            <label class="status-radio"><input type="radio" name="op-outcome" value="opprettholdt" /><span class="status-pill s-op">Opprettholdt</span></label>
+            <label class="status-radio"><input type="radio" name="op-outcome" value="endret" /><span class="status-pill s-op">Opprettholdt i endret form</span></label>
+            <label class="status-radio"><input type="radio" name="op-outcome" value="opphevet" /><span class="status-pill s-op">Opphevet</span></label>
+            <label class="status-radio"><input type="radio" name="op-outcome" value="avvist" /><span class="status-pill s-op">Innsigelse avvist</span></label>
+          </div>
+        </div>
         <div class="field-group">
           <label class="field-label" for="f-tags">Stikkord</label>
           <input class="field-input" id="f-tags" type="text" placeholder="f.eks. bioteknologi, avslag, krav endret" />
@@ -5639,9 +5649,10 @@ function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
   };
 
   // OP-saker går gjennom fasene uten dialoger; fasens frist foreslås av
-  // opSyncDue. Bare avgjørelsen telles i statistikken.
+  // opSyncDue. Avslutningen spør om utfall og stikkord, som for andre saker,
+  // og bare den telles i statistikken.
   if (opPhase(fromStatus) || opPhase(toStatus)) {
-    if (toStatus === 'avsluttet') t.logType = 'op';
+    if (toStatus === 'avsluttet') { t.needsTags = true; t.logType = 'op'; }
     return t;
   }
 
@@ -8048,8 +8059,8 @@ var OP_OUTCOMES = {
 
 var OP_TEXT_MAX = 200;
 var OP_MAX_OPPONENTS = 20;
-// Oppstartsmøtet: helst innen 10 virkedager etter svar eller fristutløp.
-var OP_MEETING_WORKDAYS = 10;
+// Oppstartsmøtet: innen 10 dager etter svar eller fristutløp (kalenderdager).
+var OP_MEETING_DAYS = 10;
 // Begge kontrollfristene er tre måneder.
 var OP_CONTROL_MONTHS = 3;
 
@@ -8132,20 +8143,6 @@ function normalizeOp(raw) {
   return out;
 }
 
-// Datoen n arbeidsdager etter iso (iso selv telles ikke). nonWorkday: helg,
-// røde dager og ferie (standard isNonWorkday).
-function opAddWorkdays(iso, n, nonWorkday) {
-  if (!iso) return '';
-  nonWorkday = nonWorkday || isNonWorkday;
-  var d = new Date(iso + 'T00:00:00');
-  var left = n;
-  for (var i = 0; i < 3660 && left > 0; i++) {
-    d = addDaysLocal(d, 1);
-    if (!nonWorkday(d)) left--;
-  }
-  return isoLocalDate(d);
-}
-
 // De to kontrollfristene, hver for seg:
 //  (a) ubesvart svarfrist: saken skal tas opp til avgjørelse innen tre måneder
 //      etter at fristen løp ut. Oppfylt når «tatt opp til avgjørelse» er satt.
@@ -8161,33 +8158,24 @@ function opControlDeadlines(op) {
   };
 }
 
-// Virkedager for saksfrister: helg og røde dager teller ikke, men din ferie
-// gjør det — fristen flytter seg ikke fordi du har fri. (Arbeidsvinduet, som
-// er din arbeidstid, strekker seg derimot forbi ferien.)
-function opProceduralNonWorkday(d) {
-  var dow = d.getDay();
-  if (dow === 0 || dow === 6) return true;
-  var ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  return getNorwegianHolidays(d.getFullYear()).some(function(h) { return h.date === ds; });
-}
-
-// Fristen for oppstartsmøtet: 10 virkedager etter svaret, eller etter at
-// svarfristen løp ut. Tom før noen av dem er kjent.
-function opMeetingDue(op, nonWorkday) {
+// Fristen for oppstartsmøtet: 10 dager etter svaret, eller etter at
+// svarfristen løp ut. Som alle frister i appen telles kalenderdager — røde
+// dager og ferie flytter den ikke. Tom før noen av dem er kjent.
+function opMeetingDue(op) {
   var o = op || {};
   var base = o.replyKind === 'svar' ? o.replyDate
            : o.replyKind === 'utlopt' ? (o.replyDue || o.replyDate) : '';
-  return base ? opAddWorkdays(base, OP_MEETING_WORKDAYS, nonWorkday || opProceduralNonWorkday) : '';
+  return base ? isoLocalDate(addDaysLocal(new Date(base + 'T00:00:00'), OP_MEETING_DAYS)) : '';
 }
 
 // Fristen appen foreslår for fasen saken står i. Tom når fasen ikke har noen
 // fast frist (Formalia, Skriftveksling) — da setter du den selv.
-function opSuggestedDue(c, nonWorkday) {
+function opSuggestedDue(c) {
   if (!isOpCase(c)) return '';
   var op = c.op || {};
   switch (c.status) {
     case 'op_svar':     return op.replyDue || '';
-    case 'op_oppstart': return opMeetingDue(op, nonWorkday);
+    case 'op_oppstart': return opMeetingDue(op);
     case 'op_avgjorelse': {
       var ctl = opControlDeadlines(op);
       var open = [ctl.a, ctl.b].filter(function(x) { return x.applies && !x.met; }).map(function(x) { return x.date; });
@@ -8199,26 +8187,30 @@ function opSuggestedDue(c, nonWorkday) {
 }
 
 // Fasens frist slik den skal lagres: forslaget, med mindre du har satt den selv.
-function opSyncDue(c, nonWorkday) {
+function opSyncDue(c) {
   if (!isOpCase(c)) return c ? c.dueDate || '' : '';
   if ((c.op && c.op.dueManual) || c.status === 'avsluttet') return c.dueDate || '';
-  return opSuggestedDue(c, nonWorkday);
+  return opSuggestedDue(c);
 }
 
 // Feltene som endres når en OP-sak bytter fase: fasens frist foreslås på nytt
 // (den gamle fasens frist er behandlet), og sakens eget vindu gjaldt den gamle
-// fasen. Avsluttet beholder fristen den hadde.
-function opStatusPatch(c, toStatus, nonWorkday) {
+// fasen. Avsluttet beholder fristen den hadde, og får utfallet som ble valgt
+// i avslutningsdialogen (outcome, en nøkkel i OP_OUTCOMES).
+function opStatusPatch(c, toStatus, outcome) {
   var op = Object.assign(normalizeOp(c && c.op), { dueManual: false });
+  if (toStatus === 'avsluttet' && outcome !== undefined && outcome !== null) {
+    op.outcome = Object.prototype.hasOwnProperty.call(OP_OUTCOMES, outcome) ? outcome : '';
+  }
   var next = Object.assign({}, c, { status: toStatus, op: op });
-  return { op: op, duration: null, dueDate: toStatus === 'avsluttet' ? (c.dueDate || '') : opSuggestedDue(next, nonWorkday) };
+  return { op: op, duration: null, dueDate: toStatus === 'avsluttet' ? (c.dueDate || '') : opSuggestedDue(next) };
 }
 
 // Feltene som endres når OP-dataene redigeres på sakssiden. changes kan ha
 // OP-feltene, `dueDate` (fasens frist satt for hånd) og `dueManual: false`
 // (tilbake til forslaget). Gir { op, dueDate }, eller null når endringen ikke
 // er gyldig (ikke en OP-sak, eller den siste innsigeren fjernes).
-function opApplyUpdate(c, changes, nonWorkday) {
+function opApplyUpdate(c, changes) {
   if (!isOpCase(c) || !changes || typeof changes !== 'object') return null;
   var cur = normalizeOp(c.op);
   var merged = Object.assign({}, cur);
@@ -8235,7 +8227,7 @@ function opApplyUpdate(c, changes, nonWorkday) {
     op.dueManual = false;
   }
   var next = Object.assign({}, c, { op: op, dueDate: dueDate });
-  return { op: op, dueDate: opSyncDue(next, nonWorkday) };
+  return { op: op, dueDate: opSyncDue(next) };
 }
 
 // Feltene fra «Legg til sak» / «Rediger sak» for en OP-sak. Ny sak: nummer og
@@ -8307,9 +8299,8 @@ function opControlText(x, notApplies) {
   return { text: toDisplay(x.date), tone: 'open' };
 }
 
-// HTML for OP-panelet. All tekst fra saken går gjennom esc. nonWorkday som i
-// opSuggestedDue. Ren funksjon — se test/opCases.test.js.
-function opPanelHtml(c, nonWorkday) {
+// HTML for OP-panelet. All tekst fra saken går gjennom esc. Ren funksjon — se test/opCases.test.js.
+function opPanelHtml(c) {
   if (!isOpCase(c)) return '';
   var op = normalizeOp(c.op);
   function input(attr, val, extra) {
@@ -8353,7 +8344,7 @@ function opPanelHtml(c, nonWorkday) {
   var a = opControlText(ctl.a, op.replyKind === 'svar' ? 'ikke aktuell (svar mottatt)' : 'gjelder bare når fristen løper ut uten svar');
   var b = opControlText(ctl.b, 'starter når varselet er sendt');
   var phase = opPhase(c.status);
-  var sugg = opSuggestedDue(c, nonWorkday);
+  var sugg = opSuggestedDue(c);
   var dueNote = !phase ? ''
     : op.dueManual
       ? 'satt for hånd' + (sugg && sugg !== c.dueDate ? ' · forslag ' + toDisplay(sugg) +
@@ -10209,7 +10200,7 @@ function _dispatch(action, payload) {
       // endring, så «Angre» tar dem også.
       var patch = statusChangePatch(toStatus, payload.outcome, newDueDate);
       // OP-saker: fasens frist foreslås på nytt (opStatusPatch)
-      if (isOpCase(theCase)) Object.assign(patch, opStatusPatch(theCase, toStatus));
+      if (isOpCase(theCase)) Object.assign(patch, opStatusPatch(theCase, toStatus, payload.outcome));
       if (typeof payload.tags === 'string') patch.tags = payload.tags;
       patch.history = appendHistory(theCase, fromStatus, toStatus);
       // «Svar mottatt»: mottaksdato og hva som kom inn følger overgangen
@@ -12292,6 +12283,7 @@ document.getElementById('medleser-list').addEventListener('click', function(e) {
 
 // ── Stikkord-modal ─────────────────────────────────
 var pendingTagId = null, pendingTagStatus = null, pendingTagCallback = null, pendingTagNeedsOutcome = false;
+var pendingTagNeedsOpOutcome = false;
 
 // Samler inn stikkord — og utfall når en sak avsluttes — og gir dem videre til
 // callback(tags, outcome). Modalen avgjør ikke selv hva som skjer etterpå — det
@@ -12305,11 +12297,13 @@ function openTagModal(id, toStatus, callback, opts) {
   var theCase   = cases.find(function(c) { return c.id === id; });
   var isClosing = pendingTagStatus === 'avsluttet';
   pendingTagNeedsOutcome = isClosing && isApplication(theCase);
+  // OP-saker har egne utfall (OP_OUTCOMES), også påkrevd ved avslutning
+  pendingTagNeedsOpOutcome = isClosing && isOpCase(theCase);
   document.getElementById('tag-case-number').textContent = theCase ? theCase.caseNumber : '';
   document.getElementById('f-tags').value = (theCase && theCase.tags) ? theCase.tags : '';
   document.getElementById('tag-modal-title').childNodes[0].textContent =
     opts.editOutcome ? 'Endre utfall — ' : isClosing ? 'Avslutt sak — ' : 'Brev sendt — ';
-  document.getElementById('tag-modal-desc').textContent = pendingTagNeedsOutcome
+  document.getElementById('tag-modal-desc').textContent = pendingTagNeedsOutcome || pendingTagNeedsOpOutcome
     ? 'Velg utfall, og legg eventuelt til stikkord.'
     : isClosing
       ? 'Legg til stikkord for denne saken (valgfritt).'
@@ -12317,32 +12311,41 @@ function openTagModal(id, toStatus, callback, opts) {
   document.getElementById('btn-tag-confirm').textContent =
     opts.editOutcome ? 'Lagre' : isClosing ? 'Avslutt sak' : 'Brev sendt';
   document.getElementById('tag-outcome-group').style.display = pendingTagNeedsOutcome ? '' : 'none';
+  document.getElementById('tag-op-outcome-group').style.display = pendingTagNeedsOpOutcome ? '' : 'none';
   var current = opts.editOutcome && theCase ? theCase.outcome : (opts.presetOutcome || null);
   document.querySelectorAll('#tag-outcome-group input[name="outcome"]').forEach(function(r) { r.checked = r.value === current; });
+  // Et utfall valgt på sakssiden står forhåndsvalgt
+  var opCurrent = pendingTagNeedsOpOutcome ? ((theCase.op || {}).outcome || null) : null;
+  document.querySelectorAll('#tag-op-outcome-group input[name="op-outcome"]').forEach(function(r) { r.checked = r.value === opCurrent; });
   syncTagConfirm();
   openBackdrop('tag-backdrop');
   setTimeout(function() {
     var first = pendingTagNeedsOutcome && !current
       ? document.querySelector('#tag-outcome-group input[name="outcome"]')
+      : pendingTagNeedsOpOutcome && !opCurrent
+      ? document.querySelector('#tag-op-outcome-group input[name="op-outcome"]')
       : document.getElementById('f-tags');
     if (first) first.focus();
   }, 50);
 }
 function selectedOutcome() {
-  var r = document.querySelector('#tag-outcome-group input[name="outcome"]:checked');
+  var r = pendingTagNeedsOpOutcome
+    ? document.querySelector('#tag-op-outcome-group input[name="op-outcome"]:checked')
+    : document.querySelector('#tag-outcome-group input[name="outcome"]:checked');
   return r ? r.value : null;
 }
 // Utfallet er påkrevd når en sak avsluttes: uten det blir saksflyten på
 // Oversikt feil.
 function syncTagConfirm() {
-  document.getElementById('btn-tag-confirm').disabled = pendingTagNeedsOutcome && !selectedOutcome();
+  document.getElementById('btn-tag-confirm').disabled = (pendingTagNeedsOutcome || pendingTagNeedsOpOutcome) && !selectedOutcome();
 }
 function closeTagModal() {
   closeBackdrop('tag-backdrop');
   pendingTagId = pendingTagStatus = pendingTagCallback = null;
   pendingTagNeedsOutcome = false;
+  pendingTagNeedsOpOutcome = false;
 }
-document.querySelectorAll('#tag-outcome-group input[name="outcome"]').forEach(function(r) {
+document.querySelectorAll('#tag-outcome-group input[name="outcome"], #tag-op-outcome-group input[name="op-outcome"]').forEach(function(r) {
   r.addEventListener('change', syncTagConfirm);
 });
 
@@ -12354,9 +12357,10 @@ document.getElementById('f-tags').addEventListener('keydown', function(e) {
 
 document.getElementById('btn-tag-confirm').addEventListener('click', function() {
   if (!pendingTagId) return;
-  if (pendingTagNeedsOutcome && !selectedOutcome()) return;
+  var needsOutcome = pendingTagNeedsOutcome || pendingTagNeedsOpOutcome;
+  if (needsOutcome && !selectedOutcome()) return;
   var tags    = normaliseTags(document.getElementById('f-tags').value);
-  var outcome = pendingTagNeedsOutcome ? selectedOutcome() : null;
+  var outcome = needsOutcome ? selectedOutcome() : null;
   var cb      = pendingTagCallback;
   if (fModalTags) fModalTags.value = tags;
   closeTagModal();

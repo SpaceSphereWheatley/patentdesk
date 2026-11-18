@@ -10,14 +10,14 @@ const weekend = (d) => d.getDay() === 0 || d.getDay() === 6;
 function load(extra) {
   return loadFunctions([
     'isOpCase', 'isApplication', 'opPhase', 'isOpWorkPhase', 'isOpWaitPhase', 'normalizeOpNumber',
-    'normalizeOp', 'normalizeOpDate', 'normalizeOpText', 'opAddWorkdays', 'opControlDeadlines',
+    'normalizeOp', 'normalizeOpDate', 'normalizeOpText', 'opControlDeadlines',
     'opMeetingDue', 'opSuggestedDue', 'opSyncDue', 'opStatusPatch', 'opApplyUpdate', 'opModalPayload', 'opTrack', 'opCaseTitle', 'opPanelHtml', 'opControlText', 'esc', 'toDisplay', 'opForwardAction', 'opPhaseLabel', 'opPhaseIndex',
     'isValidDate', 'parseDate', 'sanitizeText', 'addMonthsClamped', 'isoLocalDate', 'addDaysLocal',
     'workWindowDays', 'countsInBelegg', 'timelineSpanDays', 'workWindowStart', 'canBeUnassigned', 'isUnassigned',
     'bufferAppliesTo', 'canPostpone', 'normalizeWorkWindows', 'fristOwnerLabel', 'fristCountdownTone',
     'fristCountdownLabel', 'statusTransition', 'forwardAction', 'sakStatusChip',
   ], Object.assign({
-    vars: ['OP_PHASES', 'OP_OUTCOMES', 'OP_DATE_LABELS', 'OP_TEXT_LABELS', 'OP_DATE_FIELDS', 'OP_TEXT_FIELDS', 'OP_TEXT_MAX', 'OP_MAX_OPPONENTS', 'OP_MEETING_WORKDAYS', 'OP_CONTROL_MONTHS',
+    vars: ['OP_PHASES', 'OP_OUTCOMES', 'OP_DATE_LABELS', 'OP_TEXT_LABELS', 'OP_DATE_FIELDS', 'OP_TEXT_FIELDS', 'OP_TEXT_MAX', 'OP_MAX_OPPONENTS', 'OP_MEETING_DAYS', 'OP_CONTROL_MONTHS',
       'WORK_WINDOW_DEFAULTS', 'WORK_WINDOW_MAX', 'MILESTONE_DAYS', 'OUTCOMES', 'DEADLINE_DEFAULTS'],
     globals: { workWindows: { ny: 10, viderebehandling: 3, oppdrag: 2, op_formalia: 1, op_oppstart: 1, op_avgjorelse: 10 },
       isNonWorkday: weekend, vacations: [] },
@@ -80,14 +80,14 @@ test('forwardAction and sakStatusChip delegate to the OP phases', () => {
   assert.strictEqual(sakStatusChip('avsluttet', false, 'opphevet').label, 'Avsluttet · Opphevet');
 });
 
-test('statusTransition for OP needs no dialogs and logs only the closing', () => {
+test('statusTransition for OP: phases need no dialogs; closing asks for outcome and tags like other cases', () => {
   const { statusTransition } = load();
   const t = statusTransition('op_formalia', 'op_svar', false);
   assert.strictEqual(t.needsDueDate, false);
   assert.strictEqual(t.needsTags, false);
   assert.strictEqual(t.logType, null);
   assert.strictEqual(statusTransition('op_avgjorelse', 'avsluttet', false).logType, 'op');
-  assert.strictEqual(statusTransition('op_avgjorelse', 'avsluttet', false).needsTags, false);
+  assert.strictEqual(statusTransition('op_avgjorelse', 'avsluttet', false).needsTags, true);
 });
 
 // ── Normalisering ─────────────────────────────────
@@ -140,20 +140,13 @@ test('control deadline (b): notice + 3 months, month end clamped, met when proto
   assert.strictEqual(opControlDeadlines({}).b.applies, false);
 });
 
-test('opAddWorkdays skips weekends, holidays and vacation', () => {
-  const { opAddWorkdays } = load();
-  // Fredag 3. juli 2026 + 10 arbeidsdager = fredag 17. juli
-  assert.strictEqual(opAddWorkdays('2026-07-03', 10, weekend), '2026-07-17');
-  const vac = (d) => weekend(d) || (d >= new Date('2026-07-06T00:00:00') && d <= new Date('2026-07-10T00:00:00'));
-  assert.strictEqual(opAddWorkdays('2026-07-03', 10, vac), '2026-07-24');
-  assert.strictEqual(opAddWorkdays('', 10, weekend), '');
-});
-
-test('opMeetingDue: 10 workdays after the reply or the expired deadline', () => {
+test('opMeetingDue: 10 calendar days after the reply or the expired deadline, holidays and vacation included', () => {
   const { opMeetingDue } = load();
-  assert.strictEqual(opMeetingDue({ replyKind: 'svar', replyDate: '2026-06-29', replyDue: '2026-07-03' }, weekend), '2026-07-13');
-  assert.strictEqual(opMeetingDue({ replyKind: 'utlopt', replyDue: '2026-07-03', replyDate: '2026-07-06' }, weekend), '2026-07-17');
-  assert.strictEqual(opMeetingDue({ replyDue: '2026-07-03' }, weekend), '');
+  assert.strictEqual(opMeetingDue({ replyKind: 'svar', replyDate: '2026-06-29', replyDue: '2026-07-03' }), '2026-07-09');
+  assert.strictEqual(opMeetingDue({ replyKind: 'utlopt', replyDue: '2026-07-03', replyDate: '2026-07-06' }), '2026-07-13');
+  // Over jul og nyttår: fortsatt bare kalenderdager
+  assert.strictEqual(opMeetingDue({ replyKind: 'svar', replyDate: '2026-12-22' }), '2027-01-01');
+  assert.strictEqual(opMeetingDue({ replyDue: '2026-07-03' }), '');
 });
 
 test('opSuggestedDue per phase', () => {
@@ -161,7 +154,7 @@ test('opSuggestedDue per phase', () => {
   const op = { replyDue: '2026-07-03', replyKind: 'svar', replyDate: '2026-06-29', noticeDate: '2026-09-28' };
   assert.strictEqual(opSuggestedDue(opCase('op_formalia', op), weekend), '');
   assert.strictEqual(opSuggestedDue(opCase('op_svar', op), weekend), '2026-07-03');
-  assert.strictEqual(opSuggestedDue(opCase('op_oppstart', op), weekend), '2026-07-13');
+  assert.strictEqual(opSuggestedDue(opCase('op_oppstart', op), weekend), '2026-07-09');
   assert.strictEqual(opSuggestedDue(opCase('op_skrift', op), weekend), '');
   assert.strictEqual(opSuggestedDue(opCase('op_avgjorelse', op), weekend), '2026-12-28');
   // Svar mottatt, varsel ikke sendt: ingen kontrollfrist
@@ -568,12 +561,12 @@ test('stored timeline views from before OP get the OP type added once', () => {
   assert.deepStrictEqual(plain(migrateTlViewAddOp({ home: { horizon: 90 } })), { home: { horizon: 90 } });
 });
 
-test('the suggested oppstartsmøte deadline counts public holidays, not your vacation', () => {
-  const { opProceduralNonWorkday } = loadFunctions(['opProceduralNonWorkday'], {
-    globals: { getNorwegianHolidays: () => [{ date: '2026-12-25' }], vacations: [{ from: '2026-12-01', to: '2026-12-31' }] } });
-  assert.strictEqual(opProceduralNonWorkday(new Date('2026-12-25T00:00:00')), true);
-  assert.strictEqual(opProceduralNonWorkday(new Date('2026-12-09T00:00:00')), false);
-  assert.strictEqual(opProceduralNonWorkday(new Date('2026-12-12T00:00:00')), true);
+test('opStatusPatch: closing stores the chosen OP outcome on the case', () => {
+  const { opStatusPatch } = load();
+  const c = opCase('op_avgjorelse', { opponents: [{ name: 'A' }] }, { dueDate: '2026-12-28' });
+  assert.strictEqual(opStatusPatch(c, 'avsluttet', 'opphevet').op.outcome, 'opphevet');
+  assert.strictEqual(opStatusPatch(c, 'avsluttet', 'meddelt').op.outcome, '');
+  assert.strictEqual(opStatusPatch(opCase('op_avgjorelse', { outcome: 'endret' }), 'avsluttet').op.outcome, 'endret');
 });
 
 test('OP track: the waiting step says it waits on the parties, not the applicant', () => {
