@@ -3,8 +3,8 @@
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.68.1';
-var SCHEMA_VERSION = 8;
+var APP_VERSION    = 'v4.69.0';
+var SCHEMA_VERSION = 9;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
 var DEFAULT_DOC_ROOT = 'C:\\Users\\brukernavn\\Dokumenter\\Saksdokumenter';
@@ -18,6 +18,7 @@ var BUFFER_KEY   = 'pt_frist_buffer';   // gammel global buffer, leses bare ved 
 var TYPE_BUFFER_KEY = 'pt_type_buffers';
 var WORK_WINDOW_KEY = 'pt_work_windows';
 var DEADLINES_KEY   = 'pt_deadlines';
+var OP_PLAN_KEY     = 'pt_op_plan'; // OP-saker: formaliatid og svartid fra inndato
 var HOME_DEADLINE_KEY = 'pt_home_frister';
 var DOC_LAYOUT_KEY    = 'pt_doc_layout';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
@@ -198,8 +199,25 @@ function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
     suggestMonths: 0,
     logType:       null,
     confirmDesc:   '',
+    alwaysConfirm: false,
     dueDateDesc:   ''
   };
+
+  // OP-saker går gjennom fasene uten dialoger; fasens frist foreslås av
+  // opSyncDue. Avslutningen spør om utfall og stikkord, som for andre saker,
+  // og bare den telles i statistikken.
+  // Hvert fasebytte bekreftes, også fra knappen (alwaysConfirm) — avslutningen
+  // bekreftes i dialogen med utfall.
+  if (opPhase(fromStatus) || opPhase(toStatus)) {
+    if (toStatus === 'avsluttet') { t.needsTags = true; t.logType = 'op'; return t; }
+    var fi = opPhaseIndex(fromStatus), ti = opPhaseIndex(toStatus);
+    t.needsConfirm  = true;
+    t.alwaysConfirm = true;
+    t.confirmDesc   = fi !== -1 && ti > fi
+      ? 'merket ferdig med «' + opPhaseLabel(fromStatus) + '» og flyttet til «' + opPhaseLabel(toStatus) + '»'
+      : 'flyttet fra «' + (opPhaseLabel(fromStatus) || fromStatus) + '» til «' + opPhaseLabel(toStatus) + '»';
+    return t;
+  }
 
   // Oppdrag har ingen saksflyt — de er enten aktive eller utført.
   if (isOppdrag) {
@@ -251,6 +269,7 @@ function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
 // Ren funksjon — se test/sakLayout.test.js.
 function forwardAction(status, isOppdrag) {
   if (status === 'avsluttet') return null;
+  if (opPhase(status)) return opForwardAction(status);
 
   // Et oppdrag er enten aktivt eller utført — ingen mellomstasjoner.
   if (isOppdrag) return { label: 'Merk som utført', toStatus: 'avsluttet', choice: null };
@@ -273,10 +292,12 @@ function forwardAction(status, isOppdrag) {
 function sakStatusChip(status, isOppdrag, outcome) {
   var s = status || 'ny';
   if (s === 'avsluttet') {
-    var o = (!isOppdrag && outcome && Object.prototype.hasOwnProperty.call(OUTCOMES, outcome)) ? OUTCOMES[outcome].label : '';
+    var o = (!isOppdrag && outcome && Object.prototype.hasOwnProperty.call(OUTCOMES, outcome)) ? OUTCOMES[outcome].label
+          : (!isOppdrag && outcome && Object.prototype.hasOwnProperty.call(OP_OUTCOMES, outcome)) ? OP_OUTCOMES[outcome] : '';
     return { label: 'Avsluttet' + (o ? ' · ' + o : ''), tone: 'avsl' };
   }
   if (isOppdrag) return { label: 'Aktiv', tone: 'oppdrag' };
+  if (opPhase(s)) return { label: opPhaseLabel(s), tone: 'op' };
   if (s === 'viderebehandling') return { label: 'Viderebehandling', tone: 'videre' };
   if (s === 'fristarkiv')       return { label: 'Fristarkiv', tone: 'frist' };
   return { label: 'Ny', tone: 'ny' };
@@ -351,7 +372,7 @@ function responseChangesLabel(changes) {
 
 // Linjen under tittelen på sakssiden. Tom for Ny, avsluttede saker og oppdrag.
 function sakRoundLine(c) {
-  if (!c || c.type === 'oppdrag') return '';
+  if (!isApplication(c)) return '';
   var status = c.status || 'ny';
   if (status !== 'fristarkiv' && status !== 'viderebehandling') return '';
   var info = responseRoundInfo(c);

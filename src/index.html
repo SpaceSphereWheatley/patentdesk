@@ -86,6 +86,9 @@
   <symbol id="ti-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
   </symbol>
+  <symbol id="ti-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 20h10"/><path d="M6 6l6 -1l6 1"/><path d="M12 3v17"/><path d="M9 12l-3 -6l-3 6a3 3 0 0 0 6 0"/><path d="M21 12l-3 -6l-3 6a3 3 0 0 0 6 0"/>
+  </symbol>
   <symbol id="ti-external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>
   </symbol>
@@ -134,6 +137,10 @@
         <a class="nav-tab" data-page="oppdrag" data-tooltip="Oppdrag" href="#">
           <svg class="ti" aria-hidden="true"><use href="#ti-flag"/></svg>
           <span class="nav-label">Oppdrag</span>
+        </a>
+        <a class="nav-tab" data-page="op" data-tooltip="OP-saker" href="#">
+          <svg class="ti" aria-hidden="true"><use href="#ti-scale"/></svg>
+          <span class="nav-label">OP-saker</span>
         </a>
         <a class="nav-tab" data-page="fristarkiv" data-tooltip="Fristarkiv" href="#">
           <svg class="ti" aria-hidden="true"><use href="#ti-archive"/></svg>
@@ -272,6 +279,9 @@
                     <tr><th scope="row">Oppdrag</th>
                       <td><input type="checkbox" data-kind="oppdrag" data-when="overdue" aria-label="Oppdrag, forfalt"></td>
                       <td><input type="checkbox" data-kind="oppdrag" data-when="upcoming" aria-label="Oppdrag, kommende"></td></tr>
+                    <tr><th scope="row">OP-sak (arbeidsfasene)</th>
+                      <td><input type="checkbox" data-kind="op" data-when="overdue" aria-label="OP-sak, forfalt"></td>
+                      <td><input type="checkbox" data-kind="op" data-when="upcoming" aria-label="OP-sak, kommende"></td></tr>
                   </tbody>
                 </table>
                 <label class="home-dl-horizon">Kommende innen
@@ -408,6 +418,7 @@
                       <th class="stat-col-num stat-col-new">Viderebehandlinger</th>
                       <th class="stat-col-num stat-col-new">Avgjort</th>
                       <th class="stat-col-num stat-col-oppdrag">Oppdrag</th>
+                      <th class="stat-col-num stat-col-op" title="OP-saker avgjort">OP</th>
                     </tr>
                   </thead>
                   <tbody id="year-tbody"></tbody>
@@ -540,13 +551,34 @@
                       <span class="tdf-cell tdf-na" role="cell" title="Oppdrag bruker alltid faktisk frist"><span class="tdf-cell-lbl">Buffer</span>—</span>
                     </div>
                     <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">OP-sak · Formalia</span>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                        <input class="s-inp" id="input-ww-op_formalia" data-ww-key="op_formalia" type="number" min="1" max="365" step="1" aria-label="Varighet i arbeidsdager, OP-sak · Formalia" />
+                        <span class="s-unit">arb.dager</span></label>
+                      <span class="tdf-cell tdf-na" role="cell" title="OP-saker har ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                    </div>
+                    <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">OP-sak · Oppstart</span>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                        <input class="s-inp" id="input-ww-op_oppstart" data-ww-key="op_oppstart" type="number" min="1" max="365" step="1" aria-label="Varighet i arbeidsdager, OP-sak · Oppstart" />
+                        <span class="s-unit">arb.dager</span></label>
+                      <span class="tdf-cell tdf-na" role="cell" title="OP-saker har ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                    </div>
+                    <div class="tdf-row" role="row">
+                      <span class="tdf-type" role="rowheader">OP-sak · Avgjørelse</span>
+                      <label class="tdf-cell" role="cell"><span class="tdf-cell-lbl">Varighet</span>
+                        <input class="s-inp" id="input-ww-op_avgjorelse" data-ww-key="op_avgjorelse" type="number" min="1" max="365" step="1" aria-label="Varighet i arbeidsdager, OP-sak · Avgjørelse" />
+                        <span class="s-unit">arb.dager</span></label>
+                      <span class="tdf-cell tdf-na" role="cell" title="OP-saker har ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
+                    </div>
+                    <div class="tdf-row" role="row">
                       <span class="tdf-type" role="rowheader">Fristarkiv</span>
                       <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ikke arbeid"><span class="tdf-cell-lbl">Varighet</span>Milepæl</span>
                       <span class="tdf-cell tdf-na" role="cell" title="Søkers frist — ingen buffer"><span class="tdf-cell-lbl">Buffer</span>—</span>
                     </div>
                   </div>
                   <div class="settings-row tdf-foot">
-                    <span class="settings-label-sub">Standard: Ny 10 / 0, Viderebehandling 3 / 0, Oppdrag 2 (varighet i arbeidsdager, buffer i dager)</span>
+                    <span class="settings-label-sub">Standard: Ny 10 / 0, Viderebehandling 3 / 0, Oppdrag 2, OP-sak 1 / 1 / 10 (varighet i arbeidsdager, buffer i dager). OP-sakens ventefaser er milepæler.</span>
                     <button class="s-btn" id="btn-ww-reset">Tilbakestill til standard</button>
                   </div>
                 </div>
@@ -618,8 +650,26 @@
                       <input class="s-inp" id="input-dl-response" data-dl-key="response" type="number" min="1" max="24" step="1" aria-label="Din frist for å behandle svar, måneder" />
                       <span class="s-unit">mnd</span></label>
                   </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">OP-sak: formalia ferdig</span>
+                      <span class="settings-label-sub">Dager etter inndato. Anslag til du endrer fristen.</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-op-plan-formaliaDays" data-op-plan-key="formaliaDays" type="number" min="0" max="365" step="1" aria-label="OP-sak: dager fra inndato til formalia er ferdig" />
+                      <span class="s-unit">dager</span></label>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">OP-sak: patenthavers svarfrist</span>
+                      <span class="settings-label-sub">Dager etter inndato. Anslag til svarfristen fra SANT er lagt inn.</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-op-plan-replyDays" data-op-plan-key="replyDays" type="number" min="1" max="365" step="1" aria-label="OP-sak: dager fra inndato til patenthavers svarfrist" />
+                      <span class="s-unit">dager</span></label>
+                  </div>
                   <div class="settings-row tdf-foot">
-                    <span class="settings-label-sub">Standard: 3 / 3 / 3 måneder</span>
+                    <span class="settings-label-sub">Standard: 3 / 3 / 3 måneder, OP-sak 1 / 112 dager</span>
                     <button class="s-btn" id="btn-dl-reset">Tilbakestill til standard</button>
                   </div>
                 </div>
@@ -989,6 +1039,9 @@
           <div class="sak-frist-meta" id="sak-frist-meta"></div>
           <div class="sak-frist-note" id="sak-frist-note"></div>
         </div>
+
+        <!-- OP-sak: parter, utvalg, saksdatoer og kontrollfrister (renderSakOp) -->
+        <section class="op-panel" id="sak-op" aria-label="OP-sak" hidden></section>
 
         <!-- Progress bar + resultatsammendrag -->
         <section class="sak-progress-section" id="sak-summary-section">
@@ -1428,18 +1481,63 @@
           </div>
         </div>
 
+        <!-- OP-sak (innsigelse): nummer, parter og datoer. Ved redigering vises
+             bare nummer, frist og eget vindu; resten endres på sakssiden. -->
+        <div id="modal-row-opcase" style="display:none;">
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="f-op-number">OP-saksnummer</label>
+              <input class="field-input" id="f-op-number" type="text" placeholder="OP ÅÅÅÅ/xxxxx" maxlength="13" autocomplete="off" />
+            </div>
+            <div class="field-group op-create-only">
+              <label class="field-label" for="f-op-received">Inndato</label>
+              <input class="field-input" id="f-op-received" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f-op-due">Frist for fasen <span class="field-label-sub">valgfritt</span></label>
+              <input class="field-input" id="f-op-due" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f-op-duration">Eget vindu <span class="field-label-sub">arbeidsdager</span></label>
+              <input class="field-input" id="f-op-duration" type="number" min="1" max="365" placeholder="Standard" />
+            </div>
+          </div>
+          <div class="field-row op-create-only">
+            <div class="field-group">
+              <label class="field-label" for="f-op-patent">Patentnummer <span class="field-label-sub">valgfritt</span></label>
+              <input class="field-input" id="f-op-patent" type="text" maxlength="200" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f-op-holder">Patenthaver <span class="field-label-sub">valgfritt</span></label>
+              <input class="field-input" id="f-op-holder" type="text" maxlength="200" />
+            </div>
+          </div>
+          <div class="field-row op-create-only">
+            <div class="field-group">
+              <label class="field-label" for="f-op-opponent">Innsiger <span class="field-label-sub">valgfritt</span></label>
+              <input class="field-input" id="f-op-opponent" type="text" maxlength="200" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f-op-opponent-agent">Fullmektig <span class="field-label-sub">valgfritt</span></label>
+              <input class="field-input" id="f-op-opponent-agent" type="text" maxlength="200" />
+            </div>
+          </div>
+          <span class="field-hint op-create-only">Bare saksnummer og inndato er påkrevd. Fristene regnes fra inndatoen som anslag til datoene fra SANT legges inn på sakssiden.</span>
+        </div>
+
         <div class="field-group">
           <label class="field-label" for="f-title">Tittel</label>
           <input class="field-input" id="f-title" type="text" placeholder="Oppfinnelsens tittel" maxlength="200" />
         </div>
 
-        <div class="field-group">
+        <div class="field-group" id="modal-row-status">
           <label class="field-label">Type / Status</label>
           <div class="status-radio-group">
             <label class="status-radio"><input type="radio" name="status" value="ny" /><span class="status-pill s-ny">Ny</span></label>
             <label class="status-radio"><input type="radio" name="status" value="viderebehandling" /><span class="status-pill s-viderebehandling">Viderebehandling</span></label>
             <label class="status-radio"><input type="radio" name="status" value="fristarkiv" /><span class="status-pill s-fristarkiv">Fristarkiv</span></label>
             <label class="status-radio"><input type="radio" name="status" value="oppdrag" /><span class="status-pill s-oppdrag">Oppdrag</span></label>
+            <label class="status-radio"><input type="radio" name="status" value="op" /><span class="status-pill s-op">OP-sak</span></label>
           </div>
           <span class="field-hint">«Avsluttet» settes når saken lukkes.</span>
         </div>
@@ -1676,6 +1774,16 @@
             <label class="status-radio"><input type="radio" name="outcome" value="henlagt" /><span class="status-pill o-henlagt">Henlagt</span></label>
           </div>
           <span class="field-hint">Vises i sakens forløpsspor og i saksflyten på Oversikt.</span>
+        </div>
+        <!-- Utfall for OP-saker (innsigelser), se OP_OUTCOMES -->
+        <div class="field-group" id="tag-op-outcome-group" style="display:none;">
+          <span class="field-label" id="tag-op-outcome-label">Utfall</span>
+          <div class="status-radio-group" role="radiogroup" aria-labelledby="tag-op-outcome-label">
+            <label class="status-radio"><input type="radio" name="op-outcome" value="opprettholdt" /><span class="status-pill s-op">Opprettholdt</span></label>
+            <label class="status-radio"><input type="radio" name="op-outcome" value="endret" /><span class="status-pill s-op">Opprettholdt i endret form</span></label>
+            <label class="status-radio"><input type="radio" name="op-outcome" value="opphevet" /><span class="status-pill s-op">Opphevet</span></label>
+            <label class="status-radio"><input type="radio" name="op-outcome" value="avvist" /><span class="status-pill s-op">Innsigelse avvist</span></label>
+          </div>
         </div>
         <div class="field-group">
           <label class="field-label" for="f-tags">Stikkord</label>
@@ -1929,6 +2037,7 @@
           <tr><td><kbd>5</kbd></td><td>Oppdrag</td></tr>
           <tr><td><kbd>6</kbd></td><td>Alle saker</td></tr>
           <tr><td><kbd>7</kbd></td><td>Medlesing</td></tr>
+          <tr><td><kbd>8</kbd></td><td>OP-saker</td></tr>
           <tr><td><kbd>?</kbd></td><td>Denne oversikten</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>Lukk dialog</td></tr>
         </table>
@@ -1962,6 +2071,7 @@
 <!-- @include js/02-claim-mapping-objections.js -->
 <!-- @include js/03-datepicker-pages.js -->
 <!-- @include js/04-domain.js -->
+<!-- @include js/04a-op-cases.js -->
 <!-- @include js/05-storage.js -->
 <!-- @include js/06-appstate.js -->
 <!-- @include js/07-ui-nav-lists.js -->

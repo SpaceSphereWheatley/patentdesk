@@ -31,6 +31,8 @@ function init() {
   });
   _dp.init(document.getElementById('f-due-date'));
   _dp.init(document.getElementById('f-due-date-op'));
+  _dp.init(document.getElementById('f-op-received'));
+  _dp.init(document.getElementById('f-op-due'));
   _dp.init(document.getElementById('f-filing-date'));
   _dp.init(document.getElementById('f-priority-date'));
   autoFormatDateInput(document.getElementById('f-due-date-op'));
@@ -67,6 +69,11 @@ function init() {
 
   // Kjør migrasjon (v3 → v4)
   migrateAll();
+
+  // OP-saker: lagrede frister i takt med planen fra inndatoen (saker lagret
+  // før planen fantes, eller under andre planinnstillinger)
+  var _opSynced = opResync(cases);
+  if (_opSynced.some(function(c, i) { return c !== cases[i]; })) { cases = _opSynced; saveCases(); }
 
   // Automatisk sikkerhetskopi: last mappehåndtak og ta oppstartskopi
   _bkInit();
@@ -172,6 +179,8 @@ function init() {
       if (!track || !track._tl || !track.closest(DRAG_TIMELINES)) return;
       var cas = cases.find(function(c) { return c.id === bar.dataset.id; });
       if (!cas) return;
+      // OP: den anslåtte Avgjørelse-blokken dras som Avgjørelse
+      if (bar.dataset.provisional) cas = opProvisionalCase(cas) || cas;
       e.preventDefault();
       var g = track._tl;
       dragging = {
@@ -266,6 +275,7 @@ function init() {
       if (!bar || !bar.closest(DRAG_TIMELINES)) return;
       var cas = cases.find(function(c) { return c.id === bar.dataset.id; });
       if (!cas) return;
+      if (bar.dataset.provisional) cas = opProvisionalCase(cas) || cas;
       var orig = bufferDaysFor(cas);
       var next = timelineKeyBuffer(orig, e.key, TYPE_BUFFER_MAX, minBufferFor(cas));
       if (next === null) return;
@@ -273,7 +283,7 @@ function init() {
       if (next === orig) return;
       var tlId = bar.closest(DRAG_TIMELINES).id;
       saveBuffer(cas, next);
-      var again = document.querySelector('#' + tlId + ' .tl-bar[data-id="' + CSS.escape(cas.id) + '"]');
+      var again = document.querySelector('#' + tlId + ' .tl-bar[data-id="' + CSS.escape(cas.id) + '"]' + (cas.provisional ? '[data-provisional]' : ''));
       // Popupen over bjelken i fokus viser de nye datoene
       if (again) again.focus();
     });

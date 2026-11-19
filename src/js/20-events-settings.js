@@ -132,6 +132,11 @@ function _renderDeadlineInputs() {
     inp.value = String(deadlines[k]);
     inp.placeholder = String(DEADLINE_DEFAULTS[k]);
   });
+  document.querySelectorAll('[data-op-plan-key]').forEach(function(inp) {
+    var k = inp.dataset.opPlanKey;
+    inp.value = String(opPlan[k]);
+    inp.placeholder = String(OP_PLAN_DEFAULTS[k]);
+  });
 }
 (function() {
   document.querySelectorAll('[data-dl-key]').forEach(function(inp) {
@@ -144,9 +149,20 @@ function _renderDeadlineInputs() {
       _renderDeadlineInputs();
     });
   });
+  document.querySelectorAll('[data-op-plan-key]').forEach(function(inp) {
+    inp.addEventListener('change', function() {
+      var raw = this.value.trim();
+      var v = parseInt(raw, 10);
+      var min = this.dataset.opPlanKey === 'formaliaDays' ? 0 : 1;
+      if (raw !== '' && !(v >= min && v <= OP_PLAN_MAX)) { _renderDeadlineInputs(); return; }
+      dispatch('SETTINGS_OP_PLAN_CHANGE', { key: this.dataset.opPlanKey, value: raw === '' ? null : v });
+      _renderDeadlineInputs();
+    });
+  });
   var reset = document.getElementById('btn-dl-reset');
   if (reset) reset.addEventListener('click', function() {
     dispatch('SETTINGS_DEADLINE_CHANGE', { key: null });
+    dispatch('SETTINGS_OP_PLAN_CHANGE', { key: null });
     _renderDeadlineInputs();
   });
   document.querySelectorAll('[data-goto-settings-tab]').forEach(function(a) {

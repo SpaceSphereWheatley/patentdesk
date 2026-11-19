@@ -24,7 +24,7 @@ test('homeDeadlineSummary counts every overdue deadline that is yours', () => {
     sak('ny', -6), sak('ny', -2), sak('viderebehandling', -1), oppdrag(-3),
     sak('ny', 3), sak('ny', 5), oppdrag(20),
   ], days));
-  assert.deepStrictEqual(s, { total: 4, ny: 2, videre: 1, oppdrag: 1, next: 3 });
+  assert.deepStrictEqual(s, { total: 4, ny: 2, videre: 1, oppdrag: 1, op: 0, next: 3 });
 });
 
 test('homeDeadlineSummary leaves out the applicant, unassigned cases and closed work', () => {
@@ -34,7 +34,15 @@ test('homeDeadlineSummary leaves out the applicant, unassigned cases and closed 
     sak('avsluttet', -9), oppdrag(-1, { status: 'avsluttet' }),
     sak('ny', NaN, { dueDate: '' }),
   ], days));
-  assert.deepStrictEqual(s, { total: 0, ny: 0, videre: 0, oppdrag: 0, next: null });
+  assert.deepStrictEqual(s, { total: 0, ny: 0, videre: 0, oppdrag: 0, op: 0, next: null });
+});
+
+test('homeDeadlineSummary counts OP cases only in their work phases', () => {
+  const op = (status, d) => ({ type: 'op', status: status, dueDate: 'x', d: d });
+  const s = plain(homeDeadlineSummary([op('op_avgjorelse', -2), op('op_oppstart', -1), op('op_svar', -30),
+    op('op_skrift', 2), op('avsluttet', -5), op('op_formalia', 6)], days));
+  assert.deepStrictEqual(s, { total: 2, ny: 0, videre: 0, oppdrag: 0, op: 2, next: 6 });
+  assert.strictEqual(homeOverdueSubText({ total: 1, ny: 0, videre: 0, oppdrag: 0, op: 1 }), '1 OP-sak');
 });
 
 test('homeDeadlineSummary takes a deadline today as the next one, not as overdue', () => {

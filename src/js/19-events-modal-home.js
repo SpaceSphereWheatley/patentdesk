@@ -42,26 +42,30 @@ function _applySaveButtonState(st) {
 function singleCaseDraftRow(f) {
   if (!f || f.editing || !f.date || !isValidDate(f.date)) return null;
   var isOp = f.status === 'oppdrag';
+  var isOpCaseDraft = f.status === 'op';
   var d = parseInt(f.duration, 10);
   return { cn: f.cn || '', title: f.title || '', date: parseDate(f.date), checked: true,
-    type: isOp ? 'oppdrag' : 'sak', status: isOp ? 'ny' : (f.status || 'ny'),
-    duration: isOp && d >= 1 ? d : null };
+    type: isOp ? 'oppdrag' : isOpCaseDraft ? 'op' : 'sak',
+    status: isOp ? 'ny' : isOpCaseDraft ? 'op_formalia' : (f.status || 'ny'),
+    duration: (isOp || isOpCaseDraft) && d >= 1 ? d : null };
 }
 function renderModalSingleDraft() {
   if (document.getElementById('modal-pane-sak').style.display === 'none') return;
   var st = getSelectedStatus();
   var isOp = st === 'oppdrag';
+  var isOpC = st === 'op';
   var row = singleCaseDraftRow({
-    cn:       (isOp ? document.getElementById('f-case-number-op') : fCaseNum).value.trim(),
+    cn:       (isOp ? document.getElementById('f-case-number-op') : isOpC ? document.getElementById('f-op-number') : fCaseNum).value.trim(),
     title:    fTitle.value.trim(),
-    date:     (isOp ? document.getElementById('f-due-date-op') : fDueDate).value.trim(),
+    date:     (isOp ? document.getElementById('f-due-date-op') : isOpC ? document.getElementById('f-op-due') : fDueDate).value.trim(),
     status:   st,
-    duration: fDuration.value,
+    duration: isOpC ? document.getElementById('f-op-duration').value : fDuration.value,
     editing:  !!editIdEl.value
   });
   renderTimeline({ target: 'modal-timeline', draftRows: row ? [row] : null });
 }
-['f-case-number', 'f-case-number-op', 'f-due-date', 'f-due-date-op', 'f-title', 'f-duration'].forEach(function(fid) {
+['f-case-number', 'f-case-number-op', 'f-due-date', 'f-due-date-op', 'f-title', 'f-duration',
+  'f-op-number', 'f-op-due', 'f-op-duration'].forEach(function(fid) {
   var el = document.getElementById(fid);
   if (el) el.addEventListener('input', renderModalSingleDraft);
 });
@@ -78,7 +82,7 @@ document.getElementById('modal-adv-toggle').addEventListener('click', function()
 // ── Status radioknapper ────────────────────────────
 document.querySelectorAll('input[name="status"]').forEach(function(r) {
   r.addEventListener('change', function() {
-    _setModalOppdrag(this.value === 'oppdrag');
+    _setModalOppdrag(this.value);
     renderModalSingleDraft();
   });
 });
@@ -163,6 +167,7 @@ function markBulkDuplicates(rows, existing) {
 
 function _bulkDupLabel(dup) {
   if (dup.type === 'oppdrag') return 'Oppdrag';
+  if (dup.type === 'op') return 'OP-sak';
   return (STATUS_CONFIG[dup.status] || {}).label || dup.status;
 }
 
@@ -331,6 +336,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
   fieldError.textContent = '';
   fieldWarn.textContent  = '';
   var st = getSelectedStatus();
+  if (st === 'op') { _saveModalOp(); return; }
   var isOppdrag = st === 'oppdrag';
   var cnEl = isOppdrag ? document.getElementById('f-case-number-op') : fCaseNum;
   var ddEl = isOppdrag ? document.getElementById('f-due-date-op')    : fDueDate;
@@ -391,6 +397,35 @@ document.getElementById('btn-save').addEventListener('click', function() {
   if (plan.transitionTo) runStatusTransition(id, plan.transitionTo, { skipConfirm: true });
 });
 
+// «Lagre» for en OP-sak. Ny sak starter i Formalia; ved redigering endres
+// bare nummer, frist, vindu, tittel, notater og stikkord (fasen og
+// OP-dataene endres på sakssiden).
+function _saveModalOp() {
+  var id = editIdEl.value;
+  var r = _readModalOp(!!id);
+  if (r.error) { fieldError.textContent = r.error; _dupWarnPending = false; return; }
+  var cnLower = r.caseNumber.toLowerCase();
+  var duplicate = cases.find(function(c) { return c.caseNumber.toLowerCase() === cnLower && c.id !== id; });
+  if (duplicate && !_dupWarnPending) {
+    fieldWarn.textContent = '⚠ Saksnummer «' + r.caseNumber + '» finnes allerede. Klikk Lagre igjen for å opprette likevel.';
+    _dupWarnPending = true; return;
+  }
+  _dupWarnPending = false;
+  var payload = { caseNumber: r.caseNumber, dueDate: r.dueDate, title: fTitle.value.trim(),
+    notes: fNotes.value.trim(), tags: fModalTags.value, type: 'op', duration: r.duration, caseBuffer: null };
+  if (id) {
+    payload.id = id;
+    dispatch('CASE_EDIT', payload);
+  } else {
+    payload.status = 'op_formalia';
+    payload.op = r.op;
+    dispatch('CASE_CREATE', payload);
+  }
+  if (activePage === 'sak' || ['statistikk', 'innstillinger', 'hjem'].indexOf(activePage) >= 0) render();
+  else navigateTo('op');
+  closeModal();
+}
+
 // Hva «Lagre» i «Rediger sak» gjør med statusen. Et statusbytte på en
 // eksisterende søknad lagres ikke direkte — da ville saken havnet i
 // Fristarkiv uten søkerens frist, og overgangen manglet i historikken og
@@ -398,7 +433,7 @@ document.getElementById('btn-save').addEventListener('click', function() {
 // etterpå gjennom runStatusTransition. Nye saker og oppdrag har ingen
 // saksflyt og lagres som før. Ren funksjon — se test/dataIntegrity.test.js.
 function editStatusPlan(orig, selected) {
-  if (!orig || orig.type === 'oppdrag' || selected === 'oppdrag' || selected === orig.status) {
+  if (!orig || !isApplication(orig) || selected === 'oppdrag' || selected === 'op' || selected === orig.status) {
     return { status: selected, transitionTo: null };
   }
   return { status: orig.status, transitionTo: selected };
@@ -525,10 +560,12 @@ function applyTimelineLink(id, force) {
   TL_LINK_TIMELINES.forEach(function(tlId) {
     var tlDiv = document.getElementById(tlId);
     var track = tlDiv && tlDiv.querySelector('.tl-track');
-    var bar = track && track.querySelector('.tl-bar' + sel);
-    if (!bar) return;
+    // En OP-sak kan ha to bjelker (fasen og den anslåtte Avgjørelse)
+    var bars = track ? track.querySelectorAll('.tl-bar' + sel) : [];
+    if (!bars.length) return;
+    var bar = bars[0];
     track.classList.add('has-linked');
-    bar.classList.add('tl-bar-linked');
+    Array.prototype.forEach.call(bars, function(b) { b.classList.add('tl-bar-linked'); });
     var scrollEl = tlDiv.closest('.tl-scroll-wrap');
     var host = scrollEl && scrollEl.parentElement;
     if (!host || !scrollEl.clientWidth) return; // skjult tidslinje
@@ -626,6 +663,8 @@ function applyTimelineLink(id, force) {
       var due   = el.dataset.due   || '';
       var caseId = el.dataset.id   || '';
       var caseObj = caseId ? cases.find(function(c) { return c.id === caseId; }) : null;
+      // OP: den anslåtte Avgjørelse-blokken er en egen bjelke med samme id
+      if (caseObj && el.dataset.provisional) caseObj = opProvisionalCase(caseObj) || caseObj;
       var effDue = caseObj ? effDueFor(caseObj) : getEffectiveDueDate(due);
       // Nedtellingen måles mot den bufrede fristen — for en utsatt sak mot den
       // faktiske; vis den andre datoen også, så tallene ikke ser ut til å
@@ -644,6 +683,8 @@ function applyTimelineLink(id, force) {
         // Forfalt-båndet: det er her belegget bokfører arbeidet
         (el.classList.contains('tl-overdue-band') ? '<span class="tl-popup-hint">' + OVERDUE_PENALTY_WORKDAYS + ' arb.dager bokført i belegget fra i dag</span>' : '') +
         (postponed && !el.classList.contains('tl-overdue-band') ? '<span class="tl-popup-hint">Utsatt ' + postponed + (postponed === 1 ? ' dag' : ' dager') + ' etter fristen. Fristen flytter seg ikke.</span>' : '') +
+        (el.dataset.provisional ? '<span class="tl-popup-hint">Avgjørelse, anslått fra datoene som er kjent. Teller i belegget fra nå.</span>'
+          : el.dataset.est ? '<span class="tl-popup-hint">Anslag, regnet fra inndatoen.</span>' : '') +
         (el.classList.contains('draggable') ? '<span class="tl-popup-hint">Dra for å endre bufferen' + (canPostpone(caseObj) ? ', også forbi fristen' : '') + ' · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd></span>' : '');
     }
     popup.style.display = 'block';

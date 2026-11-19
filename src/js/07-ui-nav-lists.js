@@ -16,9 +16,10 @@ function navHasBadge(page) {
 
 function updateNav() {
   // Grupper saker per side i én gjennomgang i stedet for ett filter per fane
-  var byPage = { ny: [], viderebehandling: [], fristarkiv: [], avsluttet: [], oppdrag: [] };
+  var byPage = { ny: [], viderebehandling: [], fristarkiv: [], avsluttet: [], oppdrag: [], op: [] };
   cases.forEach(function(c) {
     if (c.type === 'oppdrag') { if (c.status !== 'avsluttet') byPage.oppdrag.push(c); return; }
+    if (isOpCase(c)) { if (c.status !== 'avsluttet') byPage.op.push(c); return; }
     var s = c.status || 'ny';
     if (byPage[s]) byPage[s].push(c);
   });
@@ -38,9 +39,11 @@ function updateNav() {
     badge.textContent = list.length - waiting;
     if (page === 'ny') badge.title = waiting ? '+ ' + waiting + ' ikke fordelt' : '';
     // Oppdrag: farg badge etter alvorlighetsgrad
-    if (page === 'oppdrag') {
+    if (page === 'oppdrag' || page === 'op') {
       badge.classList.remove('nav-count-urgent', 'nav-count-soon');
-      var minDays = list.reduce(function(m, c) { return Math.min(m, daysUntil(c.dueDate)); }, Infinity);
+      // OP: bare arbeidsfasene — patenthavers svarfrist er ikke din
+      var own = page === 'op' ? list.filter(function(c) { return isOpWorkPhase(c) && c.dueDate; }) : list;
+      var minDays = own.reduce(function(m, c) { return Math.min(m, daysUntil(c.dueDate)); }, Infinity);
       if (list.length && minDays < 0)       badge.classList.add('nav-count-urgent');
       else if (list.length && minDays <= 7) badge.classList.add('nav-count-soon');
     }
@@ -103,11 +106,11 @@ function lookupTitle(logEntry) {
 // en endret dato flyttes på riktig hendelse. Statistikken føres på selve
 // overgangen (se statusTransition): realitetsbrev ut fra Ny er en
 // nybehandling, fra Viderebehandling en viderebehandling, og en avslutning
-// er «avsluttet» — eller «oppdrag» for oppdrag. Andre overganger, og eldre
+// er «avsluttet» — eller «oppdrag» for oppdrag og «op» for OP-saker. Andre overganger, og eldre
 // historikk uten from, førte ingenting. Ren funksjon — se test/dataIntegrity.test.js.
 function historyLogType(h, isOppdrag) {
   if (!h || (h.type && h.type !== 'status')) return null;
-  if (h.to === 'avsluttet') return isOppdrag ? 'oppdrag' : 'avsluttet';
+  if (h.to === 'avsluttet') return opPhase(h.from) ? 'op' : isOppdrag ? 'oppdrag' : 'avsluttet';
   if (h.to === 'fristarkiv' && !isOppdrag) {
     if (h.from === 'ny') return 'ny';
     if (h.from === 'viderebehandling') return 'videre';
@@ -259,6 +262,12 @@ function postponePillHtml(c) {
   var tip = 'Planlagt ' + n + (n === 1 ? ' dag' : ' dager') + ' etter fristen ' + toDisplay(c.dueDate) +
             '. Fristen flytter seg ikke.';
   return '<span class="postpone-pill" title="' + esc(tip) + '">Utsatt til ' + esc(toDisplay(effDueFor(c))) + '</span>';
+}
+
+// OP-sak: fristen er et anslag regnet fra inndatoen (opDueIsEstimate)
+function opEstimatePillHtml(c) {
+  if (!opDueIsEstimate(c)) return '';
+  return '<span class="op-est-pill" title="Anslått frist, regnet fra inndatoen. Datoen fra SANT tar over når den legges inn.">anslag</span>';
 }
 
 // ── Ikke fordelt: visning ──────────────────────────
@@ -625,7 +634,7 @@ function currentTrackSlot(slots) {
 
 function trackStepHtml(s) {
   var ico = TRK_ICONS[s.state];
-  return '<span class="trk-step trk-' + s.state + '" title="' + esc(s.label + ' — ' + TRK_STATE_TEXT[s.state]) + '">' +
+  return '<span class="trk-step trk-' + s.state + '" title="' + esc(s.label + ' — ' + (s.stateText || TRK_STATE_TEXT[s.state])) + '">' +
     (ico ? '<svg class="ti" aria-hidden="true"><use href="#' + ico + '"/></svg>' : '') +
     '<span>' + esc(s.label) + '</span></span>';
 }
@@ -633,7 +642,7 @@ function trackStepHtml(s) {
 // Fullt spor (sakslister) eller minispor (Oversikt). Oppdrag har ingen
 // saksflyt og får én bjelke i sporets sted.
 function trackHtml(c, mini) {
-  var slots = caseTrack(c);
+  var slots = isOpCase(c) ? opTrack(c) : caseTrack(c);
   if (!slots) {
     var done = c.status === 'avsluttet';
     var text = done ? 'Oppdrag · utført' : 'Oppdrag' + (c.duration ? ' · ' + c.duration + ' dager' : '');
@@ -659,7 +668,7 @@ function trackHtml(c, mini) {
 // beholder hele forløpet, for der er statusene ulike fra rad til rad.
 // Ren funksjon — se test/listTrack.test.js.
 function listTrackMini(page) {
-  return ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag'].indexOf(page) !== -1;
+  return ['ny', 'viderebehandling', 'fristarkiv', 'oppdrag', 'op'].indexOf(page) !== -1;
 }
 
 // ── Felles kortliste-renderer ──────────────────────
@@ -694,9 +703,14 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
     var cls         = days < 0 ? 'overdue' : days <= 3 ? 'urgent' : days <= 14 ? 'soon' : 'ok';
     // I Fristarkiv er fristen søkerens: nøytral og stiplet, uansett hvor nær.
     if (!isOppdrag && c.status === 'fristarkiv') cls = 'theirs';
+    var isOp        = isOpCase(c);
+    // OP i en ventefase: fristen er patenthavers eller partenes
+    if (isOpWaitPhase(c)) cls = 'theirs';
     var daysTxt     = days < 0 ? Math.abs(days) + 'd forfalt' : days === 0 ? 'I dag' : days + 'd';
+    // En OP-fase uten fast frist (Formalia, Skriftveksling) kan stå uten dato
+    if (!c.dueDate) { cls = 'ok'; daysTxt = 'Ingen frist'; }
     var tips        = [];
-    if (cls === 'theirs') tips.push('Søkerens svarfrist — ikke din arbeidsfrist');
+    if (cls === 'theirs') tips.push(isOp ? 'Partenes frist — ikke din arbeidsfrist' : 'Søkerens svarfrist — ikke din arbeidsfrist');
     if (isUnassigned(c)) tips.push('Ikke fordelt ennå — teller ikke i belegget');
     if (periodOverlapsVacation(c)) tips.push(vacationTipText(c));
     var closedAgo   = isAvsluttet ? closedDaysAgo(c, todayStr()) : null;
@@ -708,15 +722,16 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
             (closedAgo === 0 ? 'I dag' : closedAgo + 'd siden') + '</span>'
         : '<span class="days-badge days-badge-placeholder"></span>';
     var tooltip     = c.tags ? ' title="' + esc(c.tags) + '"' : '';
-    var cardCls     = (isOppdrag ? ' case-card-oppdrag' : '') + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '');
-    var cnCls       = isOppdrag ? ' case-card-cn-oppdrag' : '';
+    var cardCls     = (isOppdrag ? ' case-card-oppdrag' : '') + (isOp ? ' case-card-op' : '') + (isActiveCaseId(c.id) ? ' is-active-case' : '') + (isUnassigned(c) ? ' is-unassigned' : '');
+    var cnCls       = isOppdrag ? ' case-card-cn-oppdrag' : isOp ? ' case-card-cn-op' : '';
     return '<div class="case-card' + cardCls + '" data-id="' + c.id + '">' +
       daysBadge +
       '<span class="case-card-cn' + cnCls + '"' + tooltip + '>' + esc(c.caseNumber) + '</span>' +
-      '<span class="case-card-main"><span class="case-card-title">' + esc(c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
+      '<span class="case-card-main"><span class="case-card-title">' + esc(isOp ? opCaseTitle(c) : c.title) + '</span>' + caseNoteHtml(c) + '</span>' +
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
       postponePillHtml(c) +
+      opEstimatePillHtml(c) +
       medlPillHtml(c) +
       trackHtml(c, listTrackMini(activePage)) +
       '<div class="case-card-menu">' +

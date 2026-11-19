@@ -65,7 +65,7 @@ test('readImportSettings: an old fristBuffer must be a non-negative number, roun
 
 test('readImportSettings: work windows are read and normalised per type', () => {
   const r = readImportSettings({ workWindows: { ny: 10, viderebehandling: -1 } });
-  assert.deepStrictEqual(Object.assign({}, r.workWindows), { ny: 10, viderebehandling: 3, oppdrag: 2 });
+  assert.deepStrictEqual(Object.assign({}, r.workWindows), { ny: 10, viderebehandling: 3, oppdrag: 2, op_formalia: 1, op_oppstart: 1, op_avgjorelse: 10 });
   assert.ok(!('workWindows' in readImportSettings({ workWindows: 'x' })));
   assert.ok(!('workWindows' in readImportSettings({})));
 });

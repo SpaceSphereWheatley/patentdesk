@@ -144,6 +144,7 @@ document.getElementById('medleser-list').addEventListener('click', function(e) {
 
 // ── Stikkord-modal ─────────────────────────────────
 var pendingTagId = null, pendingTagStatus = null, pendingTagCallback = null, pendingTagNeedsOutcome = false;
+var pendingTagNeedsOpOutcome = false;
 
 // Samler inn stikkord — og utfall når en sak avsluttes — og gir dem videre til
 // callback(tags, outcome). Modalen avgjør ikke selv hva som skjer etterpå — det
@@ -156,12 +157,14 @@ function openTagModal(id, toStatus, callback, opts) {
   pendingTagCallback = callback || null;
   var theCase   = cases.find(function(c) { return c.id === id; });
   var isClosing = pendingTagStatus === 'avsluttet';
-  pendingTagNeedsOutcome = isClosing && !!theCase && theCase.type !== 'oppdrag';
+  pendingTagNeedsOutcome = isClosing && isApplication(theCase);
+  // OP-saker har egne utfall (OP_OUTCOMES), også påkrevd ved avslutning
+  pendingTagNeedsOpOutcome = isClosing && isOpCase(theCase);
   document.getElementById('tag-case-number').textContent = theCase ? theCase.caseNumber : '';
   document.getElementById('f-tags').value = (theCase && theCase.tags) ? theCase.tags : '';
   document.getElementById('tag-modal-title').childNodes[0].textContent =
     opts.editOutcome ? 'Endre utfall — ' : isClosing ? 'Avslutt sak — ' : 'Brev sendt — ';
-  document.getElementById('tag-modal-desc').textContent = pendingTagNeedsOutcome
+  document.getElementById('tag-modal-desc').textContent = pendingTagNeedsOutcome || pendingTagNeedsOpOutcome
     ? 'Velg utfall, og legg eventuelt til stikkord.'
     : isClosing
       ? 'Legg til stikkord for denne saken (valgfritt).'
@@ -169,32 +172,41 @@ function openTagModal(id, toStatus, callback, opts) {
   document.getElementById('btn-tag-confirm').textContent =
     opts.editOutcome ? 'Lagre' : isClosing ? 'Avslutt sak' : 'Brev sendt';
   document.getElementById('tag-outcome-group').style.display = pendingTagNeedsOutcome ? '' : 'none';
+  document.getElementById('tag-op-outcome-group').style.display = pendingTagNeedsOpOutcome ? '' : 'none';
   var current = opts.editOutcome && theCase ? theCase.outcome : (opts.presetOutcome || null);
   document.querySelectorAll('#tag-outcome-group input[name="outcome"]').forEach(function(r) { r.checked = r.value === current; });
+  // Et utfall valgt på sakssiden står forhåndsvalgt
+  var opCurrent = pendingTagNeedsOpOutcome ? ((theCase.op || {}).outcome || null) : null;
+  document.querySelectorAll('#tag-op-outcome-group input[name="op-outcome"]').forEach(function(r) { r.checked = r.value === opCurrent; });
   syncTagConfirm();
   openBackdrop('tag-backdrop');
   setTimeout(function() {
     var first = pendingTagNeedsOutcome && !current
       ? document.querySelector('#tag-outcome-group input[name="outcome"]')
+      : pendingTagNeedsOpOutcome && !opCurrent
+      ? document.querySelector('#tag-op-outcome-group input[name="op-outcome"]')
       : document.getElementById('f-tags');
     if (first) first.focus();
   }, 50);
 }
 function selectedOutcome() {
-  var r = document.querySelector('#tag-outcome-group input[name="outcome"]:checked');
+  var r = pendingTagNeedsOpOutcome
+    ? document.querySelector('#tag-op-outcome-group input[name="op-outcome"]:checked')
+    : document.querySelector('#tag-outcome-group input[name="outcome"]:checked');
   return r ? r.value : null;
 }
 // Utfallet er påkrevd når en sak avsluttes: uten det blir saksflyten på
 // Oversikt feil.
 function syncTagConfirm() {
-  document.getElementById('btn-tag-confirm').disabled = pendingTagNeedsOutcome && !selectedOutcome();
+  document.getElementById('btn-tag-confirm').disabled = (pendingTagNeedsOutcome || pendingTagNeedsOpOutcome) && !selectedOutcome();
 }
 function closeTagModal() {
   closeBackdrop('tag-backdrop');
   pendingTagId = pendingTagStatus = pendingTagCallback = null;
   pendingTagNeedsOutcome = false;
+  pendingTagNeedsOpOutcome = false;
 }
-document.querySelectorAll('#tag-outcome-group input[name="outcome"]').forEach(function(r) {
+document.querySelectorAll('#tag-outcome-group input[name="outcome"], #tag-op-outcome-group input[name="op-outcome"]').forEach(function(r) {
   r.addEventListener('change', syncTagConfirm);
 });
 
@@ -206,9 +218,10 @@ document.getElementById('f-tags').addEventListener('keydown', function(e) {
 
 document.getElementById('btn-tag-confirm').addEventListener('click', function() {
   if (!pendingTagId) return;
-  if (pendingTagNeedsOutcome && !selectedOutcome()) return;
+  var needsOutcome = pendingTagNeedsOutcome || pendingTagNeedsOpOutcome;
+  if (needsOutcome && !selectedOutcome()) return;
   var tags    = normaliseTags(document.getElementById('f-tags').value);
-  var outcome = pendingTagNeedsOutcome ? selectedOutcome() : null;
+  var outcome = needsOutcome ? selectedOutcome() : null;
   var cb      = pendingTagCallback;
   if (fModalTags) fModalTags.value = tags;
   closeTagModal();
@@ -258,7 +271,7 @@ function runStatusTransition(id, toStatus, opts) {
   if (isOppdrag && toStatus === 'avsluttet') { completeOppdrag(id); return; }
 
   var steps = [];
-  if (t.needsConfirm && !opts.skipConfirm) steps.push('confirm');
+  if (t.needsConfirm && (!opts.skipConfirm || t.alwaysConfirm)) steps.push('confirm');
   if (t.needsTags)    steps.push('tags');
   if (t.needsDueDate) steps.push('due');
 
@@ -422,6 +435,7 @@ function runRowAction(id) {
   else if (a.type === 'response')          runStatusTransition(id, 'viderebehandling');
   else if (a.type === 'choice-videre')     openVidereChoice(id, c.caseNumber);
   else if (a.type === 'complete-oppdrag')  completeOppdrag(id);
+  else if (a.type === 'op-forward')        runStatusTransition(id, a.toStatus);
 }
 
 // ════════════════════════════════════════════════════════════════════════════

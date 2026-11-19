@@ -725,3 +725,37 @@ body[data-page="sak"] #view-sak.is-docs-tab.is-focus { display: grid !important;
 #view-sak.is-focus .sak-topbar-right { display: none !important; }
 #view-sak.is-focus .dp-toolbar { padding-bottom: 0; }
 #view-sak.is-focus .dp-tab { padding: var(--space-1) var(--space-5); }
+
+/* ── OP-panelet (op-): parter, utvalg, saksdatoer og kontrollfrister ── */
+.op-panel { margin: var(--space-4, 16px) 0; }
+.op-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .op-grid { grid-template-columns: 1fr; } }
+.op-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.op-card-title { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-text); font-weight: 600; }
+.op-card-sub { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.op-kv { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 6px 12px; align-items: center; font-size: 13.5px; }
+.op-kv-k { color: var(--muted-text); }
+.op-kv-plain { padding: 4px 0; }
+.op-input { width: 100%; }
+.op-opp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; margin-bottom: 6px; align-items: center; }
+.op-opp-new { grid-template-columns: minmax(0, 1fr); }
+.op-opp-del[disabled] { opacity: .35; cursor: not-allowed; }
+.op-dates { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.op-dates th { text-align: left; font-weight: 400; color: var(--muted-text); padding: 5px 8px 5px 0; width: 48%; }
+.op-dates td { padding: 5px 0; border-bottom: 1px solid var(--border); }
+.op-dates tr:last-child td { border-bottom: 0; }
+.op-date-cell { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.op-date-cell .dp-wrap { width: 140px; }
+.op-reply-kind { width: auto; }
+.op-due { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 10px;
+  background: var(--s-op-bg); border: 1px solid var(--s-op-border); border-radius: var(--radius); font-size: 13.5px; }
+.op-due label { color: var(--s-op-text); font-weight: 600; }
+.op-due .dp-wrap { width: 140px; }
+.op-due-note { color: var(--muted-text); font-size: 12.5px; }
+.op-link { background: none; border: 0; padding: 0; color: var(--primary); cursor: pointer; font: inherit; text-decoration: underline; }
+.op-ctrl { margin-top: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; font-size: 13.5px; }
+.op-ctrl-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+.op-ctrl-open { font-weight: 600; }
+.op-ctrl-met { color: var(--trk-done-text); }
+.op-ctrl-na { color: var(--muted-text); font-style: italic; }
+.op-ctrl-hint { color: var(--muted-text); font-size: 12px; margin-top: 4px; }

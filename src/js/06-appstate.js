@@ -88,6 +88,8 @@ function _dispatch(action, payload) {
       // Oppdater state. Stikkord fra avslutningsdialogen følger med i samme
       // endring, så «Angre» tar dem også.
       var patch = statusChangePatch(toStatus, payload.outcome, newDueDate);
+      // OP-saker: fasens frist foreslås på nytt (opStatusPatch)
+      if (isOpCase(theCase)) Object.assign(patch, opStatusPatch(theCase, toStatus, payload.outcome));
       if (typeof payload.tags === 'string') patch.tags = payload.tags;
       patch.history = appendHistory(theCase, fromStatus, toStatus);
       // «Svar mottatt»: mottaksdato og hva som kom inn følger overgangen
@@ -128,7 +130,7 @@ function _dispatch(action, payload) {
     case 'MEDL_SET': {
       // Fra «Rediger sak». Et nytt navn skrevet inn der legges også på lista.
       var sc = cases.find(function(c) { return c.id === payload.id; });
-      if (!sc || sc.type === 'oppdrag') break;
+      if (!isApplication(sc)) break;
       var reader = sanitizeText(payload.reader || '').trim();
       if (reader && payload.addToList) {
         medleserList = addMedleser(medleserList, reader);
@@ -206,7 +208,12 @@ function _dispatch(action, payload) {
         history: [{ type: 'status', date: new Date().toISOString(), from: null, to: p.status }]
       };
       if (p.duration) newCase.duration = p.duration;
-      if (p.caseBuffer != null && p.type !== 'oppdrag') newCase.caseBuffer = p.caseBuffer;
+      if (p.caseBuffer != null && isApplication(newCase)) newCase.caseBuffer = p.caseBuffer;
+      // OP-sak: saksdataene fra dialogen; en frist skrevet inn der er satt for hånd
+      if (isOpCase(newCase)) {
+        newCase.op = Object.assign(normalizeOp(p.op), { dueManual: !!p.dueDate });
+        newCase.dueDate = opSyncDue(newCase);
+      }
       if (p.unassigned) Object.assign(newCase, unassignedPatch(newCase, true, newCase.createdAt));
       AppState.cases = cases.concat([newCase]);
       saveCases();
@@ -228,20 +235,28 @@ function _dispatch(action, payload) {
                       notes: sanitizeText(p.notes || ''), tags: normaliseTags(p.tags || ''),
                       type: p.type || c.type, caseBuffer: p.caseBuffer != null ? p.caseBuffer : null };
         if (p.type === 'oppdrag') { patch.status = p.status || 'ny'; patch.duration = p.duration; patch.caseBuffer = null; }
+        else if (p.type === 'op') {
+          // Fasen og OP-dataene endres på sakssiden; dialogen endrer nummer,
+          // tittel, notater, stikkord, eget vindu og fasens frist.
+          // Bufferen er planen for Avgjørelse (dra i tidslinjen) og beholdes
+          patch.status = c.status; patch.duration = p.duration; patch.caseBuffer = c.caseBuffer != null ? c.caseBuffer : null;
+          var opUpd = opApplyUpdate(c, p.dueDate !== c.dueDate ? { dueDate: p.dueDate } : {});
+          if (opUpd) { patch.op = opUpd.op; patch.dueDate = opUpd.dueDate; }
+        }
         else                      { patch.status = p.status;  delete patch.duration; }
         patch.outcome = normaliseOutcome(patch.status, c.outcome);
         Object.assign(patch, unassignedPatch(Object.assign({}, c, patch), !!p.unassigned, new Date().toISOString()));
         // Record frist change in history if dueDate changed
         var histPatch = {};
-        if (p.dueDate !== c.dueDate) {
-          histPatch.history = appendHistory(c, null, null, 'frist', c.dueDate, p.dueDate);
+        if (patch.dueDate !== c.dueDate) {
+          histPatch.history = appendHistory(c, null, null, 'frist', c.dueDate, patch.dueDate);
         }
         return Object.assign({}, c, patch, histPatch);
       });
       saveCases();
       // Innleverings- og prioritetsdatoen ligger i saksdetaljene (pt_sak_*),
       // ikke i cases[]
-      if (p.type !== 'oppdrag' && typeof p.filingDate === 'string') {
+      if (p.type !== 'oppdrag' && p.type !== 'op' && typeof p.filingDate === 'string') {
         var editData = loadSakData(p.id) || defaultSakData(0);
         var priorityDate = typeof p.priorityDate === 'string' ? p.priorityDate : (editData.priorityDate || '');
         if ((editData.filingDate || '') !== p.filingDate || (editData.priorityDate || '') !== priorityDate) {
@@ -325,6 +340,21 @@ function _dispatch(action, payload) {
     case 'CASE_COMPLETE': {
       // Håndteres av runStatusTransition; rutes hit som CASE_STATUS_CHANGE
       dispatch('CASE_STATUS_CHANGE', payload);
+      break;
+    }
+
+    case 'OP_UPDATE': {
+      // OP-dataene fra sakssiden: ett eller flere felt (se opApplyUpdate)
+      var ouCase = cases.find(function(c) { return c.id === payload.id; });
+      var ouPatch = opApplyUpdate(ouCase, payload.changes);
+      if (!ouPatch) { if (isOpCase(ouCase)) showToast('✗ Inndatoen er obligatorisk — skriv inn en gyldig dato', true); break; }
+      if (ouPatch.dueDate !== ouCase.dueDate) {
+        ouPatch.history = appendHistory(ouCase, null, null, 'frist', ouCase.dueDate, ouPatch.dueDate);
+      }
+      AppState.cases = cases.map(function(c) { return c.id === payload.id ? Object.assign({}, c, ouPatch) : c; });
+      saveCases();
+      render();
+      if (activeSakId === payload.id) renderSak(payload.id);
       break;
     }
 
@@ -425,7 +455,7 @@ function _dispatch(action, payload) {
     case 'OBJECTION_STATE_SET': {
       // Vurdering av én (gruppert) innvending i runden saken er i nå
       var osCase = cases.find(function(c) { return c.id === payload.id; });
-      if (!osCase || osCase.type === 'oppdrag' || osCase.status !== 'viderebehandling') break;
+      if (!isApplication(osCase) || osCase.status !== 'viderebehandling') break;
       if (payload.round !== examinationRound(osCase) || OBJECTION_STATES.indexOf(payload.state) === -1) break;
       var osData = loadSakData(payload.id);
       if (!osData) break;
@@ -439,7 +469,7 @@ function _dispatch(action, payload) {
     case 'OBJECTION_ADD': {
       // Egen innvending: reist i runde k («Ny i denne runden») eller i brev L
       var oaCase = cases.find(function(c) { return c.id === payload.id; });
-      if (!oaCase || oaCase.type === 'oppdrag' || oaCase.status !== 'viderebehandling') break;
+      if (!isApplication(oaCase) || oaCase.status !== 'viderebehandling') break;
       var oaData = loadSakData(payload.id);
       if (!oaData) break;
       var oaRound = objectionRound(oaCase, roundsOf(oaData));
@@ -457,7 +487,7 @@ function _dispatch(action, payload) {
 
     case 'OBJECTION_DELETE': {
       var odCase = cases.find(function(c) { return c.id === payload.id; });
-      if (!odCase || odCase.type === 'oppdrag' || odCase.status !== 'viderebehandling') break;
+      if (!isApplication(odCase) || odCase.status !== 'viderebehandling') break;
       var odData = loadSakData(payload.id);
       if (!odData) break;
       var odOut = objectionsAfterDelete(odData, payload.objId);
@@ -899,6 +929,28 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'SETTINGS_OP_PLAN_CHANGE': {
+      // value null = tilbake til standard; key null = begge tilbake til standard
+      var nextPlan = Object.assign({}, opPlan);
+      if (payload.key == null) nextPlan = Object.assign({}, OP_PLAN_DEFAULTS);
+      else if (payload.key in OP_PLAN_DEFAULTS) {
+        nextPlan[payload.key] = payload.value == null ? OP_PLAN_DEFAULTS[payload.key] : payload.value;
+      }
+      opPlan = normalizeOpPlan(nextPlan);
+      saveOpPlan(opPlan);
+      // Anslåtte frister på OP-sakene følger den nye planen, og endringen
+      // føres i sakens historikk som andre fristendringer
+      var synced = opResync(cases);
+      AppState.cases = synced.map(function(c, i) {
+        var old = cases[i];
+        return c === old ? c : Object.assign({}, c, { history: appendHistory(old, null, null, 'frist', old.dueDate, c.dueDate) });
+      });
+      saveCases();
+      render();
+      if (payload.key !== null) showToast('✓ Plan for OP-saker lagret');
+      break;
+    }
+
     case 'RESPONSE_CHECK_TOGGLE': {
       var rc = cases.find(function(c) { return c.id === payload.id; });
       if (!rc) break;
@@ -1068,6 +1120,7 @@ function _dispatch(action, payload) {
         if ('typeBuffers' in s) { typeBuffers = s.typeBuffers; saveTypeBuffers(typeBuffers); }
         if ('workWindows' in s) { workWindows = s.workWindows; saveWorkWindows(workWindows); }
         if ('deadlines' in s) { deadlines = s.deadlines; saveDeadlines(deadlines); }
+        if ('opPlan' in s) { opPlan = s.opPlan; saveOpPlan(opPlan); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
         if ('docLayout' in s) { docLayout = s.docLayout; saveDocLayout(docLayout); if (typeof renderDocPanes === 'function') renderDocPanes(); }
@@ -1077,6 +1130,9 @@ function _dispatch(action, payload) {
         if ('medlLog' in s) { medlLog = s.medlLog; saveMedlLog(medlLog); }
         if ('caseSource' in s) { saveCaseSource(s.caseSource); renderCaseSourceLinks(); _caseSourceFillInputs(); }
       }
+      // OP-saker: fristene følger planen (innstillingene kan ha kommet med importen)
+      var opSynced = opResync(cases);
+      if (opSynced.some(function(c, i) { return c !== cases[i]; })) { cases = opSynced; saveCases(); }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
       navigateTo(payload.page || 'ny');
@@ -1150,7 +1206,8 @@ function _dispatch(action, payload) {
 function casesForPage(page) {
   if (PAGES[page] && PAGES[page].showAll) return cases;
   if (page === 'oppdrag') return cases.filter(function(c) { return c.type === 'oppdrag' && c.status !== 'avsluttet'; });
-  return cases.filter(function(c) { return (c.status || 'ny') === page && c.type !== 'oppdrag'; });
+  if (page === 'op') return cases.filter(function(c) { return isOpCase(c) && c.status !== 'avsluttet'; });
+  return cases.filter(function(c) { return (c.status || 'ny') === page && isApplication(c); });
 }
 
 // ── Alle saker: sortering på kolonneoverskriftene ──
@@ -1174,10 +1231,12 @@ function nextAllSort(cur, key) {
 }
 
 // Rekkefølgen i saksflyten: aktive oppdrag, Ny, Viderebehandling, Fristarkiv, Avsluttet.
+// OP-saker i en arbeidsfase står med Ny, i en ventefase med Fristarkiv.
 // Ren funksjon — se test/allCasesSort.test.js.
 function allCasesStatusRank(c) {
   if (c.status === 'avsluttet') return 4;
   if (c.type === 'oppdrag') return 0;
+  if (isOpCase(c)) return isOpWorkPhase(c) ? 1 : 3;
   return { ny: 1, viderebehandling: 2, fristarkiv: 3 }[c.status || 'ny'] || 1;
 }
 

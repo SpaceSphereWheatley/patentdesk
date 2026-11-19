@@ -57,7 +57,7 @@ These two stores have distinct responsibilities. Do not conflate them.
 
 ### Versioning
 - Version string: `APP_VERSION` (SemVer, e.g. `v4.4.4`)
-- Schema version: `SCHEMA_VERSION` (integer, currently `8`)
+- Schema version: `SCHEMA_VERSION` (integer, currently `9`)
 - Versioning follows **Semantic Versioning**: bump patch for fixes, minor for
   meaningful features, major for breaking changes. Do not bump mid-session —
   only at the end of a batch of related changes.
@@ -107,6 +107,26 @@ These two stores have distinct responsibilities. Do not conflate them.
   - `Avsluttet` — done; excluded from all workload logic.
 - Oppdrag are separate from this: they carry an explicit `duration` (in
   workdays) and always use their actual `dueDate` (never buffered).
+- **OP-saker** (innsigelser, `type: 'op'`, `src/js/04a-op-cases.js`) are a
+  third type with their own phases stored as `status` (`OP_PHASES`):
+  `op_formalia → op_svar → op_oppstart → op_skrift → op_avgjorelse → avsluttet`.
+  The examiner is always 1. voterende. Work phases (formalia, oppstart,
+  avgjørelse) behave like Ny: a work window (`workWindows.op_*`, or the case's
+  own `duration`) ending on `dueDate`, belegg, overdue penalty; no buffer, no
+  postponing — except Avgjørelse, which can be planned earlier (positive
+  `caseBuffer`), never later; overdue counts from `dueDate`. Wait phases (svar,
+  skrift) behave like Fristarkiv: milestone, no belegg. Only the OP number and
+  the inndato (`op.received`) are required. The whole plan is derived from the
+  inndato (`opPlanDates`, settings `opPlan`: formalia/reply days), marked as an
+  estimate (`opDueIsEstimate`) until a real date from SANT replaces it; all
+  deadlines are calendar days. `dueDate` is the current phase's deadline,
+  suggested unless set by hand (`op.dueManual`); the two control deadlines
+  (`opControlDeadlines`) are shown separately. Before Avgjørelse, a provisional
+  Avgjørelse block (`opProvisionalCase`) is drawn and counted in belegg. Every
+  phase change is confirmed. Case data lives on the
+  case as `op` (`normalizeOp`). SANT is the source of truth: the app suggests,
+  never sends, confirms or closes anything. Use `isApplication(c)` for "a
+  patent application" — never `c.type !== 'oppdrag'`, which also matches OP.
 - Claims (krav): independent (selvstendige) and dependent (uselvstendige)
 - Novelty (nyhet) and inventive step (oppfinnelseshøyde) are per-claim
   properties. A claim without novelty is automatically locked to no inventive

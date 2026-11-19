@@ -16,7 +16,7 @@ function copyToClipboard(text, btn) {
 }
 
 // ── Hash-routing ───────────────────────────────────
-var VALID_PAGES = ['hjem','ny','fristarkiv','viderebehandling','avsluttet','statistikk','innstillinger','oppdrag','medlesing'];
+var VALID_PAGES = ['hjem','ny','fristarkiv','viderebehandling','avsluttet','statistikk','innstillinger','oppdrag','medlesing','op'];
 
 var activeSakId = null;
 
@@ -187,7 +187,7 @@ document.getElementById('case-list').addEventListener('click', function(e) {
       activeCaseMenuItemHtml(c) +
       unassignedMenuItemsHtml(c) +
       medlMenuItemsHtml(c) +
-      (c.status === 'avsluttet' && c.type !== 'oppdrag'
+      (c.status === 'avsluttet' && isApplication(c)
         ? '<button class="card-dropdown-item btn-row-outcome" data-id="' + id + '"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
         : '') +
       '<button class="card-dropdown-item btn-copy-path" data-cn="' + esc(c.caseNumber) + '"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier mappe-sti</button>' +
@@ -295,7 +295,7 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     activeCaseMenuItemHtml(c) +
     unassignedMenuItemsHtml(c) +
     medlMenuItemsHtml(c) +
-    (c.status === 'avsluttet' && c.type !== 'oppdrag'
+    (c.status === 'avsluttet' && isApplication(c)
       ? '<button class="card-dropdown-item btn-sak-outcome"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Endre utfall</button>'
       : '') +
     '<button class="card-dropdown-item btn-sak-copy-path" data-cn="' + esc(c.caseNumber) + '"><svg class="ti" aria-hidden="true"><use href="#ti-copy"/></svg> Kopier mappe-sti</button>' +
@@ -528,9 +528,21 @@ var fPriorityDate = document.getElementById('f-priority-date');
 var _modalBulkMode = 'auto'; // 'auto' | 'fast'
 var _modalBulkParsed = [];
 
-function _setModalOppdrag(isOppdrag) {
-  document.getElementById('modal-row-sak').style.display     = isOppdrag ? 'none' : '';
+// kind: valgt verdi i «Type / Status» — 'oppdrag', 'op' eller en søknadsstatus.
+function _setModalOppdrag(kind) {
+  var isOppdrag = kind === 'oppdrag', isOp = kind === 'op';
+  document.getElementById('modal-row-sak').style.display     = isOppdrag || isOp ? 'none' : '';
   document.getElementById('modal-row-oppdrag').style.display = isOppdrag ? '' : 'none';
+  document.getElementById('modal-row-opcase').style.display  = isOp ? '' : 'none';
+  // Parter og mottaksdato legges inn bare når saken opprettes
+  var editing = !!editIdEl.value;
+  document.querySelectorAll('#modal-row-opcase .op-create-only').forEach(function(el) { el.style.display = editing ? 'none' : ''; });
+  // En OP-sak bytter ikke type, og en søknad blir ikke en OP-sak
+  var orig = editing ? cases.find(function(c) { return c.id === editIdEl.value; }) : null;
+  var statusRow = document.getElementById('modal-row-status');
+  if (statusRow) statusRow.style.display = orig && isOpCase(orig) ? 'none' : '';
+  var opRadio = document.querySelector('input[name="status"][value="op"]');
+  if (opRadio) opRadio.closest('label').style.display = orig && !isOpCase(orig) ? 'none' : '';
   _syncModalBuffer();
   _syncModalUnassigned();
   _syncModalMedl();
@@ -545,7 +557,8 @@ var fMedlDate   = document.getElementById('f-medl-date');
 // Bare når en eksisterende søknad redigeres — ikke for oppdrag eller nye saker.
 function _syncModalMedl() {
   var row = document.getElementById('modal-row-medl');
-  if (row) row.style.display = editIdEl.value && getSelectedStatus() !== 'oppdrag' ? '' : 'none';
+  var st = getSelectedStatus();
+  if (row) row.style.display = editIdEl.value && st !== 'oppdrag' && st !== 'op' ? '' : 'none';
 }
 
 function _fillModalMedl(c) {
@@ -600,7 +613,7 @@ function _syncModalUnassigned() {
 function _syncModalBuffer() {
   if (!fCaseBuffer) return;
   var st = getSelectedStatus();
-  var applies = st !== 'oppdrag' && st !== 'fristarkiv' && st !== 'avsluttet';
+  var applies = st !== 'oppdrag' && st !== 'op' && st !== 'fristarkiv' && st !== 'avsluttet';
   fCaseBuffer.closest('.field-group').style.display = applies ? '' : 'none';
   fCaseBuffer.placeholder = 'Standard: ' + typeBufferFor({ status: st });
   // Bare viderebehandling kan utsettes etter fristen (canPostpone)
@@ -609,7 +622,7 @@ function _syncModalBuffer() {
   var hint = document.getElementById('f-case-buffer-hint');
   if (hint) hint.hidden = !late;
   var orig = editIdEl.value ? cases.find(function(c) { return c.id === editIdEl.value; }) : null;
-  if (orig && orig.type !== 'oppdrag') {
+  if (isApplication(orig)) {
     fCaseBuffer.value = (st === orig.status && orig.caseBuffer != null) ? String(orig.caseBuffer) : '';
   }
 }
@@ -628,14 +641,14 @@ function modalFallbackStatus(orig) {
 }
 function setSelectedStatus(val) {
   document.querySelectorAll('input[name="status"]').forEach(function(r) { r.checked = (r.value === val); });
-  _setModalOppdrag(val === 'oppdrag');
+  _setModalOppdrag(val);
 }
 // Fanen «Legg til» åpner på når en ny sak legges til. «Flere saker» er
 // standard, men den legger alltid inn Ny søknader, og oppdrag legges inn ett
 // og ett — derfor åpner Fristarkiv, Viderebehandling og Oppdrag på «Én sak».
 // Rene funksjoner — se test/addModalTab.test.js.
 function defaultAddTab(page) {
-  return ['fristarkiv', 'viderebehandling', 'oppdrag'].indexOf(page) >= 0 ? 'sak' : 'bulk';
+  return ['fristarkiv', 'viderebehandling', 'oppdrag', 'op'].indexOf(page) >= 0 ? 'sak' : 'bulk';
 }
 function addButtonLabel(page) {
   return defaultAddTab(page) === 'bulk' ? '+ Legg til saker' : '+ Legg til sak';
@@ -648,9 +661,11 @@ function openModal(c) {
   // Determine context
   var defaultOppdrag = !c && activePage === 'oppdrag';
   var isOppdrag = (c && c.type === 'oppdrag') || defaultOppdrag;
+  var defaultOp = !c && activePage === 'op';
+  var isOp = (c && isOpCase(c)) || defaultOp;
 
   document.getElementById('modal-title').textContent = c
-    ? (isOppdrag ? 'Rediger oppdrag' : 'Rediger sak')
+    ? (isOppdrag ? 'Rediger oppdrag' : isOp ? 'Rediger OP-sak' : 'Rediger sak')
     : 'Legg til sak';
 
   // Reset adv toggle
@@ -673,22 +688,24 @@ function openModal(c) {
     fModalTags.value = c.tags  || '';
     fDuration.value   = c.duration || '';
     fCaseBuffer.value = c.caseBuffer != null ? String(c.caseBuffer) : '';
-    fFilingDate.value = c.type === 'oppdrag' ? '' : toDisplay((loadSakData(c.id) || {}).filingDate || '');
-    fPriorityDate.value = c.type === 'oppdrag' ? '' : toDisplay((loadSakData(c.id) || {}).priorityDate || '');
+    fFilingDate.value = !isApplication(c) ? '' : toDisplay((loadSakData(c.id) || {}).filingDate || '');
+    fPriorityDate.value = !isApplication(c) ? '' : toDisplay((loadSakData(c.id) || {}).priorityDate || '');
+    _fillModalOp(c);
     if (c.notes || c.tags) {
       document.getElementById('modal-adv-toggle').classList.add('open');
       document.getElementById('modal-adv-body').classList.add('open');
     }
     document.getElementById('f-unassigned').checked = isUnassigned(c);
     _fillModalMedl(c);
-    setSelectedStatus(isOppdrag ? 'oppdrag' : (c.status || 'ny'));
+    setSelectedStatus(isOppdrag ? 'oppdrag' : isOp ? 'op' : (c.status || 'ny'));
   } else {
     document.getElementById('f-unassigned').checked = UNASSIGNED_NEW_DEFAULT;
     _fillModalMedl(null);
     editIdEl.value = fCaseNum.value = fDueDate.value = fTitle.value = fNotes.value = fModalTags.value = fDuration.value = fCaseBuffer.value = fFilingDate.value = fPriorityDate.value = '';
     document.getElementById('f-case-number-op').value = '';
     document.getElementById('f-due-date-op').value = '';
-    var defStatus = defaultOppdrag ? 'oppdrag'
+    _fillModalOp(null);
+    var defStatus = defaultOppdrag ? 'oppdrag' : defaultOp ? 'op'
       : (['statistikk','innstillinger','hjem'].indexOf(activePage) >= 0 ? 'ny' : activePage);
     setSelectedStatus(defStatus);
   }
@@ -701,8 +718,25 @@ function openModal(c) {
   openBackdrop('modal-backdrop');
   setTimeout(function() {
     (openBulk ? document.getElementById('modal-bulk-paste')
-      : isOppdrag ? document.getElementById('f-case-number-op') : fCaseNum).focus();
+      : isOppdrag ? document.getElementById('f-case-number-op')
+      : isOp ? document.getElementById('f-op-number') : fCaseNum).focus();
   }, 50);
+}
+// OP-feltene i dialogen: tomme for en ny sak, nummer/frist/vindu ved redigering.
+var OP_MODAL_FIELDS = ['f-op-number', 'f-op-due', 'f-op-duration', 'f-op-patent', 'f-op-holder',
+  'f-op-received', 'f-op-opponent', 'f-op-opponent-agent'];
+function _fillModalOp(c) {
+  OP_MODAL_FIELDS.forEach(function(fid) { document.getElementById(fid).value = ''; });
+  if (!c || !isOpCase(c)) return;
+  document.getElementById('f-op-number').value = c.caseNumber || '';
+  document.getElementById('f-op-due').value = toDisplay(c.dueDate || '');
+  document.getElementById('f-op-duration').value = c.duration || '';
+}
+function _readModalOp(editing) {
+  function v(fid) { return document.getElementById(fid).value; }
+  return opModalPayload({ number: v('f-op-number'), due: v('f-op-due'), duration: v('f-op-duration'),
+    patentNo: v('f-op-patent'), holder: v('f-op-holder'), received: v('f-op-received'),
+    opponent: v('f-op-opponent'), opponentAgent: v('f-op-opponent-agent') }, editing);
 }
 function closeModal() { closeBackdrop('modal-backdrop'); }
 

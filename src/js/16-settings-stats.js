@@ -128,7 +128,7 @@ function renderVacationList() {
 function buildByMonth() {
   var byMonth = {};
   function ensureKey(k) {
-    if (!byMonth[k]) byMonth[k] = { ny: 0, videre: 0, oppdrag: 0 };
+    if (!byMonth[k]) byMonth[k] = { ny: 0, videre: 0, oppdrag: 0, op: 0 };
   }
   stats.log.forEach(function(e) {
     var k = monthKey(e.date);
@@ -136,23 +136,26 @@ function buildByMonth() {
     if (e.type === 'ny')      byMonth[k].ny++;
     if (e.type === 'videre')  byMonth[k].videre++;
     if (e.type === 'oppdrag') byMonth[k].oppdrag++;
+    if (e.type === 'op')      byMonth[k].op++;
   });
   return byMonth;
 }
 
 function renderMonthTable(MONTHS_YEAR, byMonth, decisions) {
-  var totNy = 0, totVidere = 0, totOppdrag = 0;
+  var totNy = 0, totVidere = 0, totOppdrag = 0, totOp = 0;
   function cell(n, extra) {
     return '<td class="stat-col-num' + (n ? '' : ' month-zero') + (extra || '') + '">' + (n || '—') + '</td>';
   }
   document.getElementById('year-tbody').innerHTML = MONTHS_YEAR.map(function(key, i) {
-    var d = byMonth[key] || { ny: 0, videre: 0, oppdrag: 0 };
+    var d = byMonth[key] || { ny: 0, videre: 0, oppdrag: 0, op: 0 };
     totNy      += d.ny;
     totVidere  += (d.videre || 0);
     totOppdrag += (d.oppdrag || 0);
+    totOp      += (d.op || 0);
     return '<tr><td>' + MONTHS[i].name + '</td>' +
       cell(d.ny) + cell(d.videre || 0, ' stat-col-new') + cell(decisions.months[i], ' stat-col-new') +
       cell(d.oppdrag || 0, ' stat-col-oppdrag') +
+      cell(d.op || 0, ' stat-col-op') +
       '</tr>';
   }).join('');
   document.getElementById('year-tfoot').innerHTML =
@@ -161,6 +164,7 @@ function renderMonthTable(MONTHS_YEAR, byMonth, decisions) {
     '<td class="stat-col-num stat-col-new">' + totVidere + '</td>' +
     '<td class="stat-col-num stat-col-new">' + decisions.total + '</td>' +
     '<td class="stat-col-num stat-col-oppdrag">' + totOppdrag + '</td>' +
+    '<td class="stat-col-num stat-col-op">' + totOp + '</td>' +
     '</tr>';
 }
 
@@ -171,7 +175,7 @@ function renderMonthTable(MONTHS_YEAR, byMonth, decisions) {
 function decisionsByMonth(list, year) {
   var out = { months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], meddelt: 0, avslatt: 0, henlagt: 0, total: 0 };
   (list || []).forEach(function(c) {
-    if (!c || c.type === 'oppdrag' || c.status !== 'avsluttet') return;
+    if (!isApplication(c) || c.status !== 'avsluttet') return;
     if (!Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome)) return;
     var when = closedDate(c);
     if (!when) return;
@@ -193,7 +197,7 @@ function allTimeTotals(log, list) {
     else if (e && e.type === 'videre') t.videre++;
   });
   (list || []).forEach(function(c) {
-    if (c && c.type !== 'oppdrag' && c.status === 'avsluttet' &&
+    if (isApplication(c) && c.status === 'avsluttet' &&
         Object.prototype.hasOwnProperty.call(OUTCOMES, c.outcome) && closedDate(c)) t.decided++;
   });
   return t;
@@ -432,7 +436,7 @@ function forecastByMonth(list, year, now, dueFn) {
   var out = {};
   var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   (list || []).forEach(function(c) {
-    if (!c || c.type === 'oppdrag' || c.status !== 'ny' || isUnassigned(c)) return;
+    if (!isApplication(c) || c.status !== 'ny' || isUnassigned(c)) return;
     var due = dueFn(c);
     if (!due) return;
     var d = new Date(due + 'T00:00:00');

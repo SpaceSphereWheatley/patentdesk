@@ -350,6 +350,7 @@ button.ob-del:hover { color: var(--text-on-no); }
 .sak-status-chip.tone-frist   { background: var(--s-frist-bg);   color: var(--s-frist-text);   border-color: var(--s-frist-border); }
 .sak-status-chip.tone-avsl    { background: var(--s-avsl-bg);    color: var(--s-avsl-text);    border-color: var(--s-avsl-border); }
 .sak-status-chip.tone-oppdrag { background: var(--s-oppdrag-bg); color: var(--s-oppdrag-text); border-color: var(--s-oppdrag-border); }
+.sak-status-chip.tone-op { background: var(--s-op-bg); color: var(--s-op-text); border-color: var(--s-op-border); }
 .sak-status-menu   { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; min-width: 240px;
                      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
                      box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: var(--space-2); }

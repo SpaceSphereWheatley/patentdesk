@@ -64,6 +64,7 @@
   --s-videre-bg:    #eef2ff; --s-videre-text:#4338ca; --s-videre-border:#c7d2fe;
   --s-avsl-bg:      #f3f4f6; --s-avsl-text:  #6b7280; --s-avsl-border:  #d1d5db;
   --s-oppdrag-bg:   #ecfeff; --s-oppdrag-text:#0e7490; --s-oppdrag-border:#a5f3fc;
+  --s-op-bg:        #fdf2f8; --s-op-text:     #9d174d; --s-op-border:     #fbcfe8;
   /* Farge-on-primary/danger */
   --on-primary:  #ffffff;
   --on-danger:   #ffffff;

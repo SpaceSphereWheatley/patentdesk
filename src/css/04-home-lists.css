@@ -601,3 +601,7 @@ kbd { display: inline-block; min-width: 1.1em; text-align: center; padding: 1px 
 #view-medlesing .case-table th { position: relative; }
 /* Notatet skal ikke styre kolonnebredden på trange skjermer; knappene skal ikke skyves lenger ut. */
 @media (max-width: 1100px) { .medl-note-cell .case-note { max-width: 140px; } }
+
+/* OP-sak: fristen er et anslag regnet fra inndatoen */
+.op-est-pill { display: inline-flex; align-items: center; flex-shrink: 0; font-size: var(--text-xs); padding: 1px var(--space-2);
+  border-radius: var(--radius-pill); border: 1px dashed var(--s-op-border); color: var(--s-op-text); background: var(--surface); }

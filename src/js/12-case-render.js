@@ -8,6 +8,9 @@ function renderSak(id) {
   if (!cas) { navigateTo('hjem'); return; }
 
   var isOppdrag = cas.type === 'oppdrag';
+  var isOp      = isOpCase(cas);
+  // Oppdrag og OP-saker har ingen søknadsdeler (krav, CPC, mothold, sjekkliste)
+  var noApp     = !isApplication(cas);
 
   _sakActiveClaimNum  = null;
   _sakEditingLabelNum = null;
@@ -48,20 +51,20 @@ function renderSak(id) {
 
   // Varighet (oppdrag-felt)
   var durField = document.getElementById('sak-duration-field');
-  if (durField) durField.style.display = isOppdrag ? '' : 'none';
+  if (durField) durField.style.display = isOppdrag || isOp ? '' : 'none';
   var durInp = document.getElementById('sak-duration');
   if (durInp) durInp.textContent = cas.duration || (workWindowDays(cas) + ' (standard)');
 
   // Per-sak-buffer (skjules for oppdrag)
   var bufField = document.getElementById('sak-case-buffer-field');
-  if (bufField) bufField.style.display = isOppdrag ? 'none' : '';
+  if (bufField) bufField.style.display = noApp ? 'none' : '';
   var bufInp = document.getElementById('sak-case-buffer');
   if (bufInp) bufInp.textContent = caseBufferLabel(cas);
 
   // Medlesing (føres inn i «Rediger sak»; skjules for oppdrag)
   var medlField = document.getElementById('sak-medl-field');
-  if (medlField) medlField.style.display = isOppdrag ? 'none' : '';
-  var medlEntry = isOppdrag ? null : caseMedlFor(medlLog, cas.id);
+  if (medlField) medlField.style.display = noApp ? 'none' : '';
+  var medlEntry = noApp ? null : caseMedlFor(medlLog, cas.id);
   document.getElementById('sak-medl').textContent = medlEntry ? medlEntry.reader + ' · ' + toDisplay(medlEntry.sent) : '—';
 
   // Metalinjen i sakshodet (lesing; redigering skjer fortsatt i «Rediger sak»)
@@ -69,7 +72,12 @@ function renderSak(id) {
 
   // Status-knapper — forenklet for oppdrag
   var statusBtns = document.getElementById('sak-status-btns');
-  if (isOppdrag) {
+  if (isOp) {
+    statusBtns.innerHTML = OP_PHASES.map(function(p) {
+      return '<button class="sak-status-btn" data-feature="op-phase" data-status="' + p.status + '">' + esc(p.label) + '</button>';
+    }).join('') +
+      '<button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>';
+  } else if (isOppdrag) {
     statusBtns.innerHTML =
       '<button class="sak-status-btn" data-status="ny"><svg class="ti" aria-hidden="true"><use href="#ti-flag"/></svg> Aktiv</button>' +
       '<button class="sak-status-btn" data-status="avsluttet"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg> Avsluttet</button>';
@@ -87,10 +95,11 @@ function renderSak(id) {
   document.querySelectorAll('.sak-status-btn').forEach(function(btn) {
     btn.className = 'sak-status-btn';
     if (btn.dataset.status === (cas.status || 'ny')) {
-      btn.classList.add(isOppdrag && btn.dataset.status === 'ny' ? 'active-oppdrag' : 'active-' + (cas.status || 'ny'));
+      btn.classList.add(isOppdrag && btn.dataset.status === 'ny' ? 'active-oppdrag'
+        : isOp && btn.dataset.status !== 'avsluttet' ? 'active-op' : 'active-' + (cas.status || 'ny'));
     }
   });
-  var chipInfo = sakStatusChip(cas.status, isOppdrag, cas.outcome);
+  var chipInfo = sakStatusChip(cas.status, isOppdrag, isOp ? (cas.op || {}).outcome : cas.outcome);
   var chip = document.getElementById('sak-status-chip');
   if (chip) {
     chip.textContent = chipInfo.label;
@@ -101,12 +110,13 @@ function renderSak(id) {
   if (hintEl) hintEl.textContent = statusMenuHint(cas.status, isOppdrag);
   setSakStatusMenu(false);
 
-  renderSakChecklist(isOppdrag ? null : data);
+  renderSakChecklist(noApp ? null : data);
+  renderSakOp(cas);
 
   // Seksjoner skjules på data-sak-section, ikke på overskriftsteksten — den
   // endrer seg, attributtet gjør det ikke.
   document.querySelectorAll('.sak-section[data-sak-section]').forEach(function(sec) {
-    var hide = isOppdrag && OPPDRAG_HIDDEN_SECTIONS.indexOf(sec.dataset.sakSection) !== -1;
+    var hide = noApp && OPPDRAG_HIDDEN_SECTIONS.indexOf(sec.dataset.sakSection) !== -1;
     sec.style.display = hide ? 'none' : '';
   });
   // En fase uten synlige seksjoner skal ikke stå igjen som en tom flate.
@@ -119,7 +129,7 @@ function renderSak(id) {
   });
   applyPhaseCollapse();
 
-  if (!isOppdrag) {
+  if (!noApp) {
     document.getElementById('sak-num-claims').value        = data.numClaims || '';
     document.getElementById('sak-filing-date').textContent = toDisplay(data.filingDate) || '—';
     document.getElementById('sak-priority-date').textContent = toDisplay(data.priorityDate) || '—';
@@ -134,7 +144,7 @@ function renderSak(id) {
   }
 
   // Sammendraget summerer krav — uten krav har det ingenting å vise.
-  var showSummary = !isOppdrag && (data.numClaims || 0) > 0;
+  var showSummary = !noApp && (data.numClaims || 0) > 0;
   var summarySection = document.getElementById('sak-summary-section');
   if (summarySection) summarySection.style.display = showSummary ? '' : 'none';
   var sentinel = document.getElementById('sak-summary-sentinel');
@@ -181,9 +191,9 @@ function renderSakMeta(cas) {
   var el = document.getElementById('sak-meta-line'); if (!el) return;
   var isOppdrag = cas.type === 'oppdrag';
   var data = loadSakData(cas.id) || {};
-  var medlEntry = isOppdrag ? null : caseMedlFor(medlLog, cas.id);
+  var medlEntry = !isApplication(cas) ? null : caseMedlFor(medlLog, cas.id);
   var parts = sakMetaLine({
-    title: cas.title || '', isOppdrag: isOppdrag,
+    title: isOpCase(cas) ? opCaseTitle(cas) : (cas.title || ''), isOppdrag: isOppdrag,
     durationLabel: cas.duration ? cas.duration + ' arb.dager' : workWindowDays(cas) + ' arb.dager (standard)',
     filing: data.filingDate, priority: data.priorityDate,
     bufferLabel: metaBufferLabel(cas),
@@ -364,7 +374,7 @@ function renderSakFrist(cas) {
   var effDue    = fristDisplayDate(cas);
   var days      = daysUntil(effDue);
   var postponed = postponedDaysFor(cas);
-  var isApplicant = cas.type !== 'oppdrag' && cas.status === 'fristarkiv';
+  var isApplicant = (isApplication(cas) && cas.status === 'fristarkiv') || isOpWaitPhase(cas);
 
   box.className = 'sak-frist' + (isApplicant ? ' sak-frist-applicant' : '');
   document.getElementById('sak-frist-owner').textContent = fristOwnerLabel(cas);
@@ -382,9 +392,17 @@ function renderSakFrist(cas) {
       postponed + (postponed === 1 ? ' dag' : ' dager') + ' etter fristen</span> ' +
       '<button type="button" class="sak-frist-unpostpone" id="sak-frist-unpostpone">Fjern utsettelse</button>';
     meta.style.display = '';
+  } else if (metaMode === 'buffer' && isOpCase(cas)) {
+    var obd = bufferDaysFor(cas);
+    meta.textContent = 'Planlagt ferdig ' + toDisplay(effDueFor(cas)) + '  ·  ' + obd + (obd === 1 ? ' dag' : ' dager') + ' før fristen' +
+      (opDueIsEstimate(cas) ? '  ·  anslag' : '');
+    meta.style.display = '';
   } else if (metaMode === 'buffer') {
     var bd = bufferDaysFor(cas);
     meta.textContent = 'Faktisk frist ' + toDisplay(cas.dueDate) + '  ·  ' + bd + (bd === 1 ? ' dags' : ' dagers') + ' buffer trukket fra';
+    meta.style.display = '';
+  } else if (opDueIsEstimate(cas)) {
+    meta.textContent = 'Anslag, regnet fra inndatoen. Legg inn datoen fra SANT når den er kjent.';
     meta.style.display = '';
   } else {
     meta.style.display = 'none';
@@ -853,7 +871,7 @@ function renderSakResponse(cas, data, opts) {
   var el = document.getElementById('sak-svar');
   if (!el) return;
   var keepForm = !(opts && opts.closeForm) ? obOpenFormState(el) : null;
-  if (!cas || cas.type === 'oppdrag' || cas.status !== 'viderebehandling') { el.innerHTML = ''; delete el.dataset.obCase; return; }
+  if (!isApplication(cas) || cas.status !== 'viderebehandling') { el.innerHTML = ''; delete el.dataset.obCase; return; }
   var round = examinationRound(cas);
   var done = responseChecked(data, round);
   var rows = RESPONSE_CHECKLIST.map(function(item) {
@@ -1079,3 +1097,35 @@ function _cpcHierarchy(code) {
   });
 }
 
+
+// ── OP-panelet ─────────────────────────────────────
+// Panelet tegnes på nytt etter hver endring. Feltet som har fokus, får det
+// tilbake, så Tab fra ett felt til det neste virker som i et vanlig skjema.
+function _opFocusSelector(elm) {
+  if (!elm || !elm.closest) return null;
+  // Kalenderknappen ved et datofelt: knappen i samme dp-wrap som feltet
+  if (elm.classList && elm.classList.contains('dp-trigger')) {
+    var inp = elm.parentNode && elm.parentNode.querySelector('input[id]');
+    return inp ? '#' + inp.id + ' ~ .dp-trigger' : null;
+  }
+  if (elm.id) return '#' + elm.id;
+  var row = elm.closest('[data-op-opp]');
+  if (row && elm.dataset.opOppKey) return '[data-op-opp="' + row.dataset.opOpp + '"] [data-op-opp-key="' + elm.dataset.opOppKey + '"]';
+  if (elm.dataset.opOppNew) return '[data-op-opp-new]';
+  return null;
+}
+
+function renderSakOp(cas) {
+  var el = document.getElementById('sak-op');
+  if (!el) return;
+  if (!isOpCase(cas)) { el.hidden = true; el.innerHTML = ''; return; }
+  var active = document.activeElement;
+  var focusSel = active && el.contains(active) ? _opFocusSelector(active) : null;
+  el.hidden = false;
+  el.innerHTML = opPanelHtml(cas);
+  el.querySelectorAll('[data-op-dp]').forEach(function(inp) { _dp.init(inp); });
+  if (focusSel) {
+    var again = el.querySelector(focusSel);
+    if (again) again.focus();
+  }
+}
