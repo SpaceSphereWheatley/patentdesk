@@ -96,11 +96,29 @@ test('AC6: a removed item is not shown, but its tick is kept and comes back with
   assert.match(back, /data-item-id="gone" checked/);
 });
 
-test('AC7: the OP template travels with export/import; a file without it means the default', () => {
+test('AC7: the OP template travels with export/import; an export with the default template (null) gives the default', () => {
   const { readImportSettings } = load();
   const custom = [{ phase: 'Formalia', items: [{ id: 'x1', label: 'Mitt punkt', type: 'check' }] }];
   assert.deepStrictEqual(plain(readImportSettings({ checklistTemplateOp: custom })).checklistTemplateOp, custom);
   assert.strictEqual(readImportSettings({ checklistTemplateOp: null }).checklistTemplateOp, null);
+  // Som for de andre feltene: en fil uten feltet (eller med en ugyldig mal) endrer ingenting
   assert.ok(!('checklistTemplateOp' in readImportSettings({})));
   assert.ok(!('checklistTemplateOp' in readImportSettings({ checklistTemplateOp: [{ phase: 1 }] })));
+});
+
+test('security: template ids are restricted to a safe pattern, and are escaped in the HTML', () => {
+  const { isValidChecklistTemplate, opChecklistHtml } = load();
+  const hostile = [{ phase: 'Formalia', items: [{ id: 'x" autofocus onfocus="alert(1)', label: 'A' }] }];
+  assert.strictEqual(isValidChecklistTemplate(hostile), false);
+  assert.strictEqual(isValidChecklistTemplate([{ phase: 'F', items: [{ id: '"><img src=x>', label: 'A' }] }]), false);
+  assert.strictEqual(isValidChecklistTemplate([{ phase: 'F', items: [{ id: 'op-formkrav', label: 'A' }, { id: 'ci3k9x2a', label: 'B' }] }]), true);
+  const html = opChecklistHtml({}, hostile, 'op_formalia');
+  assert.ok(!html.includes('" autofocus'), html);
+  assert.match(html, /data-item-id="x&quot; autofocus/);
+});
+
+test('the default templates pass the stricter id check', () => {
+  const { isValidChecklistTemplate, OP_CHECKLIST_DEFAULT, CHECKLIST_DEFAULT } = load();
+  assert.strictEqual(isValidChecklistTemplate(OP_CHECKLIST_DEFAULT), true);
+  assert.strictEqual(isValidChecklistTemplate(CHECKLIST_DEFAULT), true);
 });

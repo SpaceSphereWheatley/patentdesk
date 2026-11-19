@@ -7418,10 +7418,13 @@ function makeExportPayload() {
   };
 }
 
+// En mal kan komme fra en importert fil. id-en havner i et HTML-attributt og
+// som nøkkel i saksdataene, så den begrenses til trygge tegn (standardmalene og
+// editorens cleUid oppfyller dette).
 function isValidChecklistTemplate(tpl) {
   return Array.isArray(tpl) && tpl.length > 0 && tpl.every(function(p) {
     return p && typeof p.phase === 'string' && Array.isArray(p.items) && p.items.every(function(i) {
-      return i && typeof i.id === 'string' && typeof i.label === 'string';
+      return i && typeof i.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(i.id) && typeof i.label === 'string';
     });
   });
 }
@@ -7452,6 +7455,8 @@ function readImportSettings(d) {
   if (typeof d.userName === 'string') out.userName = d.userName.trim();
   if (d.checklistTemplate === null) out.checklistTemplate = null;
   else if (isValidChecklistTemplate(d.checklistTemplate)) out.checklistTemplate = d.checklistTemplate;
+  // OP-malen: null = standardmalen (det en eksport med standardmalen har).
+  // Som for de andre feltene endrer en fil uten feltet ingenting.
   if (d.checklistTemplateOp === null) out.checklistTemplateOp = null;
   else if (isValidChecklistTemplate(d.checklistTemplateOp)) out.checklistTemplateOp = d.checklistTemplateOp;
   // Eldre eksportfiler har bare én global fristbuffer; den fyller begge typene.
@@ -12951,6 +12956,12 @@ document.getElementById('cle-backdrop').addEventListener('click', function(e) {
 
 document.getElementById('btn-cle-save').addEventListener('click', function() {
   var tpl = cleCollect();
+  // En tom OP-mal ville falt tilbake på standardmalen uten at du ser det
+  if (_cleKind === 'op' && !tpl.length) {
+    var st = document.getElementById('cle-status');
+    if (st) st.textContent = 'Malen må ha minst én gruppe. Bruk «Tilbakestill» for standardmalen.';
+    return;
+  }
   dispatch('CHECKLIST_TEMPLATE_SAVE', { template: tpl, kind: _cleKind });
 });
 
@@ -15648,6 +15659,9 @@ document.getElementById('view-sak').addEventListener('click', function(e) {
   sec.classList.toggle('is-open', open);
   head.setAttribute('aria-expanded', open ? 'true' : 'false');
   sec.querySelector('.sak-fold-body').hidden = !open;
+  // OP-sjekklisten åpner etter fasen og lagrer ikke valget (navnene kan
+  // overlappe med søknadsmalens grupper)
+  if (sec.closest('#sak-op-checklist')) return;
   var state = loadChecklistOpen();
   state[sec.dataset.fold] = open;
   lsSetSafe(CHECKLIST_OPEN_KEY, JSON.stringify(state));
@@ -15893,7 +15907,7 @@ function _checklistItemsHtml(data, group) {
   return group.items.map(function(item) {
     var checked = data.checklist[item.id] === true;
     return '<label class="sak-check-row sak-check-clickable' + (checked ? ' sak-check-done' : '') + '">' +
-      '<input type="checkbox" class="sak-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + '  data-feature="checklist-toggle-item"/>' +
+      '<input type="checkbox" class="sak-checkbox" data-item-id="' + esc(item.id) + '"' + (checked ? ' checked' : '') + '  data-feature="checklist-toggle-item"/>' +
       '<span class="sak-check-label">' + esc(item.label) + '</span>' +
     '</label>';
   }).join('');

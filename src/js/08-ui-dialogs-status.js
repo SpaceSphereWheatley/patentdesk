@@ -553,6 +553,12 @@ document.getElementById('cle-backdrop').addEventListener('click', function(e) {
 
 document.getElementById('btn-cle-save').addEventListener('click', function() {
   var tpl = cleCollect();
+  // En tom OP-mal ville falt tilbake på standardmalen uten at du ser det
+  if (_cleKind === 'op' && !tpl.length) {
+    var st = document.getElementById('cle-status');
+    if (st) st.textContent = 'Malen må ha minst én gruppe. Bruk «Tilbakestill» for standardmalen.';
+    return;
+  }
   dispatch('CHECKLIST_TEMPLATE_SAVE', { template: tpl, kind: _cleKind });
 });
 

@@ -316,6 +316,9 @@ document.getElementById('view-sak').addEventListener('click', function(e) {
   sec.classList.toggle('is-open', open);
   head.setAttribute('aria-expanded', open ? 'true' : 'false');
   sec.querySelector('.sak-fold-body').hidden = !open;
+  // OP-sjekklisten åpner etter fasen og lagrer ikke valget (navnene kan
+  // overlappe med søknadsmalens grupper)
+  if (sec.closest('#sak-op-checklist')) return;
   var state = loadChecklistOpen();
   state[sec.dataset.fold] = open;
   lsSetSafe(CHECKLIST_OPEN_KEY, JSON.stringify(state));
@@ -561,7 +564,7 @@ function _checklistItemsHtml(data, group) {
   return group.items.map(function(item) {
     var checked = data.checklist[item.id] === true;
     return '<label class="sak-check-row sak-check-clickable' + (checked ? ' sak-check-done' : '') + '">' +
-      '<input type="checkbox" class="sak-checkbox" data-item-id="' + item.id + '"' + (checked ? ' checked' : '') + '  data-feature="checklist-toggle-item"/>' +
+      '<input type="checkbox" class="sak-checkbox" data-item-id="' + esc(item.id) + '"' + (checked ? ' checked' : '') + '  data-feature="checklist-toggle-item"/>' +
       '<span class="sak-check-label">' + esc(item.label) + '</span>' +
     '</label>';
   }).join('');
