@@ -47,7 +47,7 @@ const CORE_FUNCTIONS = ['isOpCase', 'isApplication', 'opPhaseIndex', 'opPhase', 
   'isOpWorkPhase', 'isOpWaitPhase', 'opForwardAction',
   // OP-planen fra inndatoen: den anslåtte Avgjørelse-blokken inngår i belegget og tidslinjen
   'opProvisionalCases', 'opProvisionalCase', 'opPlanDates', 'opDueIsEstimate', 'opControlDeadlines',
-  'normalizeOpPlan', '_opPlusDays', '_opPlusMonths', 'addMonthsClamped', 'isoLocalDate', 'addDaysLocal'];
+  'normalizeOpPlan', '_opPlusDays', '_opPlusMonths', 'addMonthsClamped', 'isoLocalDate', 'addDaysLocal', 'opPlanDue'];
 const CORE_VARS = ['OP_PHASES', 'OP_PLAN_DEFAULTS', 'OP_PLAN_MAX', 'OP_MEETING_DAYS', 'OP_CONTROL_MONTHS'];
 
 function loadFunctions(names, opts) {

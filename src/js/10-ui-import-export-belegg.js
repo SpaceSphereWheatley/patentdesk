@@ -372,7 +372,8 @@ function computeBelegg(horizonDays) {
     var busyCount = 0;
     // OP-saker: den anslåtte Avgjørelse-blokken er arbeid fra første dag
     cases.concat(opProvisionalCases(cases)).filter(counts || countsInBelegg).forEach(function(c) {
-      var due      = new Date(effDueFor(c) + 'T00:00:00');
+      var planDue  = opPlanDue(c, isoLocalDate(today));
+      var due      = new Date(planDue + 'T00:00:00');
       var dueOff   = Math.round((due - today) / 86400000);
 
       // Forfalt: vinduet ligger i fortiden, men arbeidet er fortsatt ugjort.
@@ -388,7 +389,7 @@ function computeBelegg(horizonDays) {
 
       // Vinduet er workWindowDays arbeidsdager og slutter på (og inkluderer)
       // fristen; fridager inni det strekker det bakover (workWindowStart).
-      var ws       = new Date(workWindowStart(effDueFor(c), workWindowDays(c)) + 'T00:00:00');
+      var ws       = new Date(workWindowStart(planDue, workWindowDays(c)) + 'T00:00:00');
       var winStart = Math.round((ws - today) / 86400000);
       var winEnd   = dueOff;
       for (var i = Math.max(startOffset, winStart); i < Math.min(endOffset, winEnd + 1); i++) {

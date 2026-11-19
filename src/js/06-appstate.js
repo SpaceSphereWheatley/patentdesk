@@ -238,7 +238,8 @@ function _dispatch(action, payload) {
         else if (p.type === 'op') {
           // Fasen og OP-dataene endres på sakssiden; dialogen endrer nummer,
           // tittel, notater, stikkord, eget vindu og fasens frist.
-          patch.status = c.status; patch.duration = p.duration; patch.caseBuffer = null;
+          // Bufferen er planen for Avgjørelse (dra i tidslinjen) og beholdes
+          patch.status = c.status; patch.duration = p.duration; patch.caseBuffer = c.caseBuffer != null ? c.caseBuffer : null;
           var opUpd = opApplyUpdate(c, p.dueDate !== c.dueDate ? { dueDate: p.dueDate } : {});
           if (opUpd) { patch.op = opUpd.op; patch.dueDate = opUpd.dueDate; }
         }
@@ -937,13 +938,15 @@ function _dispatch(action, payload) {
       }
       opPlan = normalizeOpPlan(nextPlan);
       saveOpPlan(opPlan);
-      // Anslåtte frister på OP-sakene følger den nye planen
-      AppState.cases = cases.map(function(c) {
-        if (!isOpCase(c)) return c;
-        var d = opSyncDue(c);
-        return d === c.dueDate ? c : Object.assign({}, c, { dueDate: d });
+      // Anslåtte frister på OP-sakene følger den nye planen, og endringen
+      // føres i sakens historikk som andre fristendringer
+      var synced = opResync(cases);
+      AppState.cases = synced.map(function(c, i) {
+        var old = cases[i];
+        return c === old ? c : Object.assign({}, c, { history: appendHistory(old, null, null, 'frist', old.dueDate, c.dueDate) });
       });
       saveCases();
+      render();
       if (payload.key !== null) showToast('✓ Plan for OP-saker lagret');
       break;
     }
@@ -1127,6 +1130,9 @@ function _dispatch(action, payload) {
         if ('medlLog' in s) { medlLog = s.medlLog; saveMedlLog(medlLog); }
         if ('caseSource' in s) { saveCaseSource(s.caseSource); renderCaseSourceLinks(); _caseSourceFillInputs(); }
       }
+      // OP-saker: fristene følger planen (innstillingene kan ha kommet med importen)
+      var opSynced = opResync(cases);
+      if (opSynced.some(function(c, i) { return c !== cases[i]; })) { cases = opSynced; saveCases(); }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
       navigateTo(payload.page || 'ny');

@@ -11,7 +11,7 @@ function load(extra) {
   return loadFunctions([
     'isOpCase', 'isApplication', 'opPhase', 'isOpWorkPhase', 'isOpWaitPhase', 'normalizeOpNumber',
     'normalizeOp', 'normalizeOpDate', 'normalizeOpText', 'opControlDeadlines',
-    'opPlanDates', 'opSuggestedDue', 'opDueIsEstimate', 'opProvisionalCase', 'normalizeOpPlan', 'opSyncDue', 'opStatusPatch', 'opApplyUpdate', 'opModalPayload', 'opTrack', 'opCaseTitle', 'opPanelHtml', 'opControlText', 'esc', 'toDisplay', 'opForwardAction', 'opPhaseLabel', 'opPhaseIndex',
+    'opPlanDates', 'opPlanDue', 'opResync', 'opSuggestedDue', 'opDueIsEstimate', 'opProvisionalCase', 'normalizeOpPlan', 'opSyncDue', 'opStatusPatch', 'opApplyUpdate', 'opModalPayload', 'opTrack', 'opCaseTitle', 'opPanelHtml', 'opControlText', 'esc', 'toDisplay', 'opForwardAction', 'opPhaseLabel', 'opPhaseIndex',
     'isValidDate', 'parseDate', 'sanitizeText', 'addMonthsClamped', 'isoLocalDate', 'addDaysLocal',
     'workWindowDays', 'countsInBelegg', 'timelineSpanDays', 'workWindowStart', 'canBeUnassigned', 'isUnassigned',
     'bufferAppliesTo', 'bufferDaysFor', 'typeBufferFor', 'deadlineFor', 'effDueFor', 'getEffectiveDueDate', 'postponedDaysFor', 'canPostpone', 'normalizeWorkWindows', 'fristOwnerLabel', 'fristCountdownTone',
@@ -210,7 +210,7 @@ test('opSuggestedDue and opDueIsEstimate per phase', () => {
   assert.strictEqual(opSuggestedDue(opCase('op_formalia', op)), '2026-10-21');
   assert.strictEqual(opSuggestedDue(opCase('op_skrift', op)), '');
   assert.strictEqual(opSuggestedDue(opCase('avsluttet', op)), '');
-  assert.strictEqual(opDueIsEstimate(opCase('op_svar', op)), true);
+  assert.strictEqual(opDueIsEstimate(opCase('op_svar', op, { dueDate: '2027-02-09' })), true);
   assert.strictEqual(opDueIsEstimate(opCase('op_svar', Object.assign({ replyDue: '2027-02-15' }, op))), false);
   assert.strictEqual(opDueIsEstimate(opCase('op_svar', Object.assign({ dueManual: true }, op))), false);
   assert.strictEqual(opDueIsEstimate(opCase('avsluttet', op)), false);
@@ -571,7 +571,7 @@ test('AC4: the provisional Avgjørelse block counts in belegg while waiting, onc
 function loadTimeline() {
   return loadFunctions(['timelineRange', 'timelineBarStart', 'tlDueOffset', 'timelineSpanDays', 'workWindowDays', 'workWindowStart',
     'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'bufferDaysFor', 'typeBufferFor', 'canPostpone', 'postponedDaysFor',
-    'isUnassigned', 'canBeUnassigned', 'isoLocalDate', 'timelineOverdueBands', 'filterCasesForTimeline', 'opDueIsEstimate', 'opProvisionalCases', 'opProvisionalCase', 'opPlanDates', 'opControlDeadlines', 'addMonthsClamped', 'deadlineFor', ], {
+    'isUnassigned', 'canBeUnassigned', 'isoLocalDate', 'timelineOverdueBands', 'filterCasesForTimeline', 'opDueIsEstimate', 'opPlanDue', 'opProvisionalCases', 'opProvisionalCase', 'opPlanDates', 'opControlDeadlines', 'addMonthsClamped', 'deadlineFor', ], {
     vars: ['MILESTONE_DAYS', 'WORK_WINDOW_DEFAULTS'],
     globals: { workWindows: { op_formalia: 1, op_oppstart: 1, op_avgjorelse: 10 }, typeBuffers: { ny: 0, viderebehandling: 0 },
       isNonWorkday: weekend, vacations: [], opPlan: { formaliaDays: 1, replyDays: 112 } },
@@ -701,4 +701,79 @@ test('a closed OP case shows its outcome in the status chip', () => {
   const { sakStatusChip } = load();
   assert.strictEqual(sakStatusChip('avsluttet', false, 'opphevet').label, 'Avsluttet · Opphevet');
   assert.strictEqual(sakStatusChip('avsluttet', false, 'meddelt').label, 'Avsluttet · Meddelt');
+});
+
+// ── Funn fra gjennomgangen av v1.1 ────────────────
+test('opPlanDue: a planned date that has passed falls back to the deadline until that passes too', () => {
+  const { opPlanDue } = load();
+  const c = opCase('op_avgjorelse', {}, { dueDate: '2027-05-09', caseBuffer: 14 });
+  assert.strictEqual(opPlanDue(c, '2027-04-01'), '2027-04-25');
+  assert.strictEqual(opPlanDue(c, '2027-04-30'), '2027-05-09');
+  assert.strictEqual(opPlanDue(c, '2027-05-10'), '2027-04-25');
+  assert.strictEqual(opPlanDue({ type: 'sak', status: 'ny', dueDate: '2027-05-09', caseBuffer: 14 }, '2027-04-30'), '2027-04-25');
+});
+
+test('AC5: between the planned date and the deadline there is no overdue penalty or band', () => {
+  const { timelineRange, timelineOverdueBands } = loadTimeline();
+  const now = new Date('2027-04-30T08:00:00');
+  const c = opCase('op_avgjorelse', { noticeDate: '2027-02-09' }, { dueDate: '2027-05-09', caseBuffer: 14 });
+  const r = timelineRange(c, now, 365, 180);
+  assert.strictEqual(r.planOverdue, false);
+  assert.strictEqual(r.isOverdue, false);
+  assert.strictEqual(timelineOverdueBands([r], [0, 1, 2]).length, 0);
+  const late = timelineRange(c, new Date('2027-05-12T08:00:00'), 365, 180);
+  assert.strictEqual(late.isOverdue, true);
+  assert.strictEqual(late.planOverdue, true);
+});
+
+test('one overdue band per case, also when both OP blocks are overdue', () => {
+  const { timelineOverdueBands } = loadTimeline();
+  const bands = timelineOverdueBands([
+    { planOverdue: true, isOpCase: true, opWork: true, status: 'op_formalia', id: 'o1' },
+    { planOverdue: true, isOpCase: true, opWork: true, status: 'op_avgjorelse', id: 'o1', isProvisional: true },
+  ], [0, 1, 2]);
+  assert.strictEqual(bands.length, 1);
+});
+
+test('AC4: the provisional block is 10 workdays across a holiday and a vacation', () => {
+  const { timelineRange } = loadFunctions(['timelineRange', 'timelineBarStart', 'tlDueOffset', 'timelineSpanDays', 'workWindowDays',
+    'workWindowStart', 'effDueFor', 'getEffectiveDueDate', 'bufferAppliesTo', 'bufferDaysFor', 'typeBufferFor', 'canPostpone',
+    'postponedDaysFor', 'isUnassigned', 'canBeUnassigned', 'opPlanDue', 'opDueIsEstimate', 'deadlineFor'], {
+    vars: ['MILESTONE_DAYS', 'WORK_WINDOW_DEFAULTS'],
+    globals: { workWindows: { op_avgjorelse: 10 }, typeBuffers: {}, vacations: [], opPlan: { formaliaDays: 1, replyDays: 112 },
+      // Kristi himmelfart 6. mai 2027 og ferie 26.–28. april
+      isNonWorkday: (d) => weekend(d) || (d.getMonth() === 4 && d.getDate() === 6) || (d.getMonth() === 3 && d.getDate() >= 26 && d.getDate() <= 28) },
+  });
+  const { opProvisionalCase } = load();
+  const prov = opProvisionalCase(opCase('op_svar', { received: '2026-10-20' }, { dueDate: '2027-02-09' }));
+  const r = timelineRange(prov, new Date('2026-11-19T08:00:00'), 365, 180);
+  // 9. mai er søndag: 7, 5, 4, 3, 30.4, 29.4, 23, 22, 21, 20 → starter 20. april
+  assert.strictEqual(r.windowStart, '2027-04-20');
+});
+
+test('opDueIsEstimate only marks a deadline that is the plan estimate', () => {
+  const { opDueIsEstimate } = load();
+  const op = { received: '2026-10-20' };
+  assert.strictEqual(opDueIsEstimate(opCase('op_svar', op, { dueDate: '2027-02-09' })), true);
+  assert.strictEqual(opDueIsEstimate(opCase('op_svar', op, { dueDate: '' })), false);
+  assert.strictEqual(opDueIsEstimate(opCase('op_svar', op, { dueDate: '2027-01-01' })), false);
+});
+
+test('a met control deadline (a) is a real date, not an estimate', () => {
+  const { opPlanDates } = load();
+  const pl = plain(opPlanDates({ replyKind: 'utlopt', replyDue: '2026-07-03', decisionDate: '2026-09-15' }));
+  assert.deepStrictEqual(pl.op_avgjorelse, { date: '2026-10-03', est: false });
+});
+
+test('opResync: stored OP deadlines follow the plan (v1 data, other plan settings); others untouched', () => {
+  const { opResync } = load();
+  const v1 = opCase('op_formalia', { received: '2026-10-20' }, { dueDate: '' });
+  const manual = opCase('op_svar', { received: '2026-10-20', dueManual: true }, { id: 'o2', dueDate: '2027-01-01' });
+  const sak = { id: 's', type: 'sak', status: 'ny', dueDate: '2027-01-01' };
+  const out = opResync([v1, manual, sak]);
+  assert.strictEqual(out[0].dueDate, '2026-10-21');
+  assert.strictEqual(out[1], manual);
+  assert.strictEqual(out[2], sak);
+  const same = [opCase('op_formalia', { received: '2026-10-20' }, { dueDate: '2026-10-21' })];
+  assert.strictEqual(opResync(same)[0], same[0]);
 });

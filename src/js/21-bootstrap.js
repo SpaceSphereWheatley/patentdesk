@@ -70,6 +70,11 @@ function init() {
   // Kjør migrasjon (v3 → v4)
   migrateAll();
 
+  // OP-saker: lagrede frister i takt med planen fra inndatoen (saker lagret
+  // før planen fantes, eller under andre planinnstillinger)
+  var _opSynced = opResync(cases);
+  if (_opSynced.some(function(c, i) { return c !== cases[i]; })) { cases = _opSynced; saveCases(); }
+
   // Automatisk sikkerhetskopi: last mappehåndtak og ta oppstartskopi
   _bkInit();
 

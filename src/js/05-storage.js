@@ -1338,7 +1338,8 @@ function timelineBarStart(cas, effDue, now) {
 // så en sak som er forfalt lenger enn fortidsvinduet fortsatt kan telles.
 function timelineRange(cas, now, horizon, past) {
   var isOp     = cas.type === 'oppdrag';
-  var effDue   = effDueFor(cas);
+  // OP: en passert plan før fristen følger fristen (opPlanDue)
+  var effDue   = isOpCase(cas) ? opPlanDue(cas, isoLocalDate(now)) : effDueFor(cas);
   var spanDays = timelineSpanDays(cas);
   var milestone = isOpCase(cas) ? isOpWaitPhase(cas) : spanDays === MILESTONE_DAYS && !isOp;
   var effEnd   = tlDueOffset(effDue, now);
@@ -1505,9 +1506,14 @@ function timelineOverdueBands(ranges, penaltyOffsets) {
     if (last && last[1] === d) last[1] = d + 1; else segs.push([d, d + 1]);
   });
   if (!segs.length) return [];
+  var seen = {};
   return (ranges || []).filter(function(r) {
-    return r.planOverdue && !r.isOppdrag && !r.unassigned &&
-      (r.status === 'ny' || r.status === 'viderebehandling' || (r.isOpCase && r.opWork));
+    if (!(r.planOverdue && !r.isOppdrag && !r.unassigned &&
+      (r.status === 'ny' || r.status === 'viderebehandling' || (r.isOpCase && r.opWork)))) return false;
+    // Én OP-sak kan ha to blokker (fasen og den anslåtte Avgjørelse): ett bånd
+    if (seen[r.id]) return false;
+    seen[r.id] = true;
+    return true;
   }).map(function(r) {
     return { id: r.id, caseNumber: r.caseNumber, segments: segs.map(function(s) { return s.slice(); }) };
   });

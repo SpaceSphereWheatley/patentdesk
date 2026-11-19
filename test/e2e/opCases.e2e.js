@@ -44,6 +44,9 @@ async function createOp(page, number, received) {
   await page.evaluate(() => navigateTo('op'));
   await page.click('#btn-open-modal');
   await page.waitForSelector('#modal-row-opcase', { state: 'visible' });
+  // Dialogen flytter fokus til saksnummeret like etter at den åpnes; vent på
+  // det, ellers kan fokusbyttet komme midt i utfyllingen av et annet felt
+  await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'f-op-number');
   await page.fill('#f-op-number', number);
   if (received !== null) await page.fill('#f-op-received', received || '2026.10.20');
   await page.fill('#f-op-patent', 'NO 345678');
@@ -168,11 +171,25 @@ e2e('case page: dates drive the phase deadline, phases walk forward, belegg only
   assert.match(await p.textContent('#sak-op .op-ctrl'), /\(b\)[^]*2027\.07\.30/);
   assert.equal(await p.evaluate(() => opProvisionalCases(cases).length), 0);
 
+  // «Rediger sak» beholder planen for Avgjørelse (bufferen)
+  await p.evaluate((i) => dispatch('CASE_FIELD_UPDATE', { id: i, patch: { caseBuffer: 7 } }), id);
+  await p.evaluate((i) => openModal(cases.find((x) => x.id === i)), id);
+  await p.waitForSelector('#modal-row-opcase', { state: 'visible' });
+  await p.waitForFunction(() => document.activeElement && document.activeElement.id === 'f-op-number');
+  await p.fill('#f-title', 'Ventil');
+  await p.click('#btn-save');
+  await p.waitForTimeout(50);
+  c = await opCase(p);
+  assert.equal(c.title, 'Ventil');
+  assert.equal(c.caseBuffer, 7);
+  assert.equal(c.op.opponents.length, 1, 'edit keeps opponents');
+  await p.evaluate((i) => navigateTo('sak/' + i), id);
+  await p.waitForSelector('#sak-op .op-grid');
+
   // Innsigere er valgfrie: en ny legges til, og alle kan fjernes
   await p.fill('[data-op-opp-new]', 'Prøve Offshore AB');
   await p.press('[data-op-opp-new]', 'Tab');
-  await p.waitForTimeout(50);
-  assert.equal((await opCase(p)).op.opponents.length, 2);
+  await p.waitForFunction(() => cases.find((x) => x.type === 'op').op.opponents.length === 2, null, { timeout: 2000 });
   await p.click('[data-op-remove="0"]');
   await p.waitForTimeout(50);
   await p.click('[data-op-remove="0"]');

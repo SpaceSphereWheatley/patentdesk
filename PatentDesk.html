@@ -8248,6 +8248,7 @@ function opPlanDates(op) {
   var open = [ctl.a, ctl.b].filter(function(x) { return x.applies && !x.met; }).map(function(x) { return x.date; }).sort();
   var avg = open.length ? { date: open[0], est: false }
           : ctl.b.applies ? { date: ctl.b.date, est: false }
+          : ctl.a.applies ? { date: ctl.a.date, est: false }
           : { date: _opPlusMonths(base.date, OP_CONTROL_MONTHS), est: !!base.date };
   return {
     op_formalia: formalia, op_svar: svar, op_oppstart: oppstart,
@@ -8268,7 +8269,30 @@ function opDueIsEstimate(c) {
   if (!isOpCase(c)) return false;
   if (c.provisional) return true;
   if (!opPhase(c.status) || (c.op && c.op.dueManual)) return false;
-  return opPlanDates(c.op)[c.status].est;
+  // Bare når den lagrede fristen faktisk er planens anslag
+  var p = opPlanDates(c.op)[c.status];
+  return p.est && !!c.dueDate && c.dueDate === p.date;
+}
+
+// Datoen arbeidsvinduet slutter på (planen). For en OP-sak der den planlagte
+// datoen har passert, men fristen ikke, gjelder fristen: arbeidet er ikke
+// forfalt før fristen, så vinduet og belegget følger fristen så lenge.
+// todayIso: 'YYYY-MM-DD'.
+function opPlanDue(c, todayIso) {
+  var eff = effDueFor(c);
+  if (isOpCase(c) && eff && c.dueDate && eff < todayIso && c.dueDate >= todayIso) return c.dueDate;
+  return eff;
+}
+
+// Lagrede frister på OP-sakene i takt med planen: saker lagret før planen fra
+// inndatoen fantes, eller med andre planinnstillinger. En frist satt for hånd
+// røres ikke. Samme objekt tilbake når ingenting endres.
+function opResync(list) {
+  return (list || []).map(function(c) {
+    if (!isOpCase(c)) return c;
+    var d = opSyncDue(c);
+    return d === (c.dueDate || '') ? c : Object.assign({}, c, { dueDate: d });
+  });
 }
 
 // Avgjørelse som anslått blokk mens saken er i en tidligere fase: en kopi av
@@ -9822,7 +9846,8 @@ function timelineBarStart(cas, effDue, now) {
 // så en sak som er forfalt lenger enn fortidsvinduet fortsatt kan telles.
 function timelineRange(cas, now, horizon, past) {
   var isOp     = cas.type === 'oppdrag';
-  var effDue   = effDueFor(cas);
+  // OP: en passert plan før fristen følger fristen (opPlanDue)
+  var effDue   = isOpCase(cas) ? opPlanDue(cas, isoLocalDate(now)) : effDueFor(cas);
   var spanDays = timelineSpanDays(cas);
   var milestone = isOpCase(cas) ? isOpWaitPhase(cas) : spanDays === MILESTONE_DAYS && !isOp;
   var effEnd   = tlDueOffset(effDue, now);
@@ -9989,9 +10014,14 @@ function timelineOverdueBands(ranges, penaltyOffsets) {
     if (last && last[1] === d) last[1] = d + 1; else segs.push([d, d + 1]);
   });
   if (!segs.length) return [];
+  var seen = {};
   return (ranges || []).filter(function(r) {
-    return r.planOverdue && !r.isOppdrag && !r.unassigned &&
-      (r.status === 'ny' || r.status === 'viderebehandling' || (r.isOpCase && r.opWork));
+    if (!(r.planOverdue && !r.isOppdrag && !r.unassigned &&
+      (r.status === 'ny' || r.status === 'viderebehandling' || (r.isOpCase && r.opWork)))) return false;
+    // Én OP-sak kan ha to blokker (fasen og den anslåtte Avgjørelse): ett bånd
+    if (seen[r.id]) return false;
+    seen[r.id] = true;
+    return true;
   }).map(function(r) {
     return { id: r.id, caseNumber: r.caseNumber, segments: segs.map(function(s) { return s.slice(); }) };
   });
@@ -10468,7 +10498,8 @@ function _dispatch(action, payload) {
         else if (p.type === 'op') {
           // Fasen og OP-dataene endres på sakssiden; dialogen endrer nummer,
           // tittel, notater, stikkord, eget vindu og fasens frist.
-          patch.status = c.status; patch.duration = p.duration; patch.caseBuffer = null;
+          // Bufferen er planen for Avgjørelse (dra i tidslinjen) og beholdes
+          patch.status = c.status; patch.duration = p.duration; patch.caseBuffer = c.caseBuffer != null ? c.caseBuffer : null;
           var opUpd = opApplyUpdate(c, p.dueDate !== c.dueDate ? { dueDate: p.dueDate } : {});
           if (opUpd) { patch.op = opUpd.op; patch.dueDate = opUpd.dueDate; }
         }
@@ -11167,13 +11198,15 @@ function _dispatch(action, payload) {
       }
       opPlan = normalizeOpPlan(nextPlan);
       saveOpPlan(opPlan);
-      // Anslåtte frister på OP-sakene følger den nye planen
-      AppState.cases = cases.map(function(c) {
-        if (!isOpCase(c)) return c;
-        var d = opSyncDue(c);
-        return d === c.dueDate ? c : Object.assign({}, c, { dueDate: d });
+      // Anslåtte frister på OP-sakene følger den nye planen, og endringen
+      // føres i sakens historikk som andre fristendringer
+      var synced = opResync(cases);
+      AppState.cases = synced.map(function(c, i) {
+        var old = cases[i];
+        return c === old ? c : Object.assign({}, c, { history: appendHistory(old, null, null, 'frist', old.dueDate, c.dueDate) });
       });
       saveCases();
+      render();
       if (payload.key !== null) showToast('✓ Plan for OP-saker lagret');
       break;
     }
@@ -11357,6 +11390,9 @@ function _dispatch(action, payload) {
         if ('medlLog' in s) { medlLog = s.medlLog; saveMedlLog(medlLog); }
         if ('caseSource' in s) { saveCaseSource(s.caseSource); renderCaseSourceLinks(); _caseSourceFillInputs(); }
       }
+      // OP-saker: fristene følger planen (innstillingene kan ha kommet med importen)
+      var opSynced = opResync(cases);
+      if (opSynced.some(function(c, i) { return c !== cases[i]; })) { cases = opSynced; saveCases(); }
       closeBackdrop('import-backdrop');
       var leg = document.querySelector('.chart-legend'); if (leg) leg.remove();
       navigateTo(payload.page || 'ny');
@@ -14186,7 +14222,8 @@ function computeBelegg(horizonDays) {
     var busyCount = 0;
     // OP-saker: den anslåtte Avgjørelse-blokken er arbeid fra første dag
     cases.concat(opProvisionalCases(cases)).filter(counts || countsInBelegg).forEach(function(c) {
-      var due      = new Date(effDueFor(c) + 'T00:00:00');
+      var planDue  = opPlanDue(c, isoLocalDate(today));
+      var due      = new Date(planDue + 'T00:00:00');
       var dueOff   = Math.round((due - today) / 86400000);
 
       // Forfalt: vinduet ligger i fortiden, men arbeidet er fortsatt ugjort.
@@ -14202,7 +14239,7 @@ function computeBelegg(horizonDays) {
 
       // Vinduet er workWindowDays arbeidsdager og slutter på (og inkluderer)
       // fristen; fridager inni det strekker det bakover (workWindowStart).
-      var ws       = new Date(workWindowStart(effDueFor(c), workWindowDays(c)) + 'T00:00:00');
+      var ws       = new Date(workWindowStart(planDue, workWindowDays(c)) + 'T00:00:00');
       var winStart = Math.round((ws - today) / 86400000);
       var winEnd   = dueOff;
       for (var i = Math.max(startOffset, winStart); i < Math.min(endOffset, winEnd + 1); i++) {
@@ -22491,10 +22528,12 @@ function applyTimelineLink(id, force) {
   TL_LINK_TIMELINES.forEach(function(tlId) {
     var tlDiv = document.getElementById(tlId);
     var track = tlDiv && tlDiv.querySelector('.tl-track');
-    var bar = track && track.querySelector('.tl-bar' + sel);
-    if (!bar) return;
+    // En OP-sak kan ha to bjelker (fasen og den anslåtte Avgjørelse)
+    var bars = track ? track.querySelectorAll('.tl-bar' + sel) : [];
+    if (!bars.length) return;
+    var bar = bars[0];
     track.classList.add('has-linked');
-    bar.classList.add('tl-bar-linked');
+    Array.prototype.forEach.call(bars, function(b) { b.classList.add('tl-bar-linked'); });
     var scrollEl = tlDiv.closest('.tl-scroll-wrap');
     var host = scrollEl && scrollEl.parentElement;
     if (!host || !scrollEl.clientWidth) return; // skjult tidslinje
@@ -23865,6 +23904,11 @@ function init() {
 
   // Kjør migrasjon (v3 → v4)
   migrateAll();
+
+  // OP-saker: lagrede frister i takt med planen fra inndatoen (saker lagret
+  // før planen fantes, eller under andre planinnstillinger)
+  var _opSynced = opResync(cases);
+  if (_opSynced.some(function(c, i) { return c !== cases[i]; })) { cases = _opSynced; saveCases(); }
 
   // Automatisk sikkerhetskopi: last mappehåndtak og ta oppstartskopi
   _bkInit();

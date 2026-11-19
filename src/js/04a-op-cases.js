@@ -177,6 +177,7 @@ function opPlanDates(op) {
   var open = [ctl.a, ctl.b].filter(function(x) { return x.applies && !x.met; }).map(function(x) { return x.date; }).sort();
   var avg = open.length ? { date: open[0], est: false }
           : ctl.b.applies ? { date: ctl.b.date, est: false }
+          : ctl.a.applies ? { date: ctl.a.date, est: false }
           : { date: _opPlusMonths(base.date, OP_CONTROL_MONTHS), est: !!base.date };
   return {
     op_formalia: formalia, op_svar: svar, op_oppstart: oppstart,
@@ -197,7 +198,30 @@ function opDueIsEstimate(c) {
   if (!isOpCase(c)) return false;
   if (c.provisional) return true;
   if (!opPhase(c.status) || (c.op && c.op.dueManual)) return false;
-  return opPlanDates(c.op)[c.status].est;
+  // Bare når den lagrede fristen faktisk er planens anslag
+  var p = opPlanDates(c.op)[c.status];
+  return p.est && !!c.dueDate && c.dueDate === p.date;
+}
+
+// Datoen arbeidsvinduet slutter på (planen). For en OP-sak der den planlagte
+// datoen har passert, men fristen ikke, gjelder fristen: arbeidet er ikke
+// forfalt før fristen, så vinduet og belegget følger fristen så lenge.
+// todayIso: 'YYYY-MM-DD'.
+function opPlanDue(c, todayIso) {
+  var eff = effDueFor(c);
+  if (isOpCase(c) && eff && c.dueDate && eff < todayIso && c.dueDate >= todayIso) return c.dueDate;
+  return eff;
+}
+
+// Lagrede frister på OP-sakene i takt med planen: saker lagret før planen fra
+// inndatoen fantes, eller med andre planinnstillinger. En frist satt for hånd
+// røres ikke. Samme objekt tilbake når ingenting endres.
+function opResync(list) {
+  return (list || []).map(function(c) {
+    if (!isOpCase(c)) return c;
+    var d = opSyncDue(c);
+    return d === (c.dueDate || '') ? c : Object.assign({}, c, { dueDate: d });
+  });
 }
 
 // Avgjørelse som anslått blokk mens saken er i en tidligere fase: en kopi av

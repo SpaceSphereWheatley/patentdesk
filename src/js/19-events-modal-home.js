@@ -560,10 +560,12 @@ function applyTimelineLink(id, force) {
   TL_LINK_TIMELINES.forEach(function(tlId) {
     var tlDiv = document.getElementById(tlId);
     var track = tlDiv && tlDiv.querySelector('.tl-track');
-    var bar = track && track.querySelector('.tl-bar' + sel);
-    if (!bar) return;
+    // En OP-sak kan ha to bjelker (fasen og den anslåtte Avgjørelse)
+    var bars = track ? track.querySelectorAll('.tl-bar' + sel) : [];
+    if (!bars.length) return;
+    var bar = bars[0];
     track.classList.add('has-linked');
-    bar.classList.add('tl-bar-linked');
+    Array.prototype.forEach.call(bars, function(b) { b.classList.add('tl-bar-linked'); });
     var scrollEl = tlDiv.closest('.tl-scroll-wrap');
     var host = scrollEl && scrollEl.parentElement;
     if (!host || !scrollEl.clientWidth) return; // skjult tidslinje
