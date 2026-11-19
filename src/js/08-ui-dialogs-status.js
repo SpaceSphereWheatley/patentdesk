@@ -442,8 +442,14 @@ function runRowAction(id) {
 
 function cleUid() { return 'ci' + Math.random().toString(36).slice(2, 8); }
 
+// Hvilken mal editoren viser: 'sak' (søknader) eller 'op' (OP-saker)
+var _cleKind = 'sak';
+function _cleTemplate() { return _cleKind === 'op' ? getOpChecklistTemplate() : getChecklistTemplate(); }
+
 function renderCle() {
-  var tpl = getChecklistTemplate();
+  var tpl = _cleTemplate();
+  var title = document.getElementById('cle-modal-title');
+  if (title) title.textContent = _cleKind === 'op' ? 'Rediger sjekkliste-mal (OP-sak)' : 'Rediger sjekkliste-mal';
   var container = document.getElementById('cle-phases');
   if (!container) return;
 
@@ -515,15 +521,23 @@ function cleCollect() {
 }
 
 function _cleUpdateSummary() {
-  var tpl = getChecklistTemplate();
-  var el = document.getElementById('cle-settings-summary');
-  if (!el) return;
-  var phases = tpl.length;
-  var items = tpl.reduce(function(n, p) { return n + p.items.length; }, 0);
-  el.textContent = phases + ' fase' + (phases !== 1 ? 'r' : '') + ' · ' + items + ' punkt' + (items !== 1 ? 'er' : '');
+  [['cle-settings-summary', getChecklistTemplate()], ['cle-op-settings-summary', getOpChecklistTemplate()]].forEach(function(x) {
+    var el = document.getElementById(x[0]);
+    if (!el) return;
+    var tpl = x[1];
+    var phases = tpl.length;
+    var items = tpl.reduce(function(n, p) { return n + p.items.length; }, 0);
+    el.textContent = phases + ' fase' + (phases !== 1 ? 'r' : '') + ' · ' + items + ' punkt' + (items !== 1 ? 'er' : '');
+  });
 }
 
 document.getElementById('btn-cle-open').addEventListener('click', function() {
+  _cleKind = 'sak';
+  renderCle();
+  openBackdrop('cle-backdrop');
+});
+document.getElementById('btn-cle-open-op').addEventListener('click', function() {
+  _cleKind = 'op';
   renderCle();
   openBackdrop('cle-backdrop');
 });
@@ -539,7 +553,13 @@ document.getElementById('cle-backdrop').addEventListener('click', function(e) {
 
 document.getElementById('btn-cle-save').addEventListener('click', function() {
   var tpl = cleCollect();
-  dispatch('CHECKLIST_TEMPLATE_SAVE', { template: tpl });
+  // En tom OP-mal ville falt tilbake på standardmalen uten at du ser det
+  if (_cleKind === 'op' && !tpl.length) {
+    var st = document.getElementById('cle-status');
+    if (st) st.textContent = 'Malen må ha minst én gruppe. Bruk «Tilbakestill» for standardmalen.';
+    return;
+  }
+  dispatch('CHECKLIST_TEMPLATE_SAVE', { template: tpl, kind: _cleKind });
 });
 
 document.getElementById('btn-cle-reset').addEventListener('click', function() { openBackdrop('cle-reset-backdrop'); });
@@ -547,7 +567,7 @@ document.getElementById('btn-cle-reset-cancel').addEventListener('click', functi
 document.getElementById('cle-reset-backdrop').addEventListener('click', function(e) { if (e.target === this) closeBackdrop('cle-reset-backdrop'); });
 document.getElementById('btn-cle-reset-confirm').addEventListener('click', function() {
   closeBackdrop('cle-reset-backdrop');
-  dispatch('CHECKLIST_TEMPLATE_RESET');
+  dispatch('CHECKLIST_TEMPLATE_RESET', { kind: _cleKind });
 });
 
 // ── Slett alt ──────────────────────────────────────

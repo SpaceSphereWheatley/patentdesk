@@ -7,6 +7,15 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.70.0] - 2026-11-19
+Sjekkliste for OP-saker, og strengere kontroll av importerte sjekkliste-maler.
+
+### Added
+- **Sjekkliste for OP-saker.** OP-saker har en egen huskeliste under OP-panelet, med én gruppe per fase. Gruppen for fasen saken står i, er åpen, og de andre viser framdriften. Standardmalen har 16 korte punkter (blant annet mottakerliste, skjerming, OT_ANKEFRIST og EQS 1870 ved endret form). Du redigerer den under Innstillinger → Saksmappe og sjekkliste → «Sjekkliste-mal (OP-sak)», adskilt fra søknadsmalen. Kryssene lagres på saken og blir stående når saken bytter fase, men endrer aldri fase, frister eller belegg. Malen følger med i eksport og import.
+
+### Security
+- **Importerte sjekkliste-maler kontrolleres strengere.** Punktenes id kan bare inneholde bokstaver, tall, bindestrek og understrek, og den escapes på siden. En importert fil kan dermed ikke lenger legge inn kode via en sjekkliste-mal, verken for søknader eller OP-saker. Malene du har laget i appen, er ikke berørt.
+
 ## [4.69.0] - 2026-11-19
 Ny sakstype for innsigelser (OP-saker), med plan fra inndatoen og Avgjørelse i belegget fra første dag.
 

@@ -3,7 +3,7 @@
 // APP_VERSION, SCHEMA_VERSION, localStorage-nøkler, domene-enums, datepicker
 // ════════════════════════════════════════════════════════════════════════════
 // PatentDesk — app.js
-var APP_VERSION    = 'v4.69.0';
+var APP_VERSION    = 'v4.70.0';
 var SCHEMA_VERSION = 9;
 var STORAGE_KEY  = 'pt_cases';
 var DOC_ROOT_KEY = 'pt_doc_root';
@@ -80,6 +80,39 @@ var CHECKLIST_DEFAULT = [
     { id: 'uttalelse-oh',   label: 'Skriv uttalelse - Oppfinnelseshøyde',            type: 'check' },
     { id: 'utvalg',         label: 'Send utvalgsoppgave',                            type: 'check' },
     { id: 'send-brev',      label: 'Send brev',                                      type: 'check' }
+  ]}
+];
+
+// Sjekkliste for OP-saker (innsigelser): egen mal med én gruppe per fase.
+// Gruppenavnet som er likt fasens navn (OP_PHASES), står åpent på sakssiden
+// mens saken er i fasen. En huskeliste — et kryss endrer aldri noe annet.
+var CHECKLIST_OP_KEY = 'pt_checklist_op_tpl';
+var OP_CHECKLIST_DEFAULT = [
+  { phase: 'Formalia', items: [
+    { id: 'op-formkrav',     label: 'Innleveringsfrist og formkrav kontrollert',                   type: 'check' },
+    { id: 'op-parter',       label: 'Patentnummer og parter kontrollert',                          type: 'check' },
+    { id: 'op-avvisning',    label: 'Ev. avvisning avklart med Patentjuridisk',                    type: 'check' },
+    { id: 'op-oversendt',    label: 'Oversendt patenthaver, svarfrist registrert i SANT',          type: 'check' }
+  ]},
+  { phase: 'Venter på svar', items: [
+    { id: 'op-fordelt',      label: 'Fordelt av Driftsforum, utvalg avklart',                      type: 'check' },
+    { id: 'op-fristutlop',   label: 'Ved fristutløp: SANT og Produksjonsinformasjon kontrollert',  type: 'check' }
+  ]},
+  { phase: 'Oppstart', items: [
+    { id: 'op-innkalt',      label: '2./3. voterende og patentjurist innkalt',                     type: 'check' },
+    { id: 'op-mote-sant',    label: 'Møtet registrert i SANT (Endre saksdata → Historie)',         type: 'check' }
+  ]},
+  { phase: 'Skriftveksling', items: [
+    { id: 'op-mottakere',    label: 'Mottakerliste kontrollert (flere innsigere)',                 type: 'check' },
+    { id: 'op-skjerming',    label: 'Skjerming kontrollert før dokumenter gjøres tilgjengelige',   type: 'check' },
+    { id: 'op-nytt-materiale', label: 'Nytt materiale drøftet med patentjurist',                  type: 'check' }
+  ]},
+  { phase: 'Avgjørelse', items: [
+    { id: 'op-varsel',       label: 'Varsel om tilstrekkelig opplyst sendt fra Utfall',            type: 'check' },
+    { id: 'op-protokoll',    label: 'Protokoll fra mal, gjennomgått av 2./3. voterende',           type: 'check' },
+    { id: 'op-utfall',       label: 'Riktig utfall valgt, protokoll lagt ved',                     type: 'check' },
+    { id: 'op-ankefrist',    label: 'Fristoppgave til OT_ANKEFRIST',                               type: 'check' },
+    { id: 'op-eqs1870',      label: 'Ved endret form: nytt patentskrift (EQS 1870)',               type: 'check' }
   ]}
 ];
 

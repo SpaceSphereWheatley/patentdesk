@@ -841,7 +841,8 @@ function _dispatch(action, payload) {
     }
 
     case 'CHECKLIST_TEMPLATE_RESET': {
-      resetChecklistTemplate();
+      if (payload && payload.kind === 'op') resetOpChecklistTemplate();
+      else resetChecklistTemplate();
       renderCle();
       _cleUpdateSummary();
       showToast('✓ Sjekkliste tilbakestilt til standard');
@@ -989,7 +990,8 @@ function _dispatch(action, payload) {
     }
 
     case 'CHECKLIST_TEMPLATE_SAVE': {
-      saveChecklistTemplate(payload.template);
+      if (payload.kind === 'op') saveOpChecklistTemplate(payload.template);
+      else saveChecklistTemplate(payload.template);
       var st = document.getElementById('cle-status');
       if (st) { st.textContent = 'Lagret ✓'; setTimeout(function() { st.textContent = ''; }, 2500); }
       _cleUpdateSummary();
@@ -1115,6 +1117,11 @@ function _dispatch(action, payload) {
         if ('checklistTemplate' in s) {
           if (s.checklistTemplate) saveChecklistTemplate(s.checklistTemplate);
           else resetChecklistTemplate();
+          _cleUpdateSummary();
+        }
+        if ('checklistTemplateOp' in s) {
+          if (s.checklistTemplateOp) saveOpChecklistTemplate(s.checklistTemplateOp);
+          else resetOpChecklistTemplate();
           _cleUpdateSummary();
         }
         if ('typeBuffers' in s) { typeBuffers = s.typeBuffers; saveTypeBuffers(typeBuffers); }

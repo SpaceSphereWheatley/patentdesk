@@ -221,3 +221,68 @@ e2e('case page: dates drive the phase deadline, phases walk forward, belegg only
   assert.deepEqual(s.errors, []);
   await s.close();
 });
+
+e2e('OP checklist: own template, current phase open, ticks kept across phases and change nothing else', async () => {
+  const s = await freshApp();
+  const p = s.page;
+  await createOp(p, 'OP 2026/00123');
+  const id = (await opCase(p)).id;
+  await p.evaluate((i) => navigateTo('sak/' + i), id);
+  await p.waitForSelector('#sak-op-checklist .sak-fold');
+  // Bare OP-malen, med Formalia åpen
+  assert.equal(await p.locator('#sak-op-checklist .sak-fold').count(), 5);
+  assert.equal(await p.locator('#sak-op-checklist [data-fold="formalia"] .sak-fold-head').getAttribute('aria-expanded'), 'true');
+  assert.equal(await p.locator('#sak-op-checklist [data-fold="oppstart"] .sak-fold-head').getAttribute('aria-expanded'), 'false');
+  assert.equal(await p.locator('#sak-checklist-saken .sak-fold').count(), 0);
+  // Et kryss lagres og endrer ingenting annet
+  const before = await opCase(p);
+  await p.check('#sak-op-checklist [data-item-id="op-formkrav"]');
+  await p.waitForTimeout(50);
+  const after = await opCase(p);
+  assert.equal(after.status, before.status);
+  assert.equal(after.dueDate, before.dueDate);
+  assert.equal(await p.evaluate((i) => loadSakData(i).checklist['op-formkrav'], id), true);
+  assert.match(await p.textContent('#sak-op-checklist [data-fold="formalia"] .sak-fold-count'), /1 \/ 4/);
+  // Neste fase: krysset står, og Venter på svar er åpen
+  await forward(p);
+  await p.waitForSelector('#sak-op-checklist [data-fold="venter på svar"] .sak-fold-head[aria-expanded="true"]');
+  assert.equal(await p.isChecked('#sak-op-checklist [data-item-id="op-formkrav"]'), true);
+  // Egen mal i Innstillinger; søknadsmalen er urørt
+  await p.evaluate(() => navigateTo('innstillinger'));
+  await p.evaluate(() => document.getElementById('btn-cle-open-op').click());
+  await p.waitForSelector('#cle-backdrop.open');
+  assert.match(await p.textContent('#cle-modal-title'), /OP-sak/);
+  await p.fill('#cle-phases .cle-phase:first-child .cle-add-item-input', 'Mitt eget punkt');
+  await p.click('#cle-phases .cle-phase:first-child .cle-btn-add-item');
+  await p.click('#btn-cle-save');
+  await p.waitForTimeout(50);
+  const tpls = await p.evaluate(() => [getOpChecklistTemplate()[0].items.length, getChecklistTemplate()[0].items.length, CHECKLIST_DEFAULT[0].items.length]);
+  assert.equal(tpls[0], 5);
+  assert.equal(tpls[1], tpls[2]);
+  assert.deepEqual(s.errors, []);
+  await s.close();
+});
+
+e2e('AC1: an application shows its own checklist and no OP checklist; an empty OP template cannot be saved', async () => {
+  const s = await freshApp();
+  const p = s.page;
+  await p.evaluate(() => dispatch('CASE_CREATE', { caseNumber: 'NO20260001', dueDate: '2026-12-10', title: 'Søknad', type: 'sak', status: 'ny' }));
+  const id = await p.evaluate(() => cases[0].id);
+  await p.evaluate((i) => navigateTo('sak/' + i), id);
+  await p.waitForTimeout(150);
+  assert.equal(await p.locator('#sak-op-checklist').isHidden(), true);
+  assert.equal(await p.locator('#sak-op-checklist .sak-fold').count(), 0);
+  assert.ok(await p.locator('#sak-checklist-saken .sak-fold, #sak-checklist-vurdering .sak-fold, #sak-checklist-gransking .sak-fold').count() > 0);
+  // Tom OP-mal: lagres ikke
+  await p.evaluate(() => navigateTo('innstillinger'));
+  await p.evaluate(() => document.getElementById('btn-cle-open-op').click());
+  await p.waitForSelector('#cle-backdrop.open');
+  await p.evaluate(() => document.querySelectorAll('#cle-phases .cle-phase-name').forEach((i) => { i.value = ''; }));
+  await p.click('#btn-cle-save');
+  await p.waitForTimeout(50);
+  assert.equal(await p.locator('#cle-backdrop.open').count(), 1);
+  assert.match(await p.textContent('#cle-status'), /minst én gruppe/);
+  assert.equal(await p.evaluate(() => localStorage.getItem('pt_checklist_op_tpl')), null);
+  assert.deepEqual(s.errors, []);
+  await s.close();
+});

@@ -246,6 +246,7 @@ function makeExportPayload() {
     // Bare en egendefinert mal eksporteres; null = standardmalen, så den
     // fortsatt følger med når standardmalen endres i en ny versjon
     checklistTemplate: _customChecklistTemplate(),
+    checklistTemplateOp: _customOpChecklistTemplate(),
     typeBuffers: typeBuffers,
     workWindows: workWindows,
     workWindowUnit: 'workdays',
@@ -261,12 +262,23 @@ function makeExportPayload() {
   };
 }
 
+// En mal kan komme fra en importert fil. id-en havner i et HTML-attributt og
+// som nøkkel i saksdataene, så den begrenses til trygge tegn (standardmalene og
+// editorens cleUid oppfyller dette).
 function isValidChecklistTemplate(tpl) {
   return Array.isArray(tpl) && tpl.length > 0 && tpl.every(function(p) {
     return p && typeof p.phase === 'string' && Array.isArray(p.items) && p.items.every(function(i) {
-      return i && typeof i.id === 'string' && typeof i.label === 'string';
+      return i && typeof i.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(i.id) && typeof i.label === 'string';
     });
   });
+}
+
+// Den egne OP-malen, eller null når standardmalen gjelder (eksporteres som null).
+function _customOpChecklistTemplate() {
+  try {
+    var tpl = JSON.parse(localStorage.getItem(CHECKLIST_OP_KEY));
+    return isValidChecklistTemplate(tpl) ? tpl : null;
+  } catch(e) { return null; }
 }
 
 function _customChecklistTemplate() {
@@ -287,6 +299,10 @@ function readImportSettings(d) {
   if (typeof d.userName === 'string') out.userName = d.userName.trim();
   if (d.checklistTemplate === null) out.checklistTemplate = null;
   else if (isValidChecklistTemplate(d.checklistTemplate)) out.checklistTemplate = d.checklistTemplate;
+  // OP-malen: null = standardmalen (det en eksport med standardmalen har).
+  // Som for de andre feltene endrer en fil uten feltet ingenting.
+  if (d.checklistTemplateOp === null) out.checklistTemplateOp = null;
+  else if (isValidChecklistTemplate(d.checklistTemplateOp)) out.checklistTemplateOp = d.checklistTemplateOp;
   // Eldre eksportfiler har bare én global fristbuffer; den fyller begge typene.
   var legacyBuf = (typeof d.fristBuffer === 'number' && isFinite(d.fristBuffer) && d.fristBuffer >= 0) ? d.fristBuffer : undefined;
   if ((d.typeBuffers && typeof d.typeBuffers === 'object' && !Array.isArray(d.typeBuffers)) || legacyBuf !== undefined) {
