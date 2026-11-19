@@ -112,11 +112,13 @@ function renderSak(id) {
 
   renderSakChecklist(noApp ? null : data);
   renderSakOp(cas);
+  renderSakOpChecklist(cas, data);
 
   // Seksjoner skjules på data-sak-section, ikke på overskriftsteksten — den
   // endrer seg, attributtet gjør det ikke.
   document.querySelectorAll('.sak-section[data-sak-section]').forEach(function(sec) {
-    var hide = noApp && OPPDRAG_HIDDEN_SECTIONS.indexOf(sec.dataset.sakSection) !== -1;
+    // OP-sjekklisten bruker de samme gruppene, men er OP-sakens egen
+    var hide = noApp && !sec.closest('#sak-op-checklist') && OPPDRAG_HIDDEN_SECTIONS.indexOf(sec.dataset.sakSection) !== -1;
     sec.style.display = hide ? 'none' : '';
   });
   // En fase uten synlige seksjoner skal ikke stå igjen som en tom flate.
@@ -605,6 +607,30 @@ function _checklistSlotHtml(data, groups, fallbackTitle) {
       '<div class="sak-checklist sak-checklist-flat">' + _checklistItemsHtml(data, g) + '</div>',
       isChecklistOpen(state, g.phase));
   }).join('');
+}
+
+// ── Sjekkliste for OP-saker ─────────────────────────
+// Gruppen som har samme navn som fasen saken står i, er åpen; de andre er
+// lukket. Avsluttet: alle lukket. Rene funksjoner — se test/opChecklist.test.js.
+function opChecklistGroupOpen(group, status) {
+  if (!group || status === 'avsluttet') return false;
+  var label = opPhaseLabel(status);
+  return !!label && checklistOpenKey(group.phase) === checklistOpenKey(label);
+}
+function opChecklistHtml(data, template, status) {
+  var d = { checklist: (data && data.checklist) || {} };
+  return (template || []).map(function(g) {
+    return _checklistFoldHtml(d, g, esc(g.phase),
+      '<div class="sak-checklist sak-checklist-flat">' + _checklistItemsHtml(d, g) + '</div>',
+      opChecklistGroupOpen(g, status));
+  }).join('');
+}
+function renderSakOpChecklist(cas, data) {
+  var el = document.getElementById('sak-op-checklist');
+  if (!el) return;
+  if (!isOpCase(cas)) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = '<h2 class="op-checklist-title">Sjekkliste</h2>' + opChecklistHtml(data, getOpChecklistTemplate(), cas.status);
 }
 
 // «Svar og endringer»: sjekklisten for søkerens svar, øverst i Vurdering.

@@ -195,6 +195,18 @@ function resetChecklistTemplate() {
   try { localStorage.removeItem(CHECKLIST_KEY); } catch(e) {}
 }
 
+// Malen for OP-saker, lagret for seg (CHECKLIST_OP_KEY). Ugyldig eller
+// manglende mal gir standardmalen.
+function getOpChecklistTemplate() {
+  return _customOpChecklistTemplate() || OP_CHECKLIST_DEFAULT;
+}
+function saveOpChecklistTemplate(tpl) {
+  lsSetSafe(CHECKLIST_OP_KEY, JSON.stringify(tpl));
+}
+function resetOpChecklistTemplate() {
+  try { localStorage.removeItem(CHECKLIST_OP_KEY); } catch(e) {}
+}
+
 // ── Tema og visning ────────────────────────────────
 
 // ── Drawer ─────────────────────────────────────────

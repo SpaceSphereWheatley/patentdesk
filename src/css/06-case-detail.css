@@ -759,3 +759,7 @@ body[data-page="sak"] #view-sak.is-docs-tab.is-focus { display: grid !important;
 .op-ctrl-met { color: var(--trk-done-text); }
 .op-ctrl-na { color: var(--muted-text); font-style: italic; }
 .op-ctrl-hint { color: var(--muted-text); font-size: 12px; margin-top: 4px; }
+
+/* Sjekkliste for OP-saker: under OP-panelet, samme sammenleggbare grupper som søknadene */
+.op-checklist { margin: 0 0 var(--space-4, 16px); }
+.op-checklist-title { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-text); font-weight: 600; }

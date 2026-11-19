@@ -3028,6 +3028,10 @@ body[data-page="sak"] #view-sak.is-docs-tab.is-focus { display: grid !important;
 .op-ctrl-met { color: var(--trk-done-text); }
 .op-ctrl-na { color: var(--muted-text); font-style: italic; }
 .op-ctrl-hint { color: var(--muted-text); font-size: 12px; margin-top: 4px; }
+
+/* Sjekkliste for OP-saker: under OP-panelet, samme sammenleggbare grupper som søknadene */
+.op-checklist { margin: 0 0 var(--space-4, 16px); }
+.op-checklist-title { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-text); font-weight: 600; }
 /* ── Tidslinje-modal ──────────────────────────────── */
 
 /* axis toggle — shared between home and modal */
@@ -4129,6 +4133,13 @@ button.ob-del:hover { color: var(--text-on-no); }
                     </div>
                     <button class="s-btn" id="btn-cle-open">Rediger</button>
                   </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Sjekkliste-mal (OP-sak)</span>
+                      <span class="settings-label-sub" id="cle-op-settings-summary"></span>
+                    </div>
+                    <button class="s-btn" id="btn-cle-open-op">Rediger</button>
+                  </div>
                 </div>
               </section>
 
@@ -4433,6 +4444,8 @@ button.ob-del:hover { color: var(--text-on-no); }
 
         <!-- OP-sak: parter, utvalg, saksdatoer og kontrollfrister (renderSakOp) -->
         <section class="op-panel" id="sak-op" aria-label="OP-sak" hidden></section>
+        <!-- OP-sak: sjekkliste fra OP-malen (renderSakOpChecklist) -->
+        <div class="op-checklist" id="sak-op-checklist" hidden></div>
 
         <!-- Progress bar + resultatsammendrag -->
         <section class="sak-progress-section" id="sak-summary-section">
@@ -5553,6 +5566,39 @@ var CHECKLIST_DEFAULT = [
     { id: 'uttalelse-oh',   label: 'Skriv uttalelse - Oppfinnelseshøyde',            type: 'check' },
     { id: 'utvalg',         label: 'Send utvalgsoppgave',                            type: 'check' },
     { id: 'send-brev',      label: 'Send brev',                                      type: 'check' }
+  ]}
+];
+
+// Sjekkliste for OP-saker (innsigelser): egen mal med én gruppe per fase.
+// Gruppenavnet som er likt fasens navn (OP_PHASES), står åpent på sakssiden
+// mens saken er i fasen. En huskeliste — et kryss endrer aldri noe annet.
+var CHECKLIST_OP_KEY = 'pt_checklist_op_tpl';
+var OP_CHECKLIST_DEFAULT = [
+  { phase: 'Formalia', items: [
+    { id: 'op-formkrav',     label: 'Innleveringsfrist og formkrav kontrollert',                   type: 'check' },
+    { id: 'op-parter',       label: 'Patentnummer og parter kontrollert',                          type: 'check' },
+    { id: 'op-avvisning',    label: 'Ev. avvisning avklart med Patentjuridisk',                    type: 'check' },
+    { id: 'op-oversendt',    label: 'Oversendt patenthaver, svarfrist registrert i SANT',          type: 'check' }
+  ]},
+  { phase: 'Venter på svar', items: [
+    { id: 'op-fordelt',      label: 'Fordelt av Driftsforum, utvalg avklart',                      type: 'check' },
+    { id: 'op-fristutlop',   label: 'Ved fristutløp: SANT og Produksjonsinformasjon kontrollert',  type: 'check' }
+  ]},
+  { phase: 'Oppstart', items: [
+    { id: 'op-innkalt',      label: '2./3. voterende og patentjurist innkalt',                     type: 'check' },
+    { id: 'op-mote-sant',    label: 'Møtet registrert i SANT (Endre saksdata → Historie)',         type: 'check' }
+  ]},
+  { phase: 'Skriftveksling', items: [
+    { id: 'op-mottakere',    label: 'Mottakerliste kontrollert (flere innsigere)',                 type: 'check' },
+    { id: 'op-skjerming',    label: 'Skjerming kontrollert før dokumenter gjøres tilgjengelige',   type: 'check' },
+    { id: 'op-nytt-materiale', label: 'Nytt materiale drøftet med patentjurist',                  type: 'check' }
+  ]},
+  { phase: 'Avgjørelse', items: [
+    { id: 'op-varsel',       label: 'Varsel om tilstrekkelig opplyst sendt fra Utfall',            type: 'check' },
+    { id: 'op-protokoll',    label: 'Protokoll fra mal, gjennomgått av 2./3. voterende',           type: 'check' },
+    { id: 'op-utfall',       label: 'Riktig utfall valgt, protokoll lagt ved',                     type: 'check' },
+    { id: 'op-ankefrist',    label: 'Fristoppgave til OT_ANKEFRIST',                               type: 'check' },
+    { id: 'op-eqs1870',      label: 'Ved endret form: nytt patentskrift (EQS 1870)',               type: 'check' }
   ]}
 ];
 
@@ -7356,6 +7402,7 @@ function makeExportPayload() {
     // Bare en egendefinert mal eksporteres; null = standardmalen, så den
     // fortsatt følger med når standardmalen endres i en ny versjon
     checklistTemplate: _customChecklistTemplate(),
+    checklistTemplateOp: _customOpChecklistTemplate(),
     typeBuffers: typeBuffers,
     workWindows: workWindows,
     workWindowUnit: 'workdays',
@@ -7379,6 +7426,14 @@ function isValidChecklistTemplate(tpl) {
   });
 }
 
+// Den egne OP-malen, eller null når standardmalen gjelder (eksporteres som null).
+function _customOpChecklistTemplate() {
+  try {
+    var tpl = JSON.parse(localStorage.getItem(CHECKLIST_OP_KEY));
+    return isValidChecklistTemplate(tpl) ? tpl : null;
+  } catch(e) { return null; }
+}
+
 function _customChecklistTemplate() {
   try {
     var tpl = JSON.parse(localStorage.getItem(CHECKLIST_KEY));
@@ -7397,6 +7452,8 @@ function readImportSettings(d) {
   if (typeof d.userName === 'string') out.userName = d.userName.trim();
   if (d.checklistTemplate === null) out.checklistTemplate = null;
   else if (isValidChecklistTemplate(d.checklistTemplate)) out.checklistTemplate = d.checklistTemplate;
+  if (d.checklistTemplateOp === null) out.checklistTemplateOp = null;
+  else if (isValidChecklistTemplate(d.checklistTemplateOp)) out.checklistTemplateOp = d.checklistTemplateOp;
   // Eldre eksportfiler har bare én global fristbuffer; den fyller begge typene.
   var legacyBuf = (typeof d.fristBuffer === 'number' && isFinite(d.fristBuffer) && d.fristBuffer >= 0) ? d.fristBuffer : undefined;
   if ((d.typeBuffers && typeof d.typeBuffers === 'object' && !Array.isArray(d.typeBuffers)) || legacyBuf !== undefined) {
@@ -8701,6 +8758,18 @@ function saveMedlesing(list) {
 
 function resetChecklistTemplate() {
   try { localStorage.removeItem(CHECKLIST_KEY); } catch(e) {}
+}
+
+// Malen for OP-saker, lagret for seg (CHECKLIST_OP_KEY). Ugyldig eller
+// manglende mal gir standardmalen.
+function getOpChecklistTemplate() {
+  return _customOpChecklistTemplate() || OP_CHECKLIST_DEFAULT;
+}
+function saveOpChecklistTemplate(tpl) {
+  lsSetSafe(CHECKLIST_OP_KEY, JSON.stringify(tpl));
+}
+function resetOpChecklistTemplate() {
+  try { localStorage.removeItem(CHECKLIST_OP_KEY); } catch(e) {}
 }
 
 // ── Tema og visning ────────────────────────────────
@@ -11101,7 +11170,8 @@ function _dispatch(action, payload) {
     }
 
     case 'CHECKLIST_TEMPLATE_RESET': {
-      resetChecklistTemplate();
+      if (payload && payload.kind === 'op') resetOpChecklistTemplate();
+      else resetChecklistTemplate();
       renderCle();
       _cleUpdateSummary();
       showToast('✓ Sjekkliste tilbakestilt til standard');
@@ -11249,7 +11319,8 @@ function _dispatch(action, payload) {
     }
 
     case 'CHECKLIST_TEMPLATE_SAVE': {
-      saveChecklistTemplate(payload.template);
+      if (payload.kind === 'op') saveOpChecklistTemplate(payload.template);
+      else saveChecklistTemplate(payload.template);
       var st = document.getElementById('cle-status');
       if (st) { st.textContent = 'Lagret ✓'; setTimeout(function() { st.textContent = ''; }, 2500); }
       _cleUpdateSummary();
@@ -11375,6 +11446,11 @@ function _dispatch(action, payload) {
         if ('checklistTemplate' in s) {
           if (s.checklistTemplate) saveChecklistTemplate(s.checklistTemplate);
           else resetChecklistTemplate();
+          _cleUpdateSummary();
+        }
+        if ('checklistTemplateOp' in s) {
+          if (s.checklistTemplateOp) saveOpChecklistTemplate(s.checklistTemplateOp);
+          else resetOpChecklistTemplate();
           _cleUpdateSummary();
         }
         if ('typeBuffers' in s) { typeBuffers = s.typeBuffers; saveTypeBuffers(typeBuffers); }
@@ -12764,8 +12840,14 @@ function runRowAction(id) {
 
 function cleUid() { return 'ci' + Math.random().toString(36).slice(2, 8); }
 
+// Hvilken mal editoren viser: 'sak' (søknader) eller 'op' (OP-saker)
+var _cleKind = 'sak';
+function _cleTemplate() { return _cleKind === 'op' ? getOpChecklistTemplate() : getChecklistTemplate(); }
+
 function renderCle() {
-  var tpl = getChecklistTemplate();
+  var tpl = _cleTemplate();
+  var title = document.getElementById('cle-modal-title');
+  if (title) title.textContent = _cleKind === 'op' ? 'Rediger sjekkliste-mal (OP-sak)' : 'Rediger sjekkliste-mal';
   var container = document.getElementById('cle-phases');
   if (!container) return;
 
@@ -12837,15 +12919,23 @@ function cleCollect() {
 }
 
 function _cleUpdateSummary() {
-  var tpl = getChecklistTemplate();
-  var el = document.getElementById('cle-settings-summary');
-  if (!el) return;
-  var phases = tpl.length;
-  var items = tpl.reduce(function(n, p) { return n + p.items.length; }, 0);
-  el.textContent = phases + ' fase' + (phases !== 1 ? 'r' : '') + ' · ' + items + ' punkt' + (items !== 1 ? 'er' : '');
+  [['cle-settings-summary', getChecklistTemplate()], ['cle-op-settings-summary', getOpChecklistTemplate()]].forEach(function(x) {
+    var el = document.getElementById(x[0]);
+    if (!el) return;
+    var tpl = x[1];
+    var phases = tpl.length;
+    var items = tpl.reduce(function(n, p) { return n + p.items.length; }, 0);
+    el.textContent = phases + ' fase' + (phases !== 1 ? 'r' : '') + ' · ' + items + ' punkt' + (items !== 1 ? 'er' : '');
+  });
 }
 
 document.getElementById('btn-cle-open').addEventListener('click', function() {
+  _cleKind = 'sak';
+  renderCle();
+  openBackdrop('cle-backdrop');
+});
+document.getElementById('btn-cle-open-op').addEventListener('click', function() {
+  _cleKind = 'op';
   renderCle();
   openBackdrop('cle-backdrop');
 });
@@ -12861,7 +12951,7 @@ document.getElementById('cle-backdrop').addEventListener('click', function(e) {
 
 document.getElementById('btn-cle-save').addEventListener('click', function() {
   var tpl = cleCollect();
-  dispatch('CHECKLIST_TEMPLATE_SAVE', { template: tpl });
+  dispatch('CHECKLIST_TEMPLATE_SAVE', { template: tpl, kind: _cleKind });
 });
 
 document.getElementById('btn-cle-reset').addEventListener('click', function() { openBackdrop('cle-reset-backdrop'); });
@@ -12869,7 +12959,7 @@ document.getElementById('btn-cle-reset-cancel').addEventListener('click', functi
 document.getElementById('cle-reset-backdrop').addEventListener('click', function(e) { if (e.target === this) closeBackdrop('cle-reset-backdrop'); });
 document.getElementById('btn-cle-reset-confirm').addEventListener('click', function() {
   closeBackdrop('cle-reset-backdrop');
-  dispatch('CHECKLIST_TEMPLATE_RESET');
+  dispatch('CHECKLIST_TEMPLATE_RESET', { kind: _cleKind });
 });
 
 // ── Slett alt ──────────────────────────────────────
@@ -15354,11 +15444,13 @@ function renderSak(id) {
 
   renderSakChecklist(noApp ? null : data);
   renderSakOp(cas);
+  renderSakOpChecklist(cas, data);
 
   // Seksjoner skjules på data-sak-section, ikke på overskriftsteksten — den
   // endrer seg, attributtet gjør det ikke.
   document.querySelectorAll('.sak-section[data-sak-section]').forEach(function(sec) {
-    var hide = noApp && OPPDRAG_HIDDEN_SECTIONS.indexOf(sec.dataset.sakSection) !== -1;
+    // OP-sjekklisten bruker de samme gruppene, men er OP-sakens egen
+    var hide = noApp && !sec.closest('#sak-op-checklist') && OPPDRAG_HIDDEN_SECTIONS.indexOf(sec.dataset.sakSection) !== -1;
     sec.style.display = hide ? 'none' : '';
   });
   // En fase uten synlige seksjoner skal ikke stå igjen som en tom flate.
@@ -15847,6 +15939,30 @@ function _checklistSlotHtml(data, groups, fallbackTitle) {
       '<div class="sak-checklist sak-checklist-flat">' + _checklistItemsHtml(data, g) + '</div>',
       isChecklistOpen(state, g.phase));
   }).join('');
+}
+
+// ── Sjekkliste for OP-saker ─────────────────────────
+// Gruppen som har samme navn som fasen saken står i, er åpen; de andre er
+// lukket. Avsluttet: alle lukket. Rene funksjoner — se test/opChecklist.test.js.
+function opChecklistGroupOpen(group, status) {
+  if (!group || status === 'avsluttet') return false;
+  var label = opPhaseLabel(status);
+  return !!label && checklistOpenKey(group.phase) === checklistOpenKey(label);
+}
+function opChecklistHtml(data, template, status) {
+  var d = { checklist: (data && data.checklist) || {} };
+  return (template || []).map(function(g) {
+    return _checklistFoldHtml(d, g, esc(g.phase),
+      '<div class="sak-checklist sak-checklist-flat">' + _checklistItemsHtml(d, g) + '</div>',
+      opChecklistGroupOpen(g, status));
+  }).join('');
+}
+function renderSakOpChecklist(cas, data) {
+  var el = document.getElementById('sak-op-checklist');
+  if (!el) return;
+  if (!isOpCase(cas)) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = '<h2 class="op-checklist-title">Sjekkliste</h2>' + opChecklistHtml(data, getOpChecklistTemplate(), cas.status);
 }
 
 // «Svar og endringer»: sjekklisten for søkerens svar, øverst i Vurdering.

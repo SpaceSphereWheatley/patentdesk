@@ -738,6 +738,13 @@
                     </div>
                     <button class="s-btn" id="btn-cle-open">Rediger</button>
                   </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">Sjekkliste-mal (OP-sak)</span>
+                      <span class="settings-label-sub" id="cle-op-settings-summary"></span>
+                    </div>
+                    <button class="s-btn" id="btn-cle-open-op">Rediger</button>
+                  </div>
                 </div>
               </section>
 
@@ -1042,6 +1049,8 @@
 
         <!-- OP-sak: parter, utvalg, saksdatoer og kontrollfrister (renderSakOp) -->
         <section class="op-panel" id="sak-op" aria-label="OP-sak" hidden></section>
+        <!-- OP-sak: sjekkliste fra OP-malen (renderSakOpChecklist) -->
+        <div class="op-checklist" id="sak-op-checklist" hidden></div>
 
         <!-- Progress bar + resultatsammendrag -->
         <section class="sak-progress-section" id="sak-summary-section">

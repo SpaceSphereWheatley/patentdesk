@@ -123,7 +123,9 @@ These two stores have distinct responsibilities. Do not conflate them.
   suggested unless set by hand (`op.dueManual`); the two control deadlines
   (`opControlDeadlines`) are shown separately. Before Avgjørelse, a provisional
   Avgjørelse block (`opProvisionalCase`) is drawn and counted in belegg. Every
-  phase change is confirmed. Case data lives on the
+  phase change is confirmed. OP cases have their own checklist template
+  (`OP_CHECKLIST_DEFAULT`, `pt_checklist_op_tpl`); ticks never change anything
+  else. Case data lives on the
   case as `op` (`normalizeOp`). SANT is the source of truth: the app suggests,
   never sends, confirms or closes anything. Use `isApplication(c)` for "a
   patent application" — never `c.type !== 'oppdrag'`, which also matches OP.
