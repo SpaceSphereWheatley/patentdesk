@@ -7,6 +7,9 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.69.0] - 2026-11-19
+Ny sakstype for innsigelser (OP-saker), med plan fra inndatoen og Avgjørelse i belegget fra første dag.
+
 ### Added
 - **Ny sakstype: OP-saker (innsigelser).** Egen side «OP-saker» i menyen (tast 8), og «OP-sak» i «Legg til sak». Bare saksnummer (`OP ÅÅÅÅ/xxxxx`) og inndato er påkrevd; patentnummer, patenthaver, innsigere og resten er valgfritt. Alt annet fylles ut på sakssiden: innsigere med fullmektig, patenthavers fullmektig, ansvarlig enhet, 2. og 3. voterende, patentjurist, utfall og saksdatoene fra SANT. Ukjente datoer står tomme.
 - **Fem faser som oppfører seg som vanlige saker.** Formalia, Oppstart og Avgjørelse er arbeid: de har et arbeidsvindu som slutter på fasens frist og teller i belegget (standard 1, 1 og 10 arbeidsdager, kan endres under Innstillinger og per sak). Venter på svar og Skriftveksling er milepæler, som Fristarkiv: de gir ikke belegg, ingen ferieoverlapp og ingen forfalt-straff. Hvert fasebytte må bekreftes. Når saken avsluttes, spør dialogen om utfall (påkrevd) og stikkord, som for andre saker, og avgjørelsen telles i statistikken (kolonnen «OP»).
