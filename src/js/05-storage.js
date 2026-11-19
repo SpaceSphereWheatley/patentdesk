@@ -563,11 +563,7 @@ function _validateImportCase(c) {
   if (typeof c.caseNumber !== 'string' || !c.caseNumber.trim()) return false;
   if (typeof c.dueDate !== 'string') return false;
   if (typeof c.title !== 'string') return false;
-  if (isOpCase(c)) {
-    // Minst én innsiger, som i dialogen og på sakssiden
-    if (!c.op || !Array.isArray(c.op.opponents) || !c.op.opponents.length) return false;
-    return c.status === 'avsluttet' || !!opPhase(c.status);
-  }
+  if (isOpCase(c)) return c.status === 'avsluttet' || !!opPhase(c.status);
   if (!VALID_IMPORT_STATUSES[c.status]) return false;
   return true;
 }
@@ -692,6 +688,14 @@ function loadDeadlines() {
 function saveDeadlines(d) {
   lsSetSafe(DEADLINES_KEY, JSON.stringify(d));
 }
+function loadOpPlan() {
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(OP_PLAN_KEY)); } catch(e) {}
+  return normalizeOpPlan(raw);
+}
+function saveOpPlan(p) {
+  lsSetSafe(OP_PLAN_KEY, JSON.stringify(p));
+}
 function loadHomeDeadlineFilter() {
   try { return normalizeHomeDeadlineFilter(JSON.parse(localStorage.getItem(HOME_DEADLINE_KEY))); }
   catch(e) { return defaultHomeDeadlineFilter(); }
@@ -765,6 +769,7 @@ function normalizeTypeBuffers(raw, legacy) {
 
 // typeBufferFor: standardbufferen for sakens type (Ny når saken mangler).
 function typeBufferFor(c) {
+  if (isOpCase(c)) return 0;
   return (c && c.status === 'viderebehandling') ? typeBuffers.viderebehandling : typeBuffers.ny;
 }
 
@@ -783,6 +788,8 @@ function bufferDaysFor(c) {
 // globale bufferen eller en per-sak-buffer trekkes fra.
 function bufferAppliesTo(c) {
   if (!c) return true;
+  // OP-saker: bare Avgjørelse kan planlegges tidligere
+  if (isOpCase(c)) return c.status === 'op_avgjorelse';
   if (!isApplication(c)) return false;
   if (c.status === 'fristarkiv') return false;
   return true;
@@ -851,6 +858,8 @@ function postponedDaysFor(c) {
 // måles mot — den bufrede datoen som før, men den faktiske fristen for en
 // utsatt sak.
 function deadlineFor(c) {
+  // OP: forfalt regnes fra fasens frist, selv om Avgjørelse er planlagt tidligere
+  if (isOpCase(c)) return c.dueDate;
   return postponedDaysFor(c) > 0 ? c.dueDate : effDueFor(c);
 }
 
@@ -1235,7 +1244,7 @@ function filterCasesForTimeline(allCases, typeFilter) {
     if (cas.type === 'oppdrag') return !!wanted.oppdrag && cas.status !== 'avsluttet';
     if (isOpCase(cas)) return !!wanted.op && cas.status !== 'avsluttet';
     return !!wanted[cas.status];
-  });
+  }).concat(wanted.op ? opProvisionalCases(allCases) : []);
 }
 
 // timelineRowPriority: hvor høyt en bjelke skal ligge når den overlapper andre.
@@ -1347,10 +1356,13 @@ function timelineRange(cas, now, horizon, past) {
     isOppdrag:   isOp,
     isOpCase:    isOpCase(cas),
     opWork:      isOpWorkPhase(cas),
+    // Anslått Avgjørelse-blokk, og datoer som bygger på inndatoen
+    isProvisional: !!cas.provisional,
+    isEstimate:  opDueIsEstimate(cas),
     status:      cas.status,
     // Forfalt fra fristen (for en utsatt sak den faktiske); belegget og
     // forfalt-båndet følger planen (planOverdue).
-    isOverdue:   (postponed ? tlDueOffset(cas.dueDate, now) : effEnd) < 0,
+    isOverdue:   (postponed || isOpCase(cas) ? tlDueOffset(cas.dueDate, now) : effEnd) < 0,
     planOverdue: effEnd < 0,
     postponed:   postponed,
     // Streken fra fristen bort til bjelken trenger plass i raden
@@ -1707,6 +1719,7 @@ var beleggHorizon  = loadBeleggHorizon();
 var typeBuffers    = loadTypeBuffers();
 var workWindows    = loadWorkWindows();
 var deadlines      = loadDeadlines();
+var opPlan         = loadOpPlan();
 var homeDeadlineFilter = loadHomeDeadlineFilter();
 var docLayout = loadDocLayout();
 var activeCase = loadActiveCase();

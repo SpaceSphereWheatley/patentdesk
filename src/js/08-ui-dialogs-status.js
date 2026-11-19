@@ -271,7 +271,7 @@ function runStatusTransition(id, toStatus, opts) {
   if (isOppdrag && toStatus === 'avsluttet') { completeOppdrag(id); return; }
 
   var steps = [];
-  if (t.needsConfirm && !opts.skipConfirm) steps.push('confirm');
+  if (t.needsConfirm && (!opts.skipConfirm || t.alwaysConfirm)) steps.push('confirm');
   if (t.needsTags)    steps.push('tags');
   if (t.needsDueDate) steps.push('due');
 

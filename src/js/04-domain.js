@@ -250,6 +250,7 @@ function makeExportPayload() {
     workWindows: workWindows,
     workWindowUnit: 'workdays',
     deadlines:  deadlines,
+    opPlan:     opPlan,
     homeDeadlineFilter: homeDeadlineFilter,
     docLayout:  docLayout,
     activeCase: activeCase,
@@ -297,6 +298,9 @@ function readImportSettings(d) {
   }
   if (d.deadlines && typeof d.deadlines === 'object' && !Array.isArray(d.deadlines)) {
     out.deadlines = normalizeDeadlines(d.deadlines);
+  }
+  if (d.opPlan && typeof d.opPlan === 'object' && !Array.isArray(d.opPlan)) {
+    out.opPlan = normalizeOpPlan(d.opPlan);
   }
   if (Array.isArray(d.medlesing)) {
     out.medlesing = d.medlesing.filter(function(m) {

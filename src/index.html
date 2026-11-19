@@ -650,8 +650,26 @@
                       <input class="s-inp" id="input-dl-response" data-dl-key="response" type="number" min="1" max="24" step="1" aria-label="Din frist for å behandle svar, måneder" />
                       <span class="s-unit">mnd</span></label>
                   </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">OP-sak: formalia ferdig</span>
+                      <span class="settings-label-sub">Dager etter inndato. Anslag til du endrer fristen.</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-op-plan-formaliaDays" data-op-plan-key="formaliaDays" type="number" min="0" max="365" step="1" aria-label="OP-sak: dager fra inndato til formalia er ferdig" />
+                      <span class="s-unit">dager</span></label>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-label">
+                      <span class="settings-label-title">OP-sak: patenthavers svarfrist</span>
+                      <span class="settings-label-sub">Dager etter inndato. Anslag til svarfristen fra SANT er lagt inn.</span>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:var(--space-3);flex-shrink:0;">
+                      <input class="s-inp" id="input-op-plan-replyDays" data-op-plan-key="replyDays" type="number" min="1" max="365" step="1" aria-label="OP-sak: dager fra inndato til patenthavers svarfrist" />
+                      <span class="s-unit">dager</span></label>
+                  </div>
                   <div class="settings-row tdf-foot">
-                    <span class="settings-label-sub">Standard: 3 / 3 / 3 måneder</span>
+                    <span class="settings-label-sub">Standard: 3 / 3 / 3 måneder, OP-sak 1 / 112 dager</span>
                     <button class="s-btn" id="btn-dl-reset">Tilbakestill til standard</button>
                   </div>
                 </div>
@@ -1471,6 +1489,10 @@
               <label class="field-label" for="f-op-number">OP-saksnummer</label>
               <input class="field-input" id="f-op-number" type="text" placeholder="OP ÅÅÅÅ/xxxxx" maxlength="13" autocomplete="off" />
             </div>
+            <div class="field-group op-create-only">
+              <label class="field-label" for="f-op-received">Inndato</label>
+              <input class="field-input" id="f-op-received" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
+            </div>
             <div class="field-group">
               <label class="field-label" for="f-op-due">Frist for fasen <span class="field-label-sub">valgfritt</span></label>
               <input class="field-input" id="f-op-due" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
@@ -1482,21 +1504,17 @@
           </div>
           <div class="field-row op-create-only">
             <div class="field-group">
-              <label class="field-label" for="f-op-patent">Patentnummer</label>
+              <label class="field-label" for="f-op-patent">Patentnummer <span class="field-label-sub">valgfritt</span></label>
               <input class="field-input" id="f-op-patent" type="text" maxlength="200" />
             </div>
             <div class="field-group">
-              <label class="field-label" for="f-op-holder">Patenthaver</label>
+              <label class="field-label" for="f-op-holder">Patenthaver <span class="field-label-sub">valgfritt</span></label>
               <input class="field-input" id="f-op-holder" type="text" maxlength="200" />
-            </div>
-            <div class="field-group">
-              <label class="field-label" for="f-op-received">Mottatt</label>
-              <input class="field-input" id="f-op-received" type="text" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off" />
             </div>
           </div>
           <div class="field-row op-create-only">
             <div class="field-group">
-              <label class="field-label" for="f-op-opponent">Innsiger</label>
+              <label class="field-label" for="f-op-opponent">Innsiger <span class="field-label-sub">valgfritt</span></label>
               <input class="field-input" id="f-op-opponent" type="text" maxlength="200" />
             </div>
             <div class="field-group">
@@ -1504,7 +1522,7 @@
               <input class="field-input" id="f-op-opponent-agent" type="text" maxlength="200" />
             </div>
           </div>
-          <span class="field-hint op-create-only">Flere innsigere, utvalg og datoer legges inn på sakssiden.</span>
+          <span class="field-hint op-create-only">Bare saksnummer og inndato er påkrevd. Fristene regnes fra inndatoen som anslag til datoene fra SANT legges inn på sakssiden.</span>
         </div>
 
         <div class="field-group">

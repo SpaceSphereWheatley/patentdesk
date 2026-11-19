@@ -227,6 +227,7 @@ function renderHomeDeadlines() {
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
       postponePillHtml(c) +
+      opEstimatePillHtml(c) +
       medlPillHtml(c) +
       vacBadge +
       trackHtml(c, true) +
@@ -381,7 +382,7 @@ function buildTimelineDiv(opts) {
 
   busyRanges.forEach(function(r) {
     var bar = document.createElement('div');
-    var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : r.isOpCase ? 'tl-bar-op' + (r.opWork ? '' : ' tl-bar-op-wait') : 'tl-bar-' + r.status;
+    var typeCls = r.isOppdrag ? 'tl-bar-oppdrag' : r.isOpCase ? 'tl-bar-op' + (r.opWork ? '' : ' tl-bar-op-wait') + (r.isEstimate ? ' tl-bar-est' : '') : 'tl-bar-' + r.status;
     bar.className = 'tl-bar ' + typeCls + (r.isMilestone ? ' tl-bar-milestone' : '') + (opts.draggable && r.canBuffer ? ' draggable' : '') + (r.isOverdue ? ' tl-bar-overdue' : '') + (opts.activeId && r.id === opts.activeId ? ' tl-bar-active' : '') + (r.unassigned ? ' tl-bar-unassigned' : '');
     var visStart = Math.max(-PAST, r.start);
     var visEnd   = Math.min(HORIZON, r.end);
@@ -392,11 +393,14 @@ function buildTimelineDiv(opts) {
     bar.dataset.title = r.title;
     bar.dataset.id    = r.id;
     bar.dataset.due   = r.dueDate;
+    // OP: den anslåtte Avgjørelse-blokken har samme id som saken
+    if (r.isProvisional) bar.dataset.provisional = '1';
+    if (r.isEstimate) bar.dataset.est = '1';
     bar.dataset.spanDays = String(Math.max(0, visEnd - visStart)); // etiketten tilpasses bredden i _applyTimelineScroll
     if (opts.interactive) {
       bar.tabIndex = 0;
       bar.setAttribute('role', 'button');
-      bar.setAttribute('aria-label', r.caseNumber + (r.title ? ' — ' + r.title : '') + ', frist ' + formatDate(r.dueDate) + (r.isOverdue ? ', forfalt' : '') +
+      bar.setAttribute('aria-label', r.caseNumber + (r.isProvisional ? ' (Avgjørelse)' : '') + (r.title ? ' — ' + r.title : '') + ', frist ' + formatDate(r.dueDate) + (r.isEstimate ? ' (anslag)' : '') + (r.isOverdue ? ', forfalt' : '') +
         (r.postponed ? ', planlagt ' + formatDate(r.effDue) + ', utsatt ' + r.postponed + (r.postponed === 1 ? ' dag' : ' dager') : ''));
     }
     // Ferie og røde dager inne i arbeidsvinduet skraveres: vinduet er
@@ -419,7 +423,7 @@ function buildTimelineDiv(opts) {
     if (r.postponed) setPostponedPart(bar, visStart, visEnd, r.actualEnd);
     var lbl = document.createElement('span');
     lbl.className = 'tl-bar-label';
-    lbl.textContent = r.caseNumber;
+    lbl.textContent = r.caseNumber + (r.isProvisional ? ' · Avgjørelse (anslag)' : '');
     bar.appendChild(lbl);
     track.appendChild(bar);
 

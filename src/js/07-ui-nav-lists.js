@@ -264,6 +264,12 @@ function postponePillHtml(c) {
   return '<span class="postpone-pill" title="' + esc(tip) + '">Utsatt til ' + esc(toDisplay(effDueFor(c))) + '</span>';
 }
 
+// OP-sak: fristen er et anslag regnet fra inndatoen (opDueIsEstimate)
+function opEstimatePillHtml(c) {
+  if (!opDueIsEstimate(c)) return '';
+  return '<span class="op-est-pill" title="Anslått frist, regnet fra inndatoen. Datoen fra SANT tar over når den legges inn.">anslag</span>';
+}
+
 // ── Ikke fordelt: visning ──────────────────────────
 function unassignedPillHtml(c) {
   if (!isUnassigned(c)) return '';
@@ -725,6 +731,7 @@ function renderCaseList(sorted, opts, listEl, emptyEl) {
       activeCasePillHtml(c) +
       unassignedPillHtml(c) +
       postponePillHtml(c) +
+      opEstimatePillHtml(c) +
       medlPillHtml(c) +
       trackHtml(c, listTrackMini(activePage)) +
       '<div class="case-card-menu">' +

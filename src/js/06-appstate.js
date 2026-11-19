@@ -346,7 +346,7 @@ function _dispatch(action, payload) {
       // OP-dataene fra sakssiden: ett eller flere felt (se opApplyUpdate)
       var ouCase = cases.find(function(c) { return c.id === payload.id; });
       var ouPatch = opApplyUpdate(ouCase, payload.changes);
-      if (!ouPatch) { if (isOpCase(ouCase)) showToast('✗ En OP-sak må ha minst én innsiger', true); break; }
+      if (!ouPatch) { if (isOpCase(ouCase)) showToast('✗ Inndatoen er obligatorisk — skriv inn en gyldig dato', true); break; }
       if (ouPatch.dueDate !== ouCase.dueDate) {
         ouPatch.history = appendHistory(ouCase, null, null, 'frist', ouCase.dueDate, ouPatch.dueDate);
       }
@@ -928,6 +928,26 @@ function _dispatch(action, payload) {
       break;
     }
 
+    case 'SETTINGS_OP_PLAN_CHANGE': {
+      // value null = tilbake til standard; key null = begge tilbake til standard
+      var nextPlan = Object.assign({}, opPlan);
+      if (payload.key == null) nextPlan = Object.assign({}, OP_PLAN_DEFAULTS);
+      else if (payload.key in OP_PLAN_DEFAULTS) {
+        nextPlan[payload.key] = payload.value == null ? OP_PLAN_DEFAULTS[payload.key] : payload.value;
+      }
+      opPlan = normalizeOpPlan(nextPlan);
+      saveOpPlan(opPlan);
+      // Anslåtte frister på OP-sakene følger den nye planen
+      AppState.cases = cases.map(function(c) {
+        if (!isOpCase(c)) return c;
+        var d = opSyncDue(c);
+        return d === c.dueDate ? c : Object.assign({}, c, { dueDate: d });
+      });
+      saveCases();
+      if (payload.key !== null) showToast('✓ Plan for OP-saker lagret');
+      break;
+    }
+
     case 'RESPONSE_CHECK_TOGGLE': {
       var rc = cases.find(function(c) { return c.id === payload.id; });
       if (!rc) break;
@@ -1097,6 +1117,7 @@ function _dispatch(action, payload) {
         if ('typeBuffers' in s) { typeBuffers = s.typeBuffers; saveTypeBuffers(typeBuffers); }
         if ('workWindows' in s) { workWindows = s.workWindows; saveWorkWindows(workWindows); }
         if ('deadlines' in s) { deadlines = s.deadlines; saveDeadlines(deadlines); }
+        if ('opPlan' in s) { opPlan = s.opPlan; saveOpPlan(opPlan); }
         if ('medlesing' in s) { medlesing = s.medlesing; saveMedlesing(medlesing); }
         if ('homeDeadlineFilter' in s) { homeDeadlineFilter = s.homeDeadlineFilter; saveHomeDeadlineFilter(homeDeadlineFilter); }
         if ('docLayout' in s) { docLayout = s.docLayout; saveDocLayout(docLayout); if (typeof renderDocPanes === 'function') renderDocPanes(); }

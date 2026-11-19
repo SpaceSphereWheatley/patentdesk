@@ -392,9 +392,17 @@ function renderSakFrist(cas) {
       postponed + (postponed === 1 ? ' dag' : ' dager') + ' etter fristen</span> ' +
       '<button type="button" class="sak-frist-unpostpone" id="sak-frist-unpostpone">Fjern utsettelse</button>';
     meta.style.display = '';
+  } else if (metaMode === 'buffer' && isOpCase(cas)) {
+    var obd = bufferDaysFor(cas);
+    meta.textContent = 'Planlagt ferdig ' + toDisplay(effDueFor(cas)) + '  ·  ' + obd + (obd === 1 ? ' dag' : ' dager') + ' før fristen' +
+      (opDueIsEstimate(cas) ? '  ·  anslag' : '');
+    meta.style.display = '';
   } else if (metaMode === 'buffer') {
     var bd = bufferDaysFor(cas);
     meta.textContent = 'Faktisk frist ' + toDisplay(cas.dueDate) + '  ·  ' + bd + (bd === 1 ? ' dags' : ' dagers') + ' buffer trukket fra';
+    meta.style.display = '';
+  } else if (opDueIsEstimate(cas)) {
+    meta.textContent = 'Anslag, regnet fra inndatoen. Legg inn datoen fra SANT når den er kjent.';
     meta.style.display = '';
   } else {
     meta.style.display = 'none';

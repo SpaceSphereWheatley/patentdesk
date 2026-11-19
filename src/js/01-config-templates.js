@@ -18,6 +18,7 @@ var BUFFER_KEY   = 'pt_frist_buffer';   // gammel global buffer, leses bare ved 
 var TYPE_BUFFER_KEY = 'pt_type_buffers';
 var WORK_WINDOW_KEY = 'pt_work_windows';
 var DEADLINES_KEY   = 'pt_deadlines';
+var OP_PLAN_KEY     = 'pt_op_plan'; // OP-saker: formaliatid og svartid fra inndato
 var HOME_DEADLINE_KEY = 'pt_home_frister';
 var DOC_LAYOUT_KEY    = 'pt_doc_layout';
 var ACTIVE_CASE_KEY   = 'pt_active_case';
@@ -198,14 +199,23 @@ function statusTransition(fromStatus, toStatus, isOppdrag, deadlines) {
     suggestMonths: 0,
     logType:       null,
     confirmDesc:   '',
+    alwaysConfirm: false,
     dueDateDesc:   ''
   };
 
   // OP-saker går gjennom fasene uten dialoger; fasens frist foreslås av
   // opSyncDue. Avslutningen spør om utfall og stikkord, som for andre saker,
   // og bare den telles i statistikken.
+  // Hvert fasebytte bekreftes, også fra knappen (alwaysConfirm) — avslutningen
+  // bekreftes i dialogen med utfall.
   if (opPhase(fromStatus) || opPhase(toStatus)) {
-    if (toStatus === 'avsluttet') { t.needsTags = true; t.logType = 'op'; }
+    if (toStatus === 'avsluttet') { t.needsTags = true; t.logType = 'op'; return t; }
+    var fi = opPhaseIndex(fromStatus), ti = opPhaseIndex(toStatus);
+    t.needsConfirm  = true;
+    t.alwaysConfirm = true;
+    t.confirmDesc   = fi !== -1 && ti > fi
+      ? 'merket ferdig med «' + opPhaseLabel(fromStatus) + '» og flyttet til «' + opPhaseLabel(toStatus) + '»'
+      : 'flyttet fra «' + (opPhaseLabel(fromStatus) || fromStatus) + '» til «' + opPhaseLabel(toStatus) + '»';
     return t;
   }
 

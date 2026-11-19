@@ -44,8 +44,11 @@ function extractVarSource(html, name) {
 // svært mange domenefunksjoner, så de lastes alltid med — med mindre testen
 // laster dem selv eller stubber dem som globals.
 const CORE_FUNCTIONS = ['isOpCase', 'isApplication', 'opPhaseIndex', 'opPhase', 'opPhaseLabel',
-  'isOpWorkPhase', 'isOpWaitPhase', 'opForwardAction'];
-const CORE_VARS = ['OP_PHASES'];
+  'isOpWorkPhase', 'isOpWaitPhase', 'opForwardAction',
+  // OP-planen fra inndatoen: den anslåtte Avgjørelse-blokken inngår i belegget og tidslinjen
+  'opProvisionalCases', 'opProvisionalCase', 'opPlanDates', 'opDueIsEstimate', 'opControlDeadlines',
+  'normalizeOpPlan', '_opPlusDays', '_opPlusMonths', 'addMonthsClamped', 'isoLocalDate', 'addDaysLocal'];
+const CORE_VARS = ['OP_PHASES', 'OP_PLAN_DEFAULTS', 'OP_PLAN_MAX', 'OP_MEETING_DAYS', 'OP_CONTROL_MONTHS'];
 
 function loadFunctions(names, opts) {
   opts = opts || {};

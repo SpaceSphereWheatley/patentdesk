@@ -33,6 +33,13 @@ var OP_MEETING_DAYS = 10;
 // Begge kontrollfristene er tre måneder.
 var OP_CONTROL_MONTHS = 3;
 
+// Planen fra inndatoen (Innstillinger → Frister): dager fra inndato til
+// formalia er gjort og til patenthavers svarfrist. Standarden er hentet fra
+// en virkelig sak (inndato 20.10., svarfrist 9.2. = 112 dager). Anslag — en
+// faktisk dato fra SANT tar alltid over.
+var OP_PLAN_DEFAULTS = { formaliaDays: 1, replyDays: 112 };
+var OP_PLAN_MAX = 365;
+
 // Datofeltene på en OP-sak, i den rekkefølgen saken går gjennom dem.
 var OP_DATE_FIELDS = ['received', 'replyDue', 'replyDate', 'meetingDate', 'noticeDate',
   'decisionDate', 'protocolDate', 'sentDate', 'transferDate'];
@@ -127,32 +134,85 @@ function opControlDeadlines(op) {
   };
 }
 
-// Fristen for oppstartsmøtet: 10 dager etter svaret, eller etter at
-// svarfristen løp ut. Som alle frister i appen telles kalenderdager — røde
-// dager og ferie flytter den ikke. Tom før noen av dem er kjent.
-function opMeetingDue(op) {
-  var o = op || {};
-  var base = o.replyKind === 'svar' ? o.replyDate
-           : o.replyKind === 'utlopt' ? (o.replyDue || o.replyDate) : '';
-  return base ? isoLocalDate(addDaysLocal(new Date(base + 'T00:00:00'), OP_MEETING_DAYS)) : '';
+// Planinnstillingene, hver verdi for seg. Formalia kan være 0 dager (samme dag).
+function normalizeOpPlan(raw) {
+  var src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  function ok(v, min) { return typeof v === 'number' && isFinite(v) && v >= min && v <= OP_PLAN_MAX; }
+  return {
+    formaliaDays: ok(src.formaliaDays, 0) ? Math.floor(src.formaliaDays) : OP_PLAN_DEFAULTS.formaliaDays,
+    replyDays:    ok(src.replyDays, 1)    ? Math.floor(src.replyDays)    : OP_PLAN_DEFAULTS.replyDays
+  };
 }
 
-// Fristen appen foreslår for fasen saken står i. Tom når fasen ikke har noen
-// fast frist (Formalia, Skriftveksling) — da setter du den selv.
+function _opPlusDays(iso, n) {
+  return iso ? isoLocalDate(addDaysLocal(new Date(iso + 'T00:00:00'), n)) : '';
+}
+function _opPlusMonths(iso, n) {
+  return iso ? addMonthsClamped(new Date(iso + 'T00:00:00'), n) : '';
+}
+
+// Fristen for hver fase, regnet fra inndatoen og de datoene som er kjent.
+// { fase: { date, est } } — est (anslag) når datoen bygger på inndatoen og
+// innstillingene i stedet for en faktisk dato fra SANT. Kalenderdager, som
+// alle frister i appen. En faktisk dato tar over, og datoene etter den
+// regnes fra den:
+//   Formalia      inndato + formaliatid                         (anslag)
+//   Venter på svar svarfrist, ellers inndato + svartid           (anslag)
+//   Oppstart      svar/fristutløp + 10 dager
+//   Skriftveksling ingen fast frist
+//   Avgjørelse    kontrollfrist (a)/(b), ellers svar/fristutløp + 3 mnd. (anslag)
+function opPlanDates(op) {
+  var o = op || {};
+  var plan = normalizeOpPlan(typeof opPlan !== 'undefined' ? opPlan : null);
+  var formalia = { date: _opPlusDays(o.received, plan.formaliaDays), est: true };
+  if (!formalia.date) formalia.est = false;
+  var svar = o.replyDue ? { date: o.replyDue, est: false }
+           : { date: _opPlusDays(o.received, plan.replyDays), est: !!o.received };
+  // Svar eller fristutløp: oppstarten og avgjørelsen regnes herfra
+  var base = o.replyKind === 'svar' && o.replyDate ? { date: o.replyDate, est: false }
+           : o.replyKind === 'utlopt' && (o.replyDue || o.replyDate) ? { date: o.replyDue || o.replyDate, est: false }
+           : svar;
+  var oppstart = { date: _opPlusDays(base.date, OP_MEETING_DAYS), est: !!base.date && base.est };
+  var ctl = opControlDeadlines(o);
+  var open = [ctl.a, ctl.b].filter(function(x) { return x.applies && !x.met; }).map(function(x) { return x.date; }).sort();
+  var avg = open.length ? { date: open[0], est: false }
+          : ctl.b.applies ? { date: ctl.b.date, est: false }
+          : { date: _opPlusMonths(base.date, OP_CONTROL_MONTHS), est: !!base.date };
+  return {
+    op_formalia: formalia, op_svar: svar, op_oppstart: oppstart,
+    op_skrift: { date: '', est: false }, op_avgjorelse: avg
+  };
+}
+
+// Fristen appen foreslår for fasen saken står i (se opPlanDates). Tom når
+// fasen ikke har noen fast frist (Skriftveksling) — da setter du den selv.
 function opSuggestedDue(c) {
-  if (!isOpCase(c)) return '';
-  var op = c.op || {};
-  switch (c.status) {
-    case 'op_svar':     return op.replyDue || '';
-    case 'op_oppstart': return opMeetingDue(op);
-    case 'op_avgjorelse': {
-      var ctl = opControlDeadlines(op);
-      var open = [ctl.a, ctl.b].filter(function(x) { return x.applies && !x.met; }).map(function(x) { return x.date; });
-      open.sort();
-      return open[0] || '';
-    }
-    default: return '';
-  }
+  if (!isOpCase(c) || !opPhase(c.status)) return '';
+  return opPlanDates(c.op)[c.status].date || '';
+}
+
+// Om fasens frist er et anslag: forslaget brukes, og det bygger på inndatoen.
+// Den anslåtte Avgjørelse-blokken (opProvisionalCase) er alltid et anslag.
+function opDueIsEstimate(c) {
+  if (!isOpCase(c)) return false;
+  if (c.provisional) return true;
+  if (!opPhase(c.status) || (c.op && c.op.dueManual)) return false;
+  return opPlanDates(c.op)[c.status].est;
+}
+
+// Avgjørelse som anslått blokk mens saken er i en tidligere fase: en kopi av
+// saken i fasen Avgjørelse, med planens frist. Tidslinjen og belegget regner
+// den som arbeid fra første dag, så tiden kan planlegges lenge før saken
+// kommer dit. Bufferen (sakens planlegging av Avgjørelse) følger med. null når
+// saken alt er i Avgjørelse, er avsluttet, eller ingen dato er kjent.
+function opProvisionalCase(c) {
+  if (!isOpCase(c) || !opPhase(c.status) || c.status === 'op_avgjorelse') return null;
+  var due = opPlanDates(c.op).op_avgjorelse.date;
+  if (!due) return null;
+  return Object.assign({}, c, { status: 'op_avgjorelse', dueDate: due, duration: null, provisional: true });
+}
+function opProvisionalCases(list) {
+  return (list || []).map(opProvisionalCase).filter(Boolean);
 }
 
 // Fasens frist slik den skal lagres: forslaget, med mindre du har satt den selv.
@@ -172,13 +232,15 @@ function opStatusPatch(c, toStatus, outcome) {
     op.outcome = Object.prototype.hasOwnProperty.call(OP_OUTCOMES, outcome) ? outcome : '';
   }
   var next = Object.assign({}, c, { status: toStatus, op: op });
-  return { op: op, duration: null, dueDate: toStatus === 'avsluttet' ? (c.dueDate || '') : opSuggestedDue(next) };
+  // Bufferen er planen for Avgjørelse og følger saken gjennom fasene
+  return { op: op, duration: null, caseBuffer: c.caseBuffer != null ? c.caseBuffer : null,
+    dueDate: toStatus === 'avsluttet' ? (c.dueDate || '') : opSuggestedDue(next) };
 }
 
 // Feltene som endres når OP-dataene redigeres på sakssiden. changes kan ha
 // OP-feltene, `dueDate` (fasens frist satt for hånd) og `dueManual: false`
 // (tilbake til forslaget). Gir { op, dueDate }, eller null når endringen ikke
-// er gyldig (ikke en OP-sak, eller den siste innsigeren fjernes).
+// er gyldig (ikke en OP-sak, eller inndatoen tømmes — den er obligatorisk).
 function opApplyUpdate(c, changes) {
   if (!isOpCase(c) || !changes || typeof changes !== 'object') return null;
   var cur = normalizeOp(c.op);
@@ -187,7 +249,7 @@ function opApplyUpdate(c, changes) {
     if (Object.prototype.hasOwnProperty.call(changes, k)) merged[k] = changes[k];
   });
   var op = normalizeOp(merged);
-  if (Object.prototype.hasOwnProperty.call(changes, 'opponents') && !op.opponents.length) return null;
+  if (Object.prototype.hasOwnProperty.call(changes, 'received') && !op.received) return null;
   var dueDate = c.dueDate || '';
   if (Object.prototype.hasOwnProperty.call(changes, 'dueDate')) {
     dueDate = normalizeOpDate(changes.dueDate);
@@ -199,8 +261,8 @@ function opApplyUpdate(c, changes) {
   return { op: op, dueDate: opSyncDue(next) };
 }
 
-// Feltene fra «Legg til sak» / «Rediger sak» for en OP-sak. Ny sak: nummer og
-// minst én innsiger kreves. Redigering: bare nummer, fasens frist, eget vindu
+// Feltene fra «Legg til sak» / «Rediger sak» for en OP-sak. Ny sak: bare
+// nummer og inndato kreves; alt annet er valgfritt. Redigering: bare nummer, fasens frist, eget vindu
 // (og tittel, notater, stikkord, som leses av dialogen selv); resten endres på
 // sakssiden. Gir { error } eller { caseNumber, dueDate, duration, op? }.
 function opModalPayload(f, editing) {
@@ -215,10 +277,10 @@ function opModalPayload(f, editing) {
   var out = { caseNumber: cn, dueDate: due ? parseDate(due) : '', duration: dur };
   if (editing) return out;
   var received = (f.received || '').trim();
-  if (received && !isValidDate(received)) return { error: 'Ugyldig mottaksdato — bruk formatet åååå.mm.dd.' };
-  var op = normalizeOp({ patentNo: f.patentNo, holder: f.holder, received: received ? parseDate(received) : '',
+  if (!received) return { error: 'Skriv inn inndatoen (da innsigelsen kom inn).' };
+  if (!isValidDate(received)) return { error: 'Ugyldig inndato — bruk formatet åååå.mm.dd.' };
+  var op = normalizeOp({ patentNo: f.patentNo, holder: f.holder, received: parseDate(received),
     opponents: [{ name: f.opponent, agent: f.opponentAgent }] });
-  if (!op.opponents.length) return { error: 'Skriv inn minst én innsiger.' };
   out.op = op;
   return out;
 }
@@ -295,8 +357,7 @@ function opPanelHtml(c) {
     return '<div class="op-opp" data-op-opp="' + i + '">' +
       input('data-op-opp-key="name" aria-label="Innsiger ' + (i + 1) + '" maxlength="' + OP_TEXT_MAX + '"', o.name) +
       input('data-op-opp-key="agent" aria-label="Fullmektig for innsiger ' + (i + 1) + '" placeholder="Fullmektig" maxlength="' + OP_TEXT_MAX + '"', o.agent) +
-      '<button type="button" class="btn-icon btn-icon-sm op-opp-del" data-feature="op-remove-opponent" data-op-remove="' + i + '"' +
-        (op.opponents.length <= 1 ? ' disabled title="En OP-sak må ha minst én innsiger"' : ' title="Fjern innsiger"') +
+      '<button type="button" class="btn-icon btn-icon-sm op-opp-del" data-feature="op-remove-opponent" data-op-remove="' + i + '" title="Fjern innsiger"' +
         ' aria-label="Fjern innsiger ' + (i + 1) + '"><svg class="ti" aria-hidden="true"><use href="#ti-x"/></svg></button>' +
     '</div>';
   }).join('') +
@@ -314,11 +375,13 @@ function opPanelHtml(c) {
   var b = opControlText(ctl.b, 'starter når varselet er sendt');
   var phase = opPhase(c.status);
   var sugg = opSuggestedDue(c);
+  var avgPlan = opPlanDates(op).op_avgjorelse;
   var dueNote = !phase ? ''
     : op.dueManual
       ? 'satt for hånd' + (sugg && sugg !== c.dueDate ? ' · forslag ' + toDisplay(sugg) +
           ' <button type="button" class="op-link" data-feature="op-use-suggestion" data-op-action="use-suggestion">Bruk forslag</button>' : '')
-      : sugg ? 'forslag · kontroller i SANT' : 'ingen fast frist i denne fasen — sett den selv';
+      : sugg ? (opDueIsEstimate(c) ? 'anslag · regnet fra inndatoen' : 'forslag · kontroller i SANT')
+      : 'ingen fast frist i denne fasen — sett den selv';
   var dueRow = phase
     ? '<div class="op-due"><label for="op-due-input">Frist for fasen «' + esc(phase.label) + '»</label>' +
         input('id="op-due-input" data-op-due="1" placeholder="åååå.mm.dd" maxlength="10" autocomplete="off"', toDisplay(c.dueDate), ' data-op-dp="1"') +
@@ -340,6 +403,9 @@ function opPanelHtml(c) {
       '<div class="op-ctrl">' +
         '<div class="op-ctrl-row"><span>(a) Tatt opp til avgjørelse — ubesvart frist + 3 mnd.</span><span class="op-ctrl-' + a.tone + '">' + esc(a.text) + '</span></div>' +
         '<div class="op-ctrl-row"><span>(b) Protokoll ferdig — varsel + 3 mnd.</span><span class="op-ctrl-' + b.tone + '">' + esc(b.text) + '</span></div>' +
+        (avgPlan.date && c.status !== 'op_avgjorelse' && c.status !== 'avsluttet'
+          ? '<div class="op-ctrl-row op-ctrl-plan"><span>Avgjørelse (plan, i tidslinjen og belegget)</span><span class="op-ctrl-' + (avgPlan.est ? 'na' : 'open') + '">' +
+              esc(toDisplay(avgPlan.date) + (avgPlan.est ? ' · anslag' : '')) + '</span></div>' : '') +
         '<div class="op-ctrl-hint">Utregnet av appen. SANT er fasit.</div>' +
       '</div>' +
     '</div>' +

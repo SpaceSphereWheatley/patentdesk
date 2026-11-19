@@ -113,10 +113,17 @@ These two stores have distinct responsibilities. Do not conflate them.
   The examiner is always 1. voterende. Work phases (formalia, oppstart,
   avgjørelse) behave like Ny: a work window (`workWindows.op_*`, or the case's
   own `duration`) ending on `dueDate`, belegg, overdue penalty; no buffer, no
-  postponing. Wait phases (svar, skrift) behave like Fristarkiv: milestone, no
-  belegg. `dueDate` is the current phase's deadline, suggested by
-  `opSuggestedDue` unless set by hand (`op.dueManual`); the two control
-  deadlines (`opControlDeadlines`) are shown separately. Case data lives on the
+  postponing — except Avgjørelse, which can be planned earlier (positive
+  `caseBuffer`), never later; overdue counts from `dueDate`. Wait phases (svar,
+  skrift) behave like Fristarkiv: milestone, no belegg. Only the OP number and
+  the inndato (`op.received`) are required. The whole plan is derived from the
+  inndato (`opPlanDates`, settings `opPlan`: formalia/reply days), marked as an
+  estimate (`opDueIsEstimate`) until a real date from SANT replaces it; all
+  deadlines are calendar days. `dueDate` is the current phase's deadline,
+  suggested unless set by hand (`op.dueManual`); the two control deadlines
+  (`opControlDeadlines`) are shown separately. Before Avgjørelse, a provisional
+  Avgjørelse block (`opProvisionalCase`) is drawn and counted in belegg. Every
+  phase change is confirmed. Case data lives on the
   case as `op` (`normalizeOp`). SANT is the source of truth: the app suggests,
   never sends, confirms or closes anything. Use `isApplication(c)` for "a
   patent application" — never `c.type !== 'oppdrag'`, which also matches OP.

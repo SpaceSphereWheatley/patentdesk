@@ -661,6 +661,8 @@ function applyTimelineLink(id, force) {
       var due   = el.dataset.due   || '';
       var caseId = el.dataset.id   || '';
       var caseObj = caseId ? cases.find(function(c) { return c.id === caseId; }) : null;
+      // OP: den anslåtte Avgjørelse-blokken er en egen bjelke med samme id
+      if (caseObj && el.dataset.provisional) caseObj = opProvisionalCase(caseObj) || caseObj;
       var effDue = caseObj ? effDueFor(caseObj) : getEffectiveDueDate(due);
       // Nedtellingen måles mot den bufrede fristen — for en utsatt sak mot den
       // faktiske; vis den andre datoen også, så tallene ikke ser ut til å
@@ -679,6 +681,8 @@ function applyTimelineLink(id, force) {
         // Forfalt-båndet: det er her belegget bokfører arbeidet
         (el.classList.contains('tl-overdue-band') ? '<span class="tl-popup-hint">' + OVERDUE_PENALTY_WORKDAYS + ' arb.dager bokført i belegget fra i dag</span>' : '') +
         (postponed && !el.classList.contains('tl-overdue-band') ? '<span class="tl-popup-hint">Utsatt ' + postponed + (postponed === 1 ? ' dag' : ' dager') + ' etter fristen. Fristen flytter seg ikke.</span>' : '') +
+        (el.dataset.provisional ? '<span class="tl-popup-hint">Avgjørelse, anslått fra datoene som er kjent. Teller i belegget fra nå.</span>'
+          : el.dataset.est ? '<span class="tl-popup-hint">Anslag, regnet fra inndatoen.</span>' : '') +
         (el.classList.contains('draggable') ? '<span class="tl-popup-hint">Dra for å endre bufferen' + (canPostpone(caseObj) ? ', også forbi fristen' : '') + ' · <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd></span>' : '');
     }
     popup.style.display = 'block';

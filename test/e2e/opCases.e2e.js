@@ -40,15 +40,24 @@ async function freshApp() {
   return { page, errors, close: () => ctx.close() };
 }
 
-async function createOp(page, number) {
+async function createOp(page, number, received) {
   await page.evaluate(() => navigateTo('op'));
   await page.click('#btn-open-modal');
   await page.waitForSelector('#modal-row-opcase', { state: 'visible' });
   await page.fill('#f-op-number', number);
+  if (received !== null) await page.fill('#f-op-received', received || '2026.10.20');
   await page.fill('#f-op-patent', 'NO 345678');
   await page.fill('#f-op-holder', 'Eksempel Marine AS');
   await page.fill('#f-op-opponent', 'Testrederi ASA');
   await page.click('#btn-save');
+}
+
+// Neste fase: knappen øverst, og så bekreftelsen
+async function forward(p) {
+  await p.click('#btn-sak-forward');
+  await p.waitForSelector('#complete-backdrop.open');
+  await p.click('#btn-complete-confirm');
+  await p.waitForTimeout(50);
 }
 
 const opCase = (page) => page.evaluate(() => JSON.parse(JSON.stringify(cases.find((c) => c.type === 'op'))));
@@ -65,6 +74,24 @@ e2e('an OP case is created from «Legg til sak» and listed on OP-saker', async 
   assert.match(cards[0], /OP 2026\/00123/);
   assert.match(cards[0], /NO 345678 · Eksempel Marine AS/);
   assert.deepEqual(s.errors, []);
+  await s.close();
+});
+
+e2e('the inndato is required; everything else is optional', async () => {
+  const s = await freshApp();
+  await createOp(s.page, 'OP 2026/00123', null);
+  assert.match(await s.page.textContent('#field-error'), /inndato/);
+  assert.equal(await s.page.evaluate(() => cases.length), 0);
+  await s.page.fill('#f-op-received', '2026.10.20');
+  await s.page.fill('#f-op-patent', '');
+  await s.page.fill('#f-op-holder', '');
+  await s.page.fill('#f-op-opponent', '');
+  await s.page.click('#btn-save');
+  const c = await opCase(s.page);
+  assert.deepEqual(c.op.opponents, []);
+  // Planen fra inndatoen: Formalia i morgen etter inndato, merket som anslag
+  assert.equal(c.dueDate, '2026-10-21');
+  assert.match(await s.page.textContent('#case-list'), /anslag/);
   await s.close();
 });
 
@@ -86,16 +113,34 @@ e2e('case page: dates drive the phase deadline, phases walk forward, belegg only
   // Søknadsdelene er skjult
   assert.equal(await p.locator('section[data-sak-section="claims"]').isVisible(), false);
 
-  // Svarfrist inn, så videre til «Venter på svar»: fristen blir svarfristen
+  // Videre til «Venter på svar» krever bekreftelse; Avbryt endrer ingenting
+  await p.click('#btn-sak-forward');
+  await p.waitForTimeout(50);
+  assert.match(await p.textContent('#complete-action-desc'), /Formalia.*Venter på svar/);
+  await p.click('#btn-complete-cancel');
+  await p.waitForTimeout(50);
+  assert.equal((await opCase(p)).status, 'op_formalia');
+  await forward(p);
+  let c = await opCase(p);
+  assert.equal(c.status, 'op_svar');
+  assert.equal(c.dueDate, '2027-02-09'); // anslag: inndato + 112 dager
+  assert.match(await p.textContent('#sak-op .op-due'), /anslag/);
+  assert.equal(await p.evaluate((i) => countsInBelegg(cases.find((x) => x.id === i)), id), false);
+  // Den anslåtte Avgjørelse-blokken teller likevel i belegget og står i tidslinjen
+  assert.equal(await p.evaluate(() => opProvisionalCases(cases).length), 1);
+  await p.evaluate(() => navigateTo('op'));
+  await p.waitForTimeout(150);
+  assert.equal(await p.locator('#cases-timeline .tl-bar[data-provisional]').count(), 1);
+  await p.evaluate((i) => navigateTo('sak/' + i), id);
+  await p.waitForSelector('#sak-op .op-grid');
+
+  // Svarfristen fra SANT erstatter anslaget
   await p.fill('#op-d-replyDue', '2027.03.03');
   await p.press('#op-d-replyDue', 'Tab');
   await p.waitForTimeout(50);
-  await p.click('#btn-sak-forward');
-  await p.waitForTimeout(50);
-  let c = await opCase(p);
-  assert.equal(c.status, 'op_svar');
+  c = await opCase(p);
   assert.equal(c.dueDate, '2027-03-03');
-  assert.equal(await p.evaluate((i) => countsInBelegg(cases.find((x) => x.id === i)), id), false);
+  assert.doesNotMatch(await p.textContent('#sak-op .op-due'), /anslag/);
 
   // Svar mottatt → Oppstart: 10 kalenderdager etter svaret
   await p.selectOption('#sak-op [data-op-field="replyKind"]', 'svar');
@@ -105,34 +150,34 @@ e2e('case page: dates drive the phase deadline, phases walk forward, belegg only
   await p.waitForTimeout(50);
   // Fokus går videre til neste felt selv om panelet tegnes på nytt
   assert.equal(await p.evaluate(() => document.activeElement && document.activeElement.matches('#op-d-replyDate ~ .dp-trigger')), true);
-  await p.click('#btn-sak-forward');
-  await p.waitForTimeout(50);
+  await forward(p);
   c = await opCase(p);
   assert.equal(c.status, 'op_oppstart');
   assert.equal(c.dueDate, '2027-03-11');
   assert.equal(await p.evaluate((i) => countsInBelegg(cases.find((x) => x.id === i)), id), true);
 
   // Varsel om tilstrekkelig opplyst → Avgjørelse: varsel + 3 mnd
-  await p.click('#btn-sak-forward');
-  await p.waitForTimeout(50);
+  await forward(p);
   await p.fill('#op-d-noticeDate', '2027.04.30');
   await p.press('#op-d-noticeDate', 'Tab');
   await p.waitForTimeout(50);
-  await p.click('#btn-sak-forward');
-  await p.waitForTimeout(50);
+  await forward(p);
   c = await opCase(p);
   assert.equal(c.status, 'op_avgjorelse');
   assert.equal(c.dueDate, '2027-07-30');
   assert.match(await p.textContent('#sak-op .op-ctrl'), /\(b\)[^]*2027\.07\.30/);
+  assert.equal(await p.evaluate(() => opProvisionalCases(cases).length), 0);
 
-  // En ny innsiger legges til, og den siste kan ikke fjernes
+  // Innsigere er valgfrie: en ny legges til, og alle kan fjernes
   await p.fill('[data-op-opp-new]', 'Prøve Offshore AB');
   await p.press('[data-op-opp-new]', 'Tab');
   await p.waitForTimeout(50);
   assert.equal((await opCase(p)).op.opponents.length, 2);
   await p.click('[data-op-remove="0"]');
   await p.waitForTimeout(50);
-  assert.equal(await p.locator('[data-op-remove="0"]').isDisabled(), true);
+  await p.click('[data-op-remove="0"]');
+  await p.waitForTimeout(50);
+  assert.equal((await opCase(p)).op.opponents.length, 0);
 
   if (SHOTS) {
     await p.evaluate(() => window.scrollTo(0, 0));

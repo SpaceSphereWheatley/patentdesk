@@ -53,6 +53,10 @@
 .case-card-cn-op        { color: var(--s-op-text) !important; font-weight: var(--weight-medium); }
 .tl-bar-op              { background: rgba(190,24,93,0.45) !important; border-color: var(--s-op-border) !important; }
 .tl-bar-op.tl-bar-op-wait { background: rgba(107,114,128,0.45) !important; border-color: var(--s-frist-border) !important; }
+/* Anslag (fra inndatoen) og den anslåtte Avgjørelse-blokken: stiplet og lysere */
+.tl-bar-op.tl-bar-est   { background: rgba(190,24,93,0.18) !important; border: 1.5px dashed rgba(190,24,93,0.7) !important; }
+.tl-bar-op.tl-bar-op-wait.tl-bar-est { background: rgba(107,114,128,0.25) !important; border-color: rgba(107,114,128,0.7) !important; }
+.tl-bar-op.tl-bar-est .tl-bar-label { color: var(--s-op-text); }
 
 /* ── Forløpsspor ─────────────────────────────────
    Fire chevroner per sak: Formalia → 1. brev → Svar/Viderebehandling → Avgjørelse. Pilene

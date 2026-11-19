@@ -370,7 +370,8 @@ function computeBelegg(horizonDays) {
   // prosenten passere 100, og skal gjøre det: det betyr overbooket.
   function busyWorkdays(startOffset, endOffset, counts) {
     var busyCount = 0;
-    cases.filter(counts || countsInBelegg).forEach(function(c) {
+    // OP-saker: den anslåtte Avgjørelse-blokken er arbeid fra første dag
+    cases.concat(opProvisionalCases(cases)).filter(counts || countsInBelegg).forEach(function(c) {
       var due      = new Date(effDueFor(c) + 'T00:00:00');
       var dueOff   = Math.round((due - today) / 86400000);
 
