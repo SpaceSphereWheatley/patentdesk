@@ -278,8 +278,12 @@ function mdReadProblem(status, size) {
 function mdLoadDocument(url, title) {
   var show = function(body) { return mdDocumentHtml(title, body); };
   var problem = function(msg) { return show('<p class="md-problem">' + esc(msg) + '</p>'); };
-  return fetch(url, { cache: 'no-store' }).then(function(res) {
+  var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  return fetch(url, { cache: 'no-store', signal: ctl ? ctl.signal : undefined }).then(function(res) {
     if (!res.ok) return problem(mdReadProblem(res.status, 0));
+    // For stor: avbryt før hele filen lastes ned (serveren sender alltid lengden)
+    var tooBig = mdReadProblem(res.status, Number(res.headers.get('Content-Length')) || 0);
+    if (tooBig) { if (ctl) ctl.abort(); return problem(tooBig); }
     return res.blob().then(function(b) {
       var p = mdReadProblem(res.status, b.size);
       if (p) return problem(p);
@@ -289,11 +293,15 @@ function mdLoadDocument(url, title) {
 }
 
 // Fillisten: viser filen formatert i fanen w (åpnet i selve klikket, så
-// nettleseren ikke stopper den som en popup).
+// nettleseren ikke stopper den som en popup). Siden skrives rett inn i den
+// tomme fanen, så ingen blob-adresse blir liggende igjen i minnet.
 function mdOpenInTab(w, url, title) {
   try { w.opener = null; w.document.title = title; w.document.body.textContent = 'Laster …'; } catch (e) { /* fanen er lukket */ }
   mdLoadDocument(url, title).then(function(doc) {
-    var blob = new Blob([mdTabHtml(title, doc)], { type: 'text/html' });
-    try { w.location.replace(URL.createObjectURL(blob)); } catch (e) { /* fanen er lukket */ }
+    try {
+      w.document.open();
+      w.document.write(mdTabHtml(title, doc));
+      w.document.close();
+    } catch (e) { /* fanen er lukket */ }
   });
 }

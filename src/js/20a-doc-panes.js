@@ -327,7 +327,7 @@ function renderDocPanes() {
     pin.textContent = manual ? 'valgt for hånd' : (rule ? 'regel: ' + rule : '');
     var isMd = idx >= 0 && _fileIsMd(files[idx].name);
     var url = idx >= 0 ? docPaneUrl(root, cas.caseNumber, files[idx].name, window.location, docLayout.hideToolbar && !isMd) : '';
-    _dpSetFrame(frame, url || '', isMd ? fileListLabel(files[idx]) : null);
+    _dpSetFrame(frame, url || '', isMd ? _fileResolvedName(files[idx].name) : null);
     if (url) {
       empty.hidden = true;
     } else {

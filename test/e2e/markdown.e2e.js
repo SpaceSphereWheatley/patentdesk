@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 let chromium = null;
 let browser = null;
@@ -23,6 +24,8 @@ const SHOT_DIR = process.env.E2E_SHOT_DIR || '';
 const NOTES_MD = '# Notater 20261299\n\n## Krav 1\n\n- D1 viser **trekk 1a–1c**\n- [ ] sjekk *D2*\n- [x] formalia\n\n' +
   '> Søker hevder at trekk 1d er nytt.\n\n| Krav | D1 | D2 |\n|:-----|:--:|:--:|\n| 1 | X | Y |\n| 2 | X | A |\n\n' +
   '```\nkrav 1: En anordning omfattende …\n```\n\nSe [EPO](https://www.epo.org) og `kode`.\n';
+const WIDE_MD = '| ' + Array.from({ length: 30 }, (_, i) => 'Kolonne' + i).join(' | ') + ' |\n|' + '---|'.repeat(30) + '\n| ' +
+  Array.from({ length: 30 }, () => 'verdi').join(' | ') + ' |\n\n```\n' + 'lang_kodelinje_'.repeat(40) + '\n```\n\n' + 'ordutenmellomrom'.repeat(40) + '\n';
 const EVIL_MD = '# Farlig\n\n<script>window.top.__pwned = 1; parent.__pwned = 1;</script>\n\n' +
   '<img src=x onerror="parent.__pwned=1">\n\n[klikk](javascript:parent.__pwned=1)\n';
 
@@ -46,12 +49,19 @@ before(async () => {
     const site = req.headers['sec-fetch-site'];
     docRequests.push({ file, site });
     if (site !== 'same-origin' && site !== 'none') { res.writeHead(403); res.end('Ingen tilgang'); return; }
-    const body = { 'notater.md': NOTES_MD, 'farlig.md': EVIL_MD, 'stor.md': 'x'.repeat(2 * 1024 * 1024 + 10) }[file];
+    const body = { 'notater.md': NOTES_MD, 'merket.md': NOTES_MD, 'farlig.md': EVIL_MD, 'bred.md': WIDE_MD, 'stor.md': 'x'.repeat(2 * 1024 * 1024 + 10) }[file];
+    if (file === 'forbudt.md') { res.writeHead(403); res.end('Ingen tilgang'); return; }
+    if (file === 'stor-uten-lengde.md') { // chunked: no Content-Length, so the size is checked on the body
+      res.writeHead(200, { 'Content-Type': 'text/markdown; charset=utf-8' });
+      for (let i = 0; i < 3; i++) res.write('x'.repeat(1024 * 1024));
+      res.end();
+      return;
+    }
     if (file === 'Claims.pdf') {
       res.writeHead(200, { 'Content-Type': 'text/html' }); // headless Chromium downloads real PDFs
       res.end('<p>Claims</p>');
     } else if (body !== undefined) {
-      res.writeHead(200, { 'Content-Type': 'text/markdown; charset=utf-8', 'Content-Disposition': "attachment; filename*=UTF-8''" + file, 'X-Content-Type-Options': 'nosniff' });
+      res.writeHead(200, { 'Content-Length': Buffer.byteLength(body), 'Content-Type': 'text/markdown; charset=utf-8', 'Content-Disposition': "attachment; filename*=UTF-8''" + file, 'X-Content-Type-Options': 'nosniff' });
       res.end(body);
     } else { res.writeHead(404); res.end('Fant ikke filen'); }
   });
@@ -67,7 +77,9 @@ function e2e(name, fn) {
 }
 
 const CASE_ID = 'e2emd';
-const FILES = [{ name: 'Claims.pdf' }, { name: 'notater.md' }, { name: 'farlig.md' }, { name: 'borte.md' }, { name: 'stor.md' }, { name: 'Notes.docx' }];
+const FILES = [{ name: 'Claims.pdf' }, { name: 'notater.md' }, { name: 'farlig.md' }, { name: 'borte.md' }, { name: 'stor.md' },
+  { name: 'stor-uten-lengde.md' }, { name: 'forbudt.md' }, { name: 'nett.md' }, { name: 'bred.md' },
+  { name: 'merket.md', label: 'Merket notat' }, { name: 'Notes.docx' }];
 
 async function openCase(opts) {
   opts = opts || {};
@@ -78,9 +90,10 @@ async function openCase(opts) {
     createdAt: '2026-10-01T08:00:00.000Z', history: [{ status: 'ny', date: '2026-10-01T08:00:00.000Z' }],
     type: opts.type || 'sak', duration: opts.type === 'oppdrag' ? 3 : null, caseBuffer: null
   };
+  if (opts.type === 'op') { kase.caseNumber = 'OP 2026/00001'; kase.op = { received: '2026-10-01' }; }
   const sak = { numClaims: 1, filingDate: '', priorityDate: '', checklist: [], classes: [], docs: [],
     claims: [{ num: 1, novelty: null, inventive: null, formal: false, notes: '', independent: true, dep: null, depManual: false, label: '', noveltyDoc: null, inventiveDocs: [] }],
-    files: opts.files || FILES };
+    files: opts.files === undefined ? FILES : opts.files };
   await page.addInitScript(([id, cs, s]) => {
     if (sessionStorage.getItem('__seeded')) return;
     sessionStorage.setItem('__seeded', '1');
@@ -90,7 +103,7 @@ async function openCase(opts) {
     localStorage.setItem('pt_cases', cs);
     localStorage.setItem('pt_sak_' + id, s);
   }, [CASE_ID, JSON.stringify([kase]), JSON.stringify(sak)]);
-  await page.goto(base + '/PatentDesk.html');
+  await page.goto(opts.fileApp ? pathToFileURL(APP_FILE).href : base + '/PatentDesk.html');
   await page.evaluate((id) => { navigateTo('sak/' + id); }, CASE_ID);
   await page.waitForTimeout(100);
   return { ctx, page, close: () => ctx.close() };
@@ -151,6 +164,7 @@ e2e('AC5/8: the hand-picked .md survives a re-render; switching to a PDF drops t
   const p = s.page;
   await pickMd(p, 1, 'notater.md');
   const n0 = docRequests.length;
+  assert.ok(n0 >= 1);
   await p.click('#dp-claims-toggle');
   await p.click('#dp-claims-toggle');
   await p.waitForTimeout(200);
@@ -195,7 +209,7 @@ e2e('AC7: clicking a .md in the file list opens a new tab with the formatted tex
     s.ctx.waitForEvent('page'),
     p.locator('.sak-docs-open', { hasText: 'notater.md' }).click()
   ]);
-  await tab.waitForURL(/^blob:/);
+  await tab.waitForSelector('iframe[srcdoc]');
   await tab.waitForTimeout(200);
   assert.equal(await tab.title(), 'notater.md');
   const inner = tab.frameLocator('iframe');
@@ -214,7 +228,7 @@ e2e('AC2/7: a dangerous .md opened in a tab runs nothing', async () => {
     s.ctx.waitForEvent('page'),
     p.locator('.sak-docs-open', { hasText: 'farlig.md' }).click()
   ]);
-  await tab.waitForURL(/^blob:/);
+  await tab.waitForSelector('iframe[srcdoc]');
   await tab.waitForTimeout(200);
   assert.equal(await tab.frameLocator('iframe').locator('h1').textContent(), 'Farlig');
   assert.equal(await tab.evaluate(() => window.__pwned), undefined);
@@ -242,4 +256,88 @@ e2e('AC9: works the same for an Oppdrag and a Fristarkiv case', async () => {
     assert.equal(await paneFrame(s.page, 1).locator('h1').textContent(), 'Notater 20261299', JSON.stringify(o));
     await s.close();
   }
+});
+
+e2e('AC6: a 403 and a network failure show a message in the pane', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await p.route('**/docs?*file=nett.md*', (r) => r.abort('connectionrefused'));
+  await pickMd(p, 1, 'forbudt.md');
+  assert.equal(await paneFrame(p, 1).locator('.md-problem').textContent(), 'Kunne ikke lese filen (403).');
+  await pickMd(p, 1, 'nett.md');
+  assert.equal(await paneFrame(p, 1).locator('.md-problem').textContent(), 'Kunne ikke lese filen (ingen kontakt med serveren).');
+  await s.close();
+});
+
+e2e('AC6: a too large file without a Content-Length is caught on its size', async () => {
+  const s = await openDocs();
+  await pickMd(s.page, 1, 'stor-uten-lengde.md');
+  assert.equal(await paneFrame(s.page, 1).locator('.md-problem').textContent(), 'Filen er for stor til å vises.');
+  await s.close();
+});
+
+e2e('AC7: the tab title is the file name, also when the file has a label', async () => {
+  const s = await openCase();
+  const p = s.page;
+  await p.click('#btn-sak-docs');
+  const [tab] = await Promise.all([
+    s.ctx.waitForEvent('page'),
+    p.locator('.sak-docs-open', { hasText: 'Merket notat' }).click()
+  ]);
+  await tab.waitForSelector('iframe[srcdoc]');
+  assert.equal(await tab.title(), 'merket.md');
+  await s.close();
+});
+
+e2e('AC7: without the local server a .md link is left to the browser', async () => {
+  const s = await openCase({ fileApp: true });
+  const p = s.page;
+  await p.evaluate(() => {
+    window.__opened = 0;
+    window.open = function() { window.__opened++; return null; };
+    window.addEventListener('click', (e) => {
+      if (e.target.closest('.sak-docs-open')) { window.__prevented = e.defaultPrevented; e.preventDefault(); }
+    });
+  });
+  await p.click('#btn-sak-docs');
+  const link = p.locator('.sak-docs-open', { hasText: 'notater.md' });
+  assert.match(await link.getAttribute('href'), /^file:\/\/\/.*notater\.md$/);
+  await link.click();
+  assert.equal(await p.evaluate(() => window.__prevented), false, 'the app did not take over the click');
+  assert.equal(await p.evaluate(() => window.__opened), 0, 'no blank tab opened');
+  await s.close();
+});
+
+e2e('AC10: wide tables and long code lines scroll inside the pane; long words wrap', async () => {
+  const s = await openDocs();
+  const p = s.page;
+  await pickMd(p, 1, 'bred.md');
+  const f = await (await p.$('#dp-frame-1')).contentFrame();
+  const m = await f.evaluate(() => {
+    const doc = document.scrollingElement;
+    const t = document.querySelector('.md-table'), pre = document.querySelector('pre');
+    return { page: doc.scrollWidth - doc.clientWidth, tScroll: t.scrollWidth > t.clientWidth, preScroll: pre.scrollWidth > pre.clientWidth,
+      font: getComputedStyle(document.body).fontFamily, color: getComputedStyle(document.body).color };
+  });
+  assert.ok(m.page <= 0, 'the document itself does not scroll sideways: ' + m.page);
+  assert.equal(m.tScroll, true, 'the table scrolls');
+  assert.equal(m.preScroll, true, 'the code block scrolls');
+  assert.match(m.font, /Inter/);
+  assert.equal(m.color, 'rgb(17, 24, 39)');
+  await s.close();
+});
+
+e2e('AC9: works for Viderebehandling, Avsluttet and an OP case', async () => {
+  for (const o of [{ status: 'viderebehandling' }, { status: 'avsluttet' }, { type: 'op', status: 'op_formalia' }]) {
+    const s = await openDocs(o);
+    await pickMd(s.page, 1, 'notater.md');
+    assert.equal(await paneFrame(s.page, 1).locator('h1').textContent(), 'Notater 20261299', JSON.stringify(o));
+    await s.close();
+  }
+});
+
+e2e('AC9: a case with no files shows the usual empty message', async () => {
+  const s = await openDocs({ files: [] });
+  assert.match(await s.page.locator('#dp-empty-1').textContent(), /Ingen filer registrert på saken/);
+  await s.close();
 });

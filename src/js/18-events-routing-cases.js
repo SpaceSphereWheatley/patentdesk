@@ -367,7 +367,7 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
         var tab = window.open('', '_blank');
         if (tab) {
           e.preventDefault();
-          mdOpenInTab(tab, openLink.href, fileListLabel(mdCtx.file));
+          mdOpenInTab(tab, openLink.href, _fileResolvedName(mdCtx.file.name));
         }
       }
       return;
