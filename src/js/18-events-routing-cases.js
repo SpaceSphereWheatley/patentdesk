@@ -357,9 +357,19 @@ document.getElementById('btn-sak-more').addEventListener('click', function(e) {
     // Venstreklikk på en dokumentlenke: la nettleseren navigere (target=_blank),
     // og lukk nedtrekket. Midtklikk gir auxclick (ikke click) og håndteres nativt
     // av nettleseren som bakgrunnsfane uten å lukke nedtrekket.
+    // En .md-fil vises formatert i en ny fane (bare via den lokale serveren);
+    // fanen åpnes i selve klikket, så den ikke stoppes som en popup.
     var openLink = e.target.closest('.sak-docs-open');
     if (openLink) {
       dd.style.display = 'none';
+      var mdCtx = activeSakFile(parseInt(openLink.getAttribute('data-idx'), 10));
+      if (mdCtx && _fileIsMd(mdCtx.file.name) && _docServedLocally(window.location)) {
+        var tab = window.open('', '_blank');
+        if (tab) {
+          e.preventDefault();
+          mdOpenInTab(tab, openLink.href, _fileResolvedName(mdCtx.file.name));
+        }
+      }
       return;
     }
 

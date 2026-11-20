@@ -664,6 +664,7 @@ tr:hover .sak-tag-display.sak-tag-empty,
 .dp-pin    { color: var(--muted-text); white-space: nowrap; }
 .dp-frame  { flex: 1; width: 100%; border: 0; background: #525659; }
 .dp-frame[hidden] { display: none; }
+.dp-frame.dp-frame-md { background: #fff; }
 .dp-empty  { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
              padding: var(--space-6); background: var(--surface2); color: var(--muted-text); font-size: var(--text-sm); }
 .dp-empty[hidden] { display: none; }

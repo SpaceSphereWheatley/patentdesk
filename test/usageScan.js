@@ -61,6 +61,9 @@ function scanDrawn() {
   const out = [];
   for (const file of fs.readdirSync(JS_DIR)) {
     if (file === '09a-usage-tracker.js') continue;
+    // Markdown-leseren tegner lenker inn i et eget dokument i en iframe med
+    // sandbox; klikk der når aldri appen, så de kan ikke telles.
+    if (file === '04b-markdown.js') continue;
     const text = fs.readFileSync(path.join(JS_DIR, file), 'utf8');
     const lineStarts = text.split('\n');
     const re = /<(button|a|select|summary|input)\b/g;

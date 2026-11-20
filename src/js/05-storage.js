@@ -406,7 +406,7 @@ function missingFileIndexes(files, listed) {
 // funksjoner og løfter uten DOM — se test/folderPicker.test.js.
 
 // Samme filtyper som serveren ($docTypes i Start-PatentDesk.ps1).
-var FOLDER_DOC_EXTS = ['.pdf', '.doc', '.docx', '.odt', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv', '.png', '.jpg', '.jpeg'];
+var FOLDER_DOC_EXTS = ['.pdf', '.doc', '.docx', '.odt', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.md', '.csv', '.png', '.jpg', '.jpeg'];
 
 // 'server' når appen åpnes via den lokale serveren, 'picker' når nettleseren
 // kan lese mappen selv, ellers 'none' (ingen mappesynk).
@@ -522,6 +522,13 @@ function _fileExt(name) {
 function _fileIsPdf(name) {
   return _fileExt(name) === 'pdf';
 }
+function _fileIsMd(name) {
+  return _fileExt(name) === 'md';
+}
+// Filer som kan vises i et dokumentpanel: PDF og Markdown (se 04b-markdown.js).
+function _fileIsPaneDoc(name) {
+  return _fileIsPdf(name) || _fileIsMd(name);
+}
 function _fileIcon(name) {
   switch (_fileExt(name)) {
     case 'pdf': return '📄';
@@ -530,7 +537,7 @@ function _fileIcon(name) {
     case 'ppt': case 'pptx': return '📽️';
     case 'png': case 'jpg': case 'jpeg': case 'gif': case 'bmp': case 'svg': return '🖼️';
     case 'zip': case 'rar': case '7z': return '🗄️';
-    case 'txt': return '📃';
+    case 'txt': case 'md': return '📃';
     default: return '📎';
   }
 }

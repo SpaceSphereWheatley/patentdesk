@@ -926,6 +926,7 @@ function docSlotMatch(files, rule, skip) {
 
 // Filindeks per panel (-1 = tomt). manual[i] er et valg brukeren har gjort i
 // panel i og går foran regelen; regler plasserer aldri samme fil to ganger.
+// For hånd kan også en .md-fil velges; reglene treffer bare PDF-er.
 function docSlotAssign(files, rules, count, manual) {
   var n = (Number.isInteger(count) && count >= 1 && count <= DOC_PANE_MAX) ? count : 2;
   var list = Array.isArray(files) ? files : [];
@@ -934,7 +935,7 @@ function docSlotAssign(files, rules, count, manual) {
   var out = [], used = [], pending = [];
   for (var i = 0; i < n; i++) {
     var m = picks[i], f = list[m];
-    if (Number.isInteger(m) && m >= 0 && m < list.length && f && typeof f.name === 'string' && _fileIsPdf(f.name)) {
+    if (Number.isInteger(m) && m >= 0 && m < list.length && f && typeof f.name === 'string' && _fileIsPaneDoc(f.name)) {
       out.push(m); used.push(m);
     } else {
       out.push(-1); pending.push(i);

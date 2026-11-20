@@ -48,6 +48,7 @@ $docTypes = @{
     '.ppt'  = 'application/vnd.ms-powerpoint'
     '.pptx' = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     '.txt'  = 'text/plain'
+    '.md'   = 'text/markdown; charset=utf-8'
     '.csv'  = 'text/csv'
     '.png'  = 'image/png'
     '.jpg'  = 'image/jpeg'

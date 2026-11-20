@@ -7,6 +7,15 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [4.71.0] - 2026-11-20
+Markdown-filer i saksmappen kan leses formatert i dokumentpanelene og i en ny fane.
+
+### Added
+- **Markdown-filer (.md) kan leses i PatentDesk.** Når appen åpnes via `Start-PatentDesk.ps1`, tas .md-filer i saksmappen med i fillisten, og de kan velges for hånd i et dokumentpanel, der de vises formatert: overskrifter, lister (også avkrysningslister), fet og kursiv, kode, sitater, tabeller og lenker. Et klikk på en .md-fil i fillisten åpner den formatert i en ny fane. Plassreglene for panelene treffer fortsatt bare PDF-er. Uten den lokale serveren virker lenken som før.
+
+### Security
+- **Markdown vises uten å kunne kjøre noe.** All tekst fra filen escapes, og HTML i filen vises som tekst. Bare http-, https- og mailto-lenker blir klikkbare, og bilder vises som tekst. Visningen ligger dessuten i en iframe med sandkasse og streng innholdspolicy.
+
 ## [4.70.0] - 2026-11-19
 Sjekkliste for OP-saker, og strengere kontroll av importerte sjekkliste-maler.
 
