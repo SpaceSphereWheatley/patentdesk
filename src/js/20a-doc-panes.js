@@ -320,13 +320,14 @@ function renderDocPanes() {
     var rule = docLayout.rules[i];
     var opts = '<option value="">' + (manual ? 'Automatisk' : (idx >= 0 ? 'Automatisk: ' + esc(_fileDisplayName(files[idx].name)) : 'Velg fil …')) + '</option>';
     files.forEach(function(f, k) {
-      if (!_fileIsPdf(f.name)) return;
+      if (!_fileIsPaneDoc(f.name)) return;
       opts += '<option value="' + k + '"' + (manual && k === idx ? ' selected' : '') + '>' + esc(fileListLabel(f)) + (gone[k] ? ' (mangler)' : '') + '</option>';
     });
     sel.innerHTML = opts;
     pin.textContent = manual ? 'valgt for hånd' : (rule ? 'regel: ' + rule : '');
-    var url = idx >= 0 ? docPaneUrl(root, cas.caseNumber, files[idx].name, window.location, docLayout.hideToolbar) : '';
-    _dpSetFrame(frame, url || '');
+    var isMd = idx >= 0 && _fileIsMd(files[idx].name);
+    var url = idx >= 0 ? docPaneUrl(root, cas.caseNumber, files[idx].name, window.location, docLayout.hideToolbar && !isMd) : '';
+    _dpSetFrame(frame, url || '', isMd ? fileListLabel(files[idx]) : null);
     if (url) {
       empty.hidden = true;
     } else {
@@ -346,16 +347,32 @@ function renderDocPanes() {
 // til forrige fil i panelet i stedet for ut av saken. En ny iframes første
 // lasting gjør ikke det. Den laster også filen helt på nytt når bare #-delen er
 // annerledes (verktøylinjen skjules eller vises), som leseren ellers ikke leser.
-function _dpSetFrame(frame, url) {
+//
+// En .md-fil (mdTitle satt) hentes og vises formatert som srcdoc i en iframe
+// med sandbox (uten skript); se 04b-markdown.js. Sandkassen settes før
+// iframen settes inn, og fjernes igjen når panelet bytter til en PDF.
+function _dpSetFrame(frame, url, mdTitle) {
   if (!frame) return;
   var old = frame.dataset.url || '';
   if (old === url) { frame.hidden = !url; return; }
-  if (!url) { frame.dataset.url = ''; frame.removeAttribute('src'); frame.hidden = true; return; }
+  if (!url) { frame.dataset.url = ''; frame.removeAttribute('src'); frame.removeAttribute('srcdoc'); frame.hidden = true; return; }
   var fresh = frame.cloneNode(false);
+  fresh.removeAttribute('src');
+  fresh.removeAttribute('srcdoc');
+  fresh.removeAttribute('sandbox');
+  fresh.classList.toggle('dp-frame-md', mdTitle != null);
   fresh.dataset.url = url;
   fresh.hidden = false;
-  fresh.setAttribute('src', url);
+  if (mdTitle == null) {
+    fresh.setAttribute('src', url);
+    frame.parentNode.replaceChild(fresh, frame);
+    return;
+  }
+  fresh.setAttribute('sandbox', 'allow-popups allow-popups-to-escape-sandbox');
   frame.parentNode.replaceChild(fresh, frame);
+  mdLoadDocument(url, mdTitle).then(function(doc) {
+    if (fresh.isConnected && fresh.dataset.url === url) fresh.setAttribute('srcdoc', doc);
+  });
 }
 
 function _dpSetLayout(patch) {

@@ -10,7 +10,7 @@ const {
   ['defaultDocLayout', 'normalizeDocLayout', 'normalizePaneWidths', 'dragPaneWidths',
     'docSlotMatch', 'docSlotAssign', 'claimOverviewRows', 'docPaneUrl', 'readImportSettings', 'isValidChecklistTemplate',
     '_docFileUrl', '_docServedLocally', '_docRootNormalize', '_docRootJoin',
-    '_fileHasExt', '_fileResolvedName', '_fileExt', '_fileIsPdf', '_fileDisplayName', 'roundTriState',
+    '_fileHasExt', '_fileResolvedName', '_fileExt', '_fileIsPdf', '_fileIsMd', '_fileIsPaneDoc', '_fileDisplayName', 'roundTriState',
     'normalizeHomeDeadlineFilter', 'defaultHomeDeadlineFilter', 'normalizeWorkWindows',
     'migrateWorkWindowsToWorkdays', 'normalizeTypeBuffers', 'normalizeDeadlines'],
   { vars: ['DOC_PANE_MAX', 'DOC_PANE_MIN', 'DOC_CLAIMS_MODES', 'DOC_CLAIMS_SIDES', 'DOC_RULE_MAX',
