@@ -1,19 +1,65 @@
-﻿# Start-PatentDesk.ps1 - starter PatentDesk via en liten lokal server.
+﻿# Start-PatentDesk.ps1 - åpner PatentDesk (eller en annen HTML-app i samme
+# mappe) via én felles lokal server.
 #
-# Legg filen i samme mappe som PatentDesk.html. Snarvei (uten konsollvindu):
+# Legg filen i samme mappe som PatentDesk.html. Én snarvei per app (uten konsollvindu):
 #   C:\Windows\System32\conhost.exe --headless C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "<mappe>\Start-PatentDesk.ps1"
+#   ... samme linje med  -Page arbeidsoversikt.html  til slutt for en annen app.
+#
+# Kjører serveren allerede, åpnes bare siden. Ellers startes serveren først.
+# Er skriptet endret siden serveren startet, byttes den gamle serveren ut.
 #
 # Serveren svarer bare på http://localhost og kan bare nås fra denne maskinen.
 # Dokumentmappen stilles inn i PatentDesk (Innstillinger → Dokumentrot); den
 # følger med i hver dokumentlenke (/docs?root=…&case=…&file=…).
+param(
+    [string]$Page = 'PatentDesk.html'
+)
 
 # Ikke bytt port: dataene i nettleseren hører til http://localhost:8080.
 $port = 8080
 
 $appFolder = $PSScriptRoot
-$url = "http://localhost:$port/PatentDesk.html"
+# Bare et vanlig filnavn i app-mappen; alt annet åpner PatentDesk.
+if ($Page -notmatch '^[\w\- .]+\.html$' -or
+        -not (Test-Path -LiteralPath (Join-Path $appFolder $Page) -PathType Leaf)) {
+    $Page = 'PatentDesk.html'
+}
+$url = "http://localhost:$port/$Page"
+# Versjonen av dette skriptet; en kjørende server med en annen versjon byttes ut.
+$scriptStamp = (Get-Item -LiteralPath $PSCommandPath).LastWriteTimeUtc.Ticks.ToString()
 
-# Stopp en server som allerede kjører, så endringer i dette skriptet tas i bruk.
+# Svaret fra /__server hvis serveren kjører, ellers $null.
+function Get-RunningServer {
+    try {
+        $request = [System.Net.WebRequest]::Create("http://localhost:$port/__server")
+        $request.Proxy = $null
+        $request.Timeout = 1500
+        $reply = $request.GetResponse()
+        try {
+            $reader = New-Object System.IO.StreamReader($reply.GetResponseStream())
+            return ($reader.ReadToEnd() | ConvertFrom-Json)
+        } finally {
+            $reply.Close()
+        }
+    } catch {
+        return $null
+    }
+}
+
+# Dobbeltklikk på to snarveier samtidig: den andre venter til den første har
+# startet serveren, og kobler seg så til den.
+$startLock = New-Object System.Threading.Mutex($false, 'Local\PatentDeskServerStart')
+$haveLock = $false
+try { $haveLock = $startLock.WaitOne(15000) } catch [System.Threading.AbandonedMutexException] { $haveLock = $true }
+
+$running = Get-RunningServer
+if ($running -and $running.app -eq 'patentdesk-server' -and $running.script -eq $scriptStamp) {
+    if ($haveLock) { $startLock.ReleaseMutex() }
+    Start-Process "msedge.exe" $url
+    exit
+}
+
+# Ingen server, eller en med en eldre versjon av skriptet: stopp den gamle.
 Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe' OR Name = 'pwsh.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*Start-PatentDesk.ps1*' } |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
@@ -31,6 +77,7 @@ for ($i = 0; $i -lt 20 -and -not $listener; $i++) {
         Start-Sleep -Milliseconds 250
     }
 }
+if ($haveLock) { $startLock.ReleaseMutex() }
 
 Start-Process "msedge.exe" $url
 if (-not $listener) { exit }
@@ -170,7 +217,10 @@ while ($listener.IsListening) {
         $fetchSite = $context.Request.Headers['Sec-Fetch-Site']
         $fromPatentDesk = $fetchSite -eq 'same-origin' -or $fetchSite -eq 'none'
 
-        if ($segments.Count -eq 1 -and $segments[0] -eq 'docs' -and -not $fromPatentDesk) {
+        if ($segments.Count -eq 1 -and $segments[0] -eq '__server') {
+            # Svaret en ny oppstart ser etter for å koble seg til denne serveren.
+            Send-Json $response @{ app = 'patentdesk-server'; script = $scriptStamp }
+        } elseif ($segments.Count -eq 1 -and $segments[0] -eq 'docs' -and -not $fromPatentDesk) {
             Send-Message $response 403 'Ingen tilgang' 'Dokumenter kan bare åpnes fra PatentDesk.'
         } elseif ($segments.Count -eq 2 -and $segments[0] -eq 'docs' -and $segments[1] -eq 'list' -and -not $fromPatentDesk) {
             Send-Message $response 403 'Ingen tilgang' 'Mappen kan bare leses fra PatentDesk.'
