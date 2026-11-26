@@ -7,6 +7,10 @@ og prosjektet følger [Semantisk Versjonering](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+### Changed
+- **Én felles lokal server for flere HTML-apper.** `Start-PatentDesk.ps1` tar nå `-Page <fil>.html`, så en annen app i samme mappe (f.eks. `arbeidsoversikt.html`) kan få sin egen snarvei. Kjører serveren allerede, åpnes bare siden; ellers startes serveren først. Den kjørende serveren startes ikke lenger på nytt ved hver oppstart, bare når skriptet er endret. To snarveier som dobbeltklikkes samtidig starter bare én server.
+- **Apper i andre mapper.** `-Page` kan også være en full sti til en HTML-fil i en annen mappe. Stien huskes i `Start-PatentDesk.pages.txt` ved siden av skriptet, og serveren viser bare de filene som står der, ikke resten av mappen. Adressen blir `http://localhost:8080/<filnavn>`.
+
 ## [4.71.0] - 2026-11-20
 Markdown-filer i saksmappen kan leses formatert i dokumentpanelene og i en ny fane.
 

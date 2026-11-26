@@ -1,19 +1,104 @@
-﻿# Start-PatentDesk.ps1 - starter PatentDesk via en liten lokal server.
+﻿# Start-PatentDesk.ps1 - åpner PatentDesk (eller en annen HTML-app i samme
+# mappe) via én felles lokal server.
 #
-# Legg filen i samme mappe som PatentDesk.html. Snarvei (uten konsollvindu):
+# Legg filen i samme mappe som PatentDesk.html. Én snarvei per app (uten konsollvindu):
 #   C:\Windows\System32\conhost.exe --headless C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "<mappe>\Start-PatentDesk.ps1"
+#   ... samme linje med  -Page arbeidsoversikt.html  til slutt for en annen app
+#   i denne mappen, eller  -Page "C:\<mappe>\arbeidsoversikt.html"  for en app i
+#   en annen mappe. Den fulle stien huskes i Start-PatentDesk.pages.txt, og
+#   serveren viser bare de HTML-filene som står der, ikke resten av mappen.
+#
+# Kjører serveren allerede, åpnes bare siden. Ellers startes serveren først.
+# Er skriptet endret siden serveren startet, byttes den gamle serveren ut.
 #
 # Serveren svarer bare på http://localhost og kan bare nås fra denne maskinen.
 # Dokumentmappen stilles inn i PatentDesk (Innstillinger → Dokumentrot); den
 # følger med i hver dokumentlenke (/docs?root=…&case=…&file=…).
+param(
+    [string]$Page = 'PatentDesk.html'
+)
 
 # Ikke bytt port: dataene i nettleseren hører til http://localhost:8080.
 $port = 8080
 
 $appFolder = $PSScriptRoot
-$url = "http://localhost:$port/PatentDesk.html"
+# HTML-filer i andre mapper som serveren kan vise, én full sti per linje.
+$pagesFile = Join-Path $appFolder 'Start-PatentDesk.pages.txt'
 
-# Stopp en server som allerede kjører, så endringer i dette skriptet tas i bruk.
+function Get-ExtraPages {
+    if (-not (Test-Path -LiteralPath $pagesFile -PathType Leaf)) { return @() }
+    return @(Get-Content -LiteralPath $pagesFile -Encoding UTF8 -ErrorAction SilentlyContinue |
+        ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
+}
+
+# Full sti til siden <name> fra listen, eller $null hvis den ikke står der
+# eller filen ikke finnes lenger.
+function Find-ExtraPage([string]$name) {
+    foreach ($p in Get-ExtraPages) {
+        if ([System.IO.Path]::GetFileName($p) -ieq $name -and (Test-Path -LiteralPath $p -PathType Leaf)) { return $p }
+    }
+    return $null
+}
+
+# Siden som skal åpnes: et vanlig filnavn i app-mappen, eller en full sti til en
+# HTML-fil et annet sted. Alt annet åpner PatentDesk.
+$pageName = [System.IO.Path]::GetFileName($Page)
+if ($pageName -notmatch '^[\w\- .]+\.html$') {
+    $pageName = 'PatentDesk.html'
+} elseif ([System.IO.Path]::IsPathRooted($Page)) {
+    # En fil i app-mappen med samme navn går foran.
+    if ((Test-Path -LiteralPath $Page -PathType Leaf) -and
+            -not (Test-Path -LiteralPath (Join-Path $appFolder $pageName) -PathType Leaf)) {
+        $full = [System.IO.Path]::GetFullPath($Page)
+        $known = Get-ExtraPages
+        if ($known -notcontains $full) {
+            # En eldre sti med samme filnavn (filen er flyttet) byttes ut.
+            $others = @($known | Where-Object { [System.IO.Path]::GetFileName($_) -ine $pageName })
+            Set-Content -LiteralPath $pagesFile -Value (@($others) + $full) -Encoding UTF8
+        }
+    } else {
+        $pageName = 'PatentDesk.html'
+    }
+} elseif (-not (Test-Path -LiteralPath (Join-Path $appFolder $pageName) -PathType Leaf) -and
+        -not (Find-ExtraPage $pageName)) {
+    $pageName = 'PatentDesk.html'
+}
+$url = "http://localhost:$port/$pageName"
+# Versjonen av dette skriptet; en kjørende server med en annen versjon byttes ut.
+$scriptStamp = (Get-Item -LiteralPath $PSCommandPath).LastWriteTimeUtc.Ticks.ToString()
+
+# Svaret fra /__server hvis serveren kjører, ellers $null.
+function Get-RunningServer {
+    try {
+        $request = [System.Net.WebRequest]::Create("http://localhost:$port/__server")
+        $request.Proxy = $null
+        $request.Timeout = 1500
+        $reply = $request.GetResponse()
+        try {
+            $reader = New-Object System.IO.StreamReader($reply.GetResponseStream())
+            return ($reader.ReadToEnd() | ConvertFrom-Json)
+        } finally {
+            $reply.Close()
+        }
+    } catch {
+        return $null
+    }
+}
+
+# Dobbeltklikk på to snarveier samtidig: den andre venter til den første har
+# startet serveren, og kobler seg så til den.
+$startLock = New-Object System.Threading.Mutex($false, 'Local\PatentDeskServerStart')
+$haveLock = $false
+try { $haveLock = $startLock.WaitOne(15000) } catch [System.Threading.AbandonedMutexException] { $haveLock = $true }
+
+$running = Get-RunningServer
+if ($running -and $running.app -eq 'patentdesk-server' -and $running.script -eq $scriptStamp) {
+    if ($haveLock) { $startLock.ReleaseMutex() }
+    Start-Process "msedge.exe" $url
+    exit
+}
+
+# Ingen server, eller en med en eldre versjon av skriptet: stopp den gamle.
 Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe' OR Name = 'pwsh.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*Start-PatentDesk.ps1*' } |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
@@ -31,6 +116,7 @@ for ($i = 0; $i -lt 20 -and -not $listener; $i++) {
         Start-Sleep -Milliseconds 250
     }
 }
+if ($haveLock) { $startLock.ReleaseMutex() }
 
 Start-Process "msedge.exe" $url
 if (-not $listener) { exit }
@@ -170,7 +256,10 @@ while ($listener.IsListening) {
         $fetchSite = $context.Request.Headers['Sec-Fetch-Site']
         $fromPatentDesk = $fetchSite -eq 'same-origin' -or $fetchSite -eq 'none'
 
-        if ($segments.Count -eq 1 -and $segments[0] -eq 'docs' -and -not $fromPatentDesk) {
+        if ($segments.Count -eq 1 -and $segments[0] -eq '__server') {
+            # Svaret en ny oppstart ser etter for å koble seg til denne serveren.
+            Send-Json $response @{ app = 'patentdesk-server'; script = $scriptStamp }
+        } elseif ($segments.Count -eq 1 -and $segments[0] -eq 'docs' -and -not $fromPatentDesk) {
             Send-Message $response 403 'Ingen tilgang' 'Dokumenter kan bare åpnes fra PatentDesk.'
         } elseif ($segments.Count -eq 2 -and $segments[0] -eq 'docs' -and $segments[1] -eq 'list' -and -not $fromPatentDesk) {
             Send-Message $response 403 'Ingen tilgang' 'Mappen kan bare leses fra PatentDesk.'
@@ -221,7 +310,13 @@ while ($listener.IsListening) {
             }
         } else {
             $path = Resolve-Inside $appFolder $segments
-            if ($path -and (Test-Path -LiteralPath $path -PathType Leaf)) {
+            if (-not ($path -and (Test-Path -LiteralPath $path -PathType Leaf))) {
+                # Ikke i app-mappen: en side fra Start-PatentDesk.pages.txt?
+                $path = if ($segments.Count -eq 1 -and $segments[0] -match '^[\w\- .]+\.html$') {
+                    Find-ExtraPage $segments[0]
+                } else { $null }
+            }
+            if ($path) {
                 $ext = [System.IO.Path]::GetExtension($path).ToLowerInvariant()
                 $type = if ($appTypes.ContainsKey($ext)) { $appTypes[$ext] } else { 'application/octet-stream' }
                 # no-cache: en ny PatentDesk.html brukes med en gang, uten gammel kopi
