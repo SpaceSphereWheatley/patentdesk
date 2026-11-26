@@ -271,5 +271,5 @@ asked.
 | `scripts/codemap.js` | Function/section map of `src/` (`npm run codemap`) |
 | `test/*.test.js` | Unit tests (`npm test`; in sessions `npm run test:quiet`) |
 | `test/e2e/*.e2e.js` | Browser layout tests, not in `npm test`; run `node --test test/e2e/*.e2e.js` (skipped if Playwright is missing) |
-| `Start-PatentDesk.ps1` | Optional local server (Windows PowerShell): serves the app on `http://localhost:8080`, case documents under `/docs?root=&case=&file=` and a file list of a case folder under `/docs/list?root=&case=`. `-Page <file>.html` opens another app in the same folder; a launch attaches to a running server (`/__server`) and replaces it only if the script changed |
+| `Start-PatentDesk.ps1` | Optional local server (Windows PowerShell): serves the app on `http://localhost:8080`, case documents under `/docs?root=&case=&file=` and a file list of a case folder under `/docs/list?root=&case=`. `-Page <file>.html` opens another app in the same folder, `-Page <full path>` one elsewhere (remembered in `Start-PatentDesk.pages.txt`, which lists the only outside files served); a launch attaches to a running server (`/__server`) and replaces it only if the script changed |
 | `cpc_v2.json` | CPC classification data (external, loaded into IndexedDB) |

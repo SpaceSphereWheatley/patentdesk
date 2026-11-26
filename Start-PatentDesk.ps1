@@ -3,7 +3,10 @@
 #
 # Legg filen i samme mappe som PatentDesk.html. Én snarvei per app (uten konsollvindu):
 #   C:\Windows\System32\conhost.exe --headless C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "<mappe>\Start-PatentDesk.ps1"
-#   ... samme linje med  -Page arbeidsoversikt.html  til slutt for en annen app.
+#   ... samme linje med  -Page arbeidsoversikt.html  til slutt for en annen app
+#   i denne mappen, eller  -Page "C:\<mappe>\arbeidsoversikt.html"  for en app i
+#   en annen mappe. Den fulle stien huskes i Start-PatentDesk.pages.txt, og
+#   serveren viser bare de HTML-filene som står der, ikke resten av mappen.
 #
 # Kjører serveren allerede, åpnes bare siden. Ellers startes serveren først.
 # Er skriptet endret siden serveren startet, byttes den gamle serveren ut.
@@ -19,12 +22,48 @@ param(
 $port = 8080
 
 $appFolder = $PSScriptRoot
-# Bare et vanlig filnavn i app-mappen; alt annet åpner PatentDesk.
-if ($Page -notmatch '^[\w\- .]+\.html$' -or
-        -not (Test-Path -LiteralPath (Join-Path $appFolder $Page) -PathType Leaf)) {
-    $Page = 'PatentDesk.html'
+# HTML-filer i andre mapper som serveren kan vise, én full sti per linje.
+$pagesFile = Join-Path $appFolder 'Start-PatentDesk.pages.txt'
+
+function Get-ExtraPages {
+    if (-not (Test-Path -LiteralPath $pagesFile -PathType Leaf)) { return @() }
+    return @(Get-Content -LiteralPath $pagesFile -Encoding UTF8 -ErrorAction SilentlyContinue |
+        ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
 }
-$url = "http://localhost:$port/$Page"
+
+# Full sti til siden <name> fra listen, eller $null hvis den ikke står der
+# eller filen ikke finnes lenger.
+function Find-ExtraPage([string]$name) {
+    foreach ($p in Get-ExtraPages) {
+        if ([System.IO.Path]::GetFileName($p) -ieq $name -and (Test-Path -LiteralPath $p -PathType Leaf)) { return $p }
+    }
+    return $null
+}
+
+# Siden som skal åpnes: et vanlig filnavn i app-mappen, eller en full sti til en
+# HTML-fil et annet sted. Alt annet åpner PatentDesk.
+$pageName = [System.IO.Path]::GetFileName($Page)
+if ($pageName -notmatch '^[\w\- .]+\.html$') {
+    $pageName = 'PatentDesk.html'
+} elseif ([System.IO.Path]::IsPathRooted($Page)) {
+    # En fil i app-mappen med samme navn går foran.
+    if ((Test-Path -LiteralPath $Page -PathType Leaf) -and
+            -not (Test-Path -LiteralPath (Join-Path $appFolder $pageName) -PathType Leaf)) {
+        $full = [System.IO.Path]::GetFullPath($Page)
+        $known = Get-ExtraPages
+        if ($known -notcontains $full) {
+            # En eldre sti med samme filnavn (filen er flyttet) byttes ut.
+            $others = @($known | Where-Object { [System.IO.Path]::GetFileName($_) -ine $pageName })
+            Set-Content -LiteralPath $pagesFile -Value (@($others) + $full) -Encoding UTF8
+        }
+    } else {
+        $pageName = 'PatentDesk.html'
+    }
+} elseif (-not (Test-Path -LiteralPath (Join-Path $appFolder $pageName) -PathType Leaf) -and
+        -not (Find-ExtraPage $pageName)) {
+    $pageName = 'PatentDesk.html'
+}
+$url = "http://localhost:$port/$pageName"
 # Versjonen av dette skriptet; en kjørende server med en annen versjon byttes ut.
 $scriptStamp = (Get-Item -LiteralPath $PSCommandPath).LastWriteTimeUtc.Ticks.ToString()
 
@@ -271,7 +310,13 @@ while ($listener.IsListening) {
             }
         } else {
             $path = Resolve-Inside $appFolder $segments
-            if ($path -and (Test-Path -LiteralPath $path -PathType Leaf)) {
+            if (-not ($path -and (Test-Path -LiteralPath $path -PathType Leaf))) {
+                # Ikke i app-mappen: en side fra Start-PatentDesk.pages.txt?
+                $path = if ($segments.Count -eq 1 -and $segments[0] -match '^[\w\- .]+\.html$') {
+                    Find-ExtraPage $segments[0]
+                } else { $null }
+            }
+            if ($path) {
                 $ext = [System.IO.Path]::GetExtension($path).ToLowerInvariant()
                 $type = if ($appTypes.ContainsKey($ext)) { $appTypes[$ext] } else { 'application/octet-stream' }
                 # no-cache: en ny PatentDesk.html brukes med en gang, uten gammel kopi

@@ -1,5 +1,6 @@
 'use strict';
-// Start-PatentDesk.ps1 as a shared server for several HTML apps in its folder:
+// Start-PatentDesk.ps1 as a shared server for several HTML apps (in its folder
+// or listed in Start-PatentDesk.pages.txt):
 // a launch attaches to a running server instead of restarting it.
 const test = require('node:test');
 const assert = require('node:assert');
@@ -14,10 +15,30 @@ test('takes the page to open as a parameter, PatentDesk by default', () => {
   assert.match(ps1, /\[string\]\$Page\s*=\s*'PatentDesk\.html'/);
 });
 
-test('only accepts a plain .html filename that exists in the app folder', () => {
-  assert.match(ps1, /\$Page -notmatch '\^\[\\w\\- \.\]\+\\\.html\$'/);
-  assert.match(ps1, /Test-Path -LiteralPath \(Join-Path \$appFolder \$Page\) -PathType Leaf/);
-  assert.match(ps1, /\$url = "http:\/\/localhost:\$port\/\$Page"/);
+test('only accepts a plain .html filename, in the app folder or listed in pages.txt', () => {
+  assert.match(ps1, /\$pageName -notmatch '\^\[\\w\\- \.\]\+\\\.html\$'/);
+  assert.match(ps1, /Test-Path -LiteralPath \(Join-Path \$appFolder \$pageName\) -PathType Leaf/);
+  assert.match(ps1, /\$url = "http:\/\/localhost:\$port\/\$pageName"/);
+});
+
+test('a full path to an .html file elsewhere is remembered in Start-PatentDesk.pages.txt', () => {
+  assert.match(ps1, /\$pagesFile = Join-Path \$appFolder 'Start-PatentDesk\.pages\.txt'/);
+  const branch = ps1.slice(ps1.indexOf('IsPathRooted($Page)'), ps1.indexOf('$url = '));
+  assert.match(branch, /Test-Path -LiteralPath \$Page -PathType Leaf/, 'the file must exist');
+  assert.match(branch, /-not \(Test-Path -LiteralPath \(Join-Path \$appFolder \$pageName\)/,
+    'a file in the app folder wins over one elsewhere with the same name');
+  assert.match(branch, /-ine \$pageName/, 'an older entry with the same name is replaced');
+  assert.match(branch, /Set-Content -LiteralPath \$pagesFile/);
+});
+
+test('the server serves a listed page only by its exact filename, and only if it exists', () => {
+  const fn = ps1.slice(ps1.indexOf('function Find-ExtraPage'), ps1.indexOf('\n}', ps1.indexOf('function Find-ExtraPage')));
+  assert.match(fn, /GetFileName\(\$p\) -ieq \$name/);
+  assert.match(fn, /Test-Path -LiteralPath \$p -PathType Leaf/);
+  const serve = ps1.slice(ps1.lastIndexOf('Resolve-Inside $appFolder $segments'));
+  assert.match(serve, /\$segments\.Count -eq 1 -and \$segments\[0\] -match '\^\[\\w\\- \.\]\+\\\.html\$'/,
+    'only a single .html name is looked up in the list');
+  assert.match(serve, /Find-ExtraPage \$segments\[0\]/);
 });
 
 test('answers /__server with an id and the script version stamp', () => {
